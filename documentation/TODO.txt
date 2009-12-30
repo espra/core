@@ -1,0 +1,15 @@
+====
+Todo
+====
+
+✓ Setup git repository for tentapp
+
+✗ Weblite base framework
+✗ Weblite service loader
+✗ Signed cookies
+✗ HTTP only cookies
+
+✗ Appengine manager script
+✗ Minification script
+
+✗ Appengine base yaml files
