@@ -84,6 +84,7 @@ Todo
 
 ✗ Trustmap definition
 ✗ Trustmap query
+✗ Trustmap editor
 ✗ Recursive trustmap
 
 ✗ Item search
@@ -131,6 +132,8 @@ Todo
 ✗ Auto-preview
 ✗ Position editor
 ✗ Uploader
+✗ Map location selector
+✗ Date/time selector
 
 ✗ Widgets
 ✗ Error handling
