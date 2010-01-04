@@ -1,0 +1,57 @@
+# specific files/directories
+
+.appengine_python_sdk
+appengine/tentapp/updated.py
+
+# minified css/js files
+
+*min.*.js
+*min.*.css
+
+# hidden files/directories
+
+.DS_Store
+.sconsign*
+.svn
+
+# file patterns
+
+*#*
+*~
+*.dylib
+*.egg
+*.jar
+*.la
+*.lo
+*.o
+*.pyc
+*.pyo
+*.so
+*.swp
+*.tar.bz2
+*.tar.gz
+*.tbz
+*.tbz2
+*.tgz
+
+# file patterns (xcode)
+
+*.mode1v3
+*.mode2v3
+*~.nib
+*.pbxuser
+*.perspective
+*.perspectivev3
+*.swp
+*.tm_build_errors
+
+# file patterns (windows)
+
+*.dll
+*.exe
+*.ilk
+*.lib
+*.ncb
+*.pdb
+*.suo
+*.vcproj.*.*.user
