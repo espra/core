@@ -3,6 +3,7 @@ Todo
 ====
 
 ✓ Setup git repository for tentapp
+✗ Buy SSL certificate
 
 ✗ Weblite base framework
 ✗ Weblite service loader
@@ -13,3 +14,210 @@ Todo
 ✗ Minification script
 
 ✗ Appengine base yaml files
+✗ Site configuration file
+✗ Site secret file
+
+✗ Main site template
+✗ Main site css
+✗ Border-based controls
+
+✗ User identity framework
+✗ User identity core model
+✗ Invitation
+✗ Membership
+✗ Membership payment (via PayPal)
+✗ Terms of service acceptance with updates
+
+✗ Login
+✗ Email
+✗ OpenID
+✗ Google
+✗ Facebook
+✗ Twitter
+✗ Flickr
+✗ Domains
+
+✗ Profile (incl. Skype)
+✗ Profile picture
+✗ User settings/configuration
+
+✗ App/service keys
+✗ App revocation
+✗ OAuth
+✗ CSRF
+✗ User quotas
+
+✗ Item framework
+✗ Item core model
+✗ Item log model (trends, etc.)
+
+✗ Item creation
+✗ Sensor notification on create
+✗ Aspect/value parsing
+✗ Builtin types
+✗ Item indexing
+✗ Item attachment
+✗ File uploading
+
+✗ Private spaces (capabilities)
+✗ Private space creation
+✗ Private space invitation
+
+✗ Reaction definition
+✗ Builtin incr/decr reactions
+✗ Calling of before/after reactions✗ 
+✗ Private messaging
+✗ Espra credits allocation
+✗ Espra credits usage
+
+✗ Item editing
+✗ Item versioning
+✗ Item positioning
+✗ Item deleting
+
+✗ Plus-ing
+✗ Re-spacing
+✗ Pecu-allocating
+✗ Commenting
+✗ Symlinking
+✗ Original chain traversal
+
+✗ Trustmap definition
+✗ Trustmap query
+✗ Recursive trustmap
+
+✗ Item search
+✗ Search syntax
+✗ Client-side search results merge
+✗ Parallel query
+✗ Merged aspect/value query
+
+✗ Real-time update
+✗ Live node
+✗ Sensor network
+✗ Sensor node
+✗ Sensor pattern match finder
+
+✗ Redis server
+✗ Redis client
+
+✗ Worker node
+✗ Resync checker
+✗ Web hooks POSTer
+
+✗ HTTP server
+✗ Server connection stats
+✗ Web Sockets support
+✗ Web Sockets client-side support
+✗ Iframe client-side support
+
+✗ Client-side caches
+✗ Item caches
+✗ Dolumn-cached loading
+
+✗ Session management
+✗ Dolumns
+✗ Scrolling
+
+✗ Item views
+✗ Listing view
+✗ Calendar view
+✗ Map view
+✗ Arbitrary view
+
+✗ Autocompletion
+✗ Autogrowing editor
+✗ Inline editor
+✗ Auto-preview
+✗ Position editor
+✗ Uploader
+
+✗ Widgets
+✗ Error handling
+✗ Error reporting
+✗ Resync notification
+✗ General notifications
+
+✗ OEmbed
+✗ OEmbed (Skitch)
+✗ Longurls
+
+✗ Links
+✗ Includes
+✗ XSS sanitation
+
+✗ Lambdascript
+✗ Lambdascript parser
+✗ Lambdascript exec
+✗ Builtins
+✗ Unicode support
+✗ Formatters
+✗ I18n support
+✗ I18n data
+✗ Timezone support
+✗ Timezone data
+✗ Decimal support
+✗ Queries
+✗ Function definition
+✗ Views
+✗ Text type (rst, markdown, etc.)
+✗ Paste type
+✗ Syntax highlighting
+✗ Pattern definition
+✗ Pattern extraction
+
+✗ Media player
+✗ YouTube
+✗ MP3s
+✗ FlowPlayer
+
+✗ Pecu app
+✗ Pecu allocation
+✗ Auto-allocation
+✗ Top rated
+✗ Top rated in period
+✗ Pecu payouts
+✗ Pecu integration with PayPal
+
+✗ Shaila app
+✗ Shaila creation mode
+✗ Shaila grab: Flickr, Twitter, etc.
+✗ Shaila browsing
+
+✗ Packaged views
+✗ Packaged views creator
+✗ Packaged views verifier/installer
+
+✗ GitHub integration
+✗ Google calendar integration: in
+✗ Google calendar integration: out
+
+✗ RSS integration: in
+✗ RSS integration: out
+✗ Twitter integration: out
+
+✗ Domain validation
+✗ Domain view definition
+✗ Domain view rendering
+
+✗ Node logging support
+✗ Node logging redis server
+✗ Node log monitor app
+
+✗ Visualisation framework
+✗ Graph (trustmap-like) viewer
+✗ Temporal viewer
+
+✗ Email integration
+✗ SMS integration
+✗ XMPP integration
+✗ Google Wave bot
+
+✗ EC2 setup
+✗ ELB setup
+✗ DNS setup
+✗ AMI setup
+✗ Nginx configuration
+✗ Redis configuration
+✗ Runner scripts
+✗ Git repository app sync
