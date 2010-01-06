@@ -10,3 +10,6 @@ SITE_ADMINS = frozenset([
     'adminuser@gmail.com'
     ])
 
+TAMPER_PROOF_KEY = "Place your long, randomly generated sekret key here."
+
+TAMPER_PROOF_DEFAULT_PERIOD = timedelta(minutes=20)
