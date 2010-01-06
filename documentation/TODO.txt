@@ -2,7 +2,7 @@
 Todo
 ====
 
-✓ Setup git repository for tentapp
+✓ Setup git repository for ampify
 ✗ Buy SSL certificate
 ✓ Buy ampify.it
 ✗ Send in verification documents to the Italian registrar
@@ -10,8 +10,8 @@ Todo
 
 ✓ Weblite base framework
 ✓ Weblite service loader
-✗ Signed cookies
-✗ HTTP only cookies
+✓ Tamper-proof cookies
+✓ HTTP only cookies
 
 ✗ Appengine manager script
 ✗ Minification script
@@ -84,7 +84,7 @@ Todo
 ✗ Item positioning
 ✗ Item deleting
 
-✗ Plus-ing
+✗ Amp-ing
 ✗ Re-spacing
 ✗ Pecu-allocating
 ✗ Commenting
@@ -155,6 +155,8 @@ Todo
 ✗ Userscripts definition
 ✗ Userstyles definition
 ✗ Background uploading
+✗ Userscript hooks/ordering
+✗ Safe login
 
 ✗ OEmbed
 ✗ OEmbed (Skitch)
