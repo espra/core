@@ -19,12 +19,8 @@ Tentapp
 
 Tentapp is a micro-data powered collaboration platform.
 
-Source repository:
-
-* git clone git://github.com/tav/tentapp.git
-
-Everything except for the bits in ``third_party`` directories is released into
-the public domain <http://creativecommons.org/publicdomain/zero/1.0/>.
+See the documentation directory for more info:
+http://github.com/tav/tentapp/blob/master/documentation/GETTING-STARTED.rst
 
 -- 
-Enjoy, tav, <tav@espians.com>
+Enjoy, tav <tav@espians.com>
