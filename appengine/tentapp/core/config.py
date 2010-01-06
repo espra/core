@@ -20,7 +20,7 @@ from tentapp import APP_ROOT
 __all__ = [
     'DEBUG', 'DEFAULT_TEMPLATE_MODE', 'ERROR_401_TEMPLATE',
     'ERROR_404_TEMPLATE', 'ERROR_500_TEMPLATE', 'SITE_ADMINS',
-    'SITE_MAIN_TEMPLATE', 'STATIC'
+    'SITE_MAIN_TEMPLATE', 'STATIC', 'TAMPER_PROOF_DEFAULT_DURATION'
     ]
 
 # ------------------------------------------------------------------------------

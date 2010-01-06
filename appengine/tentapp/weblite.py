@@ -8,7 +8,6 @@ import sys
 
 from BaseHTTPServer import BaseHTTPRequestHandler
 from cgi import FieldStorage, parse_qsl as parse_query_string
-from Cookie import SimpleCookie
 from datetime import datetime, timedelta
 from hashlib import sha1
 from hmac import new as hmac
@@ -29,6 +28,7 @@ from wsgiref.headers import Headers
 # import other libraries
 # ------------------------------------------------------------------------------
 
+from cookie import SimpleCookie # note: this is our cookie and not Cookie...
 from demjson import decode as json_decode, encode as json_encode
 from genshi.core import Markup
 from genshi.template import MarkupTemplate, NewTextTemplate
@@ -45,6 +45,10 @@ from tentapp.core.config import *
 from tentapp.core.model import Player
 from tentapp.core.exception import *
 from tentapp.core.validation import validate
+
+from tentapp.util.crypto import (
+    create_tamper_proof_string, validate_tamper_proof_string
+    )
 
 # ------------------------------------------------------------------------------
 # i/o helpers
@@ -176,6 +180,13 @@ class Response(object):
         for name, value in kwargs.iteritems():
             if value:
                 cookie[name.lower()] = value
+
+    def set_secure_cookie(
+        self, name, value, duration=TAMPER_PROOF_DEFAULT_DURATION.seconds,
+        **kwargs
+        ):
+        value = create_tamper_proof_string(value, duration)
+        self.set_cookie(name, value, **kwargs)
 
     def append_to_cookie(self, name, value):
         cookie = self.cookies.setdefault(name, {})
@@ -366,6 +377,7 @@ class Context(object):
         self.append_to_cookie = response.append_to_cookie
         self.expire_cookie = response.expire_cookie
         self.set_cookie = response.set_cookie
+        self.set_secure_cookie = response.set_secure_cookie
         self.clear_response = response.clear_response
         self.response_headers = response.headers
         self.set_response_header = response.set_header
@@ -577,6 +589,11 @@ class Context(object):
 
     def get_cookie(self, name, default=''):
         return self.cookies.get(name, default)
+
+    def get_secure_cookie(self, name, timestamped=True):
+        if name not in self.cookies:
+            return
+        return validate_tamper_proof_string(self.cookies[name])
 
     def get_current_session(self):
         if self._current_session is not None:

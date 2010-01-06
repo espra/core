@@ -2,12 +2,12 @@
 
 """Miscellaneous utility crypto functions."""
 
-from base64 import b64encode, b64decode
+from base64 import b64encode
 from hmac import HMAC
 from hashlib import sha384
 from time import time
 
-from tentapp.core.config import TAMPER_PROOF_KEY, TAMPER_PROOF_DEFAULT_PERIOD
+from tentapp.core.config import TAMPER_PROOF_KEY, TAMPER_PROOF_DEFAULT_DURATION
 
 # ------------------------------------------------------------------------------
 # http://rdist.root.org/2009/05/28/timing-attack-in-google-keyczar-library/
@@ -41,22 +41,21 @@ def create_rehashed_mac(value, key, hmac, hasher, n=10):
     return b64encode(digest, '-_')
 
 def create_tamper_proof_string(
-    value, key=TAMPER_PROOF_KEY, valid_for=TAMPER_PROOF_DEFAULT_PERIOD.seconds,
-    hmac=HMAC, hasher=sha384, time=time
+    value, duration=TAMPER_PROOF_DEFAULT_DURATION.seconds, key=TAMPER_PROOF_KEY,
+    hmac=HMAC, hasher=sha384
     ):
     """Return a tamper proof version of the passed in string value."""
 
     if not isinstance(value, str):
         raise ValueError("You can only tamper-proof str objects.")
 
-    if valid_for:
-        value = "%s:%s" % (int(time()) + valid_for, value)
+    if duration:
+        value = "%s:%s" % (int(time()) + duration, value)
 
     return "%s:%s" % (create_rehashed_mac(value, key, hmac, hasher), value)
 
 def validate_tamper_proof_string(
-    value, key=TAMPER_PROOF_KEY, timestamped=True, hmac=HMAC, hasher=sha384,
-    time=time
+    value, timestamped=True, key=TAMPER_PROOF_KEY, hmac=HMAC, hasher=sha384
     ):
     """Validate that the given value hasn't been tampered with."""
 
