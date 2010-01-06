@@ -4,14 +4,14 @@
 
 echo
 echo "# Todo:"
-grep "✗" TODO.txt | wc -l
+grep "✗" TODO.rst | wc -l
 
 echo
 echo "# Done:"
-grep "✓" TODO.txt | wc -l
+grep "✓" TODO.rst | wc -l
 
 echo
 echo "# Total:"
-grep "[✓✗]" TODO.txt | wc -l
+grep "[✓✗]" TODO.rst | wc -l
 
 echo
