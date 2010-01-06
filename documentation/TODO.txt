@@ -16,6 +16,9 @@ Todo
 ✗ Python third party dependencies
 ✗ Javascript third party dependencies
 
+✗ Overview documentation
+✗ Architecture documentation
+
 ✓ Appengine base yaml files
 ✗ Site configuration file
 ✗ Site secret file
@@ -143,6 +146,10 @@ Todo
 ✗ Error reporting
 ✗ Resync notification
 ✗ General notifications
+
+✗ Userscripts definition
+✗ Userstyles definition
+✗ Background uploading
 
 ✗ OEmbed
 ✗ OEmbed (Skitch)
