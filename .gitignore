@@ -3,6 +3,7 @@
 .appengine_python_sdk
 appengine/tentapp/updated.py
 appengine/siteconfig.py
+appengine/.latest
 
 # minified css/js files
 
