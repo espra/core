@@ -12,8 +12,11 @@ Todo
 
 ✗ Appengine manager script
 ✗ Minification script
+✗ Remote API handler script
+✗ Python third party dependencies
+✗ Javascript third party dependencies
 
-✗ Appengine base yaml files
+✓ Appengine base yaml files
 ✗ Site configuration file
 ✗ Site secret file
 
