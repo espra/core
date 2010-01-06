@@ -43,5 +43,5 @@ handlers:
   login: admin
 
 - url: .*
-  script: /tentapp/main.py
+  script: main.py
   secure: optional
