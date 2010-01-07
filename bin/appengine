@@ -163,8 +163,8 @@ if __name__ == '__main__':
         if not argv:
             argv = ['-v', 'update', APP_ROOT]
             cur_dir = getcwd()
-            chdir(APP_ROOT)
-            subprocess.call(['make'])
+            chdir(MAIN_ROOT)
+            subprocess.call(['make', 'static'])
             chdir(cur_dir)
             updated_file = open(UPDATED_FILE_PATH, 'wb')
             updated_file.write("APPLICATION_TIMESTAMP = %s\n" % time())
