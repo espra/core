@@ -73,7 +73,7 @@ function main() {
     }
     if (!JSLINT(source, {bitwise: true, eqeqeq: true, immed: true,
                 newcap: true, nomen: false, onevar: true, plusplus: true,
-                predef: ['require', 'process', '__filename'],
+                predef: ['exports', 'module', 'require', 'process', '__filename', 'GLOBAL'],
                 regexp: true, rhino: false, undef: true, white: true})) {
         for (i = 0; i < JSLINT.errors.length; i += 1) {
             error = JSLINT.errors[i];
