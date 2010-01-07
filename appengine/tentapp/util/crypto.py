@@ -41,30 +41,47 @@ def create_rehashed_mac(value, key, hmac, hasher, n=10):
     return b64encode(digest, '-_')
 
 def create_tamper_proof_string(
-    value, duration=TAMPER_PROOF_DEFAULT_DURATION.seconds, key=TAMPER_PROOF_KEY,
-    hmac=HMAC, hasher=sha384
+    name, value, duration=TAMPER_PROOF_DEFAULT_DURATION.seconds,
+    key=TAMPER_PROOF_KEY, hmac=HMAC, hasher=sha384
     ):
     """Return a tamper proof version of the passed in string value."""
 
+    if not isinstance(name, str):
+        raise ValueError("You can only tamper-proof str name/values.")
+
     if not isinstance(value, str):
-        raise ValueError("You can only tamper-proof str objects.")
+        raise ValueError("You can only tamper-proof str name/values.")
 
     if duration:
         value = "%s:%s" % (int(time()) + duration, value)
 
-    return "%s:%s" % (create_rehashed_mac(value, key, hmac, hasher), value)
+    named_value = "%s|%s" % (name.replace('|', r'\|'), value)
+
+    return "%s:%s" % (
+        create_rehashed_mac(named_value, key, hmac, hasher),
+        value
+        )
 
 def validate_tamper_proof_string(
-    value, timestamped=True, key=TAMPER_PROOF_KEY, hmac=HMAC, hasher=sha384
+    name, value, timestamped=True, key=TAMPER_PROOF_KEY, hmac=HMAC,
+    hasher=sha384
     ):
     """Validate that the given value hasn't been tampered with."""
+
+    if not isinstance(name, str):
+        raise ValueError("You can only tamper-proof str name/values.")
+
+    if not isinstance(value, str):
+        raise ValueError("You can only tamper-proof str name/values.")
 
     try:
         mac, value = value.split(':', 1)
     except:
         return
 
-    expected_mac = create_rehashed_mac(value, key, hmac, hasher)
+    named_value = "%s|%s" % (name.replace('|', r'\|'), value)
+
+    expected_mac = create_rehashed_mac(named_value, key, hmac, hasher)
     if not secure_string_comparison(mac, expected_mac):
         return
 

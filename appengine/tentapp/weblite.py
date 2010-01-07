@@ -185,7 +185,7 @@ class Response(object):
         self, name, value, duration=TAMPER_PROOF_DEFAULT_DURATION.seconds,
         **kwargs
         ):
-        value = create_tamper_proof_string(value, duration)
+        value = create_tamper_proof_string(name, value, duration)
         self.set_cookie(name, value, **kwargs)
 
     def append_to_cookie(self, name, value):
@@ -593,7 +593,9 @@ class Context(object):
     def get_secure_cookie(self, name, timestamped=True):
         if name not in self.cookies:
             return
-        return validate_tamper_proof_string(self.cookies[name])
+        return validate_tamper_proof_string(
+            name, self.cookies[name], timestamped
+            )
 
     def get_current_session(self):
         if self._current_session is not None:
