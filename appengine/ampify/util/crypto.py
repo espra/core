@@ -7,7 +7,7 @@ from hmac import HMAC
 from hashlib import sha384
 from time import time
 
-from tentapp.core.config import TAMPER_PROOF_KEY, TAMPER_PROOF_DEFAULT_DURATION
+from ampify.core.config import TAMPER_PROOF_KEY, TAMPER_PROOF_DEFAULT_DURATION
 
 # ------------------------------------------------------------------------------
 # http://rdist.root.org/2009/05/28/timing-attack-in-google-keyczar-library/

@@ -40,13 +40,13 @@ from google.appengine.api.urlfetch import fetch as urlfetch, GET, POST
 from google.appengine.api import users
 from google.appengine.ext import db
 
-from tentapp import APP_ROOT, PKG_ROOT
-from tentapp.core.config import *
-from tentapp.core.model import Player
-from tentapp.core.exception import *
-from tentapp.core.validation import validate
+from ampify import APP_ROOT, PKG_ROOT
+from ampify.core.config import *
+from ampify.core.model import Player
+from ampify.core.exception import *
+from ampify.core.validation import validate
 
-from tentapp.util.crypto import (
+from ampify.util.crypto import (
     create_tamper_proof_string, validate_tamper_proof_string
     )
 
@@ -1332,7 +1332,7 @@ class Service(object):
         return self.function(ctx, *args, **kwargs)
 
     @classmethod
-    def get_service(klass, name, prefix='tentapp.service.'):
+    def get_service(klass, name, prefix='ampify.service.'):
         if name in klass.__services__:
             return klass.__services__[name]
         if name in klass._unknown_services:

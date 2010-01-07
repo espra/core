@@ -5,7 +5,7 @@
 from time import time
 from sha import new as sha1
 
-from tentapp.core.exception import Error
+from ampify.core.exception import Error
 
 # ------------------------------------------------------------------------------
 # some konstants

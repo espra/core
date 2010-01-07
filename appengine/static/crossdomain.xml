@@ -2,9 +2,9 @@
 <!DOCTYPE cross-domain-policy SYSTEM "http://www.adobe.com/xml/dtds/cross-domain-policy.dtd">
 <cross-domain-policy>
   <site-control permitted-cross-domain-policies="master-only" />
-  <allow-access-from domain="www.tentapp.com" />
-  <allow-access-from domain="static1.tentapp.com" />
-  <allow-access-from domain="static2.tentapp.com" />
-  <allow-access-from domain="static3.tentapp.com" />
-  <allow-access-from domain="tentapp.appspot.com" />
+  <allow-access-from domain="www.ampify.it" />
+  <allow-access-from domain="static1.ampify.it" />
+  <allow-access-from domain="static2.ampify.it" />
+  <allow-access-from domain="static3.ampify.it" />
+  <allow-access-from domain="ampifyit.appspot.com" />
 </cross-domain-policy>

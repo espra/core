@@ -1,4 +1,4 @@
-application: tentapp
+application: ampifyit
 version: 1
 runtime: python
 api_version: 1
@@ -31,15 +31,15 @@ handlers:
   secure: optional
 
 - url: /.remote/.*
-  script: /tentapp/handler/remote.py
+  script: /ampify/handler/remote.py
   secure: always
 
 - url: /_ah/mail/.*
-  script: /tentapp/handler/mail.py
+  script: /ampify/handler/mail.py
   login: admin
 
 - url: /_ah/xmpp/message/chat/.*
-  script: /tentapp/handler/xmpp.py
+  script: /ampify/handler/xmpp.py
   login: admin
 
 - url: .*

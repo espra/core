@@ -15,7 +15,7 @@ try:
 except ImportError:
     APPLICATION_TIMESTAMP = time()
 
-from tentapp import APP_ROOT
+from ampify import APP_ROOT
 
 __all__ = [
     'DEBUG', 'DEFAULT_TEMPLATE_MODE', 'ERROR_401_TEMPLATE',

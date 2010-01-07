@@ -2,7 +2,7 @@
 
 """Main site service."""
 
-from tentapp.weblite import register_service, Raw
+from ampify.weblite import register_service, Raw
 
 @register_service('site.hello', token_required=False)
 def hello(ctx, name="world"):

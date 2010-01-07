@@ -1,6 +1,6 @@
-=======
-Tentapp
-=======
+======
+Ampify
+======
 
                       __,--'\                _                  _   
                 __,--'    :. \.             ( )_               ( )_ 
@@ -17,10 +17,10 @@ Tentapp
                 `--|_,`'                              (_)    (_)    
                         `/              
 
-Tentapp is a micro-data powered collaboration platform.
+Ampify is a micro-data powered collaboration platform.
 
 See the documentation directory for more info:
-http://github.com/tav/tentapp/blob/master/documentation/GETTING-STARTED.rst
+http://github.com/tav/ampify/blob/master/documentation/GETTING-STARTED.rst
 
 -- 
 Enjoy, tav <tav@espians.com>

@@ -2,7 +2,7 @@
 
 """Main entrypoint."""
 
-from tentapp.weblite import run_wsgi_app, Application, DEBUG
+from ampify.weblite import run_wsgi_app, Application, DEBUG
 
 # ------------------------------------------------------------------------------
 # self runner -- app engine cached main() function
