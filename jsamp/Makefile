@@ -1,7 +1,7 @@
 # Released into the Public Domain by tav <tav@espians.com>
 
 #
-# A simple Makefile for compiling various static files.
+# A simple Makefile for building and testing jsamp.js
 #
 
 # ------------------------------------------------------------------------------
@@ -9,12 +9,12 @@
 # ------------------------------------------------------------------------------
 
 makefile_path := $(word $(words $(MAKEFILE_LIST)),$(MAKEFILE_LIST))
-main_root := $(abspath $(dir $(makefile_path)))
+main_root := $(dir $(abspath $(dir $(makefile_path))))
 
 latest := .latest
 download := curl -O
 
-jars = bin/yuicompressor-2.4.2.jar bin/closure-2009-12-17.jar
+jars = ../bin/yuicompressor-2.4.2.jar ../bin/closure-2009-12-17.jar
 
 # ------------------------------------------------------------------------------
 # we declare our phonies so they stop telling us that targets are up-to-date
@@ -40,5 +40,5 @@ $(jars):
 
 download: $(jars)
 
-static: download
+jsamp: download
 	@echo boo
