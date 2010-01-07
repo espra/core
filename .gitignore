@@ -1,9 +1,10 @@
 # specific files/directories
 
 .appengine_python_sdk
-appengine/tentapp/updated.py
+.latest
+appengine/ampify/updated.py
 appengine/siteconfig.py
-appengine/.latest
+bin/local
 
 # minified css/js files
 
