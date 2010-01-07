@@ -4,3 +4,6 @@
 [submodule "third_party/v8"]
 	path = third_party/v8
 	url = git://github.com/v8/v8.git
+[submodule "third_party/nodejs"]
+	path = third_party/nodejs
+	url = git://github.com/ry/node.git
