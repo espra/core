@@ -7,3 +7,6 @@
 [submodule "third_party/nodejs"]
 	path = third_party/nodejs
 	url = git://github.com/ry/node.git
+[submodule "third_party/go"]
+	path = third_party/go
+	url = git://github.com/tav/go.git
