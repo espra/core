@@ -3,7 +3,7 @@
 """Miscellaneous utility crypto functions."""
 
 from base64 import b64encode
-from hmac import HMAC
+from hmac2 import HMAC
 from hashlib import sha384
 from time import time
 
