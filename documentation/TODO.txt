@@ -13,11 +13,17 @@ Todo
 ✓ Tamper-proof cookies
 ✓ HTTP only cookies
 
-✗ Appengine manager script
-✗ Minification script
-✗ Remote API handler script
+✓ Appengine manager script
+✓ Remote API handler script
 ✓ Python third party dependencies
+
+✓ Minification script
+✓ Lint checker script
 ✗ Javascript third party dependencies
+
+✗ Build script for jsamp
+✗ Javascript testing framework
+✗ nodebrowser.js port of env.js
 
 ✗ Overview documentation
 ✗ Architecture documentation
@@ -55,6 +61,7 @@ Todo
 ✗ OAuth
 ✗ CSRF
 ✗ User quotas
+✗ Scheduled/unscheduled maintenance support
 
 ✗ Item framework
 ✗ Item core model
