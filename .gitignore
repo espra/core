@@ -5,11 +5,12 @@
 appengine/ampify/updated.py
 appengine/siteconfig.py
 bin/local
+jsamp/jsamp.js
 
 # minified css/js files
 
-*min.*.js
-*min.*.css
+*.min.js
+*.min.css
 
 # hidden files/directories
 
