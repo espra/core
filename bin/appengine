@@ -31,10 +31,10 @@ if sys.version[:3] != '2.5':
 import subprocess
 
 from cStringIO import StringIO
-from os import chdir, getcwd, mkdir
+from os import mkdir
 from os.path import abspath, dirname, exists, join as join_path
 from shutil import rmtree
-from time import time
+from time import time, sleep
 from urllib import urlopen
 from zipfile import ZipFile
 
@@ -44,8 +44,6 @@ from zipfile import ZipFile
 
 APP_DIRECTORY = 'appengine'
 APP_PACKAGE = 'ampify'
-RESOURCE_DIRECTORY = 'jsamp'
-RESOURCE_BUILD_COMMAND = ['make', 'jsamp']
 SDK_VERSION = "1.3.0"
 
 # ------------------------------------------------------------------------------
@@ -55,7 +53,6 @@ SDK_VERSION = "1.3.0"
 SCRIPT_ROOT = dirname(abspath(__file__))
 MAIN_ROOT = dirname(SCRIPT_ROOT)
 APP_ROOT = join_path(MAIN_ROOT, APP_DIRECTORY)
-RESOURCE_ROOT = join_path(MAIN_ROOT, RESOURCE_DIRECTORY)
 UPDATED_FILE_PATH = join_path(APP_ROOT, APP_PACKAGE, 'updated.py')
 
 SDK_FILE = "google_appengine_%s.zip" % SDK_VERSION
@@ -165,10 +162,6 @@ if __name__ == '__main__':
 
         if not argv:
             argv = ['-v', 'update', APP_ROOT]
-            cur_dir = getcwd()
-            chdir(RESOURCE_ROOT)
-            subprocess.call(RESOURCE_BUILD_COMMAND)
-            chdir(cur_dir)
             updated_file = open(UPDATED_FILE_PATH, 'wb')
             updated_file.write("APPLICATION_TIMESTAMP = %s\n" % time())
             updated_file.close()
