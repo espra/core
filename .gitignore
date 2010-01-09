@@ -5,7 +5,7 @@
 appengine/ampify/updated.py
 appengine/siteconfig.py
 bin/local
-jsamp/jsamp.js
+jsutil/jsutil.js
 
 # minified css/js files
 

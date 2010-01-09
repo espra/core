@@ -15,8 +15,8 @@ APPENGINE := bin/appengine
 CSS_PATH = appengine/static/css/$(css_file).min.css
 DOWNLOAD := curl -O
 
-JSAMP_ROOT := jsamp
-JSAMP_PATH = $(JSAMP_ROOT)/$(jsamp_file).js
+JSUTIL_ROOT := jsutil
+JSUTIL_PATH = $(JSUTIL_ROOT)/$(jsutil_file).js
 
 NODELINT := bin/nodelint.js
 
@@ -26,11 +26,11 @@ yui := bin/yuicompressor-2.4.2.jar
 css_files := screen
 css_files := $(foreach css_file,$(css_files),$(CSS_PATH))
 
-jsamp_source_files := sanitise
-jsamp_source_files := $(foreach jsamp_file,$(jsamp_source_files),$(JSAMP_PATH))
+jsutil_source_files := sanitise
+jsutil_source_files := $(foreach jsutil_file,$(jsutil_source_files),$(JSUTIL_PATH))
 
-jsamp_js := $(JSAMP_ROOT)/jsamp.js
-jsamp_min_js := $(JSAMP_ROOT)/jsamp.min.js
+jsutil_js := $(JSUTIL_ROOT)/jsutil.js
+jsutil_min_js := $(JSUTIL_ROOT)/jsutil.min.js
 
 latest := .latest
 jars := $(closure) $(yui)
@@ -57,23 +57,23 @@ $(jars):
 	@$(DOWNLOAD) http://cloud.github.com/downloads/tav/ampify/$(@F)
 	@mv "$(@F)" $(MAIN_ROOT)/bin/
 
-$(jsamp_js): $(jsamp_source_files)
+$(jsutil_js): $(jsutil_source_files)
 	@echo
-	@echo "# Building JSAmp from source files"
+	@echo "# Building jsutil from source files"
 	@echo
-	@cat $(jsamp_source_files) > $(jsamp_js)
+	@cat $(jsutil_source_files) > $(jsutil_js)
 
-$(jsamp_min_js): $(closure) $(jsamp_js)
+$(jsutil_min_js): $(closure) $(jsutil_js)
 	@echo
-	@echo "# Linting JSAmp"
+	@echo "# Linting jsutil"
 	@echo
-	@$(NODELINT) $(jsamp_js) || echo -e "\n# Linting failed !!"
+	@$(NODELINT) $(jsutil_js) || echo -e "\n# Linting failed !!"
 	@echo
-	@echo "# Compressing JSAmp using Closure Compiler"
+	@echo "# Compressing jsutil using Closure Compiler"
 	@echo
-	@java -jar $(closure) --js $(jsamp_js) --js_output_file $(jsamp_min_js)
+	@java -jar $(closure) --js $(jsutil_js) --js_output_file $(jsutil_min_js)
 
-js: $(jsamp_min_js)
+js: $(jsutil_min_js)
 
 $(css_files): %.min.css: %.css
 	@echo
@@ -96,7 +96,7 @@ run:
 
 clean:
 	rm -f $(css_files)
-	rm -f $(jsamp_js)
-	rm -f $(jsamp_min_js)
+	rm -f $(jsutil_js)
+	rm -f $(jsutil_min_js)
 
 all:
