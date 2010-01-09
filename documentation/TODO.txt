@@ -21,9 +21,25 @@ Todo
 ✓ Lint checker script
 ✗ Javascript third party dependencies
 
-✗ Build script for jsamp
+✗ Build script for jsutil
 ✗ Javascript testing framework
+✗ Javascript testing runner
+
+✗ nodebrowser.js builder
 ✗ nodebrowser.js port of env.js
+✗ nodebrowser.js runner
+✗ nodebrowser.js testing
+
+✗ Python testing framework
+✗ Python testing runner
+
+✗ Go build script
+✗ Go testing framework
+✗ Go testing runner
+
+✗ Python client setup.py/build script
+✗ Python client testing framework
+✗ Python client testing runner
 
 ✗ Overview documentation
 ✗ Architecture documentation
