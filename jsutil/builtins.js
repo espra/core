@@ -11,7 +11,7 @@
 
 var sys = require('sys');
 
-var dump = function (object, with_values) {
+function dump(object, with_values) {
     var k;
     for (k in object) {
         if (object.hasOwnProperty(k)) { 
@@ -22,7 +22,34 @@ var dump = function (object, with_values) {
             sys.puts('-----------------------------------------------------------');
         }
     }
-};
+}
+
+function extend(object, update) {
+
+    var p,
+        getter,
+        setter;
+
+    for (p in update) {
+        if (update.hasOwnProperty(p)) { 
+            getter = update.__lookupGetter__(p);
+            setter = update.__lookupSetter__(p);
+            if (getter || setter) {
+                if (getter) {
+                    object.__defineGetter__(p, getter);
+                }
+                if (setter) {
+                    object.__defineSetter__(p, setter);
+                }
+            } else {
+                object[p] = update[p];
+            }
+        }
+    }
+
+    return object;
+
+}
 
 exports.install = function () {
     if (GLOBAL.__builtins_installed__) {
@@ -30,8 +57,10 @@ exports.install = function () {
     }
     GLOBAL.__builtins_installed__ = true;
     GLOBAL.dump = dump;
+    GLOBAL.inspect = sys.p;
     GLOBAL.print = sys.print;
     GLOBAL.puts = sys.puts;
 };
 
 exports.dump = dump;
+exports.extend = extend;
