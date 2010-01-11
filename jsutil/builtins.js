@@ -12,6 +12,28 @@
 var posix = require('posix'),
     sys = require('sys');
 
+// -----------------------------------------------------------------------------
+// exceptions to complement builtin ones like Error and TypeError
+// -----------------------------------------------------------------------------
+
+function IOError(message) {
+    this.name = "IOError";
+    this.message = message;
+}
+
+IOError.prototype = new Error();
+
+function ValueError(message) {
+    this.name = "ValueError";
+    this.message = message;
+}
+
+ValueError.prototype = new Error();
+
+// -----------------------------------------------------------------------------
+// builtin funktions
+// -----------------------------------------------------------------------------
+
 function dump(object, with_values) {
     var k;
     for (k in object) {
@@ -53,7 +75,11 @@ function extend(object, update) {
 }
 
 function read(filepath) {
-    return posix.cat(filepath).wait();
+    try {
+        return posix.cat(filepath).wait();
+    } catch (err) {
+        throw new IOError(err.message + ": " + filepath);
+    }
 }
 
 exports.install = function () {
