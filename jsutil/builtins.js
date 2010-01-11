@@ -113,6 +113,8 @@ function read(filepath) {
 function repr(object) {
 }
 
+GLOBAL.IOError = IOError;
+GLOBAL.ValueError = ValueError;
 
 GLOBAL.extend = extend;
 GLOBAL.read = read;
