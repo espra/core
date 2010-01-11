@@ -14,6 +14,15 @@ var posix = require('posix'),
     sys = require('sys');
 
 // -----------------------------------------------------------------------------
+// inheritance support
+// -----------------------------------------------------------------------------
+
+Function.prototype.inherits = function (Parent) {
+    this.prototype = new Parent();
+    this.prototype.constructor = this;
+};
+
+// -----------------------------------------------------------------------------
 // exceptions to complement builtin ones like Error and TypeError
 // -----------------------------------------------------------------------------
 
@@ -21,14 +30,14 @@ function IOError(message) {
     this.message = message;
 }
 
-IOError.prototype = new Error();
+IOError.inherits(Error);
 IOError.prototype.name = "IOError";
 
 function ValueError(message) {
     this.message = message;
 }
 
-ValueError.prototype = new Error();
+ValueError.inherits(Error);
 ValueError.prototype.name = "ValueError";
 
 // -----------------------------------------------------------------------------
