@@ -9,7 +9,8 @@
  *
  */
 
-var sys = require('sys');
+var posix = require('posix'),
+    sys = require('sys');
 
 function dump(object, with_values) {
     var k;
@@ -51,16 +52,26 @@ function extend(object, update) {
 
 }
 
+function read(filepath) {
+    return posix.cat(filepath).wait();
+}
+
 exports.install = function () {
     if (GLOBAL.__builtins_installed__) {
         return;
     }
     GLOBAL.__builtins_installed__ = true;
-    GLOBAL.dump = dump;
-    GLOBAL.inspect = sys.p;
-    GLOBAL.print = sys.print;
-    GLOBAL.puts = sys.puts;
+    for (var name in exports) {
+        if (exports.hasOwnProperty(name)) {
+            GLOBAL[name] = exports[name];
+        }
+    }
 };
 
 exports.dump = dump;
 exports.extend = extend;
+exports.read = read;
+
+exports.inspect = sys.p;
+exports.print = sys.print;
+exports.puts = sys.puts;
