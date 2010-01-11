@@ -5,7 +5,7 @@
  *
  */
 
-function join_path(p1, p2) {
+function join(p1, p2) {
     var path = p1;
     if (p2.charAt(0) === "/") {
         path = p2;
@@ -17,7 +17,7 @@ function join_path(p1, p2) {
     return path;
 }
 
-function split_path(path) {
+function split(path) {
     var i = path.lastIndexOf('/') + 1,
         head = path.slice(0, i),
         tail = path.slice(i);
@@ -28,13 +28,13 @@ function split_path(path) {
 }
 
 function dirname(path) {
-    return split_path(path)[0];
+    return split(path)[0];
 }
 
 // -----------------------------------------------------------------------------
 // exports
 // -----------------------------------------------------------------------------
 
-exports.join_path = join_path;
-exports.split_path = split_path;
+exports.join = join;
+exports.split = split;
 exports.dirname = dirname;

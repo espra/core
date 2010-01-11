@@ -5,46 +5,16 @@
  *
  * Changes released into the Public Domain by tav <tav@espians.com>
  *
- * Adapted from rhino.js, Copyright (c) 2002 Douglas Crockford
  * Adapted from posixpath.py in the Python Standard Library.
  *
  */
 
 /*global JSLINT */
-/*jslint evil: true */
+/*jslint evil: true, regexp: false */
 
 var posix = require('posix'),
+    posixpath = require('./posixpath'),
     sys = require('sys');
-
-// -----------------------------------------------------------------------------
-// file manipulation utility funktions
-// -----------------------------------------------------------------------------
-
-function join_posix_path(p1, p2) {
-    var path = p1;
-    if (p2.charAt(0) === "/") {
-        path = p2;
-    } else if (path === "" || path.charAt(path.length - 1) === "/") {
-        path += p2;
-    } else {
-        path += "/" + p2;
-    }
-    return path;
-}
-
-function split_posix_path(path) {
-    var i = path.lastIndexOf('/') + 1,
-        head = path.slice(0, i),
-        tail = path.slice(i);
-    if (head && head !== ('/' * head.length)) {
-        head = head.replace(/\/*$/g, "");
-    }
-    return [head, tail];
-}
-
-function dirname(path) {
-    return split_posix_path(path)[0];
-}
 
 // -----------------------------------------------------------------------------
 // skript main funktion
@@ -55,8 +25,8 @@ function main() {
         source,
         i,
         error,
-        jslint_path = join_posix_path(
-          dirname(dirname(__filename)),
+        jslint_path = posixpath.join(
+          posixpath.dirname(posixpath.dirname(__filename)),
           'third_party/jslint/jslint.js'
           );
     eval(posix.cat(jslint_path).wait());
@@ -71,6 +41,7 @@ function main() {
         sys.puts(err);
         process.exit(1);
     }
+    source = source.replace(/^\#\!.*/, ''); // remove any shebangs
     if (!JSLINT(source, {bitwise: true, eqeqeq: true, immed: true,
                 newcap: true, nomen: false, onevar: true, plusplus: true,
                 predef: ['exports', 'module', 'require', 'process', '__filename', 'GLOBAL'],
@@ -88,8 +59,6 @@ function main() {
             }
         }
         process.exit(2);
-    } else {
-        sys.puts("Success: No problems found in <" + file + ">");
     }
 }
 
