@@ -2,11 +2,25 @@
 
 /*=
 
-The builtins provides some basic functions that should really be part of the
-standard Javascript environment. You can have the functions available globally
-by adding the following at the start of your programs:
+The module provides some utility functions and extensions of builtin objects to
+complement the standard Javascript environment.
 
-    require('builtins').install();
+The `Object.extend` method allows you to easily update an object with the
+contents of another:
+
+    > a = {'a': 1}
+
+    > b = {'b': 2}
+
+    > a.extend(a, b)
+    {'a': 1, 'b': 2}
+
+    > foo = 2
+
+    > bar = 3
+
+    > foo + bar
+    5
 
 */
 
@@ -44,7 +58,7 @@ ValueError.prototype.name = "ValueError";
 // builtin funktions
 // -----------------------------------------------------------------------------
 
-function dump(object, with_values) {
+Object.prototype.dump = function (object, with_values) {
     var k;
     for (k in object) {
         if (object.hasOwnProperty(k)) { 
@@ -55,27 +69,7 @@ function dump(object, with_values) {
             sys.puts('-----------------------------------------------------------');
         }
     }
-}
-
-/*=
-
-The extend function allows you to easily extend:
-
-    > a = {'a': 1}
-
-    > b = {'b': 2}
-
-    > extend(a, b)
-    {'a': 1, 'b': 2}
-
-    > foo = 2
-
-    > bar = 3
-
-    > foo + bar
-    5
-
-*/
+};
 
 function extend(object, update) {
 
@@ -104,6 +98,10 @@ function extend(object, update) {
 
 }
 
+Object.prototype.extend = function (update) {
+    return extend(this, update);
+};
+
 function read(filepath) {
     try {
         return posix.cat(filepath).wait();
@@ -115,23 +113,11 @@ function read(filepath) {
 function repr(object) {
 }
 
-exports.install = function () {
-    if (GLOBAL.__builtins_installed__) {
-        return;
-    }
-    GLOBAL.__builtins_installed__ = true;
-    for (var name in exports) {
-        if (exports.hasOwnProperty(name)) {
-            GLOBAL[name] = exports[name];
-        }
-    }
-};
 
-exports.dump = dump;
-exports.extend = extend;
-exports.read = read;
-exports.repr = repr;
+GLOBAL.extend = extend;
+GLOBAL.read = read;
+GLOBAL.repr = repr;
 
-exports.inspect = sys.p;
-exports.print = sys.print;
-exports.puts = sys.puts;
+GLOBAL.inspect = sys.p;
+GLOBAL.print = sys.print;
+GLOBAL.puts = sys.puts;
