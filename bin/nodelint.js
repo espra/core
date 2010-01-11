@@ -5,7 +5,7 @@
  *
  * Changes released into the Public Domain by tav <tav@espians.com>
  *
- * Adapted from posixpath.py in the Python Standard Library.
+ * Adapted from rhino.js, Copyright (c) 2002 Douglas Crockford
  *
  */
 
