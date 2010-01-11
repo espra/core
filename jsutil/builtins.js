@@ -1,13 +1,14 @@
-/*
- * Released into the Public Domain by tav <tav@espians.com>
- *
- * The builtins provides some basic functions that should really be part of the
- * standard Javascript environment. You can have the functions available
- * globally by adding the following at the start of your programs:
- *
- *   require('builtins').install();
- *
- */
+// Released into the Public Domain by tav <tav@espians.com>
+
+/*=
+
+The builtins provides some basic functions that should really be part of the
+standard Javascript environment. You can have the functions available globally
+by adding the following at the start of your programs:
+
+    require('builtins').install();
+
+*/
 
 var posix = require('posix'),
     sys = require('sys');
@@ -17,18 +18,18 @@ var posix = require('posix'),
 // -----------------------------------------------------------------------------
 
 function IOError(message) {
-    this.name = "IOError";
     this.message = message;
 }
 
 IOError.prototype = new Error();
+IOError.prototype.name = "IOError";
 
 function ValueError(message) {
-    this.name = "ValueError";
     this.message = message;
 }
 
 ValueError.prototype = new Error();
+ValueError.prototype.name = "ValueError";
 
 // -----------------------------------------------------------------------------
 // builtin funktions
@@ -46,6 +47,26 @@ function dump(object, with_values) {
         }
     }
 }
+
+/*=
+
+The extend function allows you to easily extend:
+
+    > a = {'a': 1}
+
+    > b = {'b': 2}
+
+    > extend(a, b)
+    {'a': 1, 'b': 2}
+
+    > foo = 2
+
+    > bar = 3
+
+    > foo + bar
+    5
+
+*/
 
 function extend(object, update) {
 
@@ -82,6 +103,9 @@ function read(filepath) {
     }
 }
 
+function repr(object) {
+}
+
 exports.install = function () {
     if (GLOBAL.__builtins_installed__) {
         return;
@@ -97,6 +121,7 @@ exports.install = function () {
 exports.dump = dump;
 exports.extend = extend;
 exports.read = read;
+exports.repr = repr;
 
 exports.inspect = sys.p;
 exports.print = sys.print;
