@@ -712,8 +712,8 @@ def handle_http_request(
     service_name = 'site.root_object'
     format = None
 
-    if args and args[0].startswith('.'):
-        service_name = args[0].lstrip('.')
+    if args and args[0].startswith('+'):
+        service_name = args[0].lstrip('+')
         args = args[1:]
 
     if '__format__' in ctx.special_kwargs:
