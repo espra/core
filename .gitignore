@@ -2,8 +2,10 @@
 
 .appengine_python_sdk
 .latest
-client_libs/appengine/ampify/updated.py
-client_libs/appengine/siteconfig.py
+client_libs/appengine/sample_app/ampify/updated.py
+client_libs/appengine/sample_app/siteconfig.py
+client_libs/sample_app/ampify/updated.py
+client_libs/sample_app/siteconfig.py
 bin/local
 jsutil/jsutil.js
 
