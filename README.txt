@@ -40,7 +40,7 @@ Ampify is a micro-data powered collaboration platform.
 
 
 See the documentation directory for more info:
-http://github.com/tav/ampify/blob/master/documentation/GETTING-STARTED.rst
+http://github.com/tav/ampify/blob/master/documentation/getting-started.md
 
 -- 
 Enjoy, tav <tav@espians.com>

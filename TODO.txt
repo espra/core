@@ -2,6 +2,9 @@
 Todo
 ====
 
+✗ Nodules
+✗ Language guesser
+
 ✓ Setup git repository for ampify
 ✗ Buy SSL certificate
 ✓ Buy ampify.it

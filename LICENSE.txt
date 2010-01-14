@@ -2,10 +2,17 @@
 Copyright and Licensing
 =======================
 
-All work in this repository by the following Authors has been placed into the
-`Public Domain <http://creativecommons.org/publicdomain/zero/1.0/>`_:
+Except for the works listed in the Exceptions below, all work in this repository
+by the following Authors has been placed into the `Public Domain
+<http://creativecommons.org/publicdomain/zero/1.0/>`_:
 
 * tav, <tav@espians.com>, <http://tav.espians.com>
+
+Exceptions to this are:
+
+* Files in ``third_party`` directories.
+* Files with differing license headers.
+* The various logo graphics for Ampify.
 
 All included works authored by third-parties in ``third_party`` directories have
 their own copyright and licensing terms separate to the above.
