@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Ampify :: Documentation</title>
+  <link rel="icon" type="image/png" href="http://cloud.github.com/downloads/tav/ampify/favicon.png" />
+  <link rel="stylesheet" type="text/css" title="default" href="documentation/_css/screen.css" />
+  <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4/jquery.min.js"></script>
+  <script type="text/javascript" src="jsutil/markdown.js"></script>
+  <script type="text/javascript">
+    function render(text) {
+      var md = new Showdown.converter();
+      return md.makeHtml(text);
+    }
+    $(function () {
+      $('#content').html(render($('#content').html()));
+    });
+  </script>
+</head>
+<body>
+<div id="header">
+  <a href=""><img src="http://cloud.github.com/downloads/tav/ampify/logo.ampify.small.png" alt="Ampify" /></a>
+</div>
+<div id="content">
+`ampify` is a micro-data powered collaboration platform.
+
+The main deployment is at [amplify.it](http://www.amplify.it).
+</div>
+<div id="footer">
+</div>
+</body>
+</html>
