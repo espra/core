@@ -10,3 +10,6 @@
 [submodule "third_party/go"]
 	path = third_party/go
 	url = git://github.com/tav/go.git
+[submodule "doc"]
+	path = doc
+	url = git://github.com/tav/ampdocs.git
