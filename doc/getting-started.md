@@ -13,7 +13,7 @@ Source repository:
 
 All code and documentation by Espians is released into the public domain:
 
-* http://creativecommons.org/publicdomain/zero/1.0/
+* [http://creativecommons.org/publicdomain/zero/1.0/](http://creativecommons.org/publicdomain/zero/1.0/)
 * See LICENSE.txt for exceptions.
 
 And this is a test code block:
@@ -34,4 +34,4 @@ And this is another test code block:
 
 To suggest a feature or report a bug:
 
-* http://github.com/tav/ampify/issues
+* [http://github.com/tav/ampify/issues](http://github.com/tav/ampify/issues)
