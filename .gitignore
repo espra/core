@@ -1,13 +1,12 @@
 # specific files/directories
 
-.appengine_python_sdk
 .latest
+bin/local
+client_libs/appengine/.appengine_python_sdk
 client_libs/appengine/sample_app/ampify/updated.py
 client_libs/appengine/sample_app/siteconfig.py
-client_libs/sample_app/ampify/updated.py
-client_libs/sample_app/siteconfig.py
-bin/local
-jsutil/jsutil.js
+doc/_site
+jsutil/ampsite.js
 
 # minified css/js files
 
@@ -24,6 +23,10 @@ jsutil/jsutil.js
 
 *#*
 *~
+*.5
+*.6
+*.8
+*.a
 *.dylib
 *.egg
 *.jar
