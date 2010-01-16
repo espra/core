@@ -2,7 +2,7 @@ This directory contains the documentation for the Ampify platform.
 
 You can also view the documentation online at:
 
-* http://amp.espians.com
+* [http://amp.espians.com](http://amp.espians.com)
 
 The documentation site is automatically generated from the `*.md` source
 [Markdown](http://daringfireball.net/projects/markdown/) files using
@@ -10,7 +10,7 @@ The documentation site is automatically generated from the `*.md` source
 Ruby.
 
 If you want the documentation as HTML files for offline use, you can install
-jekyll for yourself using:
+Jekyll for yourself using:
 
     $ sudo gem install jekyll
 
@@ -19,4 +19,5 @@ for your system Python using something like:
 
     $ sudo easy_install Pygments
 
-You can then generate the `_site` by just running `jekyll` in this directory.
+You can then generate the `_site` HTML files by just running `jekyll` in this
+directory.
