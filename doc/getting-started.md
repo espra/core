@@ -1,4 +1,5 @@
 ---
+license: Public Domain
 title: Getting Started
 layout: page
 ---

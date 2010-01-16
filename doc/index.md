@@ -1,4 +1,5 @@
 ---
+license: Public Domain
 title: Documentation
 layout: page
 ---
