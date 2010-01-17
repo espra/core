@@ -37,7 +37,7 @@ ValueError.prototype.name = "ValueError";
 Object.prototype.dump = function (object, with_values) {
     var k;
     for (k in object) {
-        if (object.hasOwnProperty(k)) { 
+        if (object.hasOwnProperty(k)) {
             sys.puts(k);
             if (with_values) {
                 sys.puts(object[k]);
@@ -54,7 +54,7 @@ function extend(object, update) {
         setter;
 
     for (p in update) {
-        if (update.hasOwnProperty(p)) { 
+        if (update.hasOwnProperty(p)) {
             getter = update.__lookupGetter__(p);
             setter = update.__lookupSetter__(p);
             if (getter || setter) {
@@ -87,6 +87,7 @@ function read(filepath) {
 }
 
 function repr(object) {
+    return "";
 }
 
 GLOBAL.IOError = IOError;
