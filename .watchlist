@@ -1,0 +1,23 @@
+# Released into the Public Domain by tav <tav@espians.com>
+
+# Watchlist Rules
+# http://dev.chromium.org/developers/contributing-code/watchlists
+
+{
+
+	'WATCHLIST_DEFINITIONS': {
+		'jsutil': {
+			'filepath': '^jsutil'
+		}
+		'self': {
+			'filepath': r'^\.watchlist'
+		}
+	},
+
+	'WATCHLISTS': {
+		'jsutil': [
+			'asktav@gmail.com'
+			]
+	}
+
+}
