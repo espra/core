@@ -1,0 +1,48 @@
+# Released into the Public Domain by tav <tav@espians.com>
+
+def JSLint(input_api, output_api):
+
+    files = [
+        f.AbsoluteLocalPath() for f in input_api.AffectedSourceFiles(
+            lambda x: x.AbsoluteLocalPath().endswith('.js')
+            )
+        ]
+
+    results = []; out = results.append
+
+    for filename in files:
+        process = input_api.subprocess.Popen(
+            ['nodelint.js', filename],
+            stdin=input_api.subprocess.PIPE,
+            stdout=input_api.subprocess.PIPE,
+            stderr=input_api.subprocess.PIPE
+            )
+        stdout, stderr = process.communicate()
+        if process.returncode:
+            out(output_api.PresubmitPromptWarning(
+                "JSLinting '%s' failed:" % filename,
+                long_text="%s" % stdout
+                ))
+
+    return results
+
+
+def CheckChange(input_api, output_api, commit):
+    results = []
+    results += input_api.canned_checks.CheckChangeHasNoStrayWhitespace(
+        input_api, output_api
+        )
+    results += input_api.canned_checks.CheckChangeHasDescription(
+        input_api, output_api
+        )
+    results.extend(JSLint(input_api, output_api))
+    return results
+
+
+def CheckChangeOnUpload(input_api, output_api):
+    return CheckChange(input_api, output_api, False)
+
+
+def CheckChangeOnCommit(input_api, output_api):
+    return CheckChange(input_api, output_api, True)
+

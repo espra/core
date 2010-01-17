@@ -1,0 +1,3 @@
+#! /bin/sh
+
+git cl presubmit --upload-only
