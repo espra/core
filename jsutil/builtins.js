@@ -87,6 +87,13 @@ function read(filepath) {
 }
 
 function repr(object) {
+    var i = 0,
+        k;
+    for (k in object) {
+        if (object.hasOwnProperty(k)) {
+            i += k;
+        }
+    }
     return "";
 }
 
