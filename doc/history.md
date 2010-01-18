@@ -32,7 +32,7 @@ History
 **Late 2009**
 
 * Discussions between James Arthur and Tav concerning the [Espra
-  Trustmap](http://www.trustmap.org) service they'd been working on leads to
+  Trustmap](http://www.trustmap.org) service they'd been working on led to
   insights about the requirements for a scalable platform.
 
 * With lots and lots of help from David Pinto, Mamading Cessay, Sofia Bustamante
