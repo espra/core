@@ -1,0 +1,6 @@
+{
+  'nodules': [
+      'logging',
+	  'datastore'
+	  ]
+}
