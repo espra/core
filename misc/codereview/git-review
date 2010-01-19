@@ -2,10 +2,11 @@
 
 # Changes released into the Public Domain by tav <tav@espians.com>
 
-# This files was adapted from git-cl by Evan Martin. This is the LICENSE that
-# accompanied the git-cl code:
+# This file was adapted from git-cl by Evan Martin and git_cl_hook.py in the
+# Chromium repository. This is the LICENSE that accompanied those files:
 
 # Copyright (c) 2008 Evan Martin <martine@danga.com>
+# Copyright (c) 2009 The Chromium Authors.
 # All rights reserved.
 
 # Redistribution and use in source and binary forms, with or without
@@ -85,7 +86,7 @@ class Settings(object):
     if not self.server:
       if not error_ok:
         error_message = ('You must configure your review setup by running '
-                         '"git cl init" or "git cl config".')
+                         '"git review init".')
         self.server = self._GetConfig('codereview.server',
                                       error_message=error_message)
       else:
@@ -112,7 +113,7 @@ class Settings(object):
   def GetTreeStatusUrl(self, error_ok=False):
     if not self.tree_status_url:
       error_message = ('You must configure your tree status URL by running '
-                       '"git cl init" or "git cl config".')
+                       '"git review init".')
       self.tree_status_url = self._GetConfig('codereview.tree-status-url',
                                              error_ok=error_ok,
                                              error_message=error_message)
@@ -184,7 +185,7 @@ class Changelist(object):
       else:
         ErrorExit("""Unable to determine default branch to diff against.
 Either pass complete "git diff"-style arguments, like
-  git cl upload origin/master
+  git review submit origin/master
 or verify this branch is set up to track another (via the --track argument to
 "git checkout -b ...").""")
 
@@ -856,17 +857,6 @@ def main(argv):
 if __name__ == '__main__':
   sys.exit(main(sys.argv))
 
-
-# Copyright (c) 2009 The Chromium Authors. All rights reserved.
-# Use of this source code is governed by a BSD-style license that can be
-# found in the LICENSE file.
-
-# Changes released into the Public Domain by tav <tav@espians.com>
-
-import os
-import re
-import subprocess
-import sys
 
 # ------------------------------------------------------------------------------
 # extend sys.path dynamically
