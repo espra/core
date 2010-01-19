@@ -26,9 +26,9 @@ function main() {
         i,
         error,
         jslint_path = posixpath.join(
-          posixpath.dirname(posixpath.dirname(__filename)),
-          'third_party/jslint/jslint.js'
-          );
+            posixpath.dirname(posixpath.dirname(posixpath.dirname(__filename))),
+            'third_party/jslint/jslint.js'
+        );
     eval(posix.cat(jslint_path).wait());
     if (!file) {
 	    sys.puts("Usage: nodelint.js file.js");
