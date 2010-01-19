@@ -22,8 +22,6 @@ import stat
 import subprocess
 import sys
 import time
-import xml.dom.minidom
-import xml.parsers.expat
 
 
 class CheckCallError(OSError):
@@ -69,29 +67,6 @@ def SplitUrlRevision(url):
     if len(components) == 1:
       components += [None]
   return tuple(components)
-
-
-def ParseXML(output):
-  try:
-    return xml.dom.minidom.parseString(output)
-  except xml.parsers.expat.ExpatError:
-    return None
-
-
-def GetNamedNodeText(node, node_name):
-  child_nodes = node.getElementsByTagName(node_name)
-  if not child_nodes:
-    return None
-  assert len(child_nodes) == 1 and child_nodes[0].childNodes.length == 1
-  return child_nodes[0].firstChild.nodeValue
-
-
-def GetNodeNamedAttributeText(node, node_name, attribute_name):
-  child_nodes = node.getElementsByTagName(node_name)
-  if not child_nodes:
-    return None
-  assert len(child_nodes) == 1
-  return child_nodes[0].getAttribute(attribute_name)
 
 
 class Error(Exception):
@@ -290,35 +265,3 @@ def SubprocessCallAndFilter(command,
       sys.exit(fail_status)
 
     raise Error(msg)
-
-
-def IsUsingGit(root, paths):
-  """Returns True if we're using git to manage any of our checkouts.
-  |entries| is a list of paths to check."""
-  for path in paths:
-    if os.path.exists(os.path.join(root, path, '.git')):
-      return True
-  return False
-
-def FindGclientRoot(from_dir):
-  """Tries to find the gclient root."""
-  path = os.path.realpath(from_dir)
-  while not os.path.exists(os.path.join(path, '.gclient')):
-    next = os.path.split(path)
-    if not next[1]:
-      return None
-    path = next[0]
-  logging.info('Found gclient root at ' + path)
-  return path
-
-def PathDifference(root, subpath):
-  """Returns the difference subpath minus root."""
-  root = os.path.realpath(root)
-  subpath = os.path.realpath(subpath)
-  if not subpath.startswith(root):
-    return None
-  # If the root does not have a trailing \ or /, we add it so the returned
-  # path starts immediately after the seperator regardless of whether it is
-  # provided.
-  root = os.path.join(root, '')
-  return subpath[len(root):]
