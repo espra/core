@@ -36,7 +36,7 @@ import urllib2  # Exposed through the API.
 import warnings
 
 # Local imports.
-import gclient_utils
+import utils
 import presubmit_canned_checks
 import scm
 
@@ -224,35 +224,6 @@ class InputApi(object):
     """
     return self._current_presubmit_path
 
-  def DepotToLocalPath(self, depot_path):
-    """Translate a depot path to a local path (relative to client root).
-
-    Args:
-      Depot path as a string.
-
-    Returns:
-      The local path of the depot path under the user's current client, or None
-      if the file is not mapped.
-
-      Remember to check for the None case and show an appropriate error!
-    """
-    local_path = scm.SVN.CaptureInfo(depot_path).get('Path')
-    if local_path:
-      return local_path
-
-  def LocalToDepotPath(self, local_path):
-    """Translate a local path to a depot path.
-
-    Args:
-      Local path (relative to current directory, or absolute) as a string.
-
-    Returns:
-      The depot path (SVN URL) of the file if mapped, otherwise None.
-    """
-    depot_path = scm.SVN.CaptureInfo(local_path).get('URL')
-    if depot_path:
-      return depot_path
-
   def AffectedFiles(self, include_dirs=False, include_deletes=True):
     """Same as input_api.change.AffectedFiles() except only lists files
     (and optionally directories) in the same directory as the current presubmit
@@ -349,7 +320,7 @@ class InputApi(object):
       file_item = file_item.AbsoluteLocalPath()
     if not file_item.startswith(self.change.RepositoryRoot()):
       raise IOError('Access outside the repository root is denied.')
-    return gclient_utils.FileRead(file_item, mode)
+    return utils.FileRead(file_item, mode)
 
   @staticmethod
   def _RightHandSideLinesImpl(affected_files):
@@ -427,7 +398,7 @@ class AffectedFile(object):
     if self.IsDirectory():
       return []
     else:
-      return gclient_utils.FileRead(self.AbsoluteLocalPath(),
+      return utils.FileRead(self.AbsoluteLocalPath(),
                                     'rU').splitlines()
 
   def OldContents(self):
@@ -726,7 +697,7 @@ def DoGetTrySlaves(changed_files,
     if verbose:
       output_stream.write("Running %s\n" % filename)
     # Accept CRLF presubmit script.
-    presubmit_script = gclient_utils.FileRead(filename, 'rU')
+    presubmit_script = utils.FileRead(filename, 'rU')
     results += executer.ExecPresubmitScript(presubmit_script)
 
   slaves = list(set(results))
@@ -842,7 +813,7 @@ def DoPresubmitChecks(change,
     if verbose:
       output_stream.write("Running %s\n" % filename)
     # Accept CRLF presubmit script.
-    presubmit_script = gclient_utils.FileRead(filename, 'rU')
+    presubmit_script = utils.FileRead(filename, 'rU')
     results += executer.ExecPresubmitScript(presubmit_script, filename)
 
   errors = []

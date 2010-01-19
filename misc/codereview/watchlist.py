@@ -1,11 +1,13 @@
-#!/usr/bin/python
+#! /usr/bin/env python
+
 # Copyright (c) 2009 The Chromium Authors. All rights reserved.
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-"""Watchlists
+"""
+Watchlist support.
 
-Watchlists is a mechanism that allow a developer (a "watcher") to watch over
+Watchlist is a mechanism that allow a developer (a"watcher") to watch over
 portions of code that he is interested in. A "watcher" will be cc-ed to
 changes that modify that portion of code, thereby giving him an opportunity
 to make comments on codereview.chromium.org even before the change is
@@ -34,19 +36,20 @@ class Watchlists(object):
                                        "/path/to/file2",])
   """
 
-  _RULES = "WATCHLISTS"
-  _RULES_FILENAME = _RULES
+  _filename = ".watchlist"
   _repo_root = None
   _defns = {}       # Definitions
   _watchlists = {}  # name to email mapping
 
-  def __init__(self, repo_root):
+  def __init__(self, repo_root, filename=None):
     self._repo_root = repo_root
+    if filename:
+      self._filename = filename
     self._LoadWatchlistRules()
 
   def _GetRulesFilePath(self):
     """Returns path to WATCHLISTS file."""
-    return os.path.join(self._repo_root, self._RULES_FILENAME)
+    return os.path.join(self._repo_root, self._filename)
 
   def _HasWatchlistsFile(self):
     """Determine if watchlists are available for this repo."""

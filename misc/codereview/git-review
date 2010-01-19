@@ -32,36 +32,23 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-"""
-git-review -- a git-command for integrating reviews on Rietveld.
-
-"""
+"""git-review -- a git-command for integrating codereview."""
 
 import getpass
 import optparse
 import os
 import re
-import readline
 import subprocess
 import sys
 import tempfile
 import textwrap
-import upload
 import urllib2
 
-try:
-  import readline
-except ImportError:
-  pass
+from upload import EncodeMultipartFormData, ErrorExit, RealMain, HttpRpcServer
 
 DEFAULT_SERVER = 'codereview.appspot.com'
 PREPUSH_HOOK = '.git/hooks/pre-cl-push'
 PREUPLOAD_HOOK = '.git/hooks/pre-cl-upload'
-
-def DieWithError(message):
-  print >>sys.stderr, message
-  sys.exit(1)
-
 
 def RunCommand(cmd, error_ok=False, error_message=None, exit_code=False,
                redirect_stdout=True):
@@ -76,8 +63,8 @@ def RunCommand(cmd, error_ok=False, error_message=None, exit_code=False,
   if exit_code:
     return proc.returncode
   if not error_ok and proc.returncode != 0:
-    DieWithError('Command "%s" failed.\n' % (' '.join(cmd)) +
-                 (error_message or output))
+    ErrorExit('Command "%s" failed.\n' % (' '.join(cmd)) +
+              (error_message or output))
   return output
 
 
@@ -195,7 +182,7 @@ class Changelist(object):
         remote = 'origin'
         upstream_branch = 'refs/heads/master'
       else:
-        DieWithError("""Unable to determine default branch to diff against.
+        ErrorExit("""Unable to determine default branch to diff against.
 Either pass complete "git diff"-style arguments, like
   git cl upload origin/master
 or verify this branch is set up to track another (via the --track argument to
@@ -270,14 +257,14 @@ or verify this branch is set up to track another (via the --track argument to
       password = getpass.getpass('Password for %s: ' % email)
       return email, password
 
-    rpc_server = upload.HttpRpcServer(settings.GetServer(),
+    rpc_server = HttpRpcServer(settings.GetServer(),
                                       GetUserCredentials,
                                       host_override=settings.GetServer(),
                                       save_cookies=True)
     # You cannot close an issue with a GET.
     # We pass an empty string for the data so it is a POST rather than a GET.
     data = [("description", self.description),]
-    ctype, body = upload.EncodeMultipartFormData(data, [])
+    ctype, body = EncodeMultipartFormData(data, [])
     rpc_server.Send('/' + self.GetIssue() + '/close', body, ctype)
 
   def _IssueSetting(self):
@@ -547,7 +534,7 @@ def CmdUpload(args):
     upload_args.extend(['--message', options.message])
   if options.send_mail:
     if not options.reviewers:
-      DieWithError("Must specify reviewers to send email.")
+      ErrorExit("Must specify reviewers to send email.")
     upload_args.append('--send_mail')
   if cl.GetIssue():
     upload_args.extend(['--issue', cl.GetIssue()])
@@ -576,7 +563,7 @@ def CmdUpload(args):
     subject = desc.splitlines()[0]
     upload_args.extend(['--message', subject])
     upload_args.extend(['--description', desc])
-  issue, patchset = upload.RealMain(['upload'] + upload_args + args)
+  issue, patchset = RealMain(['upload'] + upload_args + args)
   if not cl.GetIssue():
     cl.SetIssue(issue)
   cl.SetPatchset(patchset)
@@ -868,3 +855,105 @@ def main(argv):
 
 if __name__ == '__main__':
   sys.exit(main(sys.argv))
+
+
+# Copyright (c) 2009 The Chromium Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+# Changes released into the Public Domain by tav <tav@espians.com>
+
+import os
+import re
+import subprocess
+import sys
+
+# ------------------------------------------------------------------------------
+# extend sys.path dynamically
+# ------------------------------------------------------------------------------
+
+sys.path.insert(0, RunCommand(['git', 'cl', '--root']).strip())
+
+# ------------------------------------------------------------------------------
+# local imports
+# ------------------------------------------------------------------------------
+
+import presubmit_support
+import scm
+import watchlists
+
+from git_cl import Changelist
+
+
+def Backquote(cmd, cwd=None):
+  """Like running `cmd` in a shell script."""
+  return subprocess.Popen(cmd,
+                          cwd=cwd,
+                          stdout=subprocess.PIPE).communicate()[0].strip()
+
+
+class ChangeOptions:
+  def __init__(self, commit=None, upstream_branch=None):
+    self.commit = commit
+    self.verbose = None
+    self.default_presubmit = None
+    self.may_prompt = None
+
+    root = Backquote(['git', 'rev-parse', '--show-cdup'])
+    if not root:
+      root = "."
+    absroot = os.path.abspath(root)
+    if not root:
+      raise Exception("Could not get root directory.")
+    log = Backquote(['git', 'show', '--name-only',
+                     '--pretty=format:%H%n%s%n%n%b'])
+    m = re.match(r'^(\w+)\n(.*)$', log, re.MULTILINE|re.DOTALL)
+    if not m:
+      raise Exception("Could not parse log message: %s" % log)
+    name = m.group(1)
+    files = scm.GIT.CaptureStatus([root], upstream_branch)
+    issue = Backquote(['git', 'cl', 'status', '--field=id'])
+    if issue == 'None':
+      issue = ''
+    try:
+      description = Changelist().GetDescription() or m.group(2)
+    except ValueError:
+      description = m.group(2)
+    patchset = None
+    self.change = presubmit_support.GitChange(name, description, absroot, files,
+                                              issue, patchset)
+
+
+def RunHooks(hook_name, upstream_branch):
+  commit = (hook_name == 'pre-cl-push')
+
+  # Create our options based on the command-line args and the current checkout.
+  options = ChangeOptions(commit=commit, upstream_branch=upstream_branch)
+
+  # Apply watchlists on upload.
+  if not commit:
+    watchlist = watchlists.Watchlists(options.change.RepositoryRoot())
+    files = [f.LocalPath() for f in options.change.AffectedFiles()]
+    watchers = watchlist.GetWatchersForPaths(files)
+    Backquote(['git', 'config', '--replace-all',
+               'codereview.extracc', ','.join(watchers)])
+
+  # Run the presubmit checks.
+  if presubmit_support.DoPresubmitChecks(options.change,
+                                         options.commit,
+                                         options.verbose,
+                                         sys.stdout,
+                                         sys.stdin,
+                                         options.default_presubmit,
+                                         options.may_prompt):
+    sys.exit(0)
+  else:
+    sys.exit(1)
+
+
+if __name__ == '__main__':
+  program_name = os.path.basename(sys.argv[0])
+  if len(sys.argv) != 2:
+    print "Usage: %s [upstream branch]" % program_name
+    sys.exit(1)
+  RunHooks(program_name, sys.argv[1])

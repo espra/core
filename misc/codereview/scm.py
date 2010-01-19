@@ -4,41 +4,11 @@
 
 """SCM-specific utility classes."""
 
-import glob
 import os
 import re
-import shutil
-import subprocess
 import sys
-import tempfile
-import xml.dom.minidom
 
-import gclient_utils
-
-def ValidateEmail(email):
- return (re.match(r"^[a-zA-Z0-9._%-+]+@[a-zA-Z0-9._%-]+.[a-zA-Z]{2,6}$", email)
-         is not None)
-
-
-def GetCasedPath(path):
-  """Elcheapos way to get the real path case on Windows."""
-  if sys.platform.startswith('win') and os.path.exists(path):
-    # Reconstruct the path.
-    path = os.path.abspath(path)
-    paths = path.split('\\')
-    for i in range(len(paths)):
-      if i == 0:
-        # Skip drive letter.
-        continue
-      subpath = '\\'.join(paths[:i+1])
-      prev = len('\\'.join(paths[:i]))
-      # glob.glob will return the cased path for the last item only. This is why
-      # we are calling it in a loop. Extract the data we want and put it back
-      # into the list.
-      paths[i] = glob.glob(subpath + '*')[0][prev+1:len(subpath)]
-    path = '\\'.join(paths)
-  return path
-
+import utils
 
 class GIT(object):
   COMMAND = "git"
@@ -57,8 +27,8 @@ class GIT(object):
     c = [GIT.COMMAND]
     c.extend(args)
     try:
-      return gclient_utils.CheckCall(c, in_directory, print_error)
-    except gclient_utils.CheckCallError:
+      return utils.CheckCall(c, in_directory, print_error)
+    except utils.CheckCallError:
       if error_ok:
         return ''
       raise
@@ -110,15 +80,15 @@ class GIT(object):
         program's output for filtering.
 
     Raises:
-      gclient_utils.Error: An error occurred while running the command.
+      utils.Error: An error occurred while running the command.
     """
     command = [GIT.COMMAND]
     command.extend(args)
-    gclient_utils.SubprocessCallAndFilter(command,
-                                          in_directory,
-                                          print_messages,
-                                          print_stdout,
-                                          filter=filter)
+    utils.SubprocessCallAndFilter(command,
+                                  in_directory,
+                                  print_messages,
+                                  print_stdout,
+                                  filter=filter)
 
   @staticmethod
   def GetEmail(repo_root):
