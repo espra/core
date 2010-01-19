@@ -10,6 +10,3 @@
 [submodule "third_party/go"]
 	path = third_party/go
 	url = git://github.com/tav/go.git
-[submodule "misc/git-cl"]
-	path = misc/git-cl
-	url = git://github.com/tav/git-cl.git
