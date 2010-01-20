@@ -26,8 +26,7 @@ function main() {
         i,
         error,
         jslint_path = posixpath.join(
-            posixpath.dirname(posixpath.dirname(posixpath.dirname(__filename))),
-            'third_party/jslint/jslint.js'
+            posixpath.dirname(__filename), 'jslint.js'
         );
     eval(posix.cat(jslint_path).wait());
     if (!file) {
