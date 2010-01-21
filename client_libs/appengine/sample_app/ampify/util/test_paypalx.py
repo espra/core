@@ -1,4 +1,4 @@
-from ampify.util.paypalx import *
+from ampify.util.paypalx import AdaptivePayment, PayRequest
 from ampify.core.config import PPX_API_USERNAME, PPX_API_PASSWORD, \
     PPX_API_SIGNATURE, PPX_APP_ID
 
