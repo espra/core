@@ -1,9 +1,10 @@
 #! /usr/bin/env python
 
-# Changes released into the Public Domain by tav <tav@espians.com>
+# Changes to this file authored by The Ampify Authors are according to the
+# Public Domain style license that can be found in the LICENSE file.
 
 # This file was adapted from git-cl by Evan Martin and git_cl_hook.py in the
-# Chromium repository. This is the LICENSE that accompanied those files:
+# Chromium depot_tools repository and has the following License:
 
 # Copyright (c) 2008 Evan Martin <martine@danga.com>
 # Copyright (c) 2009 The Chromium Authors.
@@ -51,81 +52,10 @@ DEFAULT_SERVER = 'codereview.appspot.com'
 PREPUSH_HOOK = '.git/hooks/pre-cl-push'
 PREUPLOAD_HOOK = '.git/hooks/pre-cl-upload'
 
-def RunCommand(cmd, error_ok=False, error_message=None, exit_code=False,
-               redirect_stdout=True):
-  # Useful for debugging:
-  # print >>sys.stderr, ' '.join(cmd)
-  if redirect_stdout:
-    stdout = subprocess.PIPE
-  else:
-    stdout = None
-  proc = subprocess.Popen(cmd, stdout=stdout)
-  output = proc.communicate()[0]
-  if exit_code:
-    return proc.returncode
-  if not error_ok and proc.returncode != 0:
-    ErrorExit('Command "%s" failed.\n' % (' '.join(cmd)) +
-              (error_message or output))
-  return output
-
-
 def RunGit(args, **kwargs):
   cmd = ['git'] + args
   return RunCommand(cmd, **kwargs)
 
-
-class Settings(object):
-  def __init__(self):
-    self.server = None
-    self.cc = None
-    self.root = None
-    self.tree_status_url = None
-    self.viewvc_url = None
-
-  def GetServer(self, error_ok=False):
-    if not self.server:
-      if not error_ok:
-        error_message = ('You must configure your review setup by running '
-                         '"git review init".')
-        self.server = self._GetConfig('codereview.server',
-                                      error_message=error_message)
-      else:
-        self.server = self._GetConfig('codereview.server', error_ok=True)
-    return self.server
-
-  def GetCCList(self):
-    """Return the users cc'd on this CL.
-
-    Return is a string suitable for passing to gcl with the --cc flag.
-    """
-    if self.cc is None:
-      self.cc = self._GetConfig('codereview.cc', error_ok=True)
-      more_cc = self._GetConfig('codereview.extracc', error_ok=True)
-      if more_cc is not None:
-        self.cc += ',' + more_cc
-    return self.cc
-
-  def GetRoot(self):
-    if not self.root:
-      self.root = os.path.abspath(RunGit(['rev-parse', '--show-cdup']).strip())
-    return self.root
-
-  def GetTreeStatusUrl(self, error_ok=False):
-    if not self.tree_status_url:
-      error_message = ('You must configure your tree status URL by running '
-                       '"git review init".')
-      self.tree_status_url = self._GetConfig('codereview.tree-status-url',
-                                             error_ok=error_ok,
-                                             error_message=error_message)
-    return self.tree_status_url
-
-  def GetViewVCUrl(self):
-    if not self.viewvc_url:
-      self.viewvc_url = self._GetConfig('codereview.viewvc-url', error_ok=True)
-    return self.viewvc_url
-
-  def _GetConfig(self, param, **kwargs):
-    return RunGit(['config', param], **kwargs).strip()
 
 
 settings = Settings()
@@ -332,7 +262,6 @@ def LoadCodereviewSettingsFromFile(file):
   SetProperty('cc', 'cc', unset_error_ok=True)
   SetProperty('tree-status-url', 'tree_status_url', unset_error_ok=True)
   SetProperty('viewvc-url', 'viev_vc', unset_error_ok=True)
-  hooks = {}
 
   for key, filename in (('pre_push_hook', PREPUSH_HOOK),
                         ('pre_upload_hook', PREUPLOAD_HOOK)):

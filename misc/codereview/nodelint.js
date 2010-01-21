@@ -1,13 +1,12 @@
 #! /usr/bin/env node
 
-/*
- * This is a command line runner of jslint using Node.js
- *
- * Changes released into the Public Domain by tav <tav@espians.com>
- *
- * Adapted from rhino.js, Copyright (c) 2002 Douglas Crockford
- *
- */
+// This is a command line runner of JSLint using Node.js
+
+// Changes to this file authored by The Ampify Authors are according to the
+// Public Domain style license that can be found in the LICENSE file.
+
+// This file was adapted from jslint/rhino.js by Douglas Crockford, which is:
+// Copyright (c) 2002 Douglas Crockford
 
 /*global JSLINT */
 /*jslint evil: true, regexp: false */
