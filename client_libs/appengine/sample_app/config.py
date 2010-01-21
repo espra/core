@@ -34,6 +34,8 @@ STATIC_PATH = '/.static/'
 STATIC_HOSTS = None
 
 execfile(join_path(APP_ROOT, 'siteinfo.py'))
+SITE_DOMAIN = 'ampifyit.appspot.com'
+SITE_HTTP_URL = 'http://ampifyit.appspot.com'
 
 # ------------------------------------------------------------------------------
 # you shouldn't have to change these ...
@@ -155,3 +157,18 @@ NETWORK_ERROR_MESSAGE = u"""
 # ------------------------------------------------------------------------------
 
 execfile(join_path(APP_ROOT, 'siteconfig.py'))
+"""Deployment site specific configuration values."""
+
+# TO USE: copy this file to ``siteconfig.py`` and modify appropriately.
+
+# These should be secure, e.g. not regularly used, Google Accounts:
+
+SITE_ADMINS = frozenset([
+    'adminuser@gmail.com'
+    ])
+
+TAMPER_PROOF_KEY = "Place your long, randomly generated sekret key here."
+
+TAMPER_PROOF_DEFAULT_DURATION = timedelta(minutes=20)
+
+REMOTE_TOKEN = "Your sekret key for Remote API calls goes here."
