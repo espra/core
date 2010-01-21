@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 
-# This file was compiled together from the PyFlakes 0.4.0 Release
+# This file was compiled together from the PyFlakes 0.4.0 release.
 
 # Copyright (c) 2005 Divmod, Inc., http://www.divmod.com/
 

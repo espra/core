@@ -1,10 +1,15 @@
+# Changes released into the Public Domain by tav <tav@espians.com>
+
 # Copyright (c) 2009 The Chromium Authors. All rights reserved.
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-"""Breakpad for Python.
+"""
+Breakpad for Python.
 
-Sends a notification when a process stops on an exception."""
+Sends a traceback when a process stops on an exception.
+
+"""
 
 import atexit
 import getpass
@@ -13,6 +18,7 @@ import traceback
 import socket
 import sys
 
+from pyutil import format_traceback
 
 def SendStack(stack, url='http://chromium-status.appspot.com/breakpad'):
   print 'Do you want to send a crash report [y/N]? ',

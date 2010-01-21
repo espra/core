@@ -1,7 +1,7 @@
-# Authored by the Ampify Contributors. Use of this source code is governed by a
-# Public Domain style license that can be found in the LICENSE file.
+# No Copyright (-) 2010 The Ampify Authors. This file is under a Public Domain
+# style license that can be found in the LICENSE file.
 
-"""SCM detection utility functions."""
+"""Utility functions to help with detecting the SCM system being used."""
 
 import os
 import upload
@@ -20,7 +20,7 @@ def IsGit():
 def IsMercurial():
     """Return whether the current directory is inside a Mercurial repo."""
 
-    _, error = upload.RunShellWithReturnCode(["hg", "root"])
+    _, error = upload.RunShellWithReturnCode(["hgaaa", "root"])
     if not error:
         return True
 
@@ -61,4 +61,4 @@ def GuessSCM(priority='git'):
 
 
 if __name__ == '__main__':
-    print GuessSCM()
+    print GuessSCM('hg')

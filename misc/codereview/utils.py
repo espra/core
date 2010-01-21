@@ -1,3 +1,9 @@
+# Changes to this file authored by The Ampify Authors are according to the
+# Public Domain style license that can be found in the LICENSE file.
+
+# This file was adapted from depot_tools/gclient_utils.py in the Chromium
+# repository and has the following License:
+
 # Copyright 2009 Google Inc.  All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -55,6 +61,76 @@ def CheckCall(command, cwd=None, print_error=True):
     raise CheckCallError(command, cwd, process.returncode, output)
   return output
 
+
+def RunCommand(cmd, error_ok=False, error_message=None, exit_code=False,
+               redirect_stdout=True):
+  # Useful for debugging:
+  # print >>sys.stderr, ' '.join(cmd)
+  if redirect_stdout:
+    stdout = subprocess.PIPE
+  else:
+    stdout = None
+  proc = subprocess.Popen(cmd, stdout=stdout)
+  output = proc.communicate()[0]
+  if exit_code:
+    return proc.returncode
+  if not error_ok and proc.returncode != 0:
+    ErrorExit('Command "%s" failed.\n' % (' '.join(cmd)) +
+              (error_message or output))
+  return output
+
+
+
+# Use a shell for subcommands on Windows to get a PATH search.
+use_shell = sys.platform.startswith("win")
+
+def RunShellWithReturnCode(command, print_output=False,
+                           universal_newlines=True,
+                           env=os.environ):
+  """Executes a command and returns the output from stdout and the return code.
+
+  Args:
+    command: Command to execute.
+    print_output: If True, the output is printed to stdout.
+                  If False, both stdout and stderr are ignored.
+    universal_newlines: Use universal_newlines flag (default: True).
+
+  Returns:
+    Tuple (output, return code)
+  """
+  logging.info("Running %s", command)
+  p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                       shell=use_shell, universal_newlines=universal_newlines,
+                       env=env)
+  if print_output:
+    output_array = []
+    while True:
+      line = p.stdout.readline()
+      if not line:
+        break
+      print line.strip("\n")
+      output_array.append(line)
+    output = "".join(output_array)
+  else:
+    output = p.stdout.read()
+  p.wait()
+  errout = p.stderr.read()
+  if print_output and errout:
+    print >>sys.stderr, errout
+  p.stdout.close()
+  p.stderr.close()
+  return output, p.returncode
+
+
+def RunShell(command, silent_ok=False, universal_newlines=True,
+             print_output=False, env=os.environ):
+  data, retcode = RunShellWithReturnCode(command, print_output,
+                                         universal_newlines, env)
+  if retcode:
+    ErrorExit("Got error status from %s:\n%s" % (command, data))
+  if not silent_ok and not data:
+    ErrorExit("No output from %s" % command)
+  return data
 
 def SplitUrlRevision(url):
   """Splits url and returns a two-tuple: url, rev"""
