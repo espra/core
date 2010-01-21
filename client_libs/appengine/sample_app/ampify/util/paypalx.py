@@ -15,8 +15,9 @@ class AdaptivePayment(object):
     """PayPal Adaptive Payments API."""
 
     def __init__(
-        self, api_username, api_password, api_signature, app_id, \
-            endpoint=SANDBOX_ENDPOINT):
+            self, api_username, api_password, api_signature, app_id, \
+            endpoint=SANDBOX_ENDPOINT
+        ):
         self._endpoint = endpoint
         self._api_username = api_username
         self._api_password = api_password
@@ -27,9 +28,9 @@ class AdaptivePayment(object):
         try:
             API_OPERATIONS.index(api_operation)
         except ValueError:
-            raise RuntimeError("Invalid API operation.  Please refer to \
-                      Adaptive Payments API Operations: \
-                      https://www.x.com/docs/DOC-1408#id099BG0B005Z")
+            raise RuntimeError("Invalid API operation.  Please refer to"
+                      "Adaptive Payments API Operations:"
+                      "https://www.x.com/docs/DOC-1408#id099BG0B005Z")
         url = "%s/%s" % (self._endpoint, api_operation)
         req = http_request(url)
         # Authentication
@@ -62,9 +63,10 @@ class PayRequest(object):
     """
 
     def __init__(
-        self, receiver_email, receiver_amount, currency_code, cancel_url, \
-                return_url, receiver_primary=False, sender_email=False,
-                preapproval_key=False, pin=False):
+            self, receiver_email, receiver_amount, currency_code, cancel_url, \
+            return_url, receiver_primary=False, sender_email=False,
+            preapproval_key=False, pin=False
+        ):
         self._pay_request = {}
         self._pay_request['actionType'] = 'PAY'
         self._pay_request['receiverList'] = {'receiver': []}
@@ -93,8 +95,8 @@ class PayRequest(object):
 
             if self._primary_set:
                 if rcvr_primary:
-                    raise RuntimeError("PayRequest already has a primary \
-                                       receiver!")
+                    raise RuntimeError("PayRequest already has a primary"
+                                       "receiver!")
             else:
                 if rcvr_primary:
                     receiver['primary'] = 'true'
@@ -110,7 +112,7 @@ class PayRequest(object):
 
 class ResponseEnvelope(object):
     """
-    Common response information, including a timestamp and the response \
+    Common response information, including a timestamp and the response
     acknowledgement status.
     """
 
@@ -124,7 +126,7 @@ class ResponseEnvelope(object):
 
 class PayResponse(object):
     """
-    The PayResponse message which contains a key that you can use to identify \
+    The PayResponse message which contains a key that you can use to identify
     the payment and the payment's status.
     """
 
@@ -136,8 +138,8 @@ class PayResponse(object):
 
 class PPFault(object):
     """
-    The PPFault message returns ErrorData and the ResponseEnvelope \
-    information to your application if an error occurs when your application \
+    The PPFault message returns ErrorData and the ResponseEnvelope
+    information to your application if an error occurs when your application
     calls an Adaptive Payments API.
     """
 
@@ -148,7 +150,7 @@ class PPFault(object):
 
 
 class ErrorData(object):
-    """Detailed error information returned from Paypal API"""
+    """Detailed error information returned from Paypal API."""
 
     def __init__(self, error_data):
         for x in error_data:
