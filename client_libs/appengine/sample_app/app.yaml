@@ -3,11 +3,6 @@ version: 1
 runtime: python
 api_version: 1
 
-inbound_services:
-
-- mail
-- xmpp_message
-
 handlers:
 
 - url: /crossdomain.xml
@@ -26,22 +21,14 @@ handlers:
   expiration: 1d
   secure: optional
 
-- url: /.static
+- url: /static
   static_dir: static
   secure: optional
 
-- url: /.remote/.*
-  script: /ampify/handler/remote.py
+- url: /remote/.*
+  script: remote.py
   secure: always
 
-- url: /_ah/mail/.*
-  script: /ampify/handler/mail.py
-  login: admin
-
-- url: /_ah/xmpp/message/chat/.*
-  script: /ampify/handler/xmpp.py
-  login: admin
-
 - url: .*
-  script: main.py
+  script: weblite.py
   secure: optional

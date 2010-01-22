@@ -1,4 +1,5 @@
-# Released into the Public Domain by tav <tav@espians.com>
+# No Copyright (-) 2008-2010 The Ampify Authors. This file is under the
+# Public Domain license that can be found in the root LICENSE file.
 
 """WebLite Framework."""
 
@@ -40,15 +41,56 @@ from google.appengine.api.urlfetch import fetch as urlfetch, GET, POST
 from google.appengine.api import users
 from google.appengine.ext import db
 
-from ampify import APP_ROOT, PKG_ROOT
 from ampify.core.config import *
-from ampify.core.model import Player
-from ampify.core.exception import *
-from ampify.core.validation import validate
 
-from ampify.util.crypto import (
+from pyutil.traceback import HTMLExceptionFormatter
+from pyutil.validation import validate
+
+from pyutil.crypto import (
     create_tamper_proof_string, validate_tamper_proof_string
     )
+
+from model import Player
+
+# ------------------------------------------------------------------------------
+# path related konstants
+# ------------------------------------------------------------------------------
+
+APP_ROOT = ''
+PKG_ROOT = ''
+
+# ------------------------------------------------------------------------------
+# exseptions
+# ------------------------------------------------------------------------------
+
+class Error(Exception):
+    """Base Weblite Exception."""
+
+class Redirect(Error):
+    """
+    Redirection Error.
+
+    This is used to handle both internal and HTTP redirects.
+    """
+
+    def __init__(self, uri, method=None, permanent=False):
+        self.uri = uri
+        self.method = method
+        self.permanent = permanent
+
+class UnAuth(Error):
+    """Unauthorised."""
+
+class NotFound(Error):
+    """404."""
+
+class ServiceNotFound(NotFound):
+    """Service 404."""
+
+def format_traceback(type, value, traceback, limit=200):
+    """Pretty print a traceback in HTML format."""
+
+    return HTMLExceptionFormatter(limit).formatException(type, value, traceback)
 
 # ------------------------------------------------------------------------------
 # i/o helpers
@@ -1568,3 +1610,47 @@ def hello(ctx, *args, **kwargs):
         'args': args,
         'kwargs': kwargs
         }
+
+# ------------------------------------------------------------------------------
+# self runner -- app engine cached main() function
+# ------------------------------------------------------------------------------
+
+if DEBUG == 2:
+
+    from cProfile import Profile
+    from pstats import Stats
+    from StringIO import StringIO
+
+    def runner():
+        run_wsgi_app(Application)
+
+    def main():
+        """Profiling main function."""
+
+        profiler = Profile()
+        profiler = profiler.runctx("runner()", globals(), locals())
+        iostream = StringIO()
+
+        stats = Stats(profiler, stream=iostream)
+        stats.sort_stats("time")  # or cumulative
+        stats.print_stats(80)     # 80 == how many to print
+
+        # optional:
+        # stats.print_callees()
+        # stats.print_callers()
+
+        logging.info("Profile data:\n%s", iostream.getvalue())
+
+else:
+
+    def main():
+        """Default main function."""
+
+        run_wsgi_app(Application)
+
+# ------------------------------------------------------------------------------
+# run in standalone mode
+# ------------------------------------------------------------------------------
+
+if __name__ == '__main__':
+    main()
