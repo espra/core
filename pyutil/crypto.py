@@ -1,4 +1,5 @@
-# Changes released into the Public Domain by tav <tav@espians.com>
+# No Copyright (-) 2010 The Ampify Authors. This file is under the
+# Public Domain license that can be found in the root LICENSE file.
 
 """Miscellaneous utility crypto functions."""
 
@@ -6,8 +7,6 @@ from base64 import b64encode
 from hmac2 import HMAC
 from hashlib import sha384
 from time import time
-
-from ampify.core.config import TAMPER_PROOF_KEY, TAMPER_PROOF_DEFAULT_DURATION
 
 # ------------------------------------------------------------------------------
 # http://rdist.root.org/2009/05/28/timing-attack-in-google-keyczar-library/
@@ -40,9 +39,9 @@ def create_rehashed_mac(value, key, hmac, hasher, n=10):
 
     return b64encode(digest, '-_')
 
+
 def create_tamper_proof_string(
-    name, value, duration=TAMPER_PROOF_DEFAULT_DURATION.seconds,
-    key=TAMPER_PROOF_KEY, hmac=HMAC, hasher=sha384
+    name, value, key, duration=None, hmac=HMAC, hasher=sha384
     ):
     """Return a tamper proof version of the passed in string value."""
 
@@ -62,9 +61,9 @@ def create_tamper_proof_string(
         value
         )
 
+
 def validate_tamper_proof_string(
-    name, value, timestamped=True, key=TAMPER_PROOF_KEY, hmac=HMAC,
-    hasher=sha384
+    name, value, key, timestamped=False, hmac=HMAC, hasher=sha384
     ):
     """Validate that the given value hasn't been tampered with."""
 

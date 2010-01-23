@@ -1,7 +1,9 @@
-# Changes released into the Public Domain by tav <tav@espians.com>
+# Changes to this file by The Ampify Authors are according to the
+# Public Domain license that can be found in the root LICENSE file.
 
-##############################################################################
-#
+# This file was adapted from zope/exceptions/exceptionformatter.py in the Zope
+# repository and has the following License:
+
 # Copyright (c) 2001, 2002 Zope Corporation and Contributors.
 # All Rights Reserved.
 #
@@ -11,8 +13,6 @@
 # WARRANTIES ARE DISCLAIMED, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
 # WARRANTIES OF TITLE, MERCHANTABILITY, AGAINST INFRINGEMENT, AND FITNESS
 # FOR A PARTICULAR PURPOSE.
-#
-##############################################################################
 
 """
 An exception formatter that shows traceback supplements and traceback info.
