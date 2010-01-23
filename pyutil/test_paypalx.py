@@ -17,3 +17,5 @@ pay_request_kwargs = {
 }
 payreq = PayRequest(**pay_request_kwargs)
 payreqmsg = payreq.get_message()
+pp_response = adaptpay.call("PAY", payreqmsg)
+
