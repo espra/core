@@ -4,4 +4,4 @@ layout: page
 title: Copyright and Licensing
 ---
 
-{% include LICENSE.md %}
+{% include LICENSE %}

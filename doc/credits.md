@@ -4,4 +4,4 @@ layout: page
 title: Credits
 ---
 
-{% include CREDITS.md %}
+{% include AUTHORS %}
