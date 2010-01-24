@@ -1,9 +1,8 @@
-/*
- * Changes released into the Public Domain by tav <tav@espians.com>
- *
- * Adapted from posixpath.py in the Python Standard Library.
- *
- */
+// No Copyright (-) 2010 The Ampify Authors. This file is under the
+// Public Domain license that can be found in the root LICENSE file.
+
+// Some portions of this file were ported from posixpath.py in the Python
+// Standard Library.
 
 function join(p1, p2) {
     var path = p1;
