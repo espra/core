@@ -13,11 +13,12 @@ You can disable breakpad support in processes like test scripts by doing:
 
     breakpad.DISABLED = True
 
-A Breakpad Server URL endpoint needs to be specified by the user at runtime
-(i.e. when the process stops on an exception) or can be defined by your app
-using:
+A Breakpad Server URL endpoint needs to be specified when send_report is called
+manually or defined in the SCM's codereview settings:
 
-    breakpad.SERVER_URL = 'http://your-server.com/breakpad/endpoint/path'
+    codereview.breakpad_url  # the breakpad server url endpoint
+    codereview.email         # the user's login email address
+    codereview.key           # a shared secret with the server for creating MACs
 
 The endpoint should accept a POST request with the following parameters:
 
@@ -45,7 +46,6 @@ from pyutil.scm import SCMConfig
 
 
 DISABLED = False
-SERVER_URL = None
 
 
 def send_report(
@@ -72,27 +72,19 @@ def send_report(
         if confirm.lower() in ['n', 'no']:
             return
 
-    url = url or SERVER_URL
-    if not url:
-        try:
-            url = raw_input('What Breakpad Server URL do you want to send to? ')
-        except EOFError:
-            return
-        if not url:
-            exit("Invalid Breakpad Server URL -- Not sending crash report.")
-
     if not user:
         config = SCMConfig()
         user = config.get('codereview.email')
         key = config.get('codereview.key')
-        if not (user and key):
+        url = config.get('codereview.breakpad_url')
+        if not (user and key and url):
             exit("Sorry, you need to configure your codereview settings.")
 
     if not quiet:
         print "Sending crash report ... "
 
     nonce = create_tamper_proof_string(
-        'nonce', b64encode(urandom(144), '-_'), key
+        'nonce', b64encode(urandom(192), '-_'), key
         )
 
     try:
