@@ -68,14 +68,13 @@ def guess(priority='git'):
         raise ValueError("Unknown SCM passed as the priority: %r" % priority)
 
 
-class SCMConfig(object):
-    """SCM Configuration handler."""
+class SCMBase(object):
+    """SCM handler base class."""
 
     def __init__(self, preferred_scm='git'):
         self._preferred_scm = preferred_scm
         self._scm = None
         self._root = None
-        self._config_cache = {}
 
     @property
     def scm(self):
@@ -97,6 +96,14 @@ class SCMConfig(object):
                     )
         return self._root
 
+
+class SCMConfig(SCMBase):
+    """SCM Configuration handler."""
+
+    def __init__(self, preferred_scm='git'):
+        super(SCMConfig, self).__init__(preferred_scm)
+        self._config_cache = {}
+
     def get(self, prop, default=None):
         if prop in self._config_cache:
             return self._config_cache[prop]
@@ -114,13 +121,23 @@ class SCMConfig(object):
                 ['git', 'config', prop, value], retcode=True
                 )
             if error:
-                raise IOError("Couldn't set: git config %r %r" % (prop, value))
+                raise IOError("Couldn't set: git config %s %s" % (prop, value))
         self._config_cache[prop] = value
 
-    def remove(self, prop, value_regex=None):
+    def delete(self, prop, value_regex=None, section=None, all=None):
         if self.scm == 'git':
-            if prop is all:
-                return ['--unset-all']
+            if all:
+                args = ['--unset-all', prop]
+                if value_regex:
+                    args.append(value_regex)
+            elif section:
+                args = ['--remove-section', prop]
+            else:
+                args = ['--unset', prop]
+                if value_regex:
+                    args.append(value_regex)
+            run_command(['git', 'config'] + args)
+            self._config_cache.clear()
 
 
 if __name__ == '__main__':
