@@ -13,3 +13,6 @@
 [submodule "third_party/haml"]
 	path = third_party/haml
 	url = git://github.com/nex3/haml.git
+[submodule "third_party/pylibs"]
+	path = third_party/pylibs
+	url = git://github.com/tav/pylibs.git
