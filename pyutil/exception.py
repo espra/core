@@ -22,7 +22,8 @@ An exception formatter that shows traceback supplements and traceback info.
   ... except:
   ...     print print_exception()
   Traceback (most recent call last):
-    Module error/traceback, line 2, in ?
+    Module pyutil.exception, line 2, in <module>
+      1/0
   ZeroDivisionError: integer division or modulo by zero
   <BLANKLINE>
 
@@ -31,7 +32,8 @@ An exception formatter that shows traceback supplements and traceback info.
   ... except:
   ...     print print_exception(stream=sys.stdout)
   Traceback (most recent call last):
-    Module error/traceback, line 2, in ?
+    Module pyutil.exception, line 2, in <module>
+      1/0
   ZeroDivisionError: integer division or modulo by zero
   <BLANKLINE>
 
@@ -43,7 +45,8 @@ Output could be optionally rendered in HTML too:
   ...     print print_exception(as_html=True)
   <p>Traceback (most recent call last):
   <ul>
-  <li>  Module error/traceback, line 2, in ?</li>
+  <li>  Module pyutil.exception, line 2, in &lt;module&gt;<br />
+      1/0</li>
   </ul>ZeroDivisionError: integer division or modulo by zero<br />
   </p>
 

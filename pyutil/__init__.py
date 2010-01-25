@@ -17,13 +17,15 @@ Pyutil -- A collection of utility modules for Python.
 
 import sys
 
-from os.path import dirname, join as join_path
+from os.path import dirname, join as join_path, realpath
 
 # ------------------------------------------------------------------------------
 # extend sys.path to include the ``third_party`` lib direktory
 # ------------------------------------------------------------------------------
 
-THIRD_PARTY_LIBRARY_PATH = join_path(dirname(__file__), 'third_party')
+THIRD_PARTY_LIBRARY_PATH = join_path(
+    dirname(dirname(realpath(__file__))), 'third_party', 'pylibs'
+    )
 
 if THIRD_PARTY_LIBRARY_PATH not in sys.path:
     sys.path.insert(0, THIRD_PARTY_LIBRARY_PATH)

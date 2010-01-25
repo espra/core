@@ -1,11 +1,10 @@
-# Released into the Public Domain by tav <tav@espians.com>
+# No Copyright (-) 2010 The Ampify Authors. This file is under the
+# Public Domain license that can be found in the root LICENSE file.
 
 """Service input validation support."""
 
 from time import time
 from sha import new as sha1
-
-from ampify.core.exception import Error
 
 # ------------------------------------------------------------------------------
 # some konstants
@@ -70,7 +69,7 @@ def %(func_name)s(%(params)s):
             try:
                 kw_%(r)s[key_%(r)s] = spec_%(r)s[key_%(r)s](kws_%(r)s[key_%(r)s])
             except Exception:
-                raise Error(
+                raise ValueError(
                     "Could not validate input argument '%%s=%%s'" %% (key_%(r)s, kws_%(r)s[key_%(r)s])
                     )
         else:
@@ -82,7 +81,7 @@ def %(func_name)s(%(params)s):
             'func_%s' % rkey: func,
             'spec_%s' % rkey: spec,
             'defaults_%s' % rkey: defaults,
-            'Error': Error
+            'ValueError': ValueError
             }
         exec source in env
 

@@ -1,5 +1,7 @@
-# Released into the Public Domain by Mamading Ceesay <mamading@gmail.com>
-""" Paypal Adaptive Payments API """
+# No Copyright (-) 2010 The Ampify Authors. This file is under the
+# Public Domain license that can be found in the root LICENSE file.
+
+"""Paypal Adaptive Payments API."""
 
 from demjson import decode as json_decode, encode as json_encode
 from urllib2 import urlopen, Request as http_request, URLError
