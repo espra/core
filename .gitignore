@@ -1,12 +1,12 @@
 # specific files/directories
 
 .latest
-client_libs/appengine/.appengine_python_sdk
-client_libs/appengine/sample_app/ampify/updated.py
-client_libs/appengine/sample_app/siteconfig.py
+.appengine_python_sdk
+client_libs/appengine/updated.py
 doc/_site
 environ/local
 jsutil/ampsite.js
+misc/devboard/siteconfig.py
 
 # minified css/js files
 
