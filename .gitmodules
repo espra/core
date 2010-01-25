@@ -22,3 +22,6 @@
 [submodule "third_party/jspec"]
 	path = third_party/jspec
 	url = git://github.com/visionmedia/jspec.git
+[submodule "third_party/rubylibs"]
+	path = third_party/rubylibs
+	url = git://github.com/tav/rubylibs.git
