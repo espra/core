@@ -10,3 +10,6 @@
 [submodule "third_party/go"]
 	path = third_party/go
 	url = git://github.com/tav/go.git
+[submodule "third_party/haml"]
+	path = third_party/haml
+	url = git://github.com/nex3/haml.git
