@@ -31,14 +31,10 @@ def secure_string_comparison(s1, s2, ord=ord):
 # tamper-proof value generation
 # ------------------------------------------------------------------------------
 
-def create_rehashed_mac(value, key, hmac, hasher, n=10):
-    """Return a base64-encoded MAC re-hashed a few times."""
+def create_encoded_mac(value, key, hmac=HMAC, hasher=sha384):
+    """Return a base64-encoded MAC."""
 
     digest = hmac(key, value, hasher).digest()
-
-    for i in xrange(n):
-        digest = hasher(digest).digest()
-
     return b64encode(digest, '-_')
 
 
@@ -59,7 +55,7 @@ def create_tamper_proof_string(
     named_value = "%s|%s" % (name.replace('|', r'\|'), value)
 
     return "%s:%s" % (
-        create_rehashed_mac(named_value, key, hmac, hasher),
+        create_encoded_mac(named_value, key, hmac, hasher),
         value
         )
 
@@ -82,7 +78,7 @@ def validate_tamper_proof_string(
 
     named_value = "%s|%s" % (name.replace('|', r'\|'), value)
 
-    expected_mac = create_rehashed_mac(named_value, key, hmac, hasher)
+    expected_mac = create_encoded_mac(named_value, key, hmac, hasher)
     if not secure_string_comparison(mac, expected_mac):
         return
 
@@ -111,10 +107,10 @@ def create_signature_for_payload(payload, key):
         append(urlencode({payload_key: payload[payload_key]}))
 
     output = '&'.join(output)
-    return create_rehashed_mac(output, key, HMAC, sha384)
+    return create_encoded_mac(output, key)
 
 
-def sign_payload(payload, key, nonce_name='nonce', nonce_size=200):
+def sign_payload(payload, key, nonce_name='nonce', nonce_size=100):
     """Return a signature and a modified payload with a generated nonce."""
     payload[nonce_name] = b32encode(urandom(nonce_size))
     return create_signature_for_payload(payload, key), payload
