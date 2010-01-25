@@ -2,6 +2,7 @@
 
 .latest
 .appengine_python_sdk
+build/
 client_libs/appengine/updated.py
 doc/_site
 environ/local
