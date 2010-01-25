@@ -1,0 +1,21 @@
+#! /usr/bin/env ruby
+
+# No Copyright (-) 2008-2010 The Ampify Authors. This file is under the
+# Public Domain license that can be found in the root LICENSE file.
+
+require 'pathname'
+
+MAIN_ROOT = Pathname.new(__FILE__).realpath.dirname.dirname.dirname
+SASS_ROOT = MAIN_ROOT.join('third_party', 'haml', 'lib')
+
+$:.unshift SASS_ROOT
+
+require 'haml/exec'
+
+if ARGV.length == 0
+    puts "Usage: sass <file>"
+    Process.exit
+end
+
+opts = Haml::Exec::Sass.new(ARGV)
+opts.parse!
