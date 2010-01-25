@@ -25,7 +25,7 @@ The endpoint should accept a POST request with the following parameters:
     command     # the name of the script/app that triggered the crash report
     args        # the command line arguments passed to the script/app
     report      # the python traceback pretty printed as HTML
-    user        # the user's email address as defined in .breakpad.cfg
+    user        # the user's login email address
     nonce       # a pseudo-random number that is accompanied by a MAC
 
 """
@@ -33,13 +33,11 @@ The endpoint should accept a POST request with the following parameters:
 import sys
 
 from atexit import register
-from base64 import b64encode
-from os import urandom
 from os.path import split as split_path
 from urllib import urlencode
 from urllib2 import urlopen
 
-from pyutil.crypto import create_tamper_proof_string
+from pyutil.crypto import sign_payload
 from pyutil.env import exit
 from pyutil.exception import format_exception
 from pyutil.scm import SCMConfig
@@ -81,26 +79,27 @@ def send_report(
             exit("Sorry, you need to configure your codereview settings.")
 
     if not quiet:
+        print
         print "Sending crash report ... "
 
-    nonce = create_tamper_proof_string(
-        'nonce', b64encode(urandom(192), '-_'), key
-        )
+    payload = {
+        'args': ' '.join(sys.argv[1:]),
+        'command': split_path(sys.argv[0])[1],
+        'report': ''.join(report),
+        'user': user,
+        }
+
+    payload['sig'], payload = sign_payload(payload, key)
 
     try:
-        params = {
-            'args': ' '.join(sys.argv[1:]),
-            'command': split_path(sys.argv[0])[1],
-            'nonce': nonce,
-            'report': ''.join(report),
-            'user': user,
-            }
-        response = urlopen(url, urlencode(params))
+        response = urlopen(url, urlencode(payload))
         if not quiet:
+            print
             print response.read()
         response.close()
     except Exception:
         if not quiet:
+            print
             print "Sorry, couldn't send the crash report for some reason."
 
 

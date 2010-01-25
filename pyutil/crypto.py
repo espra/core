@@ -3,10 +3,12 @@
 
 """Miscellaneous utility crypto functions."""
 
-from base64 import b64encode
+from base64 import b64encode, b32encode
 from hmac2 import HMAC
 from hashlib import sha384
+from os import urandom
 from time import time
+from urllib import urlencode
 
 # ------------------------------------------------------------------------------
 # http://rdist.root.org/2009/05/28/timing-attack-in-google-keyczar-library/
@@ -94,3 +96,32 @@ def validate_tamper_proof_string(
             return
 
     return value
+
+# ------------------------------------------------------------------------------
+# pseudo-signature generation and validation
+# ------------------------------------------------------------------------------
+
+def create_signature_for_payload(payload, key):
+    """Return the signature for the given payload."""
+
+    payload_keys = sorted(payload.keys())
+    output = []; append = output.append
+
+    for payload_key in payload_keys:
+        append(urlencode({payload_key: payload[payload_key]}))
+
+    output = '&'.join(output)
+    return create_rehashed_mac(output, key, HMAC, sha384)
+
+
+def sign_payload(payload, key, nonce_name='nonce', nonce_size=200):
+    """Return a signature and a modified payload with a generated nonce."""
+    payload[nonce_name] = b32encode(urandom(nonce_size))
+    return create_signature_for_payload(payload, key), payload
+
+
+def validate_signed_payload(payload, key, signature):
+    """Validate that the signature matches the given payload and key."""
+    expected_sig = create_signature_for_payload(payload, key)
+    if secure_string_comparison(signature, expected_sig):
+        return payload
