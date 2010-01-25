@@ -16,3 +16,6 @@
 [submodule "third_party/pylibs"]
 	path = third_party/pylibs
 	url = git://github.com/tav/pylibs.git
+[submodule "third_party/jslibs"]
+	path = third_party/jslibs
+	url = git://github.com/tav/jslibs.git
