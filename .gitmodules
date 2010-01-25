@@ -10,18 +10,12 @@
 [submodule "third_party/go"]
 	path = third_party/go
 	url = git://github.com/tav/go.git
-[submodule "third_party/haml"]
-	path = third_party/haml
-	url = git://github.com/nex3/haml.git
 [submodule "third_party/pylibs"]
 	path = third_party/pylibs
 	url = git://github.com/tav/pylibs.git
 [submodule "third_party/jslibs"]
 	path = third_party/jslibs
 	url = git://github.com/tav/jslibs.git
-[submodule "third_party/jspec"]
-	path = third_party/jspec
-	url = git://github.com/visionmedia/jspec.git
 [submodule "third_party/rubylibs"]
 	path = third_party/rubylibs
 	url = git://github.com/tav/rubylibs.git
