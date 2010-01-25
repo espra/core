@@ -1,15 +1,14 @@
 #! /usr/bin/env python2.5
 
-# Released into the Public Domain by tav <tav@espians.com>
+# No Copyright (-) 2008-2010 The Ampify Authors. This file is under the
+# Public Domain license that can be found in the root LICENSE file.
 
 """
-Usage: appengine <command> [options]
+Usage: appengine <app-directory> <command> [options]
 
 Available commands:
 
    run [dev_appserver.py options]
-
-   prod [dev_appserver.py options]
 
    deploy [appcfg.py options]
 """
@@ -32,7 +31,7 @@ import subprocess
 
 from cStringIO import StringIO
 from os import mkdir
-from os.path import abspath, dirname, exists, join as join_path
+from os.path import abspath, dirname, exists, join as join_path, realpath
 from shutil import rmtree
 from time import time, sleep
 from urllib import urlopen
@@ -42,18 +41,14 @@ from zipfile import ZipFile
 # konfig
 # ------------------------------------------------------------------------------
 
-APP_DIRECTORY = 'appengine'
-APP_PACKAGE = 'ampify'
 SDK_VERSION = "1.3.0"
 
 # ------------------------------------------------------------------------------
 # some konstants
 # ------------------------------------------------------------------------------
 
-SCRIPT_ROOT = dirname(abspath(__file__))
-MAIN_ROOT = dirname(SCRIPT_ROOT)
-APP_ROOT = join_path(MAIN_ROOT, APP_DIRECTORY)
-UPDATED_FILE_PATH = join_path(APP_ROOT, APP_PACKAGE, 'updated.py')
+SCRIPT_ROOT = dirname(realpath(__file__))
+MAIN_ROOT = dirname(dirname(SCRIPT_ROOT))
 
 SDK_FILE = "google_appengine_%s.zip" % SDK_VERSION
 SDK_PATH = "http://googleappengine.googlecode.com/files/" + SDK_FILE
@@ -122,12 +117,15 @@ if __name__ == '__main__':
 
     argv = sys.argv[1:]
 
-    if not argv:
+    if not len(argv) >= 2:
         print __doc__
         sys.exit()
 
-    command = argv[0]
-    argv = argv[1:]
+    app_root = abspath(argv[0])
+    updated_file_path = join_path(app_root, 'updated.py')
+
+    command = argv[1]
+    argv = argv[2:]
 
     if command in ['--help', '-h', 'help']:
         print __doc__
@@ -136,7 +134,7 @@ if __name__ == '__main__':
     if command == 'run':
 
         if not argv:
-            argv = [APP_ROOT]
+            argv = [app_root]
 
         subprocess.call(
             [sys.executable, join_path(OUR_SDK_PATH, 'dev_appserver.py')] + argv
@@ -144,25 +142,11 @@ if __name__ == '__main__':
 
         sys.exit()
 
-    if command == 'prod':
-
-        env = {'PYTHONPATH': join_path(APP_ROOT, APP_PACKAGE, 'inject')}
-
-        if not argv:
-            argv = [APP_ROOT]
-
-        subprocess.call(
-            [sys.executable, join_path(OUR_SDK_PATH, 'dev_appserver.py')] + argv,
-            env=env
-        )
-
-        sys.exit()
-
     if command == 'deploy':
 
         if not argv:
-            argv = ['-v', 'update', APP_ROOT]
-            updated_file = open(UPDATED_FILE_PATH, 'wb')
+            argv = ['-v', 'update', app_root]
+            updated_file = open(updated_file_path, 'wb')
             updated_file.write("APPLICATION_TIMESTAMP = %s\n" % time())
             updated_file.close()
 

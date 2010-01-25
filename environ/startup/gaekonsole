@@ -1,11 +1,9 @@
 #! /usr/bin/env python2.5
 
-# Released into the Public Domain by tav <tav@espians.com>
+# No Copyright (-) 2009-2010 The Ampify Authors. This file is under the
+# Public Domain license that can be found in the root LICENSE file.
 
-"""
-Usage: ./remote-appengine [ dev | prod | localhost:8081 ]
-
-"""
+"""Usage: gaekonsole <app-directory> [ dev | prod | localhost:8081 ]"""
 
 import code
 import getpass
@@ -13,15 +11,14 @@ import os
 import sys
 
 from base64 import urlsafe_b64encode
-from os.path import abspath, dirname, join as join_path
+from os.path import abspath, dirname, join as join_path, realpath
 
-MAIN_ROOT = dirname(dirname(abspath(__file__)))
+MAIN_ROOT = dirname(dirname(dirname(realpath(__file__))))
 OUR_SDK_PATH = join_path(MAIN_ROOT, '.appengine_python_sdk')
 
 sys.path.insert(0, OUR_SDK_PATH)
 sys.path.insert(0, join_path(OUR_SDK_PATH, 'lib', 'yaml', 'lib'))
 sys.path.insert(0, join_path(OUR_SDK_PATH, 'lib', 'webob'))
-sys.path.insert(0, join_path(MAIN_ROOT, 'appengine'))
 
 from google.appengine.api import apiproxy_stub_map
 from google.appengine.tools.appengine_rpc import HttpRpcServer
@@ -30,9 +27,7 @@ from google.appengine.ext.remote_api.remote_api_stub import (
     GetSourceName, GetUserAgent, RemoteDatastoreStub, RemoteStub
     )
 
-from ampify.core.config import REMOTE_TOKEN
-from ampify.core import model
-from ampify.util.crypto import create_tamper_proof_string
+from pyutil.crypto import create_tamper_proof_string
 
 # ------------------------------------------------------------------------------
 # some konstants
@@ -65,10 +60,19 @@ class NonAuthHttpRpcServer(HttpRpcServer):
 # ------------------------------------------------------------------------------
 
 def main(
-    argv=None, app_id=APP_ID, dev_host=DEV_HOST, secure=False, key=REMOTE_TOKEN
+    argv=None, app_id=APP_ID, dev_host=DEV_HOST, secure=False, key=None
     ):
 
     argv = argv or sys.argv[1:]
+
+    if len(argv) < 1:
+        print __doc__
+        sys.exit(1)
+
+    if not key:
+        app_root = abspath(argv.pop(0))
+        sys.path.insert(0, app_root)
+        from config import REMOTE_TOKEN as key
 
     if not argv:
         host = dev_host
@@ -101,8 +105,7 @@ def main(
         apiproxy_stub_map.apiproxy.RegisterStub(service, stub)
 
     code.interact(
-        'Ampify [App Engine] Interactive Console [%s]' % host, None,
-        {'db': db, 'model': model}
+        '[App Engine] Interactive Console [%s]' % host, None, {'db': db}
         )
 
 # ------------------------------------------------------------------------------
