@@ -1,4 +1,4 @@
-from ampify.util.paypalx import AdaptivePayment, PayRequest
+from pyutil.paypalx import AdaptivePayment, PayRequest
 from ampify.core.config import (
     PPX_API_USERNAME, PPX_API_PASSWORD, 
     PPX_API_SIGNATURE, PPX_APP_ID
@@ -17,5 +17,5 @@ pay_request_kwargs = {
 }
 payreq = PayRequest(**pay_request_kwargs)
 payreqmsg = payreq.get_message()
-pp_response = adaptpay.call("PAY", payreqmsg)
+#pp_response = adaptpay.call("PAY", payreqmsg)
 
