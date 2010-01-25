@@ -43,8 +43,8 @@ class CommandNotFound(Exception):
 
 def run_command(
     args, retcode=False, reterror=False, exit_on_error=False, error_message="",
-    log=None, stdout=True, stderr=True, shell=sys.platform.startswith('win'),
-    cwd=None, env=None, universal_newlines=True
+    log=None, redirect_stdout=True, redirect_stderr=True, cwd=None,
+    shell=sys.platform.startswith('win'), env=None, universal_newlines=True
     ):
     """Execute the command with the given options."""
 
@@ -55,12 +55,12 @@ def run_command(
         else:
             sys.stderr.write("Running command: " + log_message + '\n')
 
-    if stdout:
+    if redirect_stdout:
         stdout = subprocess.PIPE
     else:
         stdout = None
 
-    if stderr:
+    if redirect_stderr:
         stderr = subprocess.PIPE
     else:
         stderr = None
