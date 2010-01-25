@@ -1,7 +1,7 @@
 #! /usr/bin/env python
 
-# Changes to this file authored by The Ampify Authors are according to the
-# Public Domain style license that can be found in the LICENSE file.
+# Changes to this file by The Ampify Authors are according to the
+# Public Domain license that can be found in the root LICENSE file.
 
 # This file was adapted from depot_tools/watchlists.py in the Chromium
 # repository and has the following License:

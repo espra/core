@@ -1,7 +1,7 @@
 #! /usr/bin/env python
 
-# Changes to this file authored by The Ampify Authors are according to the
-# Public Domain style license that can be found in the LICENSE file.
+# Changes to this file by The Ampify Authors are according to the
+# Public Domain license that can be found in the root LICENSE file.
 
 # This file was adapted from git-cl by Evan Martin and git_cl_hook.py in the
 # Chromium depot_tools repository and has the following License:
@@ -36,48 +36,106 @@
 
 """git-review -- a git-command for integrating codereview."""
 
-import getpass
-import optparse
 import os
 import re
 import subprocess
 import sys
-import tempfile
-import textwrap
-import urllib2
 
-from upload import EncodeMultipartFormData, ErrorExit, RealMain, HttpRpcServer
+from getpass import getpass
+from optparse import OptionParser
+from tempfile import mkstemp
+from textwrap import TextWrapper
+from urllib2 import urlopen
 
-DEFAULT_SERVER = 'codereview.appspot.com'
-PREPUSH_HOOK = '.git/hooks/pre-cl-push'
-PREUPLOAD_HOOK = '.git/hooks/pre-cl-upload'
+from upload import EncodeMultipartFormData, RealMain, HttpRpcServer
 
-def RunGit(args, **kwargs):
-  cmd = ['git'] + args
-  return RunCommand(cmd, **kwargs)
+from pyutil.env import exit, run_command
+from pyutil.scm import is_git, SCMConfig
+
+# ------------------------------------------------------------------------------
+# some konstants
+# ------------------------------------------------------------------------------
+
+ERROR_MESSAGE = 'You must configure %s by running "git review init".'
+
+SCM = SCMConfig()
+
+# ------------------------------------------------------------------------------
+# konfig related utility funktions
+# ------------------------------------------------------------------------------
+
+def GetConfigValue(name, title, exit_if_not_set=True):
+  value = SCM.get('codereview.%s' % name)
+  if exit_if_not_set and not value:
+    exit(ERROR_MESSAGE % title)
+  return value
+
+def GetServer(exit=True):
+  """Return the codereview server config value."""
+  return GetConfigValue('server', "the Codereview Server", exit)
 
 
+def GetTreeStatusUrl(exit=False):
+  """Return the codereview tree status url config value."""
+  return GetConfigValue('tree-status-url', "the Tree Status URL", exit)
 
-settings = Settings()
+
+def GetCCList(exit=False):
+  """Return the codereview cc list config value."""
+  cc = GetConfigValue('cc', "the CC List", exit)
+  more_cc = GetConfigValue('extracc', "the Extra CC List", False)
+  if more_cc:
+    if cc:
+      cc += ',' + more_cc
+    else:
+      cc = more_cc
+  return cc
+
+# ------------------------------------------------------------------------------
+# other utility funktions
+# ------------------------------------------------------------------------------
+
+def RunGit(*args, **kwargs):
+  """Run the given Git command arguments and return the output."""
+  args = ['git'] + list(args)
+  kwargs.setdefault('redirect_stderr', False)
+  return run_command(args, **kwargs).strip()
 
 
-def IssueURL(issue):
+def GetIssueURL(issue):
   """Get the URL for a particular issue."""
-  return 'http://%s/%s' % (settings.GetServer(), issue)
+  return 'http://%s/%s' % (GetServer(), issue)
 
 
-def ShortBranchName(branch):
-  """Convert a name like 'refs/heads/foo' to just 'foo'."""
+def GetShortBranchName(branch):
+  """Convert a branch name like 'refs/heads/foo' to just 'foo'."""
   return branch.replace('refs/heads/', '')
 
 
-class Changelist(object):
+def GetUserCredentials():
+  """Return the user credentials as acquired from the user."""
+  email = raw_input('Email: ').strip()
+  password = getpass('Password for %s: ' % email)
+  return email, password
+
+def GetUserPasswordFunction(email):
+  def _GetUserCredentials():
+    password = getpass('Password for %s: ' % email)
+    return email, password
+  return _GetUserCredentials
+
+# ------------------------------------------------------------------------------
+# kore changelist klass
+# ------------------------------------------------------------------------------
+
+class ChangeList(object):
+
   def __init__(self, branchref=None):
     # Poke settings so we get the "configure your server" message if necessary.
-    settings.GetServer()
+    GetServer()
     self.branchref = branchref
     if self.branchref:
-      self.branch = ShortBranchName(self.branchref)
+      self.branch = GetShortBranchName(self.branchref)
     else:
       self.branch = None
     self.upstream_branch = None
@@ -87,38 +145,39 @@ class Changelist(object):
     self.description = None
 
   def GetBranch(self):
-    """Returns the short branch name, e.g. 'master'."""
+    """Return the short branch name, e.g. 'master'."""
     if not self.branch:
-      self.branchref = RunGit(['symbolic-ref', 'HEAD']).strip()
-      self.branch = ShortBranchName(self.branchref)
+      self.branchref = RunGit('symbolic-ref', 'HEAD')
+      self.branch = GetShortBranchName(self.branchref)
     return self.branch
+
   def GetBranchRef(self):
     """Returns the full branch name, e.g. 'refs/heads/master'."""
     self.GetBranch()  # Poke the lazy loader.
     return self.branchref
 
   def FetchUpstreamTuple(self):
-    """Returns a tuple containg remote and remote ref,
-       e.g. 'origin', 'refs/heads/master'
+    """
+    Return a tuple containing the remote and remote ref, e.g.
+    ('origin', 'refs/heads/master')
+
     """
     remote = '.'
     branch = self.GetBranch()
-    upstream_branch = RunGit(['config', 'branch.%s.merge' % branch],
-                             error_ok=True).strip()
+    upstream_branch = RunGit('config', 'branch.%s.merge' % branch)
     if upstream_branch:
-      remote = RunGit(['config', 'branch.%s.remote' % branch]).strip()
+      remote = RunGit('config', 'branch.%s.remote' % branch)
     else:
       # Fall back on origin/master if it exits.
-      if RunGit(['branch', '-r']).split().count('origin/master'):
+      if RunGit('branch', '-r').split().count('origin/master'):
         remote = 'origin'
         upstream_branch = 'refs/heads/master'
       else:
-        ErrorExit("""Unable to determine default branch to diff against.
+        exit("""Unable to determine default branch to diff against.
 Either pass complete "git diff"-style arguments, like
   git review submit origin/master
 or verify this branch is set up to track another (via the --track argument to
 "git checkout -b ...").""")
-
     return remote, upstream_branch
 
   def GetUpstreamBranch(self):
@@ -128,10 +187,10 @@ or verify this branch is set up to track another (via the --track argument to
         upstream_branch = upstream_branch.replace('heads', 'remotes/' + remote)
       self.upstream_branch = upstream_branch
     return self.upstream_branch
-
+  # @@
   def GetIssue(self):
     if not self.has_issue:
-      issue = RunGit(['config', self._IssueSetting()], error_ok=True).strip()
+      issue = RunGit('config', self._IssueSetting())
       if issue:
         self.issue = issue
       else:
@@ -146,18 +205,17 @@ or verify this branch is set up to track another (via the --track argument to
     if not self.has_description:
       if self.GetIssue():
         url = self.GetIssueURL() + '/description'
-        self.description = urllib2.urlopen(url).read().strip()
+        self.description = urlopen(url).read().strip()
       self.has_description = True
     if pretty:
-      wrapper = textwrap.TextWrapper()
+      wrapper = TextWrapper()
       wrapper.initial_indent = wrapper.subsequent_indent = '  '
       return wrapper.fill(self.description)
     return self.description
 
   def GetPatchset(self):
     if not self.has_patchset:
-      patchset = RunGit(['config', self._PatchsetSetting()],
-                        error_ok=True).strip()
+      patchset = RunGit('config', self._PatchsetSetting())
       if patchset:
         self.patchset = patchset
       else:
@@ -168,30 +226,25 @@ or verify this branch is set up to track another (via the --track argument to
   def SetPatchset(self, patchset):
     """Set this branch's patchset.  If patchset=0, clears the patchset."""
     if patchset:
-      RunGit(['config', self._PatchsetSetting(), str(patchset)])
+      RunGit('config', self._PatchsetSetting(), str(patchset))
     else:
-      RunGit(['config', '--unset', self._PatchsetSetting()])
+      RunGit('config', '--unset', self._PatchsetSetting())
     self.has_patchset = False
 
   def SetIssue(self, issue):
     """Set this branch's issue.  If issue=0, clears the issue."""
     if issue:
-      RunGit(['config', self._IssueSetting(), str(issue)])
+      RunGit('config', self._IssueSetting(), str(issue))
     else:
-      RunGit(['config', '--unset', self._IssueSetting()])
+      RunGit('config', '--unset', self._IssueSetting())
       self.SetPatchset(0)
     self.has_issue = False
 
   def CloseIssue(self):
-    def GetUserCredentials():
-      email = raw_input('Email: ').strip()
-      password = getpass.getpass('Password for %s: ' % email)
-      return email, password
-
-    rpc_server = HttpRpcServer(settings.GetServer(),
-                                      GetUserCredentials,
-                                      host_override=settings.GetServer(),
-                                      save_cookies=True)
+    rpc_server = HttpRpcServer(GetServer(),
+                               GetUserCredentials,
+                               host_override=GetServer(),
+                               save_cookies=True)
     # You cannot close an issue with a GET.
     # We pass an empty string for the data so it is a POST rather than a GET.
     data = [("description", self.description),]
@@ -206,131 +259,113 @@ or verify this branch is set up to track another (via the --track argument to
     """Return the git setting that stores this change's most recent patchset."""
     return 'branch.%s.codereviewpatchset' % self.GetBranch()
 
+# ------------------------------------------------------------------------------
+# git review init
+# ------------------------------------------------------------------------------
 
-def GetCodereviewSettingsInteractively():
-  """Prompt the user for settings."""
-  server = settings.GetServer(error_ok=True)
-  prompt = 'Codereview server (host[:port])'
-  prompt += ' [%s]' % (server or DEFAULT_SERVER)
-  newserver = raw_input(prompt + ': ')
-  if not server and not newserver:
-    newserver = DEFAULT_SERVER
-  if newserver and newserver != server:
-    RunGit(['config', 'codereview.server', newserver])
-
-  def SetProperty(initial, caption, name):
-    prompt = caption
-    if initial:
-      prompt += ' ("x" to clear) [%s]' % initial
-    new_val = raw_input(prompt + ': ')
-    if new_val == 'x':
-      RunGit(['config', '--unset-all', 'codereview.' + name], error_ok=True)
-    elif new_val and new_val != initial:
-      RunGit(['config', 'codereview.' + name, new_val])
-
-  SetProperty(settings.GetCCList(), 'CC list', 'cc')
-  SetProperty(settings.GetTreeStatusUrl(error_ok=True), 'Tree status URL',
-              'tree-status-url')
-  SetProperty(settings.GetViewVCUrl(), 'ViewVC URL', 'viewvc-url')
-
-  # TODO: configure a default branch to diff against, rather than this
-  # svn-based hackery.
+def CmdInit(args):
+  parser = OptionParser(usage='git review init [options]')
+  parser.add_option(
+    '-f', '--force', action='store_true',
+    help='overwrite any pre-existing config values'
+    )
+  parser.add_option(
+    '-c', '--clean', action='store_true',
+    help='remove all pre-existing config values'
+    )
+  options, args = parser.parse_args(args)
+  if options.clean:
+    SCM.delete('codereview', section=True)
+    return
+  config_file = open(os.path.join(SCM.root, '.codereview.cfg'), 'rb')
+  UpdateCodereviewSettings(config_file, options.force)
 
 
-def LoadCodereviewSettingsFromFile(file):
-  """Parse a codereview.cfg file."""
+def UpdateCodereviewSettings(file, force=False):
+  """Update .git/config from settings in the .codereview.cfg file."""
+
   settings = {}
+  first_time_error = " [to override, use: git review init --force]"
+
+  def NormaliseOptionName(name):
+    return name.lower().replace('_', '-')
+
   for line in file.read().splitlines():
     if not line or line.startswith("#"):
       continue
-    k, v = line.split(": ", 1)
-    settings[k] = v
-
-  def GetProperty(name):
-    return settings.get(name)
-
-  def SetProperty(name, setting, unset_error_ok=False):
-    fullname = 'codereview.' + name
-    if setting in settings:
-      RunGit(['config', fullname, settings[setting]])
+    key, value = map(str.strip, line.split(": ", 1))
+    key = 'codereview.%s' % NormaliseOptionName(key)
+    if force:
+      SCM.set(key, value)
     else:
-      RunGit(['config', '--unset-all', fullname], error_ok=unset_error_ok)
+      if not SCM.get(key):
+        SCM.set(key, value)
+      else:
+        print "Already set: %s%s" % (key, first_time_error)
+        first_time_error = ''
 
-  SetProperty('server', 'server')
-  # Only server is required. Other settings can be absent. In that case, we
-  # ignore errors raised during option deletion attempt.
-  SetProperty('cc', 'cc', unset_error_ok=True)
-  SetProperty('tree-status-url', 'tree_status_url', unset_error_ok=True)
-  SetProperty('viewvc-url', 'viev_vc', unset_error_ok=True)
+  user_config_url = SCM.get('codereview.user-config-url')
+  if not user_config_url:
+    exit("Couldn't find the 'user-config-url' setting to download from.")
 
-  for key, filename in (('pre_push_hook', PREPUSH_HOOK),
-                        ('pre_upload_hook', PREUPLOAD_HOOK)):
-    value = GetProperty(key)
-    if not value:
-      continue
-    DownloadToFile(value, filename)
+  user_config_server = user_config_url.split('://', 1)[1].split('/')[0]
+  email = SCM.get('codereview.email')
 
+  if not email:
+    while not email:
+      email = raw_input(
+        "What's your email username for %s ? " % user_config_server
+        ).strip()
+    SCM.set('codereview.email', email)
 
-def DownloadToFile(url, filename):
-  if url.startswith('http://') or url.startswith('https://'):
-    download = True
-  else:
-    download = False
-  filename = os.path.join(settings.GetRoot(), filename)
-  if os.path.exists(filename):
-    print '%s exists, skipping' % filename
-    return False
-  if download:
-    contents = urllib2.urlopen(url).read()
-  else:
-    source_file = open(url, 'rb')
-    contents = source_file.read()
-    source_file.close()
-  file = open(filename, 'wb')
-  file.write(contents)
-  file.close()
-  os.chmod(filename, 0755)
-  return True
+  if not SCM.get('codereview.key'):
+    print "Downloading user settings from: %s" % user_config_url
+    rpc_server = HttpRpcServer(
+      user_config_server, GetUserPasswordFunction(email),
+      host_override=user_config_server, save_cookies=True
+      )
+    rpc_server._Authenticate()
+    request = rpc_server._CreateRequest(user_config_url)
+    user_config_stream = rpc_server.opener.open(request)
+    user_config = user_config_stream.read()
+    user_config_stream.close()
+    print repr(user_config)
+    for line in user_config.splitlines():
+      if not line or line.startswith("#"):
+        continue
+      key, value = map(str.strip, line.split(": ", 1))
+      key = 'codereview.%s' % NormaliseOptionName(key)
+      if force:
+        SCM.set(key, value)
+      else:
+        if not SCM.get(key):
+          SCM.set(key, value)
+        else:
+          print "Already set: %s%s" % (key, first_time_error)
+          first_time_error = ''
 
-
-def CmdConfig(args):
-  parser = optparse.OptionParser(
-      usage='git cl config [http://url/to/your/codereview.cfg]')
-  (options, args) = parser.parse_args(args)
-  if len(args) == 0:
-    GetCodereviewSettingsInteractively()
-    return
-
-  url = args[0]
-  if not url.endswith('codereview.cfg'):
-    url = os.path.join(url, 'codereview.cfg')
-
-  # Load Codereview settings and download hooks (if available).
-  LoadCodereviewSettingsFromFile(urllib2.urlopen(url))
-
-
-def CmdInit(args):
-  cfg = open(os.path.join(settings.GetRoot(), '.codereview.cfg'), 'rb')
-  LoadCodereviewSettingsFromFile(cfg)
-
+# ------------------------------------------------------------------------------
+# git review status
+# ------------------------------------------------------------------------------
 
 def CmdStatus(args):
-  parser = optparse.OptionParser(usage='git cl status [options]')
+
+  parser = OptionParser(usage='git review status [options]')
   parser.add_option('--field', help='print only specific field (desc|id|url)')
-  (options, args) = parser.parse_args(args)
+  options, args = parser.parse_args(args)
 
   # TODO: maybe make show_branches a flag if necessary.
   show_branches = not options.field
 
   if show_branches:
-    branches = RunGit(['for-each-ref', '--format=%(refname)', 'refs/heads'])
+    branches = RunGit('for-each-ref', '--format=%(refname)', 'refs/heads')
     if branches:
       print 'Branches associated with reviews:'
       for branch in sorted(branches.splitlines()):
-        cl = Changelist(branchref=branch)
+        cl = ChangeList(branchref=branch)
         print "  %10s: %s" % (cl.GetBranch(), cl.GetIssue())
 
-  cl = Changelist()
+  cl = ChangeList()
   if options.field:
     if options.field.startswith('desc'):
       print cl.GetDescription()
@@ -351,12 +386,12 @@ def CmdStatus(args):
 
 
 def CmdIssue(args):
-  parser = optparse.OptionParser(usage='git cl issue [issue_number]')
+  parser = OptionParser(usage='git review issue [issue_number]')
   parser.description = ('Set or display the current code review issue. ' +
                         'Pass issue number 0 to clear the current issue.')
-  (options, args) = parser.parse_args(args)
+  options, args = parser.parse_args(args)
 
-  cl = Changelist()
+  cl = ChangeList()
   if len(args) > 0:
     cl.SetIssue(int(args[0]))
   print 'Issue number:', cl.GetIssue(), '(%s)' % cl.GetIssueURL()
@@ -366,7 +401,7 @@ def UserEditedLog(starting_text):
   """Given some starting text, let the user edit it and return the result."""
   editor = os.getenv('EDITOR', 'vi')
 
-  (file_handle, filename) = tempfile.mkstemp()
+  file_handle, filename = mkstemp()
   file = os.fdopen(file_handle, 'w')
   file.write(starting_text)
   file.close()
@@ -387,11 +422,11 @@ def UserEditedLog(starting_text):
 def RunHook(hook, upstream_branch=None, error_ok=False):
   """Run a given hook if it exists.  By default, we fail on errors."""
   # upstream_branch used to default to 'origin'
-  hook = '%s/%s' % (settings.GetRoot(), hook)
+  hook = '%s/%s' % (SCM.root, hook)
   if not os.path.exists(hook):
     return
   if not upstream_branch:
-    upstream_branch = Changelist().GetUpstreamBranch()
+    upstream_branch = ChangeList().GetUpstreamBranch()
   output = RunCommand([hook, upstream_branch], error_ok).strip()
   if output != '':
     print output
@@ -399,20 +434,20 @@ def RunHook(hook, upstream_branch=None, error_ok=False):
 
 def CmdPresubmit(args):
   """Reports what presubmit checks on the change would report."""
-  parser = optparse.OptionParser(
-      usage='git cl presubmit [options]')
+  parser = OptionParser(
+      usage='git review [options]')
   parser.add_option('--push-only', action='store_true', dest='push_only',
                     help='only run the push presubmit hook')
-  parser.add_option('--upload-only', action='store_true', dest='upload_only',
+  parser.add_option('--submit-only', action='store_true', dest='upload_only',
                     help='only run the upload presubmit hook')
-  (options, args) = parser.parse_args(args)
+  options, args = parser.parse_args(args)
 
-  if RunGit(['diff-index', 'HEAD']):
-    print 'Cannot presubmit with a dirty tree.  You must commit locally first.'
+  if RunGit('diff-index', 'HEAD'):
+    print 'Cannot review with a dirty tree. You must commit locally first.'
     return 1
 
   if not options.push_only:
-    print '*** Presubmit checks for UPLOAD would report: ***'
+    print '*** Presubmit checks for SUBMIT would report: ***'
     RunHook(PREUPLOAD_HOOK, error_ok=True)
 
   if not options.upload_only:
@@ -420,9 +455,9 @@ def CmdPresubmit(args):
     RunHook(PREPUSH_HOOK, error_ok=True)
 
 
-def CmdUpload(args):
-  parser = optparse.OptionParser(
-      usage='git cl upload [options] [args to "git diff"]')
+def CmdSubmit(args):
+  parser = OptionParser(
+      usage='git review submit [options] [args to "git diff"]')
   parser.add_option('--bypass-hooks', action='store_true', dest='bypass_hooks',
                     help='bypass upload presubmit hook')
   parser.add_option('-m', dest='message', help='message for patch')
@@ -430,13 +465,13 @@ def CmdUpload(args):
                     help='reviewer email addresses')
   parser.add_option('--send-mail', action='store_true',
                     help='send email to reviewer immediately')
-  (options, args) = parser.parse_args(args)
+  options, args = parser.parse_args(args)
 
-  if RunGit(['diff-index', 'HEAD']):
+  if RunGit('diff-index', 'HEAD'):
     print 'Cannot upload with a dirty tree.  You must commit locally first.'
     return 1
 
-  cl = Changelist()
+  cl = ChangeList()
   if args:
     base_branch = args[0]
   else:
@@ -456,15 +491,15 @@ def CmdUpload(args):
                   env=env)
 
   upload_args = ['--assume_yes']  # Don't ask about untracked files.
-  upload_args.extend(['--server', settings.GetServer()])
+  upload_args.extend(['--server', GetServer()])
   if options.reviewers:
     upload_args.extend(['--reviewers', options.reviewers])
-  upload_args.extend(['--cc', settings.GetCCList()])
+  upload_args.extend(['--cc', GetCCList()])
   if options.message:
     upload_args.extend(['--message', options.message])
   if options.send_mail:
     if not options.reviewers:
-      ErrorExit("Must specify reviewers to send email.")
+      exit("Must specify reviewers to send email.")
     upload_args.append('--send_mail')
   if cl.GetIssue():
     upload_args.extend(['--issue', cl.GetIssue()])
@@ -482,7 +517,7 @@ def CmdUpload(args):
       log_args = [args[0] + '..' + args[1]]
     else:
       log_args = args[:]  # Hope for the best!
-    desc = RunGit(['log', '--pretty=format:%s\n\n%b'] + log_args)
+    desc = RunGit('log', '--pretty=format:%s\n\n%b', *log_args)
     initial_text = """# Enter a description of the change.
 # This will displayed on the codereview site.
 # The first line will also be used as the subject of the review."""
@@ -506,8 +541,8 @@ def CmdPush(args, cmd='push'):
   Pushes the code upstream.
   Updates review and closes.
   """
-  parser = optparse.OptionParser(
-      usage='git cl %s [options] [upstream branch to apply against]' % cmd)
+  parser = OptionParser(
+      usage='git review %s [options] [upstream branch to apply against]' % cmd)
   parser.add_option('--bypass-hooks', action='store_true', dest='bypass_hooks',
                     help='bypass upload presubmit hook')
   parser.add_option('-m', dest='message',
@@ -520,9 +555,9 @@ def CmdPush(args, cmd='push'):
   parser.add_option('--tbr', action='store_true', dest='tbr',
                     help="short for 'to be reviewed', commit branch " +
                          "even without uploading for review")
-  (options, args) = parser.parse_args(args)
+  options, args = parser.parse_args(args)
 
-  cl = Changelist()
+  cl = ChangeList()
 
   if not args or cmd == 'push':
     # Default to merging against our best guess of the upstream branch.
@@ -530,14 +565,14 @@ def CmdPush(args, cmd='push'):
 
   base_branch = args[0]
 
-  if RunGit(['diff-index', 'HEAD']):
+  if RunGit('diff-index', 'HEAD'):
     print 'Cannot %s with a dirty tree.  You must commit locally first.' % cmd
     return 1
 
   # This rev-list syntax means "show all commits not in my branch that
   # are in base_branch".
-  upstream_commits = RunGit(['rev-list', '^' + cl.GetBranchRef(),
-                             base_branch]).splitlines()
+  upstream_commits = RunGit('rev-list', '^' + cl.GetBranchRef(),
+                            base_branch).splitlines()
   if upstream_commits:
     print ('Base branch "%s" has %d commits '
            'not in this branch.' % (base_branch, len(upstream_commits)))
@@ -551,11 +586,11 @@ def CmdPush(args, cmd='push'):
     status = GetTreeStatus()
     if 'closed' == status:
       print ('The tree is closed.  Please wait for it to reopen. Use '
-             '"git cl dcommit -f" to commit on a closed tree.')
+             '"git review push -f" to commit on a closed tree.')
       return 1
     elif 'unknown' == status:
       print ('Unable to determine tree status.  Please verify manually and '
-             'use "git cl dcommit -f" to commit on a closed tree.')
+             'use "git review push -f" to commit on a closed tree.')
 
   description = options.message or ''
   description_set = not not description
@@ -606,14 +641,15 @@ def CmdPush(args, cmd='push'):
   # pushting that.
   MERGE_BRANCH = 'git-cl-commit'
   # Delete the merge branch if it already exists.
-  if RunGit(['show-ref', '--quiet', '--verify', 'refs/heads/' + MERGE_BRANCH],
-            exit_code=True) == 0:
-    RunGit(['branch', '-D', MERGE_BRANCH])
+  if RunGit(
+    'show-ref', '--quiet', '--verify', 'refs/heads/' + MERGE_BRANCH,
+    retcode=True)[1] == 0:
+    RunGit('branch', '-D', MERGE_BRANCH)
 
   # We might be in a directory that's present in this branch but not in the
   # trunk.  Move up to the top of the tree so that git commands that expect a
   # valid CWD won't fail after we check out the merge branch.
-  rel_base_path = RunGit(['rev-parse', '--show-cdup']).strip()
+  rel_base_path = RunGit('rev-parse', '--show-cdup')
   if rel_base_path:
     os.chdir(rel_base_path)
 
@@ -621,17 +657,17 @@ def CmdPush(args, cmd='push'):
   # We wrap in a try...finally block so if anything goes wrong,
   # we clean up the branches.
   try:
-    RunGit(['checkout', '-q', '-b', MERGE_BRANCH, base_branch])
-    RunGit(['merge', '--squash', cl.GetBranchRef()])
-    RunGit(['commit', '-m', description])
+    RunGit('checkout', '-q', '-b', MERGE_BRANCH, base_branch)
+    RunGit('merge', '--squash', cl.GetBranchRef())
+    RunGit('commit', '-m', description)
     if cmd == 'push':
       # push the merge branch.
       remote, branch = cl.FetchUpstreamTuple()
-      output = RunGit(['push', remote, 'HEAD:%s' % branch], exit_code=True)
+      output = RunGit('push', remote, 'HEAD:%s' % branch, retcode=True)[1]
   finally:
     # And then swap back to the original branch and clean up.
-    RunGit(['checkout', '-q', cl.GetBranch()])
-    RunGit(['branch', '-D', MERGE_BRANCH])
+    RunGit('checkout', '-q', cl.GetBranch())
+    RunGit('branch', '-D', MERGE_BRANCH)
 
   if cl.has_issue:
     if output == 0:
@@ -646,7 +682,7 @@ def CmdPush(args, cmd='push'):
 
 
 def CmdPatch(args):
-  parser = optparse.OptionParser(usage=('git cl patch [options] '
+  parser = OptionParser(usage=('git review patch [options] '
                                         '<patch url or issue id>'))
   parser.add_option('-b', dest='newbranch',
                     help='create a new branch off trunk for the patch')
@@ -656,7 +692,7 @@ def CmdPatch(args):
                     help='allow failed patches and spew .rej files')
   parser.add_option('-n', '--no-commit', action='store_true', dest='nocommit',
                     help="don't commit after patch applies")
-  (options, args) = parser.parse_args(args)
+  options, args = parser.parse_args(args)
   if len(args) != 1:
     return parser.print_help()
   input = args[0]
@@ -664,12 +700,12 @@ def CmdPatch(args):
   if re.match(r'\d+', input):
     # Input is an issue id.  Figure out the URL.
     issue = input
-    fetch = "curl --silent http://%s/%s" % (settings.GetServer(), issue)
+    fetch = "curl --silent http://%s/%s" % (GetServer(), issue)
     grep = "grep -E -o '/download/issue[0-9]+_[0-9]+.diff'"
     pipe = subprocess.Popen("%s | %s" % (fetch, grep), shell=True,
                             stdout=subprocess.PIPE)
     path = pipe.stdout.read().strip()
-    url = 'http://%s%s' % (settings.GetServer(), path)
+    url = 'http://%s%s' % (GetServer(), path)
   else:
     # Assume it's a URL to the patch.
     match = re.match(r'http://.*?/issue(\d+)_\d+.diff', input)
@@ -682,12 +718,12 @@ def CmdPatch(args):
 
   if options.newbranch:
     if options.force:
-      RunGit(['branch', '-D', options.newbranch], error_ok=True)
-    RunGit(['checkout', '-b', options.newbranch])
+      RunGit('branch', '-D', options.newbranch)
+    RunGit('checkout', '-b', options.newbranch)
 
   # Switch up to the top-level directory, if necessary, in preparation for
   # applying the patch.
-  top = RunGit(['rev-parse', '--show-cdup']).strip()
+  top = RunGit('rev-parse', '--show-cdup')
   if top:
     os.chdir(top)
 
@@ -710,98 +746,91 @@ def CmdPatch(args):
 
   # If we had an issue, commit the current state and register the issue.
   if not options.nocommit:
-    RunGit(['commit', '-m', 'patch from issue %s' % issue])
-    cl = Changelist()
+    RunGit('commit', '-m', 'patch from issue %s' % issue)
+    cl = ChangeList()
     cl.SetIssue(issue)
     print "Committed patch."
   else:
     print "Patch applied to index."
 
-def GetTreeStatus():
-  """Fetches the tree status and returns either 'open', 'closed',
-  'unknown' or 'unset'."""
-  url = settings.GetTreeStatusUrl(error_ok=True)
+
+def GetTreeStatus(exit_if_not_set=False):
+  """
+  Fetches the tree status and returns one of:
+  'open', 'closed', 'unknown' or 'unset'
+
+  """
+  url = GetTreeStatusUrl(exit_if_not_set)
   if url:
-    status = urllib2.urlopen(url).read().lower()
+    status = urlopen(url).read().lower()
     if status.find('closed') != -1 or status == '0':
       return 'closed'
     elif status.find('open') != -1 or status == '1':
       return 'open'
     return 'unknown'
-
   return 'unset'
 
-def CmdTreeStatus(args):
-  status = GetTreeStatus()
-  if 'unset' == status:
-    print 'You must configure your tree status URL by running "git cl init" or "git cl config".'
-    return 2
 
-  print "The tree is %s" % status
+def CmdTree(args):
+  status = GetTreeStatus(True)
+  print status
   if status != 'open':
     return 1
   return 0
 
+
 def CmdUpstream(args):
-  cl = Changelist()
+  cl = ChangeList()
   print cl.GetUpstreamBranch()
 
+
 COMMANDS = [
-  ('config',  'edit configuration for this tree',            CmdConfig),
-  ('init',    'setup config from $repo_root/.codereview.cfg',CmdInit),
-  ('issue',   'show/set current branch\'s issue number',     CmdIssue),
-  ('patch',   'patch in a code review',                      CmdPatch),
-  ('presubmit', 'run presubmit tests on the current changelist', CmdPresubmit),
-  ('push',    'commit the current changelist via git',       CmdPush),
-  ('status',  'show status of changelists',                  CmdStatus),
-  ('tree',    'show the status of the tree',                 CmdTreeStatus),
-  ('upload',  'upload the current changelist to codereview', CmdUpload),
-  ('upstream', 'print the name of the upstream branch, if any', CmdUpstream),
+  ('init',        "setup config from the root .codereview.cfg",     CmdInit),
+  ('issue',       "show/set current branch's issue number",         CmdIssue),
+  ('patch',       "patch in a code review",                         CmdPatch),
+  ('push',        "commit the current changelist via git",          CmdPush),
+  ('status',      "show the status of changelists",                 CmdStatus),
+  ('tree',        "show the status of the tree",                    CmdTree),
+  ('submit',      "submit the current changelist to codereview",    CmdSubmit),
+  ('upstream',    "show the name of the upstream branch, if any",   CmdUpstream),
 ]
 
-
-def Usage(name):
+def Usage(executable_filename):
+  name = os.path.split(executable_filename)[1]
   print 'usage: %s <command>' % name
   print 'commands are:'
   for name, desc, _ in COMMANDS:
-    print '  %-10s %s' % (name, desc)
+    print '  %-15s %s' % (name, desc)
   sys.exit(1)
 
 
 def main(argv):
+
   if len(argv) < 2:
-    Usage(argv[0])
+    return CmdReview()
 
   command = argv[1]
-  if command == '--root':
-    print os.path.dirname(os.path.realpath(__file__))
-    return 0
+  if command in ['help', '--help']:
+    Usage(argv[0])
+
   for name, _, func in COMMANDS:
     if name == command:
       return func(argv[2:])
-  print 'unknown command: %s' % command
-  Usage(argv[0])
 
+  return CmdReview(argv[2:])
+
+def CmdReview(args=None):
+  pass
 
 if __name__ == '__main__':
   sys.exit(main(sys.argv))
-
-
-# ------------------------------------------------------------------------------
-# extend sys.path dynamically
-# ------------------------------------------------------------------------------
-
-sys.path.insert(0, RunCommand(['git', 'cl', '--root']).strip())
 
 # ------------------------------------------------------------------------------
 # local imports
 # ------------------------------------------------------------------------------
 
-import presubmit_support
-import scm
-import watchlists
-
-from git_cl import Changelist
+import review
+import watchlist
 
 
 def Backquote(cmd, cwd=None):
@@ -835,7 +864,7 @@ class ChangeOptions:
     if issue == 'None':
       issue = ''
     try:
-      description = Changelist().GetDescription() or m.group(2)
+      description = ChangeList().GetDescription() or m.group(2)
     except ValueError:
       description = m.group(2)
     patchset = None
@@ -870,7 +899,7 @@ def RunHooks(hook_name, upstream_branch):
     sys.exit(1)
 
 
-if __name__ == '__main__':
+if __name__ == '__mains__':
   program_name = os.path.basename(sys.argv[0])
   if len(sys.argv) != 2:
     print "Usage: %s [upstream branch]" % program_name

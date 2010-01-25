@@ -1,5 +1,11 @@
 #! /usr/bin/env python
 
+# Changes to this file by The Ampify Authors are according to the
+# Public Domain license that can be found in the root LICENSE file.
+
+# This file was adapted from depot_tools/presubmit_support.py in the Chromium
+# repository and has the following License:
+
 # Copyright (c) 2006-2009 The Chromium Authors. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -28,14 +34,13 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-"""Enables directory-specific presubmit checks to run at upload and/or commit.
-"""
+"""Enables directory-specific review scripts within in a code repository."""
 
 __version__ = '1.3.4'
 
 # TODO(joi) Add caching where appropriate/needed. The API is designed to allow
-# caching (between all different invocations of presubmit scripts for a given
-# change). We should add it as our presubmit scripts start feeling slow.
+# caching (between all different invocations of review scripts for a given
+# change). We should add it as our review scripts start feeling slow.
 
 import cPickle  # Exposed through the API.
 import cStringIO  # Exposed through the API.
@@ -60,9 +65,10 @@ import urllib2  # Exposed through the API.
 import warnings
 
 # Local imports.
-import utils
-import presubmit_canned_checks
-import scm
+import reviewbuiltins
+
+from pyutil import scm
+from pyutil.env import read_file
 
 
 class NotImplementedException(Exception):
@@ -88,11 +94,11 @@ def PromptYesNo(input_stream, output_stream, prompt):
   return response == 'y' or response == 'yes'
 
 class OutputApi(object):
-  """This class (more like a module) gets passed to presubmit scripts so that
+  """This class (more like a module) gets passed to review scripts so that
   they can specify various types of results.
   """
 
-  class PresubmitResult(object):
+  class ReviewResult(object):
     """Base class for result objects."""
 
     def __init__(self, message, items=None, long_text=''):
@@ -133,41 +139,41 @@ class OutputApi(object):
 
     def IsFatal(self):
       """An error that is fatal stops g4 mail/submit immediately, i.e. before
-      other presubmit scripts are run.
+      other review scripts are run.
       """
       return False
 
     def ShouldPrompt(self):
-      """Whether this presubmit result should result in a prompt warning."""
+      """Whether this review result should result in a prompt warning."""
       return False
 
-  class PresubmitError(PresubmitResult):
-    """A hard presubmit error."""
+  class ReviewError(ReviewResult):
+    """A hard review error."""
     def IsFatal(self):
       return True
 
-  class PresubmitPromptWarning(PresubmitResult):
+  class ReviewPromptWarning(ReviewResult):
     """An warning that prompts the user if they want to continue."""
     def ShouldPrompt(self):
       return True
 
-  class PresubmitNotifyResult(PresubmitResult):
+  class ReviewNotifyResult(ReviewResult):
     """Just print something to the screen -- but it's not even a warning."""
     pass
 
-  class MailTextResult(PresubmitResult):
+  class MailTextResult(ReviewResult):
     """A warning that should be included in the review request email."""
     def __init__(self, *args, **kwargs):
       raise NotImplementedException()  # TODO(joi) Implement.
 
 
 class InputApi(object):
-  """An instance of this object is passed to presubmit scripts so they can
+  """An instance of this object is passed to review scripts so they can
   know stuff about the change they're looking at.
   """
 
   # File extensions that are considered source files from a style guide
-  # perspective. Don't modify this list from a presubmit script!
+  # perspective. Don't modify this list from a review script!
   DEFAULT_WHITE_LIST = (
       # C++ and friends
       r".*\.c", r".*\.cc", r".*\.cpp", r".*\.h", r".*\.m", r".*\.mm",
@@ -181,7 +187,7 @@ class InputApi(object):
   )
 
   # Path regexp that should be excluded from being considered containing source
-  # files. Don't modify this list from a presubmit script!
+  # files. Don't modify this list from a review script!
   DEFAULT_BLACK_LIST = (
       r".*\bexperimental[\\\/].*",
       r".*\bthird_party[\\\/].*",
@@ -197,21 +203,20 @@ class InputApi(object):
       r".*\.svn[\\\/].*",
   )
 
-  def __init__(self, change, presubmit_path, is_committing):
+  def __init__(self, change, review_path, is_committing):
     """Builds an InputApi object.
 
     Args:
-      change: A presubmit.Change object.
-      presubmit_path: The path to the presubmit script being processed.
+      change: A review.Change object.
+      review_path: The path to the review script being processed.
       is_committing: True if the change is about to be committed.
     """
-    # Version number of the presubmit_support script.
     self.version = [int(x) for x in __version__.split('.')]
     self.change = change
     self.is_committing = is_committing
 
     # We expose various modules and functions as attributes of the input_api
-    # so that presubmit scripts don't have to import them.
+    # so that review scripts don't have to import them.
     self.basename = os.path.basename
     self.cPickle = cPickle
     self.cStringIO = cStringIO
@@ -232,28 +237,28 @@ class InputApi(object):
     # InputApi.platform is the platform you're currently running on.
     self.platform = sys.platform
 
-    # The local path of the currently-being-processed presubmit script.
-    self._current_presubmit_path = os.path.dirname(presubmit_path)
+    # The local path of the currently-being-processed review script.
+    self._current_review_path = os.path.dirname(review_path)
 
-    # We carry the canned checks so presubmit scripts can easily use them.
-    self.canned_checks = presubmit_canned_checks
+    # We carry the builtin checks so review scripts can easily use them.
+    self.builtins = reviewbuiltins
 
-  def PresubmitLocalPath(self):
-    """Returns the local path of the presubmit script currently being run.
+  def ReviewLocalPath(self):
+    """Returns the local path of the review script currently being run.
 
     This is useful if you don't want to hard-code absolute paths in the
-    presubmit script.  For example, It can be used to find another file
-    relative to the PRESUBMIT.py script, so the whole tree can be branched and
-    the presubmit script still works, without editing its content.
+    review script.  For example, It can be used to find another file
+    relative to the review script, so the whole tree can be branched and
+    the review script still works, without editing its content.
     """
-    return self._current_presubmit_path
+    return self._current_review_path
 
   def AffectedFiles(self, include_dirs=False, include_deletes=True):
     """Same as input_api.change.AffectedFiles() except only lists files
-    (and optionally directories) in the same directory as the current presubmit
+    (and optionally directories) in the same directory as the current review
     script, or subdirectories thereof.
     """
-    dir_with_slash = normpath("%s/" % self.PresubmitLocalPath())
+    dir_with_slash = normpath("%s/" % self.ReviewLocalPath())
     if len(dir_with_slash) == 1:
       dir_with_slash = ''
     return filter(
@@ -274,7 +279,7 @@ class InputApi(object):
 
   def AffectedTextFiles(self, include_deletes=None):
     """Same as input_api.change.AffectedTextFiles() except only lists files
-    in the same directory as the current presubmit script, or subdirectories
+    in the same directory as the current review script, or subdirectories
     thereof.
     """
     if include_deletes is not None:
@@ -319,7 +324,7 @@ class InputApi(object):
     """An iterator over all text lines in "new" version of changed files.
 
     Only lists lines from new or modified text files in the change that are
-    contained by the directory of the currently executing presubmit script.
+    contained by the directory of the currently executing review script.
 
     This is useful for doing line-by-line regex checks, like checking for
     trailing whitespace.
@@ -344,7 +349,7 @@ class InputApi(object):
       file_item = file_item.AbsoluteLocalPath()
     if not file_item.startswith(self.change.RepositoryRoot()):
       raise IOError('Access outside the repository root is denied.')
-    return utils.FileRead(file_item, mode)
+    return read_file(file_item, mode)
 
   @staticmethod
   def _RightHandSideLinesImpl(affected_files):
@@ -422,7 +427,7 @@ class AffectedFile(object):
     if self.IsDirectory():
       return []
     else:
-      return utils.FileRead(self.AbsoluteLocalPath(),
+      return read_file(self.AbsoluteLocalPath(),
                                     'rU').splitlines()
 
   def OldContents(self):
@@ -491,7 +496,7 @@ class GitAffectedFile(AffectedFile):
 class Change(object):
   """Describe a change.
 
-  Used directly by the presubmit scripts to query the current change being
+  Used directly by the review scripts to query the current change being
   tested.
 
   Instance members:
@@ -634,15 +639,15 @@ class GitChange(Change):
     self.scm = 'git'
 
 
-def ListRelevantPresubmitFiles(files, root):
-  """Finds all presubmit files that apply to a given set of source files.
+def ListRelevantReviewFiles(files, root):
+  """Finds all review files that apply to a given set of source files.
 
   Args:
     files: An iterable container containing file paths.
     root: Path where to stop searching.
 
   Return:
-    List of absolute paths of the existing .presubmit.py scripts.
+    List of absolute paths of the existing review scripts.
   """
   entries = []
   for f in files:
@@ -655,16 +660,16 @@ def ListRelevantPresubmitFiles(files, root):
       if f == root:
         break
   entries.sort()
-  entries = map(lambda x: os.path.join(x, '.presubmit.py'), entries)
+  entries = map(lambda x: os.path.join(x, '.review.py'), entries)
   return filter(lambda x: os.path.isfile(x), entries)
 
 
 class GetTrySlavesExecuter(object):
-  def ExecPresubmitScript(self, script_text):
-    """Executes GetPreferredTrySlaves() from a single presubmit script.
+  def ExecReviewScript(self, script_text):
+    """Executes GetPreferredTrySlaves() from a single review script.
 
     Args:
-      script_text: The text of the presubmit script.
+      script_text: The text of the review script.
 
     Return:
       A list of try slaves.
@@ -677,7 +682,7 @@ class GetTrySlavesExecuter(object):
       result = eval(function_name + '()', context)
       if not isinstance(result, types.ListType):
         raise exceptions.RuntimeError(
-            'Presubmit functions must return a list, got a %s instead: %s' %
+            'Review functions must return a list, got a %s instead: %s' %
             (type(result), str(result)))
       for item in result:
         if not isinstance(item, basestring):
@@ -692,37 +697,37 @@ class GetTrySlavesExecuter(object):
 
 def DoGetTrySlaves(changed_files,
                    repository_root,
-                   default_presubmit,
+                   default_review,
                    verbose,
                    output_stream):
-  """Get the list of try servers from the presubmit scripts.
+  """Get the list of try servers from the review scripts.
 
   Args:
     changed_files: List of modified files.
     repository_root: The repository root.
-    default_presubmit: A default presubmit script to execute in any case.
+    default_review: A default review script to execute in any case.
     verbose: Prints debug info.
     output_stream: A stream to write debug output to.
 
   Return:
     List of try slaves
   """
-  presubmit_files = ListRelevantPresubmitFiles(changed_files, repository_root)
-  if not presubmit_files and verbose:
-    output_stream.write("Warning, no presubmit.py found.\n")
+  review_files = ListRelevantReviewFiles(changed_files, repository_root)
+  if not review_files and verbose:
+    output_stream.write("Warning, no review script found.\n")
   results = []
   executer = GetTrySlavesExecuter()
-  if default_presubmit:
+  if default_review:
     if verbose:
-      output_stream.write("Running default presubmit script.\n")
-    results += executer.ExecPresubmitScript(default_presubmit)
-  for filename in presubmit_files:
+      output_stream.write("Running default review script.\n")
+    results += executer.ExecReviewScript(default_review)
+  for filename in review_files:
     filename = os.path.abspath(filename)
     if verbose:
       output_stream.write("Running %s\n" % filename)
-    # Accept CRLF presubmit script.
-    presubmit_script = utils.FileRead(filename, 'rU')
-    results += executer.ExecPresubmitScript(presubmit_script)
+    # Accept CRLF review script.
+    review_script = read_file(filename, 'rU')
+    results += executer.ExecReviewScript(review_script)
 
   slaves = list(set(results))
   if slaves and verbose:
@@ -731,7 +736,7 @@ def DoGetTrySlaves(changed_files,
   return slaves
 
 
-class PresubmitExecuter(object):
+class ReviewExecuter(object):
   def __init__(self, change, committing):
     """
     Args:
@@ -741,29 +746,29 @@ class PresubmitExecuter(object):
     self.change = change
     self.committing = committing
 
-  def ExecPresubmitScript(self, script_text, presubmit_path):
-    """Executes a single presubmit script.
+  def ExecReviewScript(self, script_text, review_path):
+    """Executes a single review script.
 
     Args:
-      script_text: The text of the presubmit script.
-      presubmit_path: The path to the presubmit file (this will be reported via
-        input_api.PresubmitLocalPath()).
+      script_text: The text of the review script.
+      review_path: The path to the review file (this will be reported via
+        input_api.ReviewLocalPath()).
 
     Return:
       A list of result objects, empty if no problems.
     """
 
-    # Change to the presubmit file's directory to support local imports.
+    # Change to the review file's directory to support local imports.
     main_path = os.getcwd()
-    os.chdir(os.path.dirname(presubmit_path))
+    os.chdir(os.path.dirname(review_path))
 
-    # Load the presubmit script into context.
-    input_api = InputApi(self.change, presubmit_path, self.committing)
+    # Load the review script into context.
+    input_api = InputApi(self.change, review_path, self.committing)
     context = {}
     exec script_text in context
 
     # These function names must change if we make substantial changes to
-    # the presubmit API that are not backwards compatible.
+    # the review API that are not backwards compatible.
     if self.committing:
       function_name = 'CheckChangeOnCommit'
     else:
@@ -774,12 +779,12 @@ class PresubmitExecuter(object):
       if not (isinstance(result, types.TupleType) or
               isinstance(result, types.ListType)):
         raise exceptions.RuntimeError(
-          'Presubmit functions must return a tuple or list')
+          'Review functions must return a tuple or list')
       for item in result:
-        if not isinstance(item, OutputApi.PresubmitResult):
+        if not isinstance(item, OutputApi.ReviewResult):
           raise exceptions.RuntimeError(
-            'All presubmit results must be of types derived from '
-            'output_api.PresubmitResult')
+            'All review results must be of types derived from '
+            'output_api.ReviewResult')
     else:
       result = ()  # no error since the script doesn't care about current event.
 
@@ -788,16 +793,16 @@ class PresubmitExecuter(object):
     return result
 
 
-def DoPresubmitChecks(change,
+def DoReviewChecks(change,
                       committing,
                       verbose,
                       output_stream,
                       input_stream,
-                      default_presubmit,
+                      default_review,
                       may_prompt):
-  """Runs all presubmit checks that apply to the files in the change.
+  """Runs all review checks that apply to the files in the change.
 
-  This finds all .presubmit.py files in directories enclosing the files in the
+  This finds all .review.py files in directories enclosing the files in the
   change (up to the repository root) and calls the relevant entrypoint function
   depending on whether the change is being committed or uploaded.
 
@@ -808,9 +813,9 @@ def DoPresubmitChecks(change,
     change: The Change object.
     committing: True if 'gcl commit' is running, False if 'gcl upload' is.
     verbose: Prints debug info.
-    output_stream: A stream to write output from presubmit tests to.
+    output_stream: A stream to write output from review tests to.
     input_stream: A stream to read input from the user.
-    default_presubmit: A default presubmit script to execute in any case.
+    default_review: A default review script to execute in any case.
     may_prompt: Enable (y/n) questions on warning or error.
 
   Warning:
@@ -821,24 +826,24 @@ def DoPresubmitChecks(change,
     True if execution can continue, False if not.
   """
   start_time = time.time()
-  presubmit_files = ListRelevantPresubmitFiles(change.AbsoluteLocalPaths(True),
+  review_files = ListRelevantReviewFiles(change.AbsoluteLocalPaths(True),
                                                change.RepositoryRoot())
-  if not presubmit_files and verbose:
-    output_stream.write("Warning, no .presubmit.py found.\n")
+  if not review_files and verbose:
+    output_stream.write("Warning, no .review.py found.\n")
   results = []
-  executer = PresubmitExecuter(change, committing)
-  if default_presubmit:
+  executer = ReviewExecuter(change, committing)
+  if default_review:
     if verbose:
-      output_stream.write("Running default presubmit script.\n")
-    fake_path = os.path.join(change.RepositoryRoot(), '.presubmit.py')
-    results += executer.ExecPresubmitScript(default_presubmit, fake_path)
-  for filename in presubmit_files:
+      output_stream.write("Running default review script.\n")
+    fake_path = os.path.join(change.RepositoryRoot(), '.review.py')
+    results += executer.ExecReviewScript(default_review, fake_path)
+  for filename in review_files:
     filename = os.path.abspath(filename)
     if verbose:
       output_stream.write("Running %s\n" % filename)
-    # Accept CRLF presubmit script.
-    presubmit_script = utils.FileRead(filename, 'rU')
-    results += executer.ExecPresubmitScript(presubmit_script, filename)
+    # Accept CRLF review script.
+    review_script = read_file(filename, 'rU')
+    results += executer.ExecReviewScript(review_script, filename)
 
   errors = []
   notifications = []
@@ -856,7 +861,7 @@ def DoPresubmitChecks(change,
                       ('Warnings', warnings),
                       ('ERRORS', errors)):
     if items:
-      output_stream.write('** Presubmit %s **\n' % name)
+      output_stream.write('** Review %s **\n' % name)
       for item in items:
         if not item._Handle(output_stream, input_stream,
                             may_prompt=False):
@@ -865,11 +870,11 @@ def DoPresubmitChecks(change,
 
   total_time = time.time() - start_time
   if total_time > 1.0:
-    print "Presubmit checks took %.1fs to calculate." % total_time
+    print "Review checks took %.1fs to calculate." % total_time
 
   if not errors and warnings and may_prompt:
     if not PromptYesNo(input_stream, output_stream,
-                       'There were presubmit warnings. '
+                       'There were review warnings. '
                        'Are you sure you wish to continue? (y/N): '):
       error_count += 1
 
@@ -916,7 +921,7 @@ def Main(argv):
   parser.add_option("--issue", type='int', default=0)
   parser.add_option("--patchset", type='int', default=0)
   parser.add_option("--root", default='')
-  parser.add_option("--default_presubmit")
+  parser.add_option("--default_review")
   parser.add_option("--may_prompt", action='store_true', default=False)
   options, args = parser.parse_args(argv[1:])
   if not options.root:
@@ -937,18 +942,18 @@ def Main(argv):
       print "Found %d files." % len(options.files)
     else:
       print "Found 1 file."
-  return not DoPresubmitChecks(change_class(options.name,
-                                            options.description,
-                                            options.root,
-                                            options.files,
-                                            options.issue,
-                                            options.patchset),
-                               options.commit,
-                               options.verbose,
-                               sys.stdout,
-                               sys.stdin,
-                               options.default_presubmit,
-                               options.may_prompt)
+  return not DoReviewChecks(change_class(options.name,
+                                         options.description,
+                                         options.root,
+                                         options.files,
+                                         options.issue,
+                                         options.patchset),
+                            options.commit,
+                            options.verbose,
+                            sys.stdout,
+                            sys.stdin,
+                            options.default_review,
+                            options.may_prompt)
 
 
 if __name__ == '__main__':
