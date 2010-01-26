@@ -1,15 +1,15 @@
 #! /usr/bin/env ruby
 
-# No Copyright (-) 2008-2010 The Ampify Authors. This file is under the
+# No Copyright (-) 2010 The Ampify Authors. This file is under the
 # Public Domain license that can be found in the root LICENSE file.
 
 require File.join(File.dirname(__FILE__), 'rubylibs')
-
 require 'haml/exec'
 
 if ARGV.length == 0
-    puts "Usage: sass <file>"
-    Process.exit
+    ARGV << "--help"
+elsif not ARGV.include? "--cache-location"
+    ARGV.unshift "--cache-location", MAIN_ROOT.join('.sass-cache').to_s
 end
 
 opts = Haml::Exec::Sass.new(ARGV)

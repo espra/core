@@ -1,13 +1,17 @@
 # specific files/directories
 
-.latest
 .appengine_python_sdk
+.latest
+.lock-wscript
+.sass-cache
+
 build/
 client_libs/appengine/updated.py
 doc/_site
 environ/local
 jsutil/ampsite.js
 misc/devboard/siteconfig.py
+misc/devboard/updated.py
 
 # minified css/js files
 
