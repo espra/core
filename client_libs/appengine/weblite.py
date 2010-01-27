@@ -15,14 +15,12 @@ from os.path import dirname, exists, join as join_path, getmtime, realpath
 from posixpath import split as split_path
 from pprint import pprint
 from re import compile as compile_regex
-from random import getrandbits
 from StringIO import StringIO
 from time import time
 from traceback import format_exception
 from types import FunctionType
 from urllib import urlencode, quote as urlquote, unquote as urlunquote
 from urlparse import urljoin
-from uuid import uuid4
 from wsgiref.headers import Headers
 
 # ------------------------------------------------------------------------------
@@ -40,16 +38,14 @@ if THIRD_PARTY_LIBS_PATH not in sys.path:
 # ------------------------------------------------------------------------------
 
 from cookie import SimpleCookie # note: this is our cookie and not Cookie...
-from demjson import decode as json_decode, encode as json_encode
+from demjson import encode as json_encode
 from genshi.core import Markup
 from genshi.template import MarkupTemplate, NewTextTemplate
 from mako.template import Template as MakoTemplate
 from webob import Request as WebObRequest # this import patches cgi.FieldStorage
                                           # to behave better for us too!
 
-from google.appengine.api.urlfetch import fetch as urlfetch, GET, POST
 from google.appengine.api import users
-from google.appengine.ext import db
 
 from pyutil.exception import HTMLExceptionFormatter
 from pyutil.validation import validate
@@ -466,7 +462,7 @@ def Application(environ, start_response, handlers=HTTP_HANDLERS):
                 env_copy['PATH_INFO'] = redirect.uri
                 env_copy['QUERY_STRING'] = ''
             return Application(
-                env_copy, start_response, handlers, response_factory
+                env_copy, start_response, handlers
                 )
 
         # external redirekt
@@ -480,7 +476,7 @@ def Application(environ, start_response, handlers=HTTP_HANDLERS):
             )
         response.clear_response()
 
-    except Exception, exception:
+    except Exception:
 
         response.set_status_and_clear_response(500)
         lines = ''.join(format_exception(*sys.exc_info()))
@@ -656,7 +652,7 @@ class Context(object):
         if self.request_method == 'POST':
 
             if ';' in request_content_type:
-                request_content_type = content_type.split(';', 1)[0]
+                request_content_type = request_content_type.split(';', 1)[0]
 
             if request_content_type in VALID_REQUEST_CONTENT_TYPES:
 
@@ -1261,7 +1257,7 @@ def get_template(
             tmpl_class = NewTextTemplate
             default_format = 'text'
         else:
-            raise IOError("Cannot find template %r" % template_name)
+            raise IOError("Cannot find template %r" % name)
 
         tmpl = get_genshi_template(template, tmpl_class)
 
@@ -1275,7 +1271,7 @@ def get_template(
             )
 
     else:
-        raise IOError("Cannot find template %r" % template_name)
+        raise IOError("Cannot find template %r" % name)
 
     template_cache[(name, template_kwargs)] = template
 
@@ -1386,7 +1382,7 @@ class View(dict):
 
     def __init__(self, **formats):
         for name, value in formats.iteritems():
-            self[key] = value
+            self[name] = value
 
     def __getattr__(self, key):
         if key in self:
@@ -1558,7 +1554,8 @@ class Service(object):
             __format = service.default_format
 
         if __format not in views:
-            raise Error(_(u"Unknown format {0} for service {1}", __format, __name))
+            # raise Error(_(u"Unknown format {0} for service {1}", __format, __name))
+            raise Error(u"Unknown format %r for service %r" % (__format, __name))
 
         if service.cache:
             cache_info = service.cache_key(

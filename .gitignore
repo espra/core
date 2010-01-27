@@ -6,6 +6,7 @@
 .sass-cache
 
 build/
+client_libs/appengine/secret.py
 client_libs/appengine/updated.py
 doc/_site
 environ/local
