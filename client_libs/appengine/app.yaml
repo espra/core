@@ -21,11 +21,11 @@ handlers:
   expiration: 1d
   secure: optional
 
-- url: /static
+- url: /.static
   static_dir: static
   secure: optional
 
-- url: /remote/.*
+- url: /.remote/.*
   script: remote.py
   secure: always
 

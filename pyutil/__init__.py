@@ -23,9 +23,15 @@ from os.path import dirname, join as join_path, realpath
 # extend sys.path to include the ``third_party`` lib direktory
 # ------------------------------------------------------------------------------
 
-THIRD_PARTY_LIBRARY_PATH = join_path(
-    dirname(dirname(realpath(__file__))), 'third_party', 'pylibs'
-    )
+def extend_sys_path():
 
-if THIRD_PARTY_LIBRARY_PATH not in sys.path:
-    sys.path.insert(0, THIRD_PARTY_LIBRARY_PATH)
+    THIRD_PARTY_LIBS_PATH = join_path(
+        dirname(dirname(realpath(__file__))), 'third_party', 'pylibs'
+        )
+
+    if THIRD_PARTY_LIBS_PATH not in sys.path:
+        sys.path.insert(0, THIRD_PARTY_LIBS_PATH)
+
+    return THIRD_PARTY_LIBS_PATH
+
+extend_sys_path()

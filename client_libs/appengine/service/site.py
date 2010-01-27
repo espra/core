@@ -1,8 +1,9 @@
-# Released into the Public Domain by tav <tav@espians.com>
+# No Copyright (-) 2010 The Ampify Authors. This file is under the
+# Public Domain license that can be found in the root LICENSE file.
 
 """Main site service."""
 
-from ampify.weblite import register_service, Raw
+from weblite import register_service, Raw
 
 @register_service('site.hello', token_required=False)
 def hello(ctx, name="world"):

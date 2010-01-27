@@ -11,8 +11,8 @@ from BaseHTTPServer import BaseHTTPRequestHandler
 from cgi import FieldStorage, parse_qsl as parse_query_string
 from datetime import datetime, timedelta
 from hashlib import sha1
-from hmac import new as hmac
-from os.path import exists, join as join_path, getmtime
+from os.path import dirname, exists, join as join_path, getmtime, realpath
+from posixpath import split as split_path
 from pprint import pprint
 from re import compile as compile_regex
 from random import getrandbits
@@ -24,6 +24,16 @@ from urllib import urlencode, quote as urlquote, unquote as urlunquote
 from urlparse import urljoin
 from uuid import uuid4
 from wsgiref.headers import Headers
+
+# ------------------------------------------------------------------------------
+# extend sys.path
+# ------------------------------------------------------------------------------
+
+APP_ROOT = dirname(realpath(__file__))
+THIRD_PARTY_LIBS_PATH = join_path(APP_ROOT, 'third_party')
+
+if THIRD_PARTY_LIBS_PATH not in sys.path:
+    sys.path.insert(0, THIRD_PARTY_LIBS_PATH)
 
 # ------------------------------------------------------------------------------
 # import other libraries
@@ -41,9 +51,7 @@ from google.appengine.api.urlfetch import fetch as urlfetch, GET, POST
 from google.appengine.api import users
 from google.appengine.ext import db
 
-from ampify.core.config import *
-
-from pyutil.traceback import HTMLExceptionFormatter
+from pyutil.exception import HTMLExceptionFormatter
 from pyutil.validation import validate
 
 from pyutil.crypto import (
@@ -53,11 +61,150 @@ from pyutil.crypto import (
 from model import Player
 
 # ------------------------------------------------------------------------------
-# path related konstants
+# default base konfig
 # ------------------------------------------------------------------------------
 
-APP_ROOT = ''
-PKG_ROOT = ''
+try:
+    from updated import APPLICATION_TIMESTAMP
+except ImportError:
+    APPLICATION_TIMESTAMP = time()
+
+DEFAULT_TEMPLATE_MODE = 'mako'
+LIVE_DEPLOYMENT = False
+SITE_HTTP_URL = None
+STATIC_PATH = '/.static/'
+STATIC_HOSTS = None
+
+# ------------------------------------------------------------------------------
+# default error templates
+# ------------------------------------------------------------------------------
+
+ERROR_401_TEMPLATE = '<div class="error"><h1>YouPlease log in</div>'
+
+ERROR_404_TEMPLATE = """
+  <div class="error">
+    <h1>The page you requested was not found</h1>
+    You may have clicked a dead link or mistyped the address. Some web addresses
+    are case sensitive.
+    <ul>
+      <li><a href="/">Return home</a></li>
+      <li><a href="#">Go back to the previous page</a></li>
+    </ul>
+  </div>
+  """ # emacs"
+
+ERROR_500_TEMPLATE = """
+  <div class="error">
+    <h1>Ooops, something went wrong!</h1>
+    There was an application error. This has been logged and will be resolved as
+    soon as possible.
+    <ul>
+      <li><a href="/">Return home</a></li>
+      <li><a href="#">Go back to the previous page</a></li>
+    </ul>
+    <div class="traceback">%s</div>
+  </div>
+  """ # emacs"
+
+NETWORK_ERROR_MESSAGE = u"""
+  Please take a deep breath, visualise floating in a warm sea ...
+  then, when mentally refreshed, try again.
+  """
+
+# ------------------------------------------------------------------------------
+# interpolated konfig
+# ------------------------------------------------------------------------------
+
+_GENERATED_CONFIG_TEMPLATE = """
+
+APPLICATION_ID = os.environ.get('APPLICATION_ID')
+SITE_MAIN_TEMPLATE = '%s:site' % DEFAULT_TEMPLATE_MODE
+
+if os.environ.get('SERVER_SOFTWARE', '').startswith('Google'):
+
+    RUNNING_ON_GOOGLE_SERVERS = True
+    DEBUG = False
+
+    if SITE_HTTP_URL is None:
+        if LIVE_DEPLOYMENT:
+            SITE_HTTP_URL = 'http://www.%s' % SITE_DOMAIN
+        else:
+            SITE_HTTP_URL = 'http://devsite.%s' % SITE_DOMAIN
+
+    SITE_HTTPS_URL = 'https://%s.appspot.com' % APPLICATION_ID
+
+else:
+
+    RUNNING_ON_GOOGLE_SERVERS = False
+
+    try:
+        import emulate_production_mode
+    except:
+        DEBUG = True
+    else:
+        DEBUG = False
+
+    SITE_HTTP_URL = 'http://localhost:8080'
+    SITE_HTTPS_URL = SITE_HTTP_URL
+    STATIC_HOSTS = [SITE_HTTP_URL]
+
+if DEBUG:
+
+    STATIC_HOST = SITE_HTTP_URL
+
+    def STATIC(path, minifiable=False, secure=False):
+        return '/.static/%s?%s' % (path, time())
+
+else:
+
+    if STATIC_HOSTS is None:
+        STATIC_HOST = 'http://static1.%s' % SITE_DOMAIN
+        STATIC_HOSTS = [
+            'http://static1.%s' % SITE_DOMAIN,
+            'http://static2.%s' % SITE_DOMAIN,
+            'http://static3.%s' % SITE_DOMAIN
+            ]
+    else:
+        STATIC_HOST = STATIC_HOSTS[0]
+
+    def STATIC(path, minifiable=False, secure=False, cache={}, len_hosts=len(STATIC_HOSTS)):
+        if STATIC.ctx and STATIC.ctx.ssl_mode:
+            secure = True
+        if (path, minifiable, secure) in cache:
+            return cache[(path, minifiable, secure)]
+        if minifiable:
+            path, filename = split_path(path)
+            if (not path) or (path == '/'):
+                path = '%smin.%s' % (path, filename)
+            else:
+                path = '%s/min.%s' % (path, filename)
+        if secure:
+            return cache.setdefault((path, minifiable, secure), "%s%s%s?%s" % (
+                SITE_HTTPS_URL, STATIC_PATH, path, APPLICATION_TIMESTAMP
+                ))
+        return cache.setdefault((path, minifiable, secure), "%s%s%s?%s" % (
+            STATIC_HOSTS[int('0x' + sha1(path).hexdigest(), 16) % len_hosts],
+            STATIC_PATH, path, APPLICATION_TIMESTAMP
+            ))
+
+    STATIC.ctx = None
+
+CLEANUP_BATCH_SIZE = 100
+EXPIRATION_WINDOW = timedelta(seconds=60*60*1) # 1 hour
+
+"""
+
+# ------------------------------------------------------------------------------
+# load the siteconfig file
+# ------------------------------------------------------------------------------
+
+_site_config_file = open('config.py')
+_site_config = _site_config_file.read() % {
+    'include_base_config': _GENERATED_CONFIG_TEMPLATE
+    }
+_site_config_file.close()
+
+exec(_site_config)
 
 # ------------------------------------------------------------------------------
 # exseptions
@@ -904,8 +1051,7 @@ if DEBUG:
     GENSHI_MTIME_DATA = {}
 
     def get_genshi_template(
-        name, klass=MarkupTemplate,
-        roots=(join_path(APP_ROOT, 'package'), join_path(PKG_ROOT, 'service'))
+        name, klass=MarkupTemplate, roots=(join_path(APP_ROOT, 'service'),)
         ):
 
         for root in roots:
@@ -939,8 +1085,7 @@ if DEBUG:
 else:
 
     def get_genshi_template(
-        name, klass=MarkupTemplate,
-        roots=(join_path(APP_ROOT, 'package'), join_path(PKG_ROOT, 'service'))
+        name, klass=MarkupTemplate, roots=(join_path(APP_ROOT, 'service'),)
         ):
 
         if name in GENSHI_TEMPLATE_CACHE:
@@ -1002,7 +1147,7 @@ class MakoTemplateLookup(object):
         self._template_cache = {}
         self._template_mtime_data = {}
 
-    TEMPLATE_ROOTS = (join_path(APP_ROOT, 'package'), join_path(PKG_ROOT, 'service'))
+    TEMPLATE_ROOTS = (join_path(APP_ROOT, 'service'),)
 
     if DEBUG:
 
@@ -1374,7 +1519,7 @@ class Service(object):
         return self.function(ctx, *args, **kwargs)
 
     @classmethod
-    def get_service(klass, name, prefix='ampify.service.'):
+    def get_service(klass, name, prefix='service.'):
         if name in klass.__services__:
             return klass.__services__[name]
         if name in klass._unknown_services:
@@ -1619,7 +1764,6 @@ if DEBUG == 2:
 
     from cProfile import Profile
     from pstats import Stats
-    from StringIO import StringIO
 
     def runner():
         run_wsgi_app(Application)
