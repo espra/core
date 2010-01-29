@@ -9,10 +9,9 @@ import sys
 
 from BaseHTTPServer import BaseHTTPRequestHandler
 from cgi import FieldStorage, parse_qsl as parse_query_string
-from datetime import datetime, timedelta
+from datetime import datetime
 from hashlib import sha1
 from os.path import dirname, exists, join as join_path, getmtime, realpath
-from posixpath import split as split_path
 from pprint import pprint
 from re import compile as compile_regex
 from StringIO import StringIO
@@ -71,6 +70,12 @@ SITE_HTTP_URL = None
 STATIC_PATH = '/.static/'
 STATIC_HOSTS = None
 
+DEBUG = None
+SITE_MAIN_TEMPLATE = None
+STATIC = None
+TAMPER_PROOF_DEFAULT_DURATION = None
+SITE_ADMINS = set()
+
 # ------------------------------------------------------------------------------
 # default error templates
 # ------------------------------------------------------------------------------
@@ -112,6 +117,9 @@ NETWORK_ERROR_MESSAGE = u"""
 # ------------------------------------------------------------------------------
 
 _GENERATED_CONFIG_TEMPLATE = """
+
+from datetime import timedelta
+from posixpath import split as split_path
 
 APPLICATION_ID = os.environ.get('APPLICATION_ID')
 SITE_MAIN_TEMPLATE = '%s:site' % DEFAULT_TEMPLATE_MODE
@@ -955,6 +963,7 @@ BUILTINS = {
     'content_slot': '',
     'urlencode': urlencode,
     'urlquote': urlquote,
+    'validate': validate
     }
 
 class Raw(unicode):
