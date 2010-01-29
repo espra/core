@@ -8,12 +8,14 @@
 SITE_DOMAIN = 'ampifyit.appspot.com'
 SITE_HTTP_URL = 'http://ampifyit.appspot.com'
 
-# the following line needs to be left exactly as it is!!
+# THE FOLLOWING LINE NEEDS TO BE LEFT EXACTLY AS IT IS!!
 # %(include_base_config)s
 
 # ------------------------------------------------------------------------------
 # define your config values from here on as you please
 # ------------------------------------------------------------------------------
+
+from datetime import timedelta
 
 SITE_ADMINS = frozenset([
     'adminuser@gmail.com'
