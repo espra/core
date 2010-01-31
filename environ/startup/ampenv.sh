@@ -96,9 +96,9 @@ function _have () {
 AMPIFY_LOCAL=$AMPIFY_ROOT/environ/local
 
 if [ "$PATH" ]; then
-    PATH=$AMPIFY_ROOT/environ/startup:$AMPIFY_LOCAL/bin:$AMPIFY_ROOT/misc/codereview:$PATH
+	PATH=$AMPIFY_ROOT/environ/startup:$AMPIFY_LOCAL/bin:$AMPIFY_ROOT/misc/codereview:$PATH
 else
-    PATH=$AMPIFY_ROOT/environ/startup:$AMPIFY_LOCAL/bin:$AMPIFY_ROOT/misc/codereview
+	PATH=$AMPIFY_ROOT/environ/startup:$AMPIFY_LOCAL/bin:$AMPIFY_ROOT/misc/codereview
 fi
 
 case $_OS_NAME in
@@ -112,15 +112,15 @@ case $_OS_NAME in
 esac
 	
 if [ "$PYTHONPATH" ]; then
-    PYTHONPATH=$AMPIFY_ROOT/environ/startup:$AMPIFY_ROOT:$AMPIFY_ROOT/third_party/pylibs:$PYTHONPATH
+	PYTHONPATH=$AMPIFY_ROOT/environ/startup:$AMPIFY_ROOT:$AMPIFY_ROOT/third_party/pylibs:$PYTHONPATH
 else
-    PYTHONPATH=$AMPIFY_ROOT/environ/startup:$AMPIFY_ROOT:$AMPIFY_ROOT/third_party/pylibs
+	PYTHONPATH=$AMPIFY_ROOT/environ/startup:$AMPIFY_ROOT:$AMPIFY_ROOT/third_party/pylibs
 fi
 
 if [ "$MANPATH" ]; then
-    MANPATH=$AMPIFY_ROOT/doc/man:$AMPIFY_LOCAL/man:$MANPATH
+	MANPATH=$AMPIFY_ROOT/doc/man:$AMPIFY_LOCAL/man:$MANPATH
 else
-    MANPATH=$AMPIFY_ROOT/doc/man:$AMPIFY_LOCAL/man
+	MANPATH=$AMPIFY_ROOT/doc/man:$AMPIFY_LOCAL/man
 fi
 
 # ------------------------------------------------------------------------------
