@@ -169,12 +169,12 @@ NACL_ROOT=$AMPIFY_LOCAL/third_party/nativeclient
 
 _have ampnode &&
 _ampnode_completion() {
-    if [ "$2" ]; then
-        COMPREPLY=( $( $1 --list-options | grep "^$2" ) )
-    else
-        COMPREPLY=( $( $1 --list-options ) )
-    fi
-    return 0
+	if [ "$2" ]; then
+		COMPREPLY=( $( $1 --list-options | grep "^$2" ) )
+	else
+		COMPREPLY=( $( $1 --list-options ) )
+	fi
+	return 0
 }
 
 # ------------------------------------------------------------------------------
@@ -183,17 +183,21 @@ _ampnode_completion() {
 
 if [ "$_INTERACTIVE_SHELL" == "true" ]; then
 
-    # first, turn on the extended globbing and programmable completion
-    shopt -s extglob progcomp
+	# first, turn on the extended globbing and programmable completion
+	shopt -s extglob progcomp
 
-    # register completers
-    complete -o default -F _ampnode_completion ampnode
-    complete -o default -F _ampnode_completion ampbuild
+	# register completers
+	complete -o default -F _ampnode_completion ampnode
+	complete -o default -F _ampnode_completion ampbuild
 
-    # and finally, register files with specific commands
-    complete -f -X '!*.nodule' install-nodule
+	# and finally, register files with specific commands
+	complete -f -X '!*.nodule' install-nodule
+	complete -f -X '!*.go' 5g 6g 8g
+	complete -f -X '!*.5' 5l
+	complete -f -X '!*.6' 6l
+	complete -f -X '!*.8' 8l
 
-    # '!*.@([Pp][Rr][Gg]|[Cc][Ll][Pp])' harbour gharbour hbpp
+	# '!*.@([Pp][Rr][Gg]|[Cc][Ll][Pp])' harbour gharbour hbpp
 
 fi
 
