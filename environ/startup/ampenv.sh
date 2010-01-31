@@ -65,11 +65,11 @@ test "$PS1" && _INTERACTIVE_SHELL=true;
 
 cd "$(dirname $BASH_SOURCE)" || return $?
 
-AMPIFY_STARTUP_DIRECTORY=`pwd -P 2> /dev/null` || return $?
+export AMPIFY_STARTUP_DIRECTORY=`pwd -P 2> /dev/null` || return $?
 
 cd $OLDPWD || return $?
 
-AMPIFY_ROOT=$(dirname $(dirname $AMPIFY_STARTUP_DIRECTORY))
+export AMPIFY_ROOT=$(dirname $(dirname $AMPIFY_STARTUP_DIRECTORY))
 
 # ------------------------------------------------------------------------------
 # exit if $AMPIFY_ROOT is not set
@@ -93,60 +93,60 @@ function _have () {
 # set/extend some core variables
 # ------------------------------------------------------------------------------
 
-AMPIFY_LOCAL=$AMPIFY_ROOT/environ/local
+export AMPIFY_LOCAL=$AMPIFY_ROOT/environ/local
 
 if [ "$PATH" ]; then
-	PATH=$AMPIFY_ROOT/environ/startup:$AMPIFY_LOCAL/bin:$AMPIFY_ROOT/misc/codereview:$PATH
+	export PATH=$AMPIFY_ROOT/environ/startup:$AMPIFY_LOCAL/bin:$AMPIFY_ROOT/misc/codereview:$PATH
 else
-	PATH=$AMPIFY_ROOT/environ/startup:$AMPIFY_LOCAL/bin:$AMPIFY_ROOT/misc/codereview
+	export PATH=$AMPIFY_ROOT/environ/startup:$AMPIFY_LOCAL/bin:$AMPIFY_ROOT/misc/codereview
 fi
 
 case $_OS_NAME in
 	darwin)
-		PATH=$AMPIFY_ROOT/environ/client/osx:$PATH;
-		DYLD_FALLBACK_LIBRARY_PATH=$AMPIFY_LOCAL/lib:$AMPIFY_LOCAL/freeswitch/lib:$DYLD_LIBRARY_PATH:$HOME/lib:/usr/local/lib:/lib:/usr/lib;;
+		export PATH=$AMPIFY_ROOT/environ/client/osx:$PATH;
+		export DYLD_FALLBACK_LIBRARY_PATH=$AMPIFY_LOCAL/lib:$AMPIFY_LOCAL/freeswitch/lib:$DYLD_LIBRARY_PATH:$HOME/lib:/usr/local/lib:/lib:/usr/lib;;
 	linux)
-		PATH=$AMPIFY_ROOT/environ/client/linux:$PATH;
-		LD_LIBRARY_PATH=$AMPIFY_LOCAL/lib:$LD_LIBRARY_PATH;;
+		export PATH=$AMPIFY_ROOT/environ/client/linux:$PATH;
+		export LD_LIBRARY_PATH=$AMPIFY_LOCAL/lib:$LD_LIBRARY_PATH;;
 	*) echo "ERROR: Unknown system operating system: ${_OS_NAME}"
 esac
 	
 if [ "$PYTHONPATH" ]; then
-	PYTHONPATH=$AMPIFY_ROOT/environ/startup:$AMPIFY_ROOT:$AMPIFY_ROOT/third_party/pylibs:$PYTHONPATH
+	export PYTHONPATH=$AMPIFY_ROOT/environ/startup:$AMPIFY_ROOT:$AMPIFY_ROOT/third_party/pylibs:$PYTHONPATH
 else
-	PYTHONPATH=$AMPIFY_ROOT/environ/startup:$AMPIFY_ROOT:$AMPIFY_ROOT/third_party/pylibs
+	export PYTHONPATH=$AMPIFY_ROOT/environ/startup:$AMPIFY_ROOT:$AMPIFY_ROOT/third_party/pylibs
 fi
 
 if [ "$MANPATH" ]; then
-	MANPATH=$AMPIFY_ROOT/doc/man:$AMPIFY_LOCAL/man:$MANPATH
+	export MANPATH=$AMPIFY_ROOT/doc/man:$AMPIFY_LOCAL/man:$MANPATH
 else
-	MANPATH=$AMPIFY_ROOT/doc/man:$AMPIFY_LOCAL/man
+	export MANPATH=$AMPIFY_ROOT/doc/man:$AMPIFY_LOCAL/man
 fi
 
 # ------------------------------------------------------------------------------
 # go related variables
 # ------------------------------------------------------------------------------
 
-GOROOT=$AMPIFY_ROOT/third_party/go
-GOBIN=$AMPIFY_LOCAL/bin
+export GOROOT=$AMPIFY_ROOT/third_party/go
+export GOBIN=$AMPIFY_LOCAL/bin
 
 if [ "$_OS_ARCH_64" ]; then
-	GOARCH="amd64"
+	export GOARCH="amd64"
 else
 	if [ "$_OS_ARCH_386" ]; then
-		GOARCH="i386"
+		export GOARCH="i386"
 	else
 		case _OS_ARCH in
-			arm) GOARCH="arm";;
+			arm) export GOARCH="arm";;
 			*) echo "ERROR: Unknown system architecture: ${_OS_ARCH}"
 		esac
 	fi
 fi
 
 case $_OS_NAME in
-	darwin) GOOS="darwin";;
-	freebsd) GOOS="freebsd";;
-	linux) GOOS="linux";;
+	darwin) export GOOS="darwin";;
+	freebsd) export GOOS="freebsd";;
+	linux) export GOOS="linux";;
 	*) echo "ERROR: Unknown system operating system: ${_OS_NAME}"
 esac
 
@@ -154,7 +154,7 @@ esac
 # nativeclient related variables
 # ------------------------------------------------------------------------------
 
-NACL_ROOT=$AMPIFY_LOCAL/third_party/nativeclient
+export NACL_ROOT=$AMPIFY_LOCAL/third_party/nativeclient
 
 # ------------------------------------------------------------------------------
 # define our bash completion function
