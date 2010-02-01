@@ -7,9 +7,9 @@ package runtime
 
 import (
 	"amp/command"
-	"bytes"
 	"runtime"
 	"strconv"
+	"strings"
 	"syscall"
 )
 
@@ -19,20 +19,21 @@ const Platform = syscall.OS
 func GetCPUCount() (count int) {
 	if (Platform == "darwin") || (Platform == "freebsd") {
 		output, err := command.GetOutput([]string{"/usr/sbin/sysctl", "-n", "hw.ncpu"})
-		if err == nil {
-			output = bytes.TrimSpace(output)
-			if _cpus, err := strconv.Atoi(string(output)); err == nil {
-				count = _cpus
-			}
+		if err != nil {
+			return 1
+		}
+		count, err = strconv.Atoi(strings.TrimSpace(output))
+		if err != nil {
+			return 1
 		}
 	} else if Platform == "linux" {
 		output, err := command.GetOutput([]string{"/bin/cat", "/proc/cpuinfo"})
-		if err == nil {
-			split_output := bytes.Split(output, []byte{'\n'}, 0)
-			for _, line := range split_output {
-				if bytes.HasPrefix(line, []byte{'p', 'r', 'o', 'c', 'e', 's', 's', 'o', 'r'}) {
-					count += 1
-				}
+		if err != nil {
+			return 1
+		}
+		for _, line := range strings.Split(output, "\n", 0) {
+			if strings.HasPrefix(line, "processor") {
+				count += 1
 			}
 		}
 	}

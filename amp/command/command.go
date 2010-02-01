@@ -6,8 +6,9 @@
 package command
 
 import (
+	"bytes"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"os"
 )
 
@@ -21,7 +22,7 @@ func (err *CommandError) String() string {
 }
 
 // Return the output from running the given command
-func GetOutput(args []string) (output []byte, error os.Error) {
+func GetOutput(args []string) (output string, error os.Error) {
 	read_pipe, write_pipe, err := os.Pipe()
 	if err != nil {
 		goto Error
@@ -37,11 +38,13 @@ func GetOutput(args []string) (output []byte, error os.Error) {
 	if err != nil {
 		goto Error
 	}
-	output, err = ioutil.ReadAll(read_pipe)
+    buffer := new(bytes.Buffer);
+    _, err = io.Copy(buffer, read_pipe);
 	if err != nil {
 		goto Error
 	}
+	output = buffer.String()
 	return output, nil
 Error:
-	return nil, &CommandError{args[0], args}
+	return "", &CommandError{args[0], args}
 }
