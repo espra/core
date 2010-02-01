@@ -14,7 +14,7 @@ import (
 
 type CommandError struct {
 	Command string
-	Args []string
+	Args    []string
 }
 
 func (err *CommandError) String() string {
@@ -38,8 +38,8 @@ func GetOutput(args []string) (output string, error os.Error) {
 	if err != nil {
 		goto Error
 	}
-    buffer := new(bytes.Buffer);
-    _, err = io.Copy(buffer, read_pipe);
+	buffer := new(bytes.Buffer)
+	_, err = io.Copy(buffer, read_pipe)
 	if err != nil {
 		goto Error
 	}

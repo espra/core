@@ -43,6 +43,4 @@ func GetCPUCount() (count int) {
 	return count
 }
 
-func Init() {
-	runtime.GOMAXPROCS(GetCPUCount())
-}
+func Init() { runtime.GOMAXPROCS(GetCPUCount()) }
