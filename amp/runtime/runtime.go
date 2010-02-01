@@ -12,9 +12,10 @@ import (
 	"os"
 	"runtime"
 	"strconv"
+	"syscall"
 )
 
-var Platform = os.Getenv("GOOS")
+const Platform = syscall.OS
 
 type CommandError struct {
 	Command string
