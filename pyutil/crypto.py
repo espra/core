@@ -110,7 +110,7 @@ def create_signature_for_payload(payload, key):
     return create_encoded_mac(output, key)
 
 
-def sign_payload(payload, key, nonce_name='nonce', nonce_size=100):
+def sign_payload(payload, key, nonce_name='nonce', nonce_size=20):
     """Return a signature and a modified payload with a generated nonce."""
     payload[nonce_name] = b32encode(urandom(nonce_size))
     return create_signature_for_payload(payload, key), payload
