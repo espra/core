@@ -3,7 +3,7 @@
 
 // The runtime package provides utilities to manage the runtime environment for
 // a given Go process/application.
-package main
+package runtime
 
 import (
 	"bytes"
@@ -78,10 +78,6 @@ func GetCPUCount() (count int) {
 	return count
 }
 
-func init() {
+func Init() {
 	runtime.GOMAXPROCS(GetCPUCount())
-}
-
-func main() {
-	fmt.Println(GetCPUCount())
 }
