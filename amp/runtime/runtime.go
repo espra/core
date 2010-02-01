@@ -18,7 +18,7 @@ const Platform = syscall.OS
 // Try and figure out the number of CPUs on the current machine
 func GetCPUCount() (count int) {
 	if (Platform == "darwin") || (Platform == "freebsd") {
-		output, err := command.GetOutput("/usr/sbin/sysctl", []string{"sysctl", "-n", "hw.ncpu"})
+		output, err := command.GetOutput([]string{"/usr/sbin/sysctl", "-n", "hw.ncpu"})
 		if err == nil {
 			output = bytes.TrimSpace(output)
 			if _cpus, err := strconv.Atoi(string(output)); err == nil {
@@ -26,7 +26,7 @@ func GetCPUCount() (count int) {
 			}
 		}
 	} else if Platform == "linux" {
-		output, err := command.GetOutput("/bin/cat", []string{"cat", "/proc/cpuinfo"})
+		output, err := command.GetOutput([]string{"/bin/cat", "/proc/cpuinfo"})
 		if err == nil {
 			split_output := bytes.Split(output, []byte{'\n'}, 0)
 			for _, line := range split_output {
