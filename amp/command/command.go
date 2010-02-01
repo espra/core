@@ -6,14 +6,15 @@
 package command
 
 import (
+	"bytes"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"os"
 )
 
 type CommandError struct {
 	Command string
-	Args []string
+	Args    []string
 }
 
 func (err *CommandError) String() string {
@@ -21,26 +22,29 @@ func (err *CommandError) String() string {
 }
 
 // Return the output from running the given command
-func GetOutput(cmd string, args []string) (output []byte, error os.Error) {
+func GetOutput(args []string) (output string, error os.Error) {
 	read_pipe, write_pipe, err := os.Pipe()
 	if err != nil {
 		goto Error
 	}
-	pid, err := os.ForkExec(cmd, args, os.Environ(), "", []*os.File{nil, write_pipe, nil})
+	defer read_pipe.Close()
+	pid, err := os.ForkExec(args[0], args, os.Environ(), ".", []*os.File{nil, write_pipe, nil})
 	if err != nil {
+		write_pipe.Close()
 		goto Error
 	}
 	_, err = os.Wait(pid, 0)
-	if err != nil {
-		goto Error
-	}
 	write_pipe.Close()
-	output, err = ioutil.ReadAll(read_pipe)
 	if err != nil {
 		goto Error
 	}
-	read_pipe.Close()
+	buffer := new(bytes.Buffer)
+	_, err = io.Copy(buffer, read_pipe)
+	if err != nil {
+		goto Error
+	}
+	output = buffer.String()
 	return output, nil
 Error:
-	return nil, &CommandError{cmd, args}
+	return "", &CommandError{args[0], args}
 }
