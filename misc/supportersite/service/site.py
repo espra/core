@@ -3,7 +3,7 @@
 
 """Main site service."""
 
-from weblite import register_service, Raw
+from weblite import register_service
 
 @register_service('site.hello', token_required=False)
 def hello(ctx, name="world"):
