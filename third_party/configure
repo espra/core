@@ -7,7 +7,7 @@ import os
 import sys
 import subprocess
 
-AMPIFY_ROOT = os.path.dirname(os.path.realpath(__file__))
+AMPIFY_ROOT = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 WAF = os.path.join(AMPIFY_ROOT, 'environ', 'startup', 'waf')
 
 sys.exit(subprocess.call([sys.executable, WAF, 'configure'] + sys.argv[1:]))
