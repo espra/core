@@ -31,8 +31,8 @@ then it can be affirmed as such with an informative header like:
     # Public Domain license that can be found in the root LICENSE file.
 
 
-1. Statement of Purpose
------------------------
+Statement of Purpose
+--------------------
 
 The laws of most jurisdictions throughout the world automatically confer
 exclusive Copyright and Related Rights (defined below) upon the creator and
@@ -61,14 +61,14 @@ the meaning and intended legal effect of the Public Domain License on those
 rights.
 
 
-2. Definitions
---------------
+Definitions
+-----------
 
 The term "Distribute" has the same meaning here as under U.S. copyright law. A
 "Contribution" is the original Work, or any additions or changes to it. A
-"Contributor" is any person that affirms their contribution under this
-license. "Licensed Patents" are a Contributor's patent claims that read directly
-on any Contribution.
+"Contributor" is any person that affirms their contribution under this license.
+"Licensed Patents" are a Contributor's patent claims that read directly on any
+Contribution.
 
 A Work made available under the Public Domain License may be protected by
 copyright, patent and related or neighboring rights ("Copyright and Related
@@ -87,7 +87,7 @@ following:
    depicted in a Work;
 
 5. rights protecting against unfair competition in regards to a Work, subject to
-   the limitations in section 6.1, below;
+   the Limitations and Disclaimers, below;
 
 6. rights protecting the extraction, dissemination, use and reuse of data in a
    Work;
@@ -101,8 +101,8 @@ following:
    on applicable law or treaty, and any national implementations thereof.
 
 
-3. Waiver
----------
+Waiver
+------
 
 To the greatest extent permitted by, but not in contravention of, applicable
 law, Affirmer hereby overtly, fully, permanently, irrevocably and
@@ -123,8 +123,8 @@ enjoyment of the Work by the public as contemplated by Affirmer's express
 Statement of Purpose.
 
 
-4. Public License Fallback
---------------------------
+Public License Fallback
+-----------------------
 
 Should any part of the Waiver for any reason be judged legally invalid or
 ineffective under applicable law, then the Waiver shall be preserved to the
@@ -149,8 +149,8 @@ exercise any of his or her remaining Copyright and Related Rights in the Work or
 in either case contrary to Affirmer's express Statement of Purpose.
 
 
-5. Grant of Patent Rights
--------------------------
+Grant of Patent Rights
+----------------------
 
 Subject to the terms and conditions of this License, the Affirmer hereby grants
 to You a perpetual, worldwide, non-exclusive, no-charge, royalty-free,
@@ -165,8 +165,8 @@ granted to You under this License for the Work shall terminate as of the date
 such litigation is filed.
 
 
-6. Limitations and Disclaimers
-------------------------------
+Limitations and Disclaimers
+---------------------------
 
 1. No trademark rights held by Affirmer are waived, abandoned, surrendered,
    licensed or otherwise affected by this document.
@@ -197,8 +197,10 @@ Appendix
 --------
 
 * The text of this document is derived from [Creative Commons CC0 1.0
-  Universal](http://creativecommons.org/publicdomain/zero/1.0/legalcode) and the
-  BSD style license that ships with Google Go.
+  Universal](http://creativecommons.org/publicdomain/zero/1.0/legalcode), the
+  [Microsoft Public License](http://www.opensource.org/licenses/ms-pl.html) and
+  the [BSD style license](http://go.googlecode.com/hg/LICENSE) that ships with
+  Google Go.
 
 * This Public Domain License is seen as a mere transitional requirement until
   international law adapts to the post intellectual property reality.
