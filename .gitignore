@@ -1,18 +1,15 @@
 # specific files/directories
 
 .appengine_python_sdk
-.latest
-.lock-wscript
-.sass-cache
 
-build/
 client_libs/appengine/secret.py
 client_libs/appengine/updated.py
 doc/_site
 environ/local
-jsutil/ampsite.js
 misc/devboard/siteconfig.py
 misc/devboard/updated.py
+src/build/
+src/jsutil/ampsite.js
 
 # minified css/js files
 
@@ -22,6 +19,8 @@ misc/devboard/updated.py
 # hidden files/directories
 
 .DS_Store
+.lock-wscript
+.sass-cache
 .sconsign*
 .svn
 

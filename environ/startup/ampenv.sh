@@ -112,9 +112,9 @@ case $_OS_NAME in
 esac
 	
 if [ "$PYTHONPATH" ]; then
-	export PYTHONPATH=$AMPIFY_ROOT/environ/startup:$AMPIFY_ROOT:$AMPIFY_ROOT/third_party/pylibs:$PYTHONPATH
+	export PYTHONPATH=$AMPIFY_ROOT/src:$AMPIFY_ROOT/third_party/pylibs:$PYTHONPATH
 else
-	export PYTHONPATH=$AMPIFY_ROOT/environ/startup:$AMPIFY_ROOT:$AMPIFY_ROOT/third_party/pylibs
+	export PYTHONPATH=$AMPIFY_ROOT/src:$AMPIFY_ROOT/third_party/pylibs
 fi
 
 if [ "$MANPATH" ]; then
@@ -134,7 +134,7 @@ if [ "$_OS_ARCH_64" ]; then
 	export GOARCH="amd64"
 else
 	if [ "$_OS_ARCH_386" ]; then
-		export GOARCH="i386"
+		export GOARCH="386"
 	else
 		case _OS_ARCH in
 			arm) export GOARCH="arm";;
