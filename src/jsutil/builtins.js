@@ -78,6 +78,12 @@ Object.prototype.extend = function (update) {
     return extend(this, update);
 };
 
+var __parseInt = parseInt;
+
+function parseInt(n, base) {
+    return __parseInt(n, base || 10);
+};
+
 function read(filepath) {
     try {
         return posix.cat(filepath).wait();
