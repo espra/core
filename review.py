@@ -1,4 +1,5 @@
-# Released into the Public Domain by tav <tav@espians.com>
+# No Copyright (-) 2010 The Ampify Authors. This file is under the
+# Public Domain license that can be found in the root LICENSE file.
 
 def JSLint(input_api, output_api):
 
