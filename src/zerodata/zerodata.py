@@ -1,7 +1,7 @@
 # No Copyright (-) 2008-2010 The Ampify Authors. This file is under the
 # Public Domain license that can be found in the root LICENSE file.
 
-"""Zerodata Framework."""
+"""Ampify ZeroDataStore."""
 
 import logging
 import os
@@ -13,7 +13,7 @@ from traceback import format_exception
 from urllib import unquote as urlunquote
 
 from google.appengine.api.capabilities import CapabilitySet
-from demjson import encode as json_encode, decode as json_decode
+from simplejson import dumps as json_encode, loads as json_decode
 
 from pyutil.crypto import validate_tamper_proof_string
 
@@ -164,6 +164,7 @@ def run_app():
             write(ERROR)
             return
 
+        # figure out which api to handle or default to the root handler
         if args:
             api_name = args.pop(0)
             api_definition = HTTP_HANDLERS.get(api_name)
@@ -177,8 +178,18 @@ def run_app():
             write(ERROR)
             return
 
+        # check that there's a token and it validates
         if check_token:
-            pass
+            token = kwargs.pop('token', None)
+            if not token:
+                write(UNAUTH)
+                return
+            if not validate_tamper_proof_string(
+                'token', token, key=API_KEY, timestamped=True
+                ):
+                logging.info("Unauthorised API Access Attempt: %r", token)
+                write(UNAUTH)
+                return
 
         handler, store_needed = api_definition
 
@@ -219,7 +230,7 @@ def run_app():
         sys.stdout = sys._boot_stdout
 
 # ------------------------------------------------------------------------------
-# the zerodata api
+# the zerodatastore api
 # ------------------------------------------------------------------------------
 
 def get(foo, bar):
@@ -243,9 +254,7 @@ def invalidate(ctx):
 # multiop
 
 def root(*args, **kwargs):
-    return {
-        'foo': time()
-        }
+    return "This is the API endpoint of the Ampify ZeroDataStore."
 
 # ------------------------------------------------------------------------------
 # register the handlers
