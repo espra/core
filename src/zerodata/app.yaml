@@ -11,6 +11,12 @@ handlers:
   expiration: 7d
   secure: optional
 
+- url: /favicon.ico
+  static_files: favicon.ico
+  upload: favicon.ico
+  expiration: 7d
+  secure: optional
+
 - url: /remote/.*
   script: remote.py
   secure: always
