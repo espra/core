@@ -8,7 +8,7 @@ import os
 import sys
 
 from BaseHTTPServer import BaseHTTPRequestHandler
-from cgi import FieldStorage, parse_qsl as parse_query_string
+from cgi import FieldStorage
 from datetime import datetime
 from hashlib import sha1
 from os.path import dirname, exists, join as join_path, getmtime, realpath
@@ -558,8 +558,8 @@ class Context(object):
     get_current_google_user = staticmethod(users.get_current_user)
 
     def __init__(
-        self, environ, response, parse_query_string=parse_query_string,
-        find_charset=find_charset, urlunquote=urlunquote
+        self, environ, response, find_charset=find_charset,
+        urlunquote=urlunquote
         ):
 
         self.request_method = environ['REQUEST_METHOD']
@@ -612,8 +612,6 @@ class Context(object):
         self.request_flags = flags = set()
         self.request_kwargs = kwargs = {}
         self.special_kwargs = special_kwargs = {}
-
-        _val = None
 
         for part in [
             sub_part
