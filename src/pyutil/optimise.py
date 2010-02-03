@@ -126,14 +126,17 @@ from types import FunctionType, ClassType, CodeType
 globals().update(opmap)
 
 def _make_constants(
-    function, builtins=None, builtin_only=False, stoplist=(), verbose=False,
+    function, builtins=None, builtin_only=False, stoplist=(), constant_fold=True,
+    verbose=False,
     ):
     """Return the given ``function`` with its constants folded."""
 
-    if settings.debug == 2:
-        print "# OPTIMISING : %s.%s" % (function.__module__, function.__name__)
+    if verbose == 2:
+        logging.info(
+            "# OPTIMISING : %s.%s", function.__module__, function.__name__
+            )
 
-    co = sys.get_func_code(function)
+    co = function.func_code
     newcode = map(ord, co.co_code)
     newconsts = list(co.co_consts)
     names = co.co_names
@@ -146,9 +149,9 @@ def _make_constants(
 
     if builtin_only:
         stoplist = dict.fromkeys(stoplist)
-        stoplist.update(sys.get_func_globals(function))
+        stoplist.update(function.func_globals)
     else:
-        env.update(sys.get_func_globals(function))
+        env.update(function.func_globals)
 
     # first pass converts global lookups into constants
 
@@ -158,6 +161,7 @@ def _make_constants(
         opcode = newcode[i]
         if opcode in (EXTENDED_ARG, STORE_GLOBAL):
             # for simplicity, only optimise common cases
+            logging.info("\n\nFound opcode\n\n")
             return function
         if opcode == LOAD_GLOBAL:
             oparg = newcode[i+1] + (newcode[i+2] << 8)
@@ -174,65 +178,67 @@ def _make_constants(
                 newcode[i+1] = pos & 0xFF
                 newcode[i+2] = pos >> 8
                 if verbose:
-                    logging.log("%s --> %s", name, value)
+                    logging.info("%s --> %s", name, value)
         i += 1
         if opcode >= HAVE_ARGUMENT:
             i += 2
 
     # second pass folds tuples of constants and constant attribute lookups
 
-    i = 0
+    if constant_fold:
 
-    while i < codelen:
+        i = 0
 
-        newtuple = []
-        while newcode[i] == LOAD_CONST:
-            oparg = newcode[i+1] + (newcode[i+2] << 8)
-            newtuple.append(newconsts[oparg])
+        while i < codelen:
+
+            newtuple = []
+            while newcode[i] == LOAD_CONST:
+                oparg = newcode[i+1] + (newcode[i+2] << 8)
+                newtuple.append(newconsts[oparg])
+                i += 3
+
+            opcode = newcode[i]
+            if not newtuple:
+                i += 1
+                if opcode >= HAVE_ARGUMENT:
+                    i += 2
+                continue
+
+            if opcode == LOAD_ATTR:
+                obj = newtuple[-1]
+                oparg = newcode[i+1] + (newcode[i+2] << 8)
+                name = names[oparg]
+                try:
+                    value = getattr(obj, name)
+                except AttributeError:
+                    continue
+                deletions = 1
+
+            elif opcode == BUILD_TUPLE:
+                oparg = newcode[i+1] + (newcode[i+2] << 8)
+                if oparg != len(newtuple):
+                    continue
+                deletions = len(newtuple)
+                value = tuple(newtuple)
+
+            else:
+                continue
+
+            reljump = deletions * 3
+            newcode[i-reljump] = JUMP_FORWARD
+            newcode[i-reljump+1] = (reljump-3) & 0xFF
+            newcode[i-reljump+2] = (reljump-3) >> 8
+
+            n = len(newconsts)
+            newconsts.append(value)
+            newcode[i] = LOAD_CONST
+            newcode[i+1] = n & 0xFF
+            newcode[i+2] = n >> 8
+
             i += 3
 
-        opcode = newcode[i]
-        if not newtuple:
-            i += 1
-            if opcode >= HAVE_ARGUMENT:
-                i += 2
-            continue
-
-        if opcode == LOAD_ATTR:
-            obj = newtuple[-1]
-            oparg = newcode[i+1] + (newcode[i+2] << 8)
-            name = names[oparg]
-            try:
-                value = getattr(obj, name)
-            except AttributeError:
-                continue
-            deletions = 1
-
-        elif opcode == BUILD_TUPLE:
-            oparg = newcode[i+1] + (newcode[i+2] << 8)
-            if oparg != len(newtuple):
-                continue
-            deletions = len(newtuple)
-            value = tuple(newtuple)
-
-        else:
-            continue
-
-        reljump = deletions * 3
-        newcode[i-reljump] = JUMP_FORWARD
-        newcode[i-reljump+1] = (reljump-3) & 0xFF
-        newcode[i-reljump+2] = (reljump-3) >> 8
-
-        n = len(newconsts)
-        newconsts.append(value)
-        newcode[i] = LOAD_CONST
-        newcode[i+1] = n & 0xFF
-        newcode[i+2] = n >> 8
-
-        i += 3
-
-        if verbose:
-            logging.debug("New folded constant: %s", value)
+            if verbose:
+                logging.info("New folded constant: %s", value)
 
     codestr = ''.join(map(chr, newcode))
     codeobj = CodeType(
@@ -244,15 +250,15 @@ def _make_constants(
         )
 
     return FunctionType(
-        codeobj, sys.get_func_globals(function), function.func_name,
-        function.func_defaults, sys.get_func_closure(function)
+        codeobj, function.func_globals, function.func_name,
+        function.func_defaults, function.func_closure
         )
 
 _make_constants = _make_constants(_make_constants) # optimise thyself!
 
 def optimise_all(
     module_or_class, builtins=None, builtin_only=False, stoplist=(),
-    verbose=False
+    constant_fold=True, verbose=False
     ):
     """Recursively apply constant binding to functions in a module or class."""
 
@@ -263,31 +269,43 @@ def optimise_all(
 
     for k, v in d.items():
         if type(v) is FunctionType:
-            new_v = _make_constants(v, builtin_only, stoplist,  verbose)
+            new_v = _make_constants(
+                v, builtins, builtin_only, stoplist, constant_fold, verbose
+                )
             setattr(module_or_class, k, new_v)
         elif type(v) in (type, ClassType):
-            optimise_all(v, builtin_only, stoplist, verbose)
+            optimise_all(
+                v, builtins, builtin_only, stoplist, constant_fold, verbose
+                )
 
 optimise_all = _make_constants(optimise_all)
 
 @_make_constants
-def optimise(builtins=None, builtin_only=False, stoplist=(), verbose=False):
+def optimise(
+    builtins=None, builtin_only=False, stoplist=(), constant_fold=True,
+    verbose=False
+    ):
     """Return a decorator for optimising global references."""
 
     if type(builtins) is FunctionType:
         raise ValueError("The optimise decorator must have arguments.")
 
-    return lambda f: _make_constants(f, builtins, builtin_only, stoplist, verbose)
+    return lambda f: _make_constants(
+        f, builtins, builtin_only, stoplist, constant_fold, verbose
+        )
 
 def build_optimising_metaclass(
-    builtins=None, builtin_only=False, stoplist=(), verbose=False
+    builtins=None, builtin_only=False, stoplist=(), constant_fold=True,
+    verbose=False
     ):
     """Return a automatically optimising metaclass for use as __metaclass__."""
 
     class _OptimisingMetaclass(type):
         def __init__(cls, name, bases, dict):
             super(_OptimisingMetaclass, cls).__init__(name, bases, dict)
-            optimise_all(cls, builtins, builtin_only, stoplist, verbose)
+            optimise_all(
+                cls, builtins, builtin_only, stoplist, constant_fold, verbose
+                )
 
     return _OptimisingMetaclass
 
