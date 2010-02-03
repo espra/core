@@ -10,6 +10,8 @@ misc/devboard/siteconfig.py
 misc/devboard/updated.py
 src/build/
 src/jsutil/ampsite.js
+src/zerodata/secret.py
+src/zerodata/updated.py
 
 # minified css/js files
 
