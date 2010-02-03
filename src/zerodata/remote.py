@@ -4,8 +4,8 @@
 """A handler that exports various App Engine services over HTTP."""
 
 import logging
+import os
 
-from os import environ
 from urllib import unquote
 from wsgiref.handlers import CGIHandler
 
@@ -14,7 +14,7 @@ from google.appengine.ext.remote_api.handler import (
     RemoteDatastoreStub, SERVICE_PB_MAP, ApiCallHandler
     )
 
-from config import REMOTE_TOKEN, RUNNING_ON_GOOGLE_SERVERS
+from config import REMOTE_KEY
 from pyutil.crypto import validate_tamper_proof_string
 
 # ------------------------------------------------------------------------------
@@ -22,6 +22,11 @@ from pyutil.crypto import validate_tamper_proof_string
 # ------------------------------------------------------------------------------
 
 SSL_ENABLED_FLAGS = frozenset(['yes', 'on', '1'])
+
+if os.environ.get('SERVER_SOFTWARE', '').startswith('Google'):
+    RUNNING_ON_GOOGLE_SERVERS = True
+else:
+    RUNNING_ON_GOOGLE_SERVERS = False
 
 # ------------------------------------------------------------------------------
 # request handler
@@ -39,19 +44,17 @@ class RemoteAPIHandler(ApiCallHandler):
 
         verifier = unquote(self.request.path.rsplit('/', 1)[1])
 
-        if validate_tamper_proof_string(
-            'remote', verifier, timestamped=False, key=REMOTE_TOKEN,
-            ) is None:
-            logging.error("Unauthorised Remote Access Attempt: %r" % verifier)
-            self.response.set_status(500)
+        if not validate_tamper_proof_string('remote', verifier, REMOTE_KEY):
+            logging.info("Unauthorised Remote Access Attempt: %r", verifier)
+            self.response.set_status(401)
             return
 
         # we skip the SSL check for local dev instances
         if (RUNNING_ON_GOOGLE_SERVERS and
-            environ.get('HTTPS') not in SSL_ENABLED_FLAGS
+            os.environ.get('HTTPS') not in SSL_ENABLED_FLAGS
             ):
-            logging.error("Insecure Remote Access Attempt")
-            self.response.set_status(500)
+            logging.info("Insecure Remote Access Attempt")
+            self.response.set_status(401)
             return
 
         ApiCallHandler.post(self)

@@ -3,15 +3,14 @@
 # No Copyright (-) 2009-2010 The Ampify Authors. This file is under the
 # Public Domain license that can be found in the root LICENSE file.
 
-"""Usage: gaekonsole <app-directory> [ dev | prod | localhost:8081 ]"""
+"""Usage: rconsole.py <app-directory> [ dev | prod | localhost:8081 ]"""
 
 import code
-import getpass
 import os
 import sys
 
 from base64 import urlsafe_b64encode
-from os.path import abspath, dirname, join as join_path, realpath
+from os.path import dirname, isfile, join as join_path, realpath
 
 MAIN_ROOT = dirname(dirname(dirname(realpath(__file__))))
 OUR_SDK_PATH = join_path(MAIN_ROOT, '.appengine_python_sdk')
@@ -27,13 +26,10 @@ from google.appengine.ext.remote_api.remote_api_stub import (
     GetSourceName, GetUserAgent, RemoteDatastoreStub, RemoteStub
     )
 
-from pyutil.crypto import create_tamper_proof_string
-
 # ------------------------------------------------------------------------------
 # some konstants
 # ------------------------------------------------------------------------------
 
-APP_ID = 'ampifyit'
 DEV_HOST = 'localhost:8080'
 
 SERVICES = set([
@@ -59,40 +55,63 @@ class NonAuthHttpRpcServer(HttpRpcServer):
 # the main funktion
 # ------------------------------------------------------------------------------
 
-def main(
-    argv=None, app_id=APP_ID, dev_host=DEV_HOST, secure=False, key=None
-    ):
+def main(argv=None, ssl=False, shell=True):
 
     argv = argv or sys.argv[1:]
 
     if len(argv) < 1:
-        print __doc__
-        sys.exit(1)
+        if shell:
+            print __doc__
+            sys.exit(1)
+        raise ValueError("You haven't passed the appropriate parameters.")
 
-    if not key:
-        app_root = abspath(argv.pop(0))
+    app_root = realpath(argv.pop(0))
+    if app_root not in sys.path:
         sys.path.insert(0, app_root)
-        from config import REMOTE_TOKEN as key
+
+    from config import REMOTE_KEY
+    from pyutil.crypto import create_tamper_proof_string
+
+    app_yaml_path = join_path(app_root, 'app.yaml')
+    if not isfile(app_yaml_path):
+        raise ValueError("Couldn't find: %s" % app_yaml_path)
+
+    app_yaml_file = open(app_yaml_path, 'rb')
+    app_id = None
+
+    for line in app_yaml_file.readlines():
+        if line.startswith('application:'):
+            line = line.split('application:', 1)
+            if len(line) == 1:
+                continue
+            _, app_id = line
+            app_id = app_id.strip()
+            break
+
+    if not app_id:
+        raise ValueError(
+            "Couldn't find the Application ID in %r" % app_yaml_path
+            )
 
     if not argv:
-        host = dev_host
+        host = DEV_HOST
     else:
         host = argv[0]
         if host.startswith('dev'):
-            host = dev_host
+            host = DEV_HOST
         elif host.startswith('prod'):
             host = '%s.appspot.com' % app_id
-            secure = True
+            ssl = True
 
     verifier = urlsafe_b64encode(os.urandom(24))
-    mac = create_tamper_proof_string('remote', verifier, duration=None, key=key)
+    mac = create_tamper_proof_string('remote', verifier, REMOTE_KEY)
 
-    path = '/.remote/%s' % mac
+    path = '/remote/%s' % mac
     os.environ['APPLICATION_ID'] = app_id
 
     server = NonAuthHttpRpcServer(
         host, None, GetUserAgent(), GetSourceName(), debug_data=False,
-        secure=secure
+        secure=ssl
         )
 
     apiproxy_stub_map.apiproxy = apiproxy_stub_map.APIProxyStubMap()
@@ -104,9 +123,10 @@ def main(
     for service in SERVICES:
         apiproxy_stub_map.apiproxy.RegisterStub(service, stub)
 
-    code.interact(
-        '[App Engine] Interactive Console [%s]' % host, None, {'db': db}
-        )
+    if shell:
+        code.interact(
+            '[App Engine] Interactive Console [%s]' % host, None, {'db': db}
+            )
 
 # ------------------------------------------------------------------------------
 # self runner

@@ -23,7 +23,7 @@ TAMPER_PROOF_KEY = "Place your long, randomly generated sekret key here."
 
 TAMPER_PROOF_DEFAULT_DURATION = timedelta(minutes=20)
 
-REMOTE_TOKEN = "Your sekret key for Remote API calls goes here."
+REMOTE_KEY = "Your sekret key for Remote API calls goes here."
 
 # ------------------------------------------------------------------------------
 # import non-public values to override predefined dummy values

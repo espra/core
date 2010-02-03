@@ -3,8 +3,10 @@
 
 """App configuration for zerodata."""
 
+import os
+
 __all__ = [
-    'DEBUG'
+    'API_KEY', 'DEBUG', 'REMOTE_KEY'
     ]
 
 # ------------------------------------------------------------------------------
@@ -12,6 +14,10 @@ __all__ = [
 # ------------------------------------------------------------------------------
 
 DEBUG = True
+
+REMOTE_KEY = 'fooa'
+
+API_KEY = 'bar'
 
 # ------------------------------------------------------------------------------
 # override sample config values with the real "secret" ones
