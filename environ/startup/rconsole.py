@@ -20,11 +20,23 @@ sys.path.insert(0, join_path(OUR_SDK_PATH, 'lib', 'yaml', 'lib'))
 sys.path.insert(0, join_path(OUR_SDK_PATH, 'lib', 'webob'))
 
 from google.appengine.api import apiproxy_stub_map
-from google.appengine.tools.appengine_rpc import HttpRpcServer
 from google.appengine.ext import db
 from google.appengine.ext.remote_api.remote_api_stub import (
     GetSourceName, GetUserAgent, RemoteDatastoreStub, RemoteStub
     )
+
+from google.appengine.tools.appengine_rpc import (
+    HttpRpcServer, uses_cert_verification
+    )
+
+# ------------------------------------------------------------------------------
+# die if ssl cert verification isn't enabled
+# ------------------------------------------------------------------------------
+
+if not uses_cert_verification:
+    raise RuntimeError(
+        "The ssl module needs to be installed for certificate verification."
+        )
 
 # ------------------------------------------------------------------------------
 # some konstants
@@ -55,7 +67,7 @@ class NonAuthHttpRpcServer(HttpRpcServer):
 # the main funktion
 # ------------------------------------------------------------------------------
 
-def main(argv=None, ssl=False, shell=True):
+def setup(argv=None, ssl=False, shell=True):
 
     argv = argv or sys.argv[1:]
 
@@ -133,4 +145,4 @@ def main(argv=None, ssl=False, shell=True):
 # ------------------------------------------------------------------------------
 
 if __name__ == '__main__':
-    main()
+    setup()
