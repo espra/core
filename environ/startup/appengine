@@ -41,7 +41,8 @@ from zipfile import ZipFile
 # konfig
 # ------------------------------------------------------------------------------
 
-SDK_VERSION = "1.3.0"
+SDK_VERSION = "1.3.1_prerelease"
+SDK_VERSION_NAME = "prerelease-1.3.1"
 
 # ------------------------------------------------------------------------------
 # some konstants
@@ -65,7 +66,7 @@ sdk_exists = None
 if exists(OUR_SDK_VERSION_FILE):
     sdk_version = open(OUR_SDK_VERSION_FILE, 'rb').readline().split()
     sdk_version = sdk_version and sdk_version[-1] or ''
-    if sdk_version == '"%s"' % SDK_VERSION:
+    if sdk_version == '"%s"' % SDK_VERSION_NAME:
         sdk_exists = True
     else:
         sdk_exists = False
