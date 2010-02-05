@@ -1,0 +1,119 @@
+#! /usr/bin/env python
+
+# No Copyright (-) 2010 The Ampify Authors. This file is under the
+# Public Domain license that can be found in the root LICENSE file.
+
+"""git-update -- a git-command to make life a bit easier."""
+
+import os
+import sys
+
+from pyutil.env import run_command
+
+# ------------------------------------------------------------------------------
+# ensure we're inside a git repository
+# ------------------------------------------------------------------------------
+
+repo_path, retcode = run_command(
+    ["git", "rev-parse", "--show-cdup"], retcode=True
+    )
+repo_path = os.path.realpath(repo_path.strip())
+
+if retcode:
+    print >> sys.stderr, "Error: This is not a git repository"
+    sys.exit(1)
+
+# ------------------------------------------------------------------------------
+# utility functions
+# ------------------------------------------------------------------------------
+
+def parse_status(status):
+    to_init = []
+    pending = set()
+    for line in status.splitlines():
+        state = line[0]
+        line = line[1:].split(' ', 2)
+        commit, path = line[0], line[1]
+        if state == '-':
+            to_init.append(path)
+        elif state == '+':
+            pending.add(path)
+    return to_init, pending
+
+def git_submodule_status():
+    status = run_command(
+        ['git', 'submodule'], redirect_stderr=False, exit_on_error=True,
+        cwd=repo_path
+        )
+    to_init, pending = parse_status(status)
+    if to_init:
+        args = ['git', 'submodule', 'update', '--init', '--'] + to_init
+        run_command(
+            args, redirect_stdout=False, redirect_stderr=False, cwd=repo_path,
+            exit_on_error=True
+            )
+    return pending
+
+def git_pull():
+    run_command(
+        ['git', 'pull'], redirect_stdout=False, redirect_stderr=False,
+        exit_on_error=True
+        )
+
+# ------------------------------------------------------------------------------
+# do the git update
+# ------------------------------------------------------------------------------
+
+pre_pending = git_submodule_status()
+git_pull()
+post_pending = git_submodule_status()
+
+needs_attention = pre_pending.intersection(post_pending)
+needs_update = post_pending.difference(pre_pending)
+
+# ------------------------------------------------------------------------------
+# update the submodules
+# ------------------------------------------------------------------------------
+
+for submodule in needs_update:
+    args = ['git', 'submodule', 'update', '--', submodule]
+    _, err, retcode = run_command(
+        args, retcode=True, redirect_stdout=False, redirect_stderr=True,
+        reterror=True, cwd=repo_path
+        )
+    if retcode:
+        print
+        print "$ git submodule update -- %s" % submodule
+        print
+        print err
+        if err.startswith("fatal: reference is not a tree:"):
+            print(
+                "Error:\n\n    Someone hasn't checked in their commits to the "
+                "submodule at %r" % submodule
+                )
+            print
+            args = ['git', 'log', "-1", "--format='%ae   %an   %ar'", '--']
+            output = run_command(
+                args + [submodule], redirect_stdout=True, redirect_stderr=True,
+                exit_on_error=True, cwd=repo_path
+                )
+            try:
+                email, user, timestamp =  (
+                    output.strip().lstrip("'").rstrip("'").split('   ', 2)
+                    )
+            except Exception:
+                pass
+            else:
+                print (
+                    "    The commit by %s <%s>, %s, is most likely "
+                    "at fault..." % (user, email, timestamp)
+                    )
+                print
+        sys.exit(retcode)
+
+
+if needs_attention:
+    for submodule in needs_attention:
+        print
+        print "Skipped:", submodule, "  <--  [May need attention... out of sync!]"
+    sys.exit(1)
