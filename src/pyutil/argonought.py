@@ -45,6 +45,8 @@ DEFAULT_PRECISION = 20
 # the number datatype
 # ------------------------------------------------------------------------------
 
+# http://jsfromhell.com/classes/bignumber
+
 class Number(object):
     """A Number datatype."""
 
@@ -340,9 +342,11 @@ def _pack(num, write):
         write('\x01')
         write(chr(left+1))
 
+r = lambda res: [ord(char) for char in res]
+
 from cStringIO import StringIO
 
-def _pack(num, write):
+def _pack2(num, write):
     lead, left = divmod(num, 256)
     if lead:
         lead_chars = []; append = lead_chars.append
@@ -367,7 +371,7 @@ def _pack(num, write):
         write('\x01')
         write(chr(left))
 
-def pack_number(num, exp=0, StringIO=StringIO):
+def pack_number2(num, exp=0, StringIO=StringIO):
     stream = StringIO()
     write = stream.write
     if num >= 0:
@@ -375,11 +379,18 @@ def pack_number(num, exp=0, StringIO=StringIO):
     else:
         num = abs(num)
         write('\x80')
-    _pack(num, write)
+    _pack2(num, write)
     if exp:
         write('\x00')
-        _pack(exp, write)
+        _pack2(exp, write)
     return stream.getvalue()
+
+
+#print len(r(pack_number2(2 ** 3960)))
+#print 2 ** 3960
+
+#import sys
+#sys.exit()
 
 # ------------------------------------------------------------------------------
 # 
@@ -412,15 +423,35 @@ def _pack(num, write):
         write('\x01')
         write(chr(left))
 
-def pack_number(num, frac=0, neg=0, StringIO=StringIO):
-    stream = StringIO()
-    write = stream.write
-    # optimise for small numbers, signed 21-bits
-    if -2097152 <= num <= 2097152:
-        if num < 0:
-            neg = 1
+# 0 > 0000 0000
+# 1 > 
+
+def pack_number(num, frac=0):
+
+    # optimise for small numbers
+    if -8323072 < num < 8323072:
+        if num >= 0:
+            result = ['\x80', '\x00', '\x00']
+            div, mod = divmod(num, 256)
+            result[2] = chr(mod)
+            if div:
+                div, mod = divmod(div, 256)
+                result[1] = chr(mod)
+                if div:
+                    result[0] = chr(div+128)
+            return ''.join(result)
+        else:
             num = abs(num)
-        if num 
+            result = ['\x7f', '\xff', '\xff']
+            div, mod = divmod(num, 256)
+            result[2] = chr(255-mod)
+            if div:
+                div, mod = divmod(div, 256)
+                result[1] = chr(255-mod)
+                if div:
+                    result[0] = chr(127-div)
+            return ''.join(result)
+
     if num >= 0:
         write('\x81')
     else:
@@ -433,6 +464,30 @@ def pack_number(num, frac=0, neg=0, StringIO=StringIO):
         write('\x00')
         _pack(frac, write)
     return stream.getvalue()
+
+
+import sys
+
+prev = ''
+
+def p(x):
+    print r(pack_number(x))
+
+#for i in range(-1000, 1000):
+
+if 1:
+    for i in range(-8323071, 8323071):
+    #for i in range(-255, 1):
+        cur = pack_number(i)
+        #print i, '\t', r(cur)
+        if cur < prev:
+            print "Error!"
+            sys.exit()
+
+#p(8323071)
+#p(8323072)
+
+sys.exit()
 
 # ------------------------------------------------------------------------------
 # test
@@ -470,8 +525,6 @@ z = """
 255 -> [2, 1]
 256 -> [2, 2]
 """
-
-r = lambda res: [ord(char) for char in res]
 
 def hex_encoding(n):
     if n >= 0:
