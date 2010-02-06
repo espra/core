@@ -226,373 +226,177 @@ class Unit(object):
 # encode_json(allow_nan=False)
 # decode_json()
 
-# def pack_integer(integer, StringIO=StringIO):
-#     stream = StringIO()
-#     write = stream.write
-#     while 1:
-#         left_bits = integer & 127
-#         integer >>= 7
-#         if integer:
-#             left_bits += 128
-#         write(chr(left_bits))
-#         if not integer:
-#             break
-#     return stream.getvalue()
+# ------------------------------------------------------------------------------
+# utility functions to help with the encoding of numbers
+# ------------------------------------------------------------------------------
 
-import sys
-
-from cStringIO import StringIO
-
-def _pack(num, write):
-    lead, left = divmod(num, 254)
-    print num, lead, left
+def pack_big_positive_int(num):
+    result = []; write = result.append
+    num -= 8323072
+    lead, left = divmod(num, 256)
     n = 0
-    div = lead
-    if div:
-        div /= 254
-        while div:
-            div /= 254
-            n += 1
-    # print "n", n, div
+    while 1:
+        if not (lead / (254 ** (n+2))):
+            break
+        n += 1
     if n:
-        write('\xff' * n)
-        mod = lead - (254 ** n)
-    print mod, lead, n
-    if left:
-        write(chr(mod+1))
-        write(chr(left+1))
-    elif mod:
-        write(chr(mod+1))
-
-#        lead_left = lead - (254 ** (n))
-
-def _pack(num, write):
-    remainder = num % 254
-    lead = num - remainder
-    print
-    print "num:", num
-    print "lead:", lead
-    print "remainder:", remainder
-    # lead, left = divmod(num, 254)
-    if lead:
-        n = 0
-        while 1:
-            if not (lead / (254 ** (n+1))):
-                break
-            n += 1
-        lead_left, lead_remainder = divmod(lead, 254 ** n)
-        print "n:", n
-        print "lead_left:", lead_left
-        if n:
-            write('\xff' * n)
-            write(chr(lead_left+1))
-        if lead_remainder:
-            while 1:
-                div, lead_remainder = divmod(lead_remainder, 254)
-                
-    else:
-        write('\x01')
-        write(chr(remainder+1))
-        return
-    if lead_left:
-        write(chr(lead_left+1))
-
-
-
-def _pack(num, write):
-    lead, left = divmod(num, 254)
-    if 0:
-        print
-        print "num:", num
-        print "lead:", lead
-        print "left:", left
-    if lead:
-        lead_chars = []; append = lead_chars.append
-        n = 0
-        while 1:
-            if not (lead / (254 ** (n+1))):
-                break
-            n += 1
-        while lead:
-            lead, mod = divmod(lead, 254)
+        size_chars = []; append = size_chars.append
+        while n:
+            n, mod = divmod(n, 254)
             append(chr(mod+1))
-        if n:
-            write('\xff' * n)
-        [write(char) for char in reversed(lead_chars)]
-    if left:
-        write('\x01')
-        write(chr(left+1))
-
-def _pack(num, write):
-    lead, left = divmod(num, 254)
-    if lead:
-        lead_chars = []; append = lead_chars.append
-        n = 0
-        while 1:
-            if not (lead / (254 ** (n+1))):
-                break
-            n += 1
-        while lead:
-            lead, mod = divmod(lead, 254)
-            append(chr(mod+1))
-        if n:
-            write('\xff' * n)
-        write(''.join(char for char in reversed(lead_chars)))
-    if left:
-        write('\x01')
-        write(chr(left+1))
-
-r = lambda res: [ord(char) for char in res]
-
-from cStringIO import StringIO
-
-def _pack2(num, write):
-    lead, left = divmod(num, 256)
-    if lead:
-        lead_chars = []; append = lead_chars.append
-        n = 0
-        while 1:
-            if not (lead / (254 ** (n+1))):
-                break
-            n += 1
-        while lead:
-            lead, mod = divmod(lead, 254)
-            append(chr(mod+1))
-        if n:
-            write('\xff')
-            n_chars = []; append = n_chars.append
-            while n:
-                n, mod = divmod(n, 254)
-                append(chr(mod+1))
-            write(''.join(char for char in reversed(n_chars)))
-            write('\xff')
-        write(''.join(char for char in reversed(lead_chars)))
+        write(''.join(reversed(size_chars)))
+        write('\xff')
+    lead_chars = []; append = lead_chars.append
+    while lead:
+        lead, mod = divmod(lead, 254)
+        append(chr(mod+1))
+    write(''.join(reversed(lead_chars)))
     if left:
         write('\x01')
         write(chr(left))
+    return ''.join(result)
 
-def pack_number2(num, exp=0, StringIO=StringIO):
-    stream = StringIO()
-    write = stream.write
-    if num >= 0:
-        write('\x81')
-    else:
-        num = abs(num)
-        write('\x80')
-    _pack2(num, write)
-    if exp:
+def pack_big_negative_int(num):
+    result = []; write = result.append
+    num = abs(num)
+    num -= 8323072
+    lead, left = divmod(num, 256)
+    n = 0
+    while 1:
+        if not (lead / (254 ** (n+2))):
+            break
+        n += 1
+    if n:
+        size_chars = []; append = size_chars.append
+        while n:
+            n, mod = divmod(n, 254)
+            append(chr(254-mod))
+        write(''.join(reversed(size_chars)))
         write('\x00')
-        _pack2(exp, write)
-    return stream.getvalue()
-
-
-#print len(r(pack_number2(2 ** 3960)))
-#print 2 ** 3960
-
-#import sys
-#sys.exit()
-
-# ------------------------------------------------------------------------------
-# 
-# ------------------------------------------------------------------------------
-
-from cStringIO import StringIO
-
-def _pack(num, write):
-    lead, left = divmod(num, 256)
-    if lead:
-        lead_chars = []; append = lead_chars.append
-        n = 0
-        while 1:
-            if not (lead / (254 ** (n+1))):
-                break
-            n += 1
-        while lead:
-            lead, mod = divmod(lead, 254)
-            append(chr(mod+1))
-        if n:
-            write('\xff')
-            n_chars = []; append = n_chars.append
-            while n:
-                n, mod = divmod(n, 254)
-                append(chr(mod+1))
-            write(''.join(char for char in reversed(n_chars)))
-            write('\xff')
-        write(''.join(char for char in reversed(lead_chars)))
+    lead_chars = []; append = lead_chars.append
+    while lead:
+        lead, mod = divmod(lead, 254)
+        append(chr(254-mod))
+    write(''.join(reversed(lead_chars)))
+    write('\xfe')
     if left:
-        write('\x01')
-        write(chr(left))
+        write(chr(255-left))
+    else:
+        write('\xfe')
+    return ''.join(result)
 
-# 0 > 0000 0000
-# 1 > 
+def pack_small_positive_int(num):
+    result = ['\x80', '\x00', '\x00']
+    div, mod = divmod(num, 256)
+    result[2] = chr(mod)
+    if div:
+        div, mod = divmod(div, 256)
+        result[1] = chr(mod)
+        if div:
+            result[0] = chr(div+128)
+    return ''.join(result)
+
+def pack_small_negative_int(num):
+    num = abs(num)
+    result = ['\x7f', '\xff', '\xff']
+    div, mod = divmod(num, 256)
+    result[2] = chr(255-mod)
+    if div:
+        div, mod = divmod(div, 256)
+        result[1] = chr(255-mod)
+        if div:
+            result[0] = chr(127-div)
+    return ''.join(result)
+
+# ------------------------------------------------------------------------------
+# the core number encoder
+# ------------------------------------------------------------------------------
+
+cache = {}
 
 def pack_number(num, frac=0):
+    """Encode a number according to the Argonought spec."""
+
+    # calculate the encoding of the fractional part
+    if frac:
+        if frac < 0:
+            raise ValueError("The fractional part must be positive.")
+        if frac < 8323072:
+            frac = pack_small_positive_int(frac)
+        else:
+            frac = pack_big_positive_int(frac)
+
+    result = []; write = result.append
 
     # optimise for small numbers
     if -8323072 < num < 8323072:
         if num >= 0:
-            result = ['\x80', '\x00', '\x00']
-            div, mod = divmod(num, 256)
-            result[2] = chr(mod)
-            if div:
-                div, mod = divmod(div, 256)
-                result[1] = chr(mod)
-                if div:
-                    result[0] = chr(div+128)
-            return ''.join(result)
+            write(pack_small_positive_int(num))
+            if frac:
+                write('\x00')
+                write(frac)
         else:
-            num = abs(num)
-            result = ['\x7f', '\xff', '\xff']
-            div, mod = divmod(num, 256)
-            result[2] = chr(255-mod)
-            if div:
-                div, mod = divmod(div, 256)
-                result[1] = chr(255-mod)
-                if div:
-                    result[0] = chr(127-div)
-            return ''.join(result)
+            write(pack_small_negative_int(num))
+            if frac:
+                write('\xff')
+                write(frac)
+        return ''.join(result)
 
+    # deal with the big numbers
     if num >= 0:
-        write('\x81')
+        write('\xff')
+        write(pack_big_positive_int(num))
+        if frac:
+            write('\x00')
+            write(frac)
     else:
-        num = abs(num)
-        write('\x80')
-    _pack(num, write)
-    if frac:
-        if frac < 0:
-            raise ValueError("The fractional part must be positive.")
         write('\x00')
-        _pack(frac, write)
-    return stream.getvalue()
+        write(pack_big_negative_int(num))
+        if frac:
+            write('\xff')
+            write(frac)
+    return ''.join(result)
 
+# ------------------------------------------------------------------------------
+# more test crap
+# ------------------------------------------------------------------------------
 
 import sys
 
-prev = ''
+r = lambda res: [ord(char) for char in res]
 
 def p(x):
     print r(pack_number(x))
 
-#for i in range(-1000, 1000):
-
-if 1:
-    for i in range(-8323071, 8323071):
-    #for i in range(-255, 1):
+def verify_packing(a, b, debug=True, continue_on_error=False, step=1):
+    prev = ''
+    for i in xrange(a, b, step):
         cur = pack_number(i)
-        #print i, '\t', r(cur)
+        if debug:
+            print i, '\t', r(cur)
         if cur < prev:
             print "Error!"
-            sys.exit()
-
-#p(8323071)
-#p(8323072)
-
-sys.exit()
-
-# ------------------------------------------------------------------------------
-# test
-# ------------------------------------------------------------------------------
-
-cache={}
-
-def packtest(n, cache=cache):
-    exp = 0
-    if isinstance(n, str):
-        _n = n.split('.', 1)
-        if len(_n) == 1:
-            num = int(_n[0])
-        else:
-            num, exp = map(int, _n)
-    else:
-        num = int(n)
-    res = cache[n] = pack_number(num, exp)
-    print "%20s\t%s" % (n, [ord(char) for char in res])
-
-if 0:
-    packtest(253)
-    packtest(258)
-    packtest(280381)
-    packtest("280381.1")
-    # sys.exit()
-
-z = """
-0 -> [1, 1]
-1 -> [1, 2]
-2 -> [1, 3]
-...
-254 -> [1, 255]
-254.10 -> [1, 255, 0, 11]
-255 -> [2, 1]
-256 -> [2, 2]
-"""
-
-def hex_encoding(n):
-    if n >= 0:
-        sign = '+'
-    else:
-        n = abs(n)
-        sign = '-'
-    n = str(hex(n))
-    if n.endswith('L'):
-        return sign + n[2:-1]
-    return sign + n[2:]
-
-if 1:
-    encoder = hex_encoding
-    encoder = pack_number
-
-    N = 100000
-    prev = prev2 = ''
-    longest = ''
-    longest_i = 0
-
-    for i in xrange(N):
-        cur = encoder(i)
-        if cur < prev:
-            print "pre2:", i-2, '\t', r(prev2), '\t', repr(prev2)
-            print "prev:", i-1, '\t', r(prev), '\t', repr(prev)
-            print "curr:", i, '\t', r(cur), '\t', repr(cur)
-            sys.exit()
-        if len(cur) > len(longest):
-            longest = cur
-            longest_i = i
-        prev2 = prev
+            if not continue_on_error:
+                if not debug:
+                    print i-1, '\t', r(prev)
+                    print i, '\t', r(cur)
+                sys.exit()
         prev = cur
 
-    print r(longest), longest_i, hex(longest_i)
-    print r(cur), i, hex(i)
-
-if 1:
-    t = 739741763491463991364913793691363198613135193563641336134913593151951735444505930390570943708347180713087130841730830180173041376387183714139643746319545462724
-
+def cmp_pack_length(bits):
+    n = 2 ** bits
+    string = str(n)
+    packed = pack_number(n)
+    print "bits:", bits
+    print "packed length:", len(packed)
+    print "string length:", len(string)
+    print "pack overhead:", len(packed) - (bits / 8)
     print
-    print "ENC:", r(pack_number(t)), len(pack_number(t))
+    print r(packed)
 
-    print
-    print filter(lambda x: x != 255, r(pack_number(t)))
-    print len(filter(lambda x: x != 255, r(pack_number(t))))
+# cmp_pack_length(4096)
 
-    print
-    print "PLAIN:", len(str(t))
+# verify_packing(-518000, 518000, 0)
+verify_packing(-8323071-100000, -8323070, 0)
 
-    print
-    print "HEX:", r(hex_encoding(t)), len(hex_encoding(t))
-
-k = 1
-print k, "\t", r(pack_number(k))
-
-if 0:
-    for i in range(100):
-        n = 10 ** i
-        print n, '\t', r(pack_number(n))
-
-if 0:
-    for i in xrange(N):
-        packtest(i)
-        if 0:
-            for j in cache:
-                if cache[j] > p:
-                    print "Invalid:", i, j
-
-    for i in xrange(N):
-        print repr(i), '\t', [ord(char) for char in cache[i]]
+sys.exit()
