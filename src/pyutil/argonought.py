@@ -231,12 +231,13 @@ class Unit(object):
 # ------------------------------------------------------------------------------
 
 def pack_big_positive_int(num):
-    result = []; write = result.append
-    num -= 8323072
-    lead, left = divmod(num, 256)
+    result = ['\xff']; write = result.append
+    num -= 8258175
+    lead, left = divmod(num, 254)
+    # print "plead", lead, left
     n = 0
     while 1:
-        if not (lead / (254 ** (n+2))):
+        if not (lead / (253 ** (n+2))):
             break
         n += 1
     if n:
@@ -248,64 +249,64 @@ def pack_big_positive_int(num):
         write('\xff')
     lead_chars = []; append = lead_chars.append
     while lead:
-        lead, mod = divmod(lead, 254)
-        append(chr(mod+1))
+        lead, mod = divmod(lead, 253)
+        append(chr(mod+2))
     write(''.join(reversed(lead_chars)))
     if left:
         write('\x01')
-        write(chr(left))
+        write(chr(left+1))
     return ''.join(result)
 
 def pack_big_negative_int(num):
-    result = []; write = result.append
+    result = ['\x00']; write = result.append
     num = abs(num)
-    num -= 8323072
-    lead, left = divmod(num, 256)
+    num -= 8258175
+    lead, left = divmod(num, 255)
     n = 0
     while 1:
-        if not (lead / (254 ** (n+2))):
+        if not (lead / (253 ** (n+2))):
             break
         n += 1
     if n:
         size_chars = []; append = size_chars.append
         while n:
-            n, mod = divmod(n, 254)
+            n, mod = divmod(n, 253)
             append(chr(254-mod))
         write('\x00')
         write(''.join(reversed(size_chars)))
     lead_chars = []; append = lead_chars.append
     while lead:
-        lead, mod = divmod(lead, 254)
+        lead, mod = divmod(lead, 253)
         append(chr(254-mod))
     if len(lead_chars) > 1:
         write('\x00')
     write(''.join(reversed(lead_chars)))
     write('\xfe')
     if left:
-        write(chr(255-left))
+        write(chr(254-left))
     else:
         write('\xfe')
     return ''.join(result)
 
 def pack_small_positive_int(num):
-    result = ['\x80', '\x00', '\x00']
-    div, mod = divmod(num, 256)
-    result[2] = chr(mod)
+    result = ['\x80', '\x01', '\x01']
+    div, mod = divmod(num, 255)
+    result[2] = chr(mod+1)
     if div:
-        div, mod = divmod(div, 256)
-        result[1] = chr(mod)
+        div, mod = divmod(div, 255)
+        result[1] = chr(mod+1)
         if div:
             result[0] = chr(div+128)
     return ''.join(result)
 
 def pack_small_negative_int(num):
     num = abs(num)
-    result = ['\x7f', '\xff', '\xff']
-    div, mod = divmod(num, 256)
-    result[2] = chr(255-mod)
+    result = ['\x7f', '\xfe', '\xfe']
+    div, mod = divmod(num, 255)
+    result[2] = chr(254-mod)
     if div:
-        div, mod = divmod(div, 256)
-        result[1] = chr(255-mod)
+        div, mod = divmod(div, 255)
+        result[1] = chr(254-mod)
         if div:
             result[0] = chr(127-div)
     return ''.join(result)
@@ -314,7 +315,7 @@ def pack_small_negative_int(num):
 # the core number encoder
 # ------------------------------------------------------------------------------
 
-cache = {}
+_pack_cache = {}
 
 def pack_number(num, frac=0):
     """Encode a number according to the Argonought spec."""
@@ -331,7 +332,7 @@ def pack_number(num, frac=0):
     result = []; write = result.append
 
     # optimise for small numbers
-    if -8323072 < num < 8323072:
+    if -8258175 < num < 8258175:
         if num >= 0:
             write(pack_small_positive_int(num))
             if frac:
@@ -346,18 +347,89 @@ def pack_number(num, frac=0):
 
     # deal with the big numbers
     if num >= 0:
-        write('\xff')
         write(pack_big_positive_int(num))
         if frac:
             write('\x00')
             write(frac)
     else:
-        write('\x00')
         write(pack_big_negative_int(num))
         if frac:
             write('\xff')
             write(frac)
     return ''.join(result)
+
+# ------------------------------------------------------------------------------
+# the core number decoder
+# ------------------------------------------------------------------------------
+
+_unpack_cache = {}
+
+def _unpack_number(s):
+    first = s[0]
+    if first >= '\x80':
+        # big +ve
+        if first == '\xff':
+            if s == '\xff':
+                return 8258175
+            s = s.rsplit('\xff', 1)[-1].split('\x01', 1)
+            lead_chars = s[0]
+            if len(s) == 1:
+                left = 0
+            else:
+                left = ord(s[1]) - 1
+            lead = 0
+            #print "ilead", r(lead_chars), left
+            for char in lead_chars:
+                lead += (lead * 252) + (ord(char) - 2)
+            #print "ulead", lead, left
+            num = (lead * 254) + left + 8258175
+        # small +ve
+        else:
+            num = ((ord(s[0]) - 128) * 255) + (ord(s[1]) - 1)
+            num = (num * 255) + (ord(s[2]) - 1)
+    else:
+        # big -ve
+        if first == '\x00':
+            num = (lead * 254) + left + 8258175
+        # small -ve
+        else:
+            num = ((127 - ord(s[0])) * 255) + (254 - ord(s[1]))
+            num = (num * 255) + (254 - ord(s[2]))
+        return -num
+    return num
+
+    while lead:
+        lead, mod = divmod(lead, 253)
+        append(chr(mod+2))
+
+def unpack_number(s):
+    """Decode a number according to the Argonought spec."""
+
+    num = frac = 0
+
+    if not s:
+        raise ValueError("Cannot decode an empty string.")
+
+    first = s[0]
+
+    if first >= '\x80':
+        split = s.split('\x00')
+        if len(split) == 1:
+            frac = 0
+        else:
+            s, frac = split
+    else:
+        split = s.split('\xff')
+        if len(split) == 1:
+            frac = 0
+        else:
+            s, frac = split
+
+    num = _unpack_number(s)
+    if frac:
+        frac = _unpack_number(frac)
+
+    return num, frac
 
 # ------------------------------------------------------------------------------
 # more test crap
@@ -370,7 +442,7 @@ r = lambda res: [ord(char) for char in res]
 def p(x):
     print r(pack_number(x))
 
-def verify_packing(a, b, debug=True, continue_on_error=False, step=1):
+def verify_packing(a, b, debug=True, continue_on_error=False, step=1, dec=0):
     prev = ''
     i = a
     while 1:
@@ -380,6 +452,14 @@ def verify_packing(a, b, debug=True, continue_on_error=False, step=1):
         cur = pack_number(i)
         if debug:
             print i, '\t', r(cur)
+        if dec:
+            cur_unpacked = unpack_number(cur)[0]
+            if i != cur_unpacked:
+                print "Error!"
+                if not continue_on_error:
+                    if not debug:
+                        print i, '\t', r(cur), '\t', cur_unpacked
+                    sys.exit()
         if cur < prev:
             print "Error!"
             if not continue_on_error:
@@ -407,7 +487,32 @@ def cmp_pack_length(bits):
 
 # verify_packing(-(2**1024), 2 ** 1024, debug=1, step=2**1014)
 # verify_packing(-(2**4096), 2 ** 4096, debug=0, step=2**4090)
-# verify_packing(-1024, 1024, step=2)
+# verify_packing(-(2**1024), 2 ** 1024, 0, 1, step=2**1014)
 
 # p(-8323070-100000000)
 # cmp_pack_length(4096)
+
+# print pack_number(2 ** 4096).count('\x00')
+
+# print len(pack_number(3133731337313373133731337))
+
+if 0:
+    i = -3932
+    e = pack_number(i)
+    print i
+    print r(e)
+    print unpack_number(e)
+
+
+verify_packing(8258175, 8258175+82583, 0, 0, dec=1)
+
+sys.exit()
+
+
+# p(82581756)
+i = 8258176023322749
+print i
+p = pack_number(i)
+print r(p)
+print unpack_number(p)[0]
+# verify_packing(-8258175, 8258175, 0, 1, dec=1)
