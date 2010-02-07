@@ -315,10 +315,15 @@ _pack_cache = {}
 def pack_number(num, frac=0):
     """Encode a number according to the Argonought spec."""
 
+    if (num, frac) in _pack_cache:
+        return _pack_cache[(num, frac)]
+
     if num >= 0:
         positive = 1
     else:
         positive = 0
+
+    frac_str = 0
 
     # calculate the encoding of the fractional part
     if frac:
@@ -326,14 +331,14 @@ def pack_number(num, frac=0):
             raise ValueError("The fractional part must be positive.")
         if frac < 8323072:
             if positive:
-                frac = pack_small_positive_int(frac)
+                frac_str = pack_small_positive_int(frac)
             else:
-                frac = pack_small_negative_int(frac)
+                frac_str = pack_small_negative_int(frac)
         else:
             if positive:
-                frac = pack_big_positive_int(frac)
+                frac_str = pack_big_positive_int(frac)
             else:
-                frac = pack_big_negative_int(frac)
+                frac_str = pack_big_negative_int(frac)
 
     result = []; write = result.append
 
@@ -341,28 +346,28 @@ def pack_number(num, frac=0):
     if -8258175 < num < 8258175:
         if positive:
             write(pack_small_positive_int(num))
-            if frac:
+            if frac_str:
                 write('\x00')
-                write(frac)
+                write(frac_str)
         else:
             write(pack_small_negative_int(num))
-            if frac:
+            if frac_str:
                 write('\xff')
-                write(frac)
-        return ''.join(result)
-
+                write(frac_str)
     # deal with the big numbers
-    if positive:
-        write(pack_big_positive_int(num))
-        if frac:
-            write('\x00')
-            write(frac)
     else:
-        write(pack_big_negative_int(num))
-        if frac:
-            write('\xff')
-            write(frac)
-    return ''.join(result)
+        if positive:
+            write(pack_big_positive_int(num))
+            if frac_str:
+                write('\x00')
+                write(frac_str)
+        else:
+            write(pack_big_negative_int(num))
+            if frac_str:
+                write('\xff')
+                write(frac_str)
+
+    return _pack_cache.setdefault((num, frac), ''.join(result))
 
 # ------------------------------------------------------------------------------
 # the core number decoder
@@ -422,7 +427,11 @@ def _unpack_number(s):
 def unpack_number(s):
     """Decode a number according to the Argonought spec."""
 
+    if s in _unpack_cache:
+        return _unpack_cache[s]
+
     num = frac = 0
+    ori = s
 
     if not s:
         raise ValueError("Cannot decode an empty string.")
@@ -446,7 +455,7 @@ def unpack_number(s):
     if frac:
         frac = abs(_unpack_number(frac))
 
-    return num, frac
+    return _unpack_cache.setdefault(ori, (num, frac))
 
 # ------------------------------------------------------------------------------
 # testing
@@ -519,10 +528,10 @@ if 0:
     print r(e)
     print unpack_number(e)[0]
 
-print r(pack_number(-1, 12))
-print r(pack_number(-1, 13))
+# print r(pack_number(-1, 12))
+# print r(pack_number(-1, 13))
 
-print pack_number(-1, 12) > pack_number(1, 1138974929462846286486282)
+# print pack_number(-1, 12) > pack_number(1, 1138974929462846286486282)
 
-print unpack_number(pack_number(-1, 12))
-print unpack_number(pack_number(1, 1138974929462846286486282))
+# print unpack_number(pack_number(-1, 12))
+# print unpack_number(pack_number(1, 1138974929462846286486282))
