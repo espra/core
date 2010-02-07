@@ -4,9 +4,8 @@
 
 """Ampify ZeroDataStore test client."""
 
-from urllib2 import HTTPHandler, HTTPSHandler, ProxyHandler, HTTPCookieProcessor, \
+from urllib2 import HTTPHandler, HTTPSHandler, ProxyHandler, \
         build_opener, install_opener, urlopen
-from cookielib import CookieJar
 from os.path import dirname, join as join_path, realpath
 
 # ------------------------------------------------------------------------------
@@ -33,12 +32,13 @@ class ZeroDataClient(object)
 
     def build_opener(debug=False):
         """Create handlers with the appropriate debug level.  
-        We intentionally create new ones because the
-        OpenerDirector class in urllib2 is smart enough to replace
-        its internal versions with ours if we pass them into the
-        urllib2.build_opener method.  This is much easier than trying
-        to introspect into the OpenerDirector to find the existing
-        handlers.
+        We intentionally create new ones because the OpenerDirector 
+        class in urllib2 is smart enough to replace its internal 
+        versions with ours if we pass them into the 
+        urllib2.build_opener method.  This is much easier than 
+        trying to introspect into the OpenerDirector to find the 
+        existing handlers.
+        based on http://code.activestate.com/recipes/440574/#c1
         """
         http_handler = HTTPHandler(debuglevel=debug)
         https_handler = HTTPSHandler(debuglevel=debug)
@@ -48,12 +48,7 @@ class ZeroDataClient(object)
         http_redirect_handler = HTTPRedirectHandler(debuglevel=debug)
         http_error_processor = HTTPErrorProcessor(debuglevel=debug)
 
-        # We want to process cookies, but only in memory so just use
-        # a basic memory-only cookie jar instance
-        cookie_jar = CookieJar()
-        cookie_handler = HTTPCookieProcessor(cookie_jar)
-
-        handlers = [http_handler, https_handler, cookie_handler]
+        handlers = [http_handler, https_handler, proxy_handler]
         opener = build_opener(handlers)
 
         # Save the cookie jar with the opener just in case it's needed
