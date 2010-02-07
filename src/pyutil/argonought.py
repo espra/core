@@ -45,8 +45,6 @@ DEFAULT_PRECISION = 20
 # the number datatype
 # ------------------------------------------------------------------------------
 
-# http://jsfromhell.com/classes/bignumber
-
 class Number(object):
     """A Number datatype."""
 
@@ -317,20 +315,31 @@ _pack_cache = {}
 def pack_number(num, frac=0):
     """Encode a number according to the Argonought spec."""
 
+    if num >= 0:
+        positive = 1
+    else:
+        positive = 0
+
     # calculate the encoding of the fractional part
     if frac:
         if frac < 0:
             raise ValueError("The fractional part must be positive.")
         if frac < 8323072:
-            frac = pack_small_positive_int(frac)
+            if positive:
+                frac = pack_small_positive_int(frac)
+            else:
+                frac = pack_small_negative_int(frac)
         else:
-            frac = pack_big_positive_int(frac)
+            if positive:
+                frac = pack_big_positive_int(frac)
+            else:
+                frac = pack_big_negative_int(frac)
 
     result = []; write = result.append
 
     # optimise for small numbers
     if -8258175 < num < 8258175:
-        if num >= 0:
+        if positive:
             write(pack_small_positive_int(num))
             if frac:
                 write('\x00')
@@ -343,7 +352,7 @@ def pack_number(num, frac=0):
         return ''.join(result)
 
     # deal with the big numbers
-    if num >= 0:
+    if positive:
         write(pack_big_positive_int(num))
         if frac:
             write('\x00')
@@ -435,7 +444,7 @@ def unpack_number(s):
 
     num = _unpack_number(s)
     if frac:
-        frac = _unpack_number(frac)
+        frac = abs(_unpack_number(frac))
 
     return num, frac
 
@@ -509,3 +518,11 @@ if 0:
     print i
     print r(e)
     print unpack_number(e)[0]
+
+print r(pack_number(-1, 12))
+print r(pack_number(-1, 13))
+
+print pack_number(-1, 12) > pack_number(1, 1138974929462846286486282)
+
+print unpack_number(pack_number(-1, 12))
+print unpack_number(pack_number(1, 1138974929462846286486282))
