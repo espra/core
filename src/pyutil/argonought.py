@@ -271,12 +271,14 @@ def pack_big_negative_int(num):
         while n:
             n, mod = divmod(n, 254)
             append(chr(254-mod))
-        write(''.join(reversed(size_chars)))
         write('\x00')
+        write(''.join(reversed(size_chars)))
     lead_chars = []; append = lead_chars.append
     while lead:
         lead, mod = divmod(lead, 254)
         append(chr(254-mod))
+    if len(lead_chars) > 1:
+        write('\x00')
     write(''.join(reversed(lead_chars)))
     write('\xfe')
     if left:
@@ -370,7 +372,11 @@ def p(x):
 
 def verify_packing(a, b, debug=True, continue_on_error=False, step=1):
     prev = ''
-    for i in xrange(a, b, step):
+    i = a
+    while 1:
+        i += step
+        if i >= b:
+            break
         cur = pack_number(i)
         if debug:
             print i, '\t', r(cur)
@@ -378,7 +384,7 @@ def verify_packing(a, b, debug=True, continue_on_error=False, step=1):
             print "Error!"
             if not continue_on_error:
                 if not debug:
-                    print i-1, '\t', r(prev)
+                    print i-step, '\t', r(prev)
                     print i, '\t', r(cur)
                 sys.exit()
         prev = cur
@@ -397,6 +403,11 @@ def cmp_pack_length(bits):
 # cmp_pack_length(4096)
 
 # verify_packing(-518000, 518000, 0)
-verify_packing(-8323071-100000, -8323070, 0)
+# verify_packing(-8323070-10000000, -8323071-1000000, 0)
 
-sys.exit()
+# verify_packing(-(2**1024), 2 ** 1024, debug=1, step=2**1014)
+# verify_packing(-(2**4096), 2 ** 4096, debug=0, step=2**4090)
+# verify_packing(-1024, 1024, step=2)
+
+# p(-8323070-100000000)
+# cmp_pack_length(4096)
