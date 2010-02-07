@@ -233,20 +233,18 @@ class Unit(object):
 def pack_big_positive_int(num):
     result = ['\xff']; write = result.append
     num -= 8258175
-    lead, left = divmod(num, 254)
-    # print "plead", lead, left
-    n = 0
+    lead, left = divmod(num, 255)
+    n = 1
     while 1:
-        if not (lead / (253 ** (n+2))):
+        if not (lead / (253 ** n)):
             break
         n += 1
-    if n:
-        size_chars = []; append = size_chars.append
-        while n:
-            n, mod = divmod(n, 254)
-            append(chr(mod+1))
-        write(''.join(reversed(size_chars)))
-        write('\xff')
+    size_chars = []; append = size_chars.append
+    while n:
+        n, mod = divmod(n, 254)
+        append(chr(mod+1))
+    write(''.join(reversed(size_chars)))
+    write('\xff')
     lead_chars = []; append = lead_chars.append
     while lead:
         lead, mod = divmod(lead, 253)
@@ -254,30 +252,29 @@ def pack_big_positive_int(num):
     write(''.join(reversed(lead_chars)))
     if left:
         write('\x01')
-        write(chr(left+1))
+        write(chr(left))
     return ''.join(result)
 
 def pack_big_negative_int(num):
     result = ['\x00']; write = result.append
     num = abs(num)
     num -= 8258175
-    lead, left = divmod(num, 255)
-    n = 0
+    lead, left = divmod(num, 254)
+    n = 1
     while 1:
-        if not (lead / (253 ** (n+2))):
+        if not (lead / (253 ** n)):
             break
         n += 1
-    if n:
-        size_chars = []; append = size_chars.append
-        while n:
-            n, mod = divmod(n, 253)
-            append(chr(254-mod))
-        write('\x00')
-        write(''.join(reversed(size_chars)))
+    size_chars = []; append = size_chars.append
+    while n:
+        n, mod = divmod(n, 254)
+        append(chr(254-mod))
+    write('\x00')
+    write(''.join(reversed(size_chars)))
     lead_chars = []; append = lead_chars.append
     while lead:
         lead, mod = divmod(lead, 253)
-        append(chr(254-mod))
+        append(chr(253-mod))
     if len(lead_chars) > 1:
         write('\x00')
     write(''.join(reversed(lead_chars)))
@@ -376,13 +373,11 @@ def _unpack_number(s):
             if len(s) == 1:
                 left = 0
             else:
-                left = ord(s[1]) - 1
+                left = ord(s[1])
             lead = 0
-            #print "ilead", r(lead_chars), left
             for char in lead_chars:
                 lead += (lead * 252) + (ord(char) - 2)
-            #print "ulead", lead, left
-            num = (lead * 254) + left + 8258175
+            num = (lead * 255) + left + 8258175
         # small +ve
         else:
             num = ((ord(s[0]) - 128) * 255) + (ord(s[1]) - 1)
@@ -390,17 +385,30 @@ def _unpack_number(s):
     else:
         # big -ve
         if first == '\x00':
-            num = (lead * 254) + left + 8258175
+            s = s.rsplit('\x00', 1)[-1].split('\xfe', 1)
+            lead_chars = s[0]
+            n = lead_chars.count('\x00')
+            if len(s) == 1:
+                left = 0
+            else:
+                left = s[1]
+                if left:
+                    if left == '\xfe':
+                        left = 0
+                    else:
+                        left = 254 - ord(left)
+                else:
+                    left = 0
+            lead = 0
+            for char in lead_chars:
+                lead += (lead * 252) + (253 - ord(char))
+            num = (lead * 254) + left + 8258175 - (254 * n)
         # small -ve
         else:
             num = ((127 - ord(s[0])) * 255) + (254 - ord(s[1]))
             num = (num * 255) + (254 - ord(s[2]))
         return -num
     return num
-
-    while lead:
-        lead, mod = divmod(lead, 253)
-        append(chr(mod+2))
 
 def unpack_number(s):
     """Decode a number according to the Argonought spec."""
@@ -432,7 +440,7 @@ def unpack_number(s):
     return num, frac
 
 # ------------------------------------------------------------------------------
-# more test crap
+# testing
 # ------------------------------------------------------------------------------
 
 import sys
@@ -443,31 +451,40 @@ def p(x):
     print r(pack_number(x))
 
 def verify_packing(a, b, debug=True, continue_on_error=False, step=1, dec=0):
-    prev = ''
-    i = a
-    while 1:
-        i += step
-        if i >= b:
-            break
-        cur = pack_number(i)
-        if debug:
-            print i, '\t', r(cur)
-        if dec:
-            cur_unpacked = unpack_number(cur)[0]
-            if i != cur_unpacked:
+    istep = 50000 * step
+    pstep = a
+    try:
+        prev = ''
+        i = a
+        while 1:
+            i += step
+            if i >= b:
+                break
+            if (i - pstep) >= istep:
+                print "i:", i
+                pstep = i
+            cur = pack_number(i)
+            if debug:
+                print i, '\t', r(cur)
+            if dec:
+                cur_unpacked = unpack_number(cur)[0]
+                if i != cur_unpacked:
+                    print "Error!"
+                    if not continue_on_error:
+                        if not debug:
+                            print i, '\t', r(cur), '\t', cur_unpacked
+                        sys.exit()
+            if cur < prev:
                 print "Error!"
                 if not continue_on_error:
                     if not debug:
-                        print i, '\t', r(cur), '\t', cur_unpacked
+                        print i-step, '\t', r(prev)
+                        print i, '\t', r(cur)
                     sys.exit()
-        if cur < prev:
-            print "Error!"
-            if not continue_on_error:
-                if not debug:
-                    print i-step, '\t', r(prev)
-                    print i, '\t', r(cur)
-                sys.exit()
-        prev = cur
+            prev = cur
+    except KeyboardInterrupt:
+        print "KB:", i, r(cur)
+        raise
 
 def cmp_pack_length(bits):
     n = 2 ** bits
@@ -482,37 +499,13 @@ def cmp_pack_length(bits):
 
 # cmp_pack_length(4096)
 
-# verify_packing(-518000, 518000, 0)
-# verify_packing(-8323070-10000000, -8323071-1000000, 0)
-
-# verify_packing(-(2**1024), 2 ** 1024, debug=1, step=2**1014)
-# verify_packing(-(2**4096), 2 ** 4096, debug=0, step=2**4090)
+# verify_packing(-20000001, 20000001, 0, 0, dec=1)
 # verify_packing(-(2**1024), 2 ** 1024, 0, 1, step=2**1014)
-
-# p(-8323070-100000000)
-# cmp_pack_length(4096)
-
-# print pack_number(2 ** 4096).count('\x00')
-
-# print len(pack_number(3133731337313373133731337))
+# verify_packing(-(2**4096), 2 ** 4096, 0, 0, step=2**4090)
 
 if 0:
-    i = -3932
+    i = -(8258175+82583+224)
     e = pack_number(i)
     print i
     print r(e)
-    print unpack_number(e)
-
-
-verify_packing(8258175, 8258175+82583, 0, 0, dec=1)
-
-sys.exit()
-
-
-# p(82581756)
-i = 8258176023322749
-print i
-p = pack_number(i)
-print r(p)
-print unpack_number(p)[0]
-# verify_packing(-8258175, 8258175, 0, 1, dec=1)
+    print unpack_number(e)[0]
