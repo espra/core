@@ -51,9 +51,5 @@ class ZeroDataClient(object)
         handlers = [http_handler, https_handler, proxy_handler]
         opener = build_opener(handlers)
 
-        # Save the cookie jar with the opener just in case it's needed
-        # later on
-        opener.cookie_jar = cookie_jar
-
         return opener
 
