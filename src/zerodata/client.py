@@ -4,9 +4,12 @@
 
 """Ampify ZeroDataStore test client."""
 
-from urllib2 import HTTPHandler, HTTPSHandler, ProxyHandler, \
-        build_opener, install_opener, urlopen
+from urllib2 import HTTPHandler, HTTPSHandler, ProxyHandler, UnknownHandler, \
+        HTTPDefaultErrorHandler, HTTPRedirectHandler, HTTPErrorProcessor, \
+        URLError, build_opener, install_opener, urlopen
 from os.path import dirname, join as join_path, realpath
+
+from simplejson import dumps as json_encode, loads as json_decode
 
 # ------------------------------------------------------------------------------
 # extend sys.path
@@ -19,18 +22,31 @@ sys.path.insert(0, join_path(AMPIFY_ROOT, 'environ', 'startup'))
 
 import rconsole
 
+# ------------------------------------------------------------------------------
+# some konstants
+# ------------------------------------------------------------------------------
+API_OPERATIONS = ['get', 'delete', 'invalidate', 'put', 'query']
+PRODUCTION_ENDPOINT = "http://ampify.appspot.com"
+TEST_ENDPOINT = "http://localhost"
+ENDPOINT_MESSAGE = "This is the API endpoint of the Ampify ZeroDataStore."
+
 
 class ZeroDataClient(object)
     """Provides a client for ZeroDataStore"""
 
     def __init__(self):
+        self._endpoint = TEST_ENDPOINT
         # Create an OpenerDirector with support for SSL and other stuff...
-        opener = self.build_opener(True) 
+        opener = self.build_opener(debug=True) 
         # ...and install it globally so it can be used with urlopen. 
         install_opener(opener) 
-        urlopen(’https://github.com’)
+        try:
+            response = urlopen(self._endpoint)
+        except URLError:
+            raise RuntimeError("API endpoint not available")
+        content = response.read()
 
-    def build_opener(debug=False):
+    def build_opener(self, debug=False):
         """Create handlers with the appropriate debug level.  
         We intentionally create new ones because the OpenerDirector 
         class in urllib2 is smart enough to replace its internal 
@@ -38,7 +54,9 @@ class ZeroDataClient(object)
         urllib2.build_opener method.  This is much easier than 
         trying to introspect into the OpenerDirector to find the 
         existing handlers.
-        based on http://code.activestate.com/recipes/440574/#c1
+        Based on http://code.activestate.com/recipes/440574/#c1
+
+        TODO: Implement workaround for http://bugs.python.org/issue7152
         """
         http_handler = HTTPHandler(debuglevel=debug)
         https_handler = HTTPSHandler(debuglevel=debug)
@@ -48,8 +66,24 @@ class ZeroDataClient(object)
         http_redirect_handler = HTTPRedirectHandler(debuglevel=debug)
         http_error_processor = HTTPErrorProcessor(debuglevel=debug)
 
-        handlers = [http_handler, https_handler, proxy_handler]
+        handlers = [http_handler, https_handler, proxy_handler, \
+                    unknown_handler, http_default_error_handler, \
+                    http_redirect_handler, http_error_processor]
         opener = build_opener(handlers)
 
         return opener
+
+    def call(self, api_operation, api_request):
+        try:
+            API_OPERATIONS.index(api_operation)
+        except ValueError:
+            raise RuntimeError("Invalid API operation.")
+        url = "%s/%s" % (self._endpoint, api_operation)
+        req = http_request(url)
+        json_request = json_encode(api_request)
+        try:
+            response = urlopen(req, json_request)
+        except URLError:
+            raise RuntimeError("API request failed.")
+        return json_decode(response.read())
 
