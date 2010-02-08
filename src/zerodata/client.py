@@ -85,5 +85,5 @@ class ZeroDataClient(object)
             response = urlopen(req, json_request)
         except URLError:
             raise RuntimeError("API request failed.")
-        return json_decode(openurl.read())
+        return json_decode(response.read())
 
