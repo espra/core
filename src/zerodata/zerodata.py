@@ -13,11 +13,18 @@ from traceback import format_exception
 from urllib import unquote as urlunquote
 
 from google.appengine.api.capabilities import CapabilitySet
-from simplejson import dumps as json_encode, loads as json_decode
+from google.appengine.ext import db
 
+from simplejson import dumps as json_encode, loads as json_decode
 from pyutil.crypto import validate_tamper_proof_string
 
 from config import *
+
+# ------------------------------------------------------------------------------
+# the age of ampify has begun!
+# ------------------------------------------------------------------------------
+
+AMPIFY_EPOCH = 1262790477000 # in milliseconds since the unix epoch
 
 # ------------------------------------------------------------------------------
 # i/o helpers
@@ -42,8 +49,10 @@ class DevNull(object):
 # some konstants
 # ------------------------------------------------------------------------------
 
+API_HANDLERS = {}
 DEVNULL = DevNull()
-HTTP_HANDLERS = {}
+
+API_REQUEST_KEYS = frozenset(['payload', 'sig'])
 SSL_FLAGS = frozenset(['yes', 'on', '1'])
 
 if os.environ.get('SERVER_SOFTWARE', '').startswith('Google'):
@@ -52,15 +61,17 @@ else:
     RUNNING_ON_GOOGLE_SERVERS = False
 
 OK = "Status: 200 OK\r\n"
-UNAUTH = "Status: 401 Unauthorized\r\n"
-ERROR = "Status: 500 Internal Server Error\r\n"
+ERROR = "Status: 500 Server Error\r\n"
 
-CONTENT_TYPE = "Content-Type: text/html; charset=utf-8\r\n"
+CONTENT_TYPE = "Content-Type: text/plain; charset=utf-8\r\n"
 LINE = '\r\n'
 OK_HEADER = OK + CONTENT_TYPE + LINE
 ERROR_HEADER = ERROR + CONTENT_TYPE + LINE
 
-DISABLED = '{"error": "CapabilityError", "error_msg": "%s disabled"}'
+DISABLED = '{"error":"CapabilityError", "error_msg":"Datastore disabled"}'
+NOTFOUND = '{"error":"NotFound", "error_msg":"Invalid API call"}'
+NOTAUTHORISED = '{"error":"NotAuthorised", "error_msg":"Invalid API call"}'
+
 UTF8 = 'utf-8'
 
 VALID_HTTP_METHODS = frozenset(['GET', 'POST'])
@@ -72,10 +83,20 @@ VALID_REQUEST_CONTENT_TYPES = frozenset([
 # app runner
 # ------------------------------------------------------------------------------
 
-def run_app():
+def run_app(
+    api=None,
+    dict=dict,
+    sys=sys,
+    API_HANDLERS=API_HANDLERS,
+    DEVNULL=DEVNULL,
+    ERROR=ERROR,
+    ERROR_HEADER=ERROR_HEADER,
+    NOTFOUND=NOTFOUND,
+    ):
     """The core application runner."""
 
     env = dict(os.environ)
+    kwargs = {}
 
     sys._boot_stdout = sys.stdout
     sys.stdout = DEVNULL
@@ -84,105 +105,55 @@ def run_app():
     try:
 
         http_method = env['REQUEST_METHOD']
-        path = env['PATH_INFO']
-        query = env['QUERY_STRING']
         content_type = env.get('CONTENT-TYPE', '')
 
-        # we assume that the request is utf-8 encoded, but that the request
-        # arg/kwarg "keys" are in ascii and the kwarg values to be in utf-8
-        args = [arg for arg in path.split('/') if arg]
-        kwargs = {}
+        args = [arg for arg in env['PATH_INFO'].split('/') if arg]
+        if args:
+            api = args[0]
 
-        # parse the query string
-        for part in [
-            sub_part
-            for part in query.lstrip('?').split('&')
-            for sub_part in part.split(';')
-            ]:
-            if not part:
-                continue
-            part = part.split('=', 1)
-            if len(part) == 1:
-                continue
-            key = urlunquote(part[0].replace('+', ' '))
-            value = part[1]
-            if value:
-                value = unicode(
-                    urlunquote(value.replace('+', ' ')),
-                    UTF8, 'strict'
-                    )
-            else:
-                value = None
-            if key in kwargs:
-                _val = kwargs[key]
-                if isinstance(_val, list):
-                    _val.append(value)
-                else:
-                    kwargs[key] = [_val, value]
-                continue
-            kwargs[key] = value
+        # return a NotFoundError if it doesn't look like a valid api call
+        if (http_method != 'POST') or (api not in API_HANDLERS):
+            write(ERROR_HEADER)
+            write(NOTFOUND)
+            return
+
+        # force the request to be over SSL when on a production deployment
+        if RUNNING_ON_GOOGLE_SERVERS and env.get('HTTPS') not in SSL_FLAGS:
+            write(ERROR_HEADER)
+            write(NOTAUTHORISED)
+            return
+
+        # we assume that the request is utf-8 encoded, but that the request
+        # kwarg "keys" are in ascii and the kwarg values to be in utf-8
+        if ';' in content_type:
+            content_type = content_type.split(';', 1)[0]
 
         # parse the POST body if it exists and is of a known content type
-        if http_method == 'POST':
+        if content_type in VALID_REQUEST_CONTENT_TYPES:
 
-            if ';' in content_type:
-                content_type = content_type.split(';', 1)[0]
+            post_environ = env.copy()
+            post_environ['QUERY_STRING'] = ''
 
-            if content_type in VALID_REQUEST_CONTENT_TYPES:
+            post_data = FieldStorage(
+                environ=post_environ, fp=env['wsgi.input']
+                ).list
 
-                post_environ = env.copy()
-                post_environ['QUERY_STRING'] = ''
-
-                post_data = FieldStorage(
-                    environ=post_environ, fp=env['wsgi.input'],
-                    keep_blank_values=True
-                    ).list
-
-                if post_data:
-                    for field in post_data:
-                        key = field.name
-                        if field.filename:
-                            value = field
-                        else:
-                            value = unicode(field.value, UTF8, 'strict')
-                        if key in kwargs:
-                            _val = kwargs[key]
-                            if isinstance(_val, list):
-                                _val.append(value)
-                            else:
-                                kwargs[key] = [_val, value]
-                            continue
-                        kwargs[key] = value
-
-        # force the request to be over SSL only when deployed
-        if RUNNING_ON_GOOGLE_SERVERS and env.get('HTTPS') not in SSL_FLAGS:
-            write(UNAUTH)
-            return
-
-        # do we have handlers for the request's http method?
-        if http_method not in VALID_HTTP_METHODS:
-            write(ERROR)
-            return
-
-        # figure out which api to handle or default to the root handler
-        if args:
-            api_name = args.pop(0)
-            api_definition = HTTP_HANDLERS.get(api_name)
-            check_token = True
-        else:
-            api_definition = HTTP_HANDLERS.get('/')
-            check_token = False
-
-        # do we have an api handler for the requested api?
-        if not api_definition:
-            write(ERROR)
-            return
+            if post_data:
+                for field in post_data:
+                    key = field.name
+                    if field.filename:
+                        continue
+                    if key not in API_REQUEST_KEYS:
+                        continue
+                    value = unicode(field.value, UTF8, 'strict')
+                    kwargs[key] = value
 
         # check that there's a token and it validates
-        if check_token:
-            token = kwargs.pop('token', None)
-            if not token:
-                write(UNAUTH)
+        if 0: # @/@
+            signature = kwargs.pop('sig', None)
+            if not signature:
+                write(ERROR_HEADER)
+                write(NOTAUTHORISED)
                 return
             if not validate_tamper_proof_string(
                 'token', token, key=API_KEY, timestamped=True
@@ -224,7 +195,13 @@ def run_app():
                 }))
 
     except:
+        # this shouldn't ever happen, but just in case...
         logging.critical(''.join(format_exception(*sys.exc_info())))
+        write(ERROR_HEADER)
+        write(json_encode({
+            "error": error.__class__.__name__,
+            "error_msg": str(error)
+            }))
 
     finally:
         sys.stdout = sys._boot_stdout
@@ -245,22 +222,50 @@ def delete(ctx=None):
         "ok": time()
         }
 
+class Ant(db.Model):
+    legs = db.StringProperty()
+
 def query(ctx):
+    key = db.Key.from_path('Ant', 1)
+    entity = db.get(key)
+    return {
+        'id': repr(key),
+        'legs': entity.legs
+        }
+
+# ------------------------------------------------------------------------------
+# you can thank evangineer for this craziness ;p
+# ------------------------------------------------------------------------------
+
+def multiop(
+    pre_id=None,
+    pre_query=None,
+    pre_cond=None, # == != in > < >= <= not in
+    pre_cond_attr=None,
+    pre_cond_val=None,
+    pre_op=None, # incr, decr, push, pop, set, delitem
+    pre_op_attr=None,
+    pre_op_value=None,
+    pre_op_return=None,
+    put_id=None,
+    put_val=None,
+    post_id=None,
+    post_query=None,
+    post_cond=None,
+    post_cond_attr=None,
+    post_cond_val=None,
+    post_op=None,
+    post_op_attr=None,
+    post_op_value=None,
+    post_op_return=None,
+    ):
     pass
-
-def invalidate(ctx):
-    pass
-
-# multiop
-
-def root(*args, **kwargs):
-    return "This is the API endpoint of the Ampify ZeroDataStore."
 
 # ------------------------------------------------------------------------------
 # register the handlers
 # ------------------------------------------------------------------------------
 
-HTTP_HANDLERS.update({
+API_HANDLERS.update({
     '/': (root, False),
     'get': (get, False),
     'delete': (delete, True),
