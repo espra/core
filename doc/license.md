@@ -1,7 +1,7 @@
 ---
 license: Public Domain
 layout: page
-title: Copyright and Licensing
+title: Public Domain License
 ---
 
 {% include LICENSE %}

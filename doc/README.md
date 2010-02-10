@@ -2,7 +2,7 @@ This directory contains the documentation for the Ampify platform.
 
 You can also view the documentation online at:
 
-* [http://amp.espians.com](http://amp.espians.com)
+* [http://code.ampify.it](http://code.ampify.it)
 
 The documentation site is automatically generated from the `*.md` source
 [Markdown](http://daringfireball.net/projects/markdown/) files using

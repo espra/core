@@ -3,8 +3,30 @@
 
 WAF=../environ/startup/waf --jobs=1
 
-all:
-	@$(WAF) build
+.PHONY: all benchmark clean debug deps distclean docs install test
+
+all: install
+
+benchmark:
+	@$(WAF) benchmark
+
+clean:
+	@$(WAF) clean
+
+debug:
+	@$(WAF) build --debug
+
+deps:
+	@$(WAF) deps
+
+distclean:
+	@$(WAF) distclean
+
+docs:
+	@$(WAF) docs
 
 install:
-	@$(WAF) install
+	@$(WAF) build
+
+test:
+	@$(WAF) test

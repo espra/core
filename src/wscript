@@ -64,3 +64,15 @@ def build(ctx):
     """build ampify"""
 
     ctx(target='latest', rule='touch ${TGT}')
+
+def test(ctx):
+    """test ampify"""
+
+def benchmark(ctx):
+    """benchmark ampify"""
+
+def deps(ctx):
+    """build ampify dependencies"""
+
+def docs(ctx):
+    """generate ampify docs"""

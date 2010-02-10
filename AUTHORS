@@ -4,20 +4,22 @@ Ampify Authors
 This is the official list of the Ampify Authors ("The Contributors"), listed in
 alphabetical order:
 
+| Name                       | Nick               | Email                    | Country        |
+|----------------------------|--------------------|--------------------------|----------------|
+| [James Arthur]             | thruflo            | <thruflo@googlemail.com> | U.K.           |
+| Maciej Fijalkowski         | fijal              | <fijall@gmail.com>       | Poland         |
+| [Mamading Ceesay]          | evangineer         | <mamading@gmail.com>     | U.K.           |
+| Mathew Ryden               | oierw              | <mathew@oierw.net>       | U.S.A.         |
+| [Sean B. Palmer]           | sbp                | <sean@miscoranda.com>    | U.K.           |
+| [Tav]                      | tav                | <tav@espians.com>        | U.K.           |
 
-| Name                       | Nickname             | Email                    | Country        |
-|---------------------------:|:--------------------:|:-------------------------|:---------------|
-| Maciej Fijalkowski         | `fijal`              | <fijall@gmail.com>       | Poland         |
-| [Mamading Ceesay]          | `evangineer`         | <mamading@gmail.com>     | U.K.           |
-| Mathew Ryden               | `oierw`              | <mathew@oierw.net>       | U.S.A.         |
-| [Sean B. Palmer]           | `sbp`                | <sean@miscoranda.com>    | U.K.           |
-| [Tav]                      | `tav`                | <tav@espians.com>        | U.K.           |
-
-
+[James Arthur]: http://thruflo.com
 [Mamading Ceesay]: http://twitter.com/evangineer
 [Sean B. Palmer]: http://inamidst.com
 [Tav]: http://tav.espians.com
 
 By adding yourself to this list, you explicitly agree to affirm all of your
 Contributions to the Public Domain according to the Public Domain license that
-can be found in the root LICENSE file.
+can be found in the root [LICENSE] file.
+
+[LICENSE]: license.html

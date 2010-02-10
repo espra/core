@@ -4,7 +4,108 @@ title: Documentation
 layout: page
 ---
 
-`ampify` is a micro-data powered collaboration platform.
+Ampify
+======
 
-The main deployment is at [amplify.it](http://www.amplify.it).
+* Table of Contents
+{:toc}
 
+The Ampify Platform aims to allow for micro-data powered application
+development. The goal for the 1.0 release is to have a fully decentralised
+platform, but right now we're working on creating version `Zero`.
+
+Have a read of the [ Zero Architecture](zero-architecture.html).
+
+
+Get Started
+-----------
+
+You need to have Git, a recent Python 2.x and general dev tools (gcc, make,
+etc.) installed.
+
+{% highlight bash %}
+# clone the source repository.
+$ git clone git://github.com/tav/ampify.git
+
+# setup ampify related environment variables using the ampenv.sh bash script.
+# you might also want to add this line to your ~/.profile or ~/.bashrc files.
+$ source ampify/environ/startup/ampenv.sh
+
+# use the new git update command which will now be on your $PATH to keep the
+# repository updated from now on — it also inits and updates git submodules.
+$ cd ampify
+$ git update
+
+# configure your build (and verify you have the necessary dependencies).
+$ cd src
+$ ./configure
+
+# build various aspects of the ampify platform and verify everything works by
+# running the tests.
+$ make test
+{% endhighlight %}
+
+
+Get Involved
+------------
+
+* Come by and say hello and introduce yourself on
+  [IRC](irc://irc.freenode.net/esp):
+
+<pre>
+server: irc.freenode.net
+channel: #esp
+chatlogs: <a href="http://irclogs.ampify.it">irclogs.ampify.it</a>
+</pre>
+
+* Get on the [ampify-dev](http://groups.google.com/group/ampify-dev) mailing
+  list.
+
+* Sign up to GitHub if you don't have an
+  [account](https://github.com/signup/free) — it takes just a minute! You can
+  then [fork](http://help.github.com/forking/) the [ampify
+  repository](http://github.com/tav/ampify) and send [pull
+  requests](http://github.com/guides/pull-requests) with any changes you might
+  have.
+
+{% highlight bash %}
+$ git clone git@github.com:yourUsername/ampify.git
+$ git remote add upstream git://github.com/tav/ampify.git
+{% endhighlight %}
+
+* Read the [getting started with
+  git](http://www.espians.com/getting-started-with-git.html) guide for Ampify
+  Developers if you're new to git.
+
+* Familiarise yourself with the Ampify testing and review process.
+
+{% highlight bash %}
+# commit your changes to your local repository.
+$ git commit
+
+# submit an issue to be reviewed on http://codereview.appspot.com — running this
+# also checks with appropriate local revhooks before your submission is made.
+$ git review submit 
+
+# make any changes and keep committing and submitting updates on the issue until
+# the reviewers give a LGTM (Looks Good To Me) reply.
+
+# once you have an okay, squash your various commits into a single commit and
+# push to the remote repository.
+$ git review push
+{% endhighlight %}
+
+
+General Info
+------------
+
+* [AUTHORS](authors.html) — A listing of those who have directly contributed
+  code/documentation to Ampify.
+
+* [CREDITS](credits.html) — A listing of those who have contributed indirectly.
+
+* [HISTORY](history.html) — A brief history of Ampify.
+
+* [LICENSE](license.html) — The Public Domain License for the Ampify platform.
+
+* [TODO](todo.html) — The current set of Priority Todo items.

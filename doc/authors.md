@@ -1,7 +1,7 @@
 ---
 license: Public Domain
 layout: page
-title: Credits
+title: Ampify Authors
 ---
 
 {% include AUTHORS %}

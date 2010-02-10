@@ -62,6 +62,11 @@ pre {
 	-webkit-box-shadow: 0px 0px 7px #cacaca;
 }
 
+pre.ascii-art {
+	line-height: 1em;
+	overflow: visible;
+}
+
 pre code {
 	background-color: transparent;
 	border: 0;
