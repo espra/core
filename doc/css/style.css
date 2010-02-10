@@ -24,7 +24,7 @@
 /* Element styles */
 
 body {
-	background-color: #fff;
+	background-color: #ededed;
 	color: #444;
 	font: 90%/1.55em Verdana, Optima, Verdana, sans-serif;
 	margin: 0;
@@ -117,8 +117,15 @@ ul {
 /* ID styles */
 
 #main {
+	background-color: #fefefe;
+	border: 1px solid #cacaca;
+	margin: 10px auto;
+	padding: 8px 14px;
 	width: 700px;
-	margin: 0 auto;
+	-moz-border-radius: 5px;
+	-webkit-border-radius: 5px;
+	border-radius: 5px;
+	-webkit-box-shadow: 0px 0px 7px #cacaca;
 }
 
 #header {
@@ -138,10 +145,15 @@ ul {
 
 .maruku_toc {
 	float: right;
-	border: 1px solid #ccc;
+	background-color: #fff;
+	border: 1px solid #cacaca;
 	margin-left: 8px;
 	margin-bottom: 8px;
 	padding: 6px 6px 6px 0;
+	-moz-border-radius: 5px;
+	-webkit-border-radius: 5px;
+	border-radius: 5px;
+	-webkit-box-shadow: 0px 0px 7px #cacaca;
 }
 
 .maruku_toc ul {
@@ -202,7 +214,7 @@ ul {
 .highlight .nb { color: #a535ae } /* Name.Builtin */ /* brightish pastely purple */
 .highlight .nc { color: #101010 } /* Name.Class */
 .highlight .nd { color: #6d8091 } /* Name.Decorator */
-.highlight .ne { color: #21439c } /* Name.Exception */
+.highlight .ne { color: #af956f } /* Name.Exception */
 .highlight .nf { color: #101010 } /* Name.Function */
 .highlight .ni { color: #101010 } /* Name.Entity */
 .highlight .nl { color: #101010 } /* Name.Label */
