@@ -1,32 +1,12 @@
 /* No Copyright (-) 2010 The Ampify Authors. This file is under the */
 /* Public Domain license that can be found in the root LICENSE file. */
 
-/* A font by Jos Buivenga (exljbris) -> www.exljbris.com */
-
-@font-face {
-	font-family: Museo;
-	src: url('http://cloud.github.com/downloads/tav/ampify/Museo300-Regular.otf') format('opentype');
-	font-weight: normal;
-}
-
-@font-face {
-	font-family: Museo;
-	src: url('http://cloud.github.com/downloads/tav/ampify/Museo700-Regular.otf') format('opentype');
-	font-weight: bold;
-}
-
-@font-face {
-	font-family: Museo;
-	src: url('http://cloud.github.com/downloads/tav/ampify/MuseoSans500-Italic.otf') format('opentype');
-	font-style: italic;
-}
-
 /* Element styles */
 
 body {
 	background-color: #ededed;
 	color: #444;
-	font: 90%/1.55em Verdana, Optima, Verdana, sans-serif;
+	font: 90%/1.55em Verdana, Optima, sans-serif;
 	margin: 0;
 	padding: 0;
 }
@@ -40,9 +20,9 @@ a:hover {
 }
 
 code {
-	background-color: #eee;
-	border: 1px solid #ccc;
-	padding: 2px;
+	background-color: #f0f0f0;
+	border: 1px solid #dadada;
+	padding: 1px 3px;
 	font-family: Monaco, "DejaVu Sans Mono", "Bitstream Vera Sans Mono", monospace;
 }
 
@@ -78,9 +58,8 @@ h1 {
 }
 
 h1, h2 {
-	color: #369;
 	color: #c32528;
-	font-family: Museo, Verdana;
+	font-family: "museo-1", "museo-2", Verdana;
 	letter-spacing: 1px;
 	text-shadow: #eee 2px 2px 3px;
 }
@@ -183,8 +162,8 @@ ul {
 .highlight .ge { color: #101010; font-style: italic } /* Generic.Emph */
 .highlight .gh { color: #101010 } /* Generic.Heading */
 .highlight .gi { color: #589819 } /* Generic.Inserted */
-.highlight .go { color: #cccccc } /* Generic.Output */
-.highlight .gp { color: #aaaaaa } /* Generic.Prompt */
+.highlight .go { color: #6a6a6a } /* Generic.Output */
+.highlight .gp { color: #6a6a6a } /* Generic.Prompt */
 .highlight .gr { color: #d22323 } /* Generic.Error */
 .highlight .gs { color: #101010 } /* Generic.Strong */
 .highlight .gt { color: #d22323 } /* Generic.Traceback */
