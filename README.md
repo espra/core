@@ -1,10 +1,27 @@
-![Ampify](http://cloud.github.com/downloads/tav/ampify/logo.ampify.small.png)
+![Ampify](http://cloud.github.com/downloads/tav/ampify/logo.ampify.smaller.png)
 
-Ampify is a micro-data powered collaboration platform.
+This is the source code repository for the Ampify Platform which aims to make
+micro-data powered application development super easy. The goal for the 1.0
+release is to have a fully decentralised "[internet operating system]" style
+platform, but right now we're working on creating a working proof of concept:
+version `Zero`.
 
-See the `doc` directory for more info or visit:
+For more info, please see the `doc` directory or visit:
 
-* [http://amp.espians.com/getting-started.html](http://amp.espians.com/getting-started.html)
+* [http://code.ampify.it] — online docs
+* [http://groups.google.com/group/ampify-dev] — mailing list
+* [irc://irc.freenode.net/esp] — irc channel
+
+Note: this is very much a work in progress and not much works yet — faster
+development is dependent on your involvement =)
 
 —
-Enjoy, tav <tav@espians.com>
+Enjoy, tav <<tav@espians.com>>
+
+
+
+
+[internet operating system]: http://en.wikipedia.org/wiki/Web_operating_system
+[http://code.ampify.it]: http://code.ampify.it
+[http://groups.google.com/group/ampify-dev]: http://groups.google.com/group/ampify-dev
+[irc://irc.freenode.net/esp]: irc://irc.freenode.net/esp
