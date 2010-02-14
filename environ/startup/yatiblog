@@ -1,0 +1,321 @@
+#! /usr/bin/env python
+
+# No Copyright (-) 2004-2010 The Ampify Authors. This file is under the
+# Public Domain license that can be found in the root LICENSE file.
+
+"""
+Yatiblog -- Blog/Documentation Generator
+
+By default yatiblog will generate .html for source files in the given directory.
+
+Usage: yatiblog [path/to/source/directory] [flags]
+
+  --clean            Delete all generated files instead of generating .html files.
+  --force            Force regeneration of ALL files irrespective of changes.
+  --pdf=CSS_FILE     Generate .pdf files from the documentation with the CSS_FILE.
+  --package=PACKAGE  Generate .html documentation for the given package.
+  --sitedir=DIRNAME  The subdirectory for site config/output [default: website]
+  --pdfdir=DIRNAME   The subdirectory for .pdf output [default: pdf]
+  --authors=FILENAME Path to a specifically formatted AUTHORS files.
+
+For example:
+
+  yatiblog /home/tav/blog pdf:/home/tav/blog/print.css package:plexnet
+
+"""
+
+import sys
+import pylibs
+
+from fnmatch import filter as fnfilter
+from os import stat, listdir, mkdir, remove as rm, utime
+from os.path import abspath, isabs, isdir, isfile, join as join_path
+
+from pyutil.article import main as generate_article
+
+# ------------------------------------------------------------------------------
+# some konstants
+# ------------------------------------------------------------------------------
+
+LATEST_FILENAME = '.latest'
+SITEDIR = 'website'
+PDFDIR = 'pdf'
+ARTICLE_STORE = '.articlestore'
+
+PDF_COMMAND = ['prince', '--input=html', '--output=pdf'] # --no-compress
+MTIME_CACHE = {}
+
+# ------------------------------------------------------------------------------
+# utility funktions
+# ------------------------------------------------------------------------------
+
+def get_mtime(file, directory=None, usecache=True):
+    """Return the last modified time of the given file."""
+    if directory is not None:
+        file = join_path(directory, *file.split('/')) # posixpath
+    if usecache:
+        if file in MTIME_CACHE:
+            return MTIME_CACHE[file]
+    try:
+        mtime = stat(file).st_mtime
+    except OSError:
+        mtime = 0
+    if usecache:
+        return MTIME_CACHE.setdefault(file, mtime)
+    return mtime
+
+def touch(file):
+    """Mimic the behaviour of the Unix ``touch`` utility."""
+    if isfile(file):
+        utime(file, None)
+    else:
+        open(file, 'wb').close()
+
+def get_flag(flag, alter=True, default=True):
+    """Return whether a specific flag is set in the command line parameters."""
+
+    flagc = '%s=' % flag
+    argv = []
+    retval = None
+    for arg in sys.argv:
+        if arg == flag:
+            retval = default
+        elif arg.startswith(flagc):
+            retval = arg.split(flagc, 1)[1] or default
+        else:
+            argv.append(arg)
+    if alter:
+        sys.argv[:] = argv
+    if retval is None and default is not True:
+        return default
+    return retval
+
+def error(message):
+    print('\n' + ('-' * 70) + '\n')
+    print("  !! %s !!" % message)
+    print('\n' + ('-' * 70) + '\n')
+
+def listdir2(path):
+    """Prune Emacs backup files."""
+
+    return [
+        filename
+        for filename in listdir(path)
+        if (not filename.startswith('.#'))
+        ]
+
+# ------------------------------------------------------------------------------
+# kore generator
+# ------------------------------------------------------------------------------
+
+def main():
+
+    sys.argv = sys.argv[1:]
+
+    help = get_flag('--help') or get_flag('help') or get_flag('-h')
+    force = get_flag('--force')
+    clean = get_flag('--clean')
+    pdfs = get_flag('--pdf')
+    package = get_flag('--package')
+    sitedir = get_flag('--sitedir', default=SITEDIR)
+    pdfdir = get_flag('--pdfdir', default=PDFDIR)
+    authors = get_flag('--authors')
+
+    if help:
+        print(__doc__)
+        sys.exit()
+
+    if not sys.argv:
+        error("A path to a directory with yatiblog text files wasn't given")
+        sys.exit(1)
+
+    LAST = len(sys.argv) - 1
+
+    for idx, source_dir in enumerate(sys.argv):
+
+        source_dir = abspath(source_dir)
+
+        if not isdir(source_dir):
+            error("%r doesn't exist" % source_dir)
+            sys.exit(1)
+
+        output_dir = sitedir
+
+        if not isabs(output_dir):
+            output_dir = join_path(source_dir, sitedir)
+
+        if not isdir(output_dir):
+            print("Creating: %r" % output_dir)
+            mkdir(output_dir)
+
+        output_pdf_dir = pdfdir
+
+        if not isabs(output_pdf_dir):
+            output_pdf_dir = join_path(output_dir, pdfdir)
+
+        if not isdir(output_pdf_dir):
+            print("Creating: %r" % output_pdf_dir)
+            mkdir(output_pdf_dir)
+
+        article_store = join_path(output_dir, ARTICLE_STORE)
+
+        if clean:
+
+             files = listdir2(output_dir)
+
+             for file in fnfilter(files, '*.html'):
+                 file = join_path(output_dir, file)
+                 print "Removing:", file
+                 rm(file)
+
+             for file in fnfilter(files, '*.rss'):
+                 file = join_path(output_dir, file)
+                 print "Removing:", file
+                 rm(file)
+
+             pdf_files = listdir2(output_pdf_dir)
+
+             for file in fnfilter(pdf_files, '*.pdf'):
+                 file = join_path(output_pdf_dir, file)
+                 print "Removing:", file
+                 rm(file)
+
+             if isfile(article_store):
+                 print "Removing:", article_store
+                 rm(article_store)
+
+             if idx == LAST:
+                 sys.exit()
+
+             continue
+
+        latest_file = join_path(output_dir, LATEST_FILENAME)
+        latest_time = get_mtime(latest_file)
+
+        sources = [
+            source[:-4]
+            for source in fnfilter(listdir2(source_dir), '*.txt')
+            ]
+
+        always_regen = join_path(source_dir, '.alwaysregen')
+
+        if isfile(always_regen):
+            always_regen_file = open(always_regen, 'rb')
+            always_regen = [x.strip() for x in always_regen_file.readlines()]
+            always_regen_file.close()
+        else:
+            always_regen = []
+
+        modified = False
+        template = join_path(output_dir, 'main.genshi')
+
+        index_mtime = get_mtime(join_path(output_dir, 'index.html'))
+        template_mtime = get_mtime(template)
+
+        argv = ['-d', article_store, '-t', template, '-o', output_dir]
+
+        if authors:
+            argv.append('-a')
+            argv.append(authors)
+
+        if force:
+            gensources = [
+                join_path(source_dir, '%s.txt' % source)
+                for source in sources
+                ]
+        else:
+            gensources = []
+            for source in sources:
+
+                source_file = join_path(source_dir, '%s.txt' % source)
+                dest_file = join_path(output_dir, '%s.html' % source.lower())
+                dest_mtime = get_mtime(dest_file)
+
+                regen = 0
+
+                if get_mtime(source_file) > dest_mtime:
+                    regen = 1
+                elif template_mtime > dest_mtime:
+                    regen = 1
+
+                if regen:
+                    gensources.append(source_file)
+                elif dest_mtime > index_mtime:
+                    modified = True
+
+        for source in always_regen:
+            if source in gensources:
+                continue
+            source_file = join_path(source_dir, source)
+            if not isfile(source_file):
+                continue
+            gensources.append(source_file)
+            modified = True
+
+        if gensources:
+            _argv = argv[:]
+            _argv.extend(gensources)
+            generate_article(_argv)
+            modified = True
+
+        regen = 0
+
+        if package:
+
+            try:
+                package_code = __import__(package)
+                package_root = package_code.__path__[0]
+            except:
+                error("Couldn't find package: %r" % package)
+                sys.exit(1)
+
+            package_files = set(); add = package_files.add
+            package_name = 'package.%s.html' % package
+            package_mtime = get_mtime(join_path(output_dir, package_name))
+
+            for entry in listdir2(package_root):
+                path = join_path(package_root, entry)
+                if isfile(path):
+                    if entry.endswith('.py'):
+                        if get_mtime(path) > package_mtime:
+                            regen = 1
+                            break
+                elif isdir(path):
+                    for entry2 in listdir2(join_path(package_root, entry)):
+                        path2 = join_path(package_root, entry, entry2)
+                        if isfile(path2) and entry2.endswith('.py'):
+                            if get_mtime(path2) > package_mtime:
+                                regen = 1
+                                break
+
+            if regen or force:
+                print
+                print("---> generating CODE DOCUMENTATION for %r" % package)
+                _argv = argv[:]
+                _argv.extend(['-c', package_root])
+                generate_article(_argv)
+                modified = True
+
+        if modified or (template_mtime > index_mtime) or force:
+            print
+            print("---> generating INDEX FILES for %r" % output_dir)
+            _argv = argv[:]
+            _argv.extend(['-p', output_dir])
+            generate_article(_argv)
+
+        touch(latest_file)
+
+        if pdfs:
+            print("PDF support not implemented yet.")
+
+# PDF_CSS = join_path(WEBSITE_ROOT, 'static', 'css', 'print.css')
+# $(documentation_pdf_files): documentation/pdf/%.pdf: documentation/article/%.html $(template) $(pdf_css)
+# 	@echo "---> generating" "$@"
+# 	    $(prince) $$n --style=$(pdf_css) --output=$@; \
+
+# ------------------------------------------------------------------------------
+# self runner
+# ------------------------------------------------------------------------------
+
+if __name__ == '__main__':
+    main()
