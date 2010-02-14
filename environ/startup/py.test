@@ -3,17 +3,7 @@
 # No Copyright (-) 2010 The Ampify Authors. This file is under the
 # Public Domain license that can be found in the root LICENSE file.
 
-import sys
-
-from os.path import dirname, join as join_path, realpath
-
-THIRD_PARTY_LIBS_PATH = join_path(
-    dirname(dirname(dirname(realpath(__file__)))), 'third_party', 'pylibs'
-    )
-
-if THIRD_PARTY_LIBS_PATH not in sys.path:
-    sys.path.insert(0, THIRD_PARTY_LIBS_PATH)
-
+import pylibs
 import py
 
 py.cmdline.pytest()
