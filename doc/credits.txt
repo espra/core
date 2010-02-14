@@ -1,33 +1,30 @@
 ---
-license: Public Domain
 layout: page
-title: Credits
 ---
 
 Credits
 =======
 
-In addition to the official [Ampify Authors](authors.html), a number of
+In addition to the official `Ampify Authors <authors.html>`_, a number of
 individuals have provided really helpful insights, support and inspiration:
 
-* [David Pinto](http://twitter.com/happyseaurchin), `happyseaurchin`
+* `David Pinto <http://twitter.com/happyseaurchin>`_, ``happyseaurchin``
 
   * Helped figure out and define much of Tent from which Ampify is derived.
 
-* [Sofia Bustamante](http://sofiabustamante.com), `olasofia`
+* `Sofia Bustamante <http://sofiabustamante.com>`_, ``olasofia``
 
   * Provided Tav with lots of TLC.
   * Provided inspiration for the Ampify name.
 
-* [Charles Goodier](http://doid.com), `mediovia`
+* `Charles Goodier <http://doid.com>`_, ``mediovia``
 
   * Pointed out that Ampify would be super useful in certain business contexts.
 
-* [Felix Geisendörfer](http://debuggable.com), `felixge`
+* `Felix Geisendörfer <http://debuggable.com>`_, ``felixge``
 
   * Detailed Node's internal variables for exclusion by nodelint.
 
-* `smw` and `tml` on the #go-nuts IRC channel:
+* ``smw`` and ``tml`` on the #go-nuts IRC channel:
 
   * Suggested using syscall.OS to define runtime.Platform.
-

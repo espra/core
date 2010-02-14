@@ -1,7 +1,6 @@
 ---
-license: Public Domain
+layout: index
 title: Documentation
-layout: page
 ---
 
 Ampify
