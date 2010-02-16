@@ -1,8 +1,9 @@
 Public Domain License
 =====================
 
-* Table of Contents
-{:toc}
+.. contents::   Table of Contents
+                :depth: 1
+                :backlinks: none
 
 In the spirit of contributing to the Public Domain, to the full extent possible
 under law, the Ampify Authors ("The Authors") have waived all copyright, patent
@@ -199,11 +200,13 @@ Limitations and Disclaimers
 Appendix
 --------
 
-* The text of this document is derived from [Creative Commons CC0 1.0
-  Universal](http://creativecommons.org/publicdomain/zero/1.0/legalcode), the
-  [Microsoft Public License](http://www.opensource.org/licenses/ms-pl.html) and
-  the [BSD style license](http://go.googlecode.com/hg/LICENSE) that ships with
-  Google Go.
+* The text of this document is derived from `Creative Commons CC0 1.0
+  Universal`_, the `Microsoft Public License`_ and the `BSD style license`_ that
+  ships with Google Go.
 
 * This Public Domain License is seen as a mere transitional requirement until
   international law adapts to the post intellectual property reality.
+
+.. _Creative Commons CC0 1.0 Universal: http://creativecommons.org/publicdomain/zero/1.0/legalcode
+.. _Microsoft Public License: http://www.opensource.org/licenses/ms-pl.html
+.. _BSD style license: http://go.googlecode.com/hg/LICENSE
