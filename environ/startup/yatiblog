@@ -7,7 +7,7 @@
 
 import pylibs
 
-from pyutil.article import main
+from pyutil.yatiblog import main
 
 
 try:

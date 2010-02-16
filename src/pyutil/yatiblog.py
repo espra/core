@@ -7,10 +7,8 @@ import sys
 
 from commands import getoutput
 from datetime import datetime
-from os import getcwd, sep as SEP, environ, walk, chdir
-from os import stat, listdir, mkdir, remove as rm
-from os.path import exists, join as join_path, isfile, isdir
-from os.path import splitext, isabs
+from os import chdir, getcwd, environ, listdir, mkdir, remove as rm, stat, walk
+from os.path import abspath, exists, join as join_path, isfile, isdir, splitext
 from optparse import OptionParser
 from pickle import load as load_pickle, dump as dump_pickle
 from re import compile
@@ -36,6 +34,7 @@ SYNTAX_FORMATTER = HtmlFormatter(cssclass='syntax', lineseparator='<br/>')
 # ------------------------------------------------------------------------------
 
 docstring_regex = compile(r'[r]?"""[^"\\]*(?:(?:\\.|"(?!""))[^"\\]*)*"""')
+find_include_refs = compile(r'\.\. include::\s*(.*)\s*\n').findall
 match_non_whitespace = compile(r'\S').match
 match_yaml_frontmatter = compile('^---\s*\n((?:.|\n)+?)\n---\s*\n').match
 replace_yaml_frontmatter = compile('^---\s*\n(?:(?:.|\n)+?)\n---\s*\n').sub
@@ -181,6 +180,7 @@ def main(argv=None):
     else:
         source_directory = getcwd()
 
+    source_directory = abspath(source_directory)
     chdir(source_directory)
 
     if not isdir(source_directory):
@@ -285,6 +285,7 @@ def main(argv=None):
 
         sources[source_file] = {
             '__content__': content,
+            '__deps__': find_include_refs(content),
             '__env__': env,
             '__genfile__': destname,
             '__id__': source_file,
@@ -313,6 +314,7 @@ def main(argv=None):
             source_path = join_path(source_directory, '_layouts', index_source)
             sources[index_source] = {
                 '__content__': '',
+                '__deps__': [],
                 '__env__': {},
                 '__genfile__': join_path(output_directory, index_page),
                 '__id__': index_source,
@@ -368,6 +370,12 @@ def main(argv=None):
 
             for layout in layout_chain:
                 if gen_mtime < layouts[layout]['__mtime__']:
+                    dirty = True
+                    break
+
+            for dep in info['__deps__']:
+                dep_mtime = stat(join_path(source_directory, dep)).st_mtime
+                if gen_mtime < dep_mtime:
                     dirty = True
                     break
 
