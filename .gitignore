@@ -1,10 +1,13 @@
 # specific files/directories
 
 .appengine_python_sdk
+.articlestore
 
 client_libs/appengine/secret.py
 client_libs/appengine/updated.py
 doc/_site
+doc/website/*.html
+doc/website/*.rss
 environ/local
 misc/devboard/siteconfig.py
 misc/devboard/updated.py
