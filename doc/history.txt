@@ -1,9 +1,14 @@
 ---
 layout: page
+title: History
 ---
 
 History
 =======
+
+**2010-02-16**
+
+* The architecture for an "Ampify Zero" is finalised.
 
 **2010-01-17**
 
@@ -40,7 +45,7 @@ History
 **2009-08-18**
 
 * With help from David Pinto, Tav coded a prototype version of the collaboration
-  platform called `Tent <http://tent.espians.com`_. It added micro syntax and
+  platform called `Tent <http://tent.espians.com>`_. It added micro syntax and
   structured search to facilitate collaboration over IRC.
 
 **2009-08-14**

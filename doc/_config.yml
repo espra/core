@@ -3,6 +3,6 @@ site_description: The Ampify Platform
 site_license: Public Domain
 site_title: Ampify
 site_url: http://code.ampify.it
+
 index_pages:
-- feed.rss: feed.genshi
 - archive.html: archive.genshi

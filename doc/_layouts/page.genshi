@@ -3,5 +3,5 @@ layout: site
 ---
 
 <div class="page">
-{{content}}
+${Markup(content)}
 </div>

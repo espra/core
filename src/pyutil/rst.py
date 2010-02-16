@@ -448,13 +448,19 @@ def syntax_directive(name, arguments, options, content, lineno,
     """Prettify <syntax> snippets into marked up HTML blocks."""
 
     try:
-        lexer = get_lexer_by_name(arguments[0])
+        lexer_name = arguments[0]
+        lexer = get_lexer_by_name(lexer_name)
     except ValueError:
+        lexer_name = 'txt'
         lexer = TextLexer()
+
+    formatter = HtmlFormatter(
+        cssclass='syntax %s' % lexer_name, lineseparator='<br/>'
+        )
 
     return [nodes.raw(
         '',
-        highlight(u'\n'.join(content), lexer, SYNTAX_FORMATTER),
+        highlight(u'\n'.join(content), lexer, formatter),
         format='html'
         )]
 
