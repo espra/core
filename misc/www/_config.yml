@@ -1,8 +1,13 @@
 site_author: Ampify Authors
-site_description: Help Create Weapons of Mass Construction
+site_description:
+    Ampify is a vision of a better future. Help it happen with £10/month. Open
+    Source + Reputation Economy = Web 4.0
+
 site_license: This work has been placed into the Public Domain.
-site_title: Ampify
+site_title: "Support Ampify: Help Create Weapons of Mass Construction!"
 site_url: http://www.ampify.it
+
+navigation_id: about
 
 index_pages:
 - index.html: index.txt

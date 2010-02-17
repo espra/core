@@ -1,6 +1,7 @@
 ---
 layout: site
 license: Public Domain
+navigation_id: faqs
 title: FAQs
 ---
 

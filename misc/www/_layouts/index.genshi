@@ -18,62 +18,6 @@ Open Source + Reputation Economy = Web 4.0
 </span>
 </div>
 
-<!-- COLUMNS -->
-
-<div class="columns">
-
-<div class="column">
-<div class="column-text">
-<a class="link" href="http://tav.espians.com/using-trustmaps-to-filter-the-realtime-web.html" target="_blank" title="Find out more about Trust Maps">TRUST MAPS</a> help people to filter the noise and manage information overload &middot; It does this by introducing a layer of trust to social networks &mdash; who you trust and for what &mdash; and uses that to filter, rank and search the Realtime Web. <a href="http://www.trustmap.org" target="_blank" title="Try the alpha release of Espra Trustmap">Try the Alpha</a> and use it to <a href="http://tweets.trustmap.org" target="_blank" title="Filter Tweets according to People's Trustmaps">filter tweets</a>. <a href="#info-trustmaps" class="more-link" target="_blank" title="Trust Maps"><img class="absmiddle" src="more.gif" alt="More ..." /></a>
-</div>
-</div>
-
-<div class="column">
-<div class="column-text">
-<a class="link" href="http://www.thruflo.com/2009/06/09/tav-describes-pecus.html" target="_blank">PECUS</a>
-free everyone to make a living doing what they love &middot; Based on &ldquo;shares&rdquo; in people, it
-enables a new reputation based economy where those adding value can be rewarded
-&mdash; whether they're writing, making music, coding, cleaning the streets or just sharing useful links!
-<a href="#info-pecus" class="more-link" target="_blank" title="Pecus"><img class="absmiddle" src="more.gif" alt="More ..." /></a>
-</div>
-</div>
-
-<div class="column">
-<div class="column-text">
-<a class="link" href="http://www.espians.com/plexnet.html" target="_blank">PLEXNET</a>
-extends the Open Web into an open source P2P platform/language with queryable event-driven structured data
-&middot;
-Its capability security base will enable scalable and composable services
-that aren't easily possible today
-&middot;
-It's Web 4.0 &mdash; a Web 4 the people by the people!
-<a href="#info-plexnet" class="more-link" target="_blank" title="Plexnet"><img class="absmiddle" src="more.gif" alt="More ..." /></a>
-</div>
-</div>
-
-<div class="column-last">
-<a href="http://tav.espians.com" target="_blank" title="Visit Tav's Blog"><img src="tav.jpg" alt="Tav" width="72px" height="72px" class="float-right" /></a>
-<div class="column-text">
-My name is <a href="http://tav.espians.com" target="_blank" title="Visit my blog">Tav</a> &middot; I'm a 27 year old from London and,
-together with the <a href="http://www.espians.com" target="_blank" title="Visit the Espians homepage">Espians</a>, I've been
-working on this for the last 10 years &middot;
-If, after watching
-the video, you like Ampify <span class="lede">please support us with £10/month</span> or more &middot; Thanks!
-<a href="#info-tav" class="more-link" target="_blank" title="Tav and the Espians"><img class="absmiddle" src="more.gif" alt="More ..." /></a>
-</div>
-</div>
-
-<hr class="clear" />
-
-<div id="info-pecu">
-</div>
-
-<div class="column-footer">&nbsp;</div>
-
-</div>
-
-<!-- END COLUMNS -->
-
 <hr class="clear" />
 
 <!-- RIGHT -->
