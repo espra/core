@@ -1,0 +1,25 @@
+---
+layout: site
+license: Public Domain
+title: FAQs
+---
+
+curl -H "Accept: application/vnd.tender-v1+json"
+"http://api.tenderapp.com/ampify/faqs?auth=1969ce1b4070075ff32cb1c21327ffc0611f9014&page=2&callback=foo"
+
+at end, before </body>
+
+<script src="https://ampify.tenderapp.com/tender_widget.js"
+type="text/javascript"></script>
+
+https://help.tenderapp.com/faqs/setup-installation/adding-and-customizing-the-tender-widget
+
+$.getJSON(
+    "http://quotessence.agoraworx.com/api/mamading?callback=?",
+    function (data) {
+        $('#epigraph-content').text(data.quote);
+        $('<a />').attr(
+          'href', 'http://quotessence.agoraworx.com/' + data.deck
+        ).text(data.author).appendTo('#epigraph-attribution');
+    }
+);

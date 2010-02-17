@@ -1,0 +1,466 @@
+---
+layout: site
+license: Public Domain
+---
+<div xmlns:py="http://genshi.edgewall.org/">
+
+<!-- ABOUT -->
+
+<div>
+
+<div class="headline">
+<span class="headline-text-small">
+Ampify is a vision of a better future. Help it happen with £10/month.
+</span>
+<br />
+<span class="headline-text">
+Open Source + Reputation Economy = Web 4.0
+</span>
+</div>
+
+<!-- COLUMNS -->
+
+<div class="columns">
+
+<div class="column">
+<div class="column-text">
+<a class="link" href="http://tav.espians.com/using-trustmaps-to-filter-the-realtime-web.html" target="_blank" title="Find out more about Trust Maps">TRUST MAPS</a> help people to filter the noise and manage information overload &middot; It does this by introducing a layer of trust to social networks &mdash; who you trust and for what &mdash; and uses that to filter, rank and search the Realtime Web. <a href="http://www.trustmap.org" target="_blank" title="Try the alpha release of Espra Trustmap">Try the Alpha</a> and use it to <a href="http://tweets.trustmap.org" target="_blank" title="Filter Tweets according to People's Trustmaps">filter tweets</a>. <a href="#info-trustmaps" class="more-link" target="_blank" title="Trust Maps"><img class="absmiddle" src="more.gif" alt="More ..." /></a>
+</div>
+</div>
+
+<div class="column">
+<div class="column-text">
+<a class="link" href="http://www.thruflo.com/2009/06/09/tav-describes-pecus.html" target="_blank">PECUS</a>
+free everyone to make a living doing what they love &middot; Based on &ldquo;shares&rdquo; in people, it
+enables a new reputation based economy where those adding value can be rewarded
+&mdash; whether they're writing, making music, coding, cleaning the streets or just sharing useful links!
+<a href="#info-pecus" class="more-link" target="_blank" title="Pecus"><img class="absmiddle" src="more.gif" alt="More ..." /></a>
+</div>
+</div>
+
+<div class="column">
+<div class="column-text">
+<a class="link" href="http://www.espians.com/plexnet.html" target="_blank">PLEXNET</a>
+extends the Open Web into an open source P2P platform/language with queryable event-driven structured data
+&middot;
+Its capability security base will enable scalable and composable services
+that aren't easily possible today
+&middot;
+It's Web 4.0 &mdash; a Web 4 the people by the people!
+<a href="#info-plexnet" class="more-link" target="_blank" title="Plexnet"><img class="absmiddle" src="more.gif" alt="More ..." /></a>
+</div>
+</div>
+
+<div class="column-last">
+<a href="http://tav.espians.com" target="_blank" title="Visit Tav's Blog"><img src="tav.jpg" alt="Tav" width="72px" height="72px" class="float-right" /></a>
+<div class="column-text">
+My name is <a href="http://tav.espians.com" target="_blank" title="Visit my blog">Tav</a> &middot; I'm a 27 year old from London and,
+together with the <a href="http://www.espians.com" target="_blank" title="Visit the Espians homepage">Espians</a>, I've been
+working on this for the last 10 years &middot;
+If, after watching
+the video, you like Ampify <span class="lede">please support us with £10/month</span> or more &middot; Thanks!
+<a href="#info-tav" class="more-link" target="_blank" title="Tav and the Espians"><img class="absmiddle" src="more.gif" alt="More ..." /></a>
+</div>
+</div>
+
+<hr class="clear" />
+
+<div id="info-pecu">
+</div>
+
+<div class="column-footer">&nbsp;</div>
+
+</div>
+
+<!-- END COLUMNS -->
+
+<hr class="clear" />
+
+<!-- RIGHT -->
+
+<div class="column-right">
+
+<div class="quote">
+The world needs good ideas and the Espians seem to have
+more than most. Keep up the good work.
+</div>
+<div class="quote-attribution">
+&mdash;
+<a href="http://www.facebook.com/profile.php?id=668116116">Brian Deegan</a>,
+Supporter <a href="http://supporters.ampify.com/4">#4</a>
+</div>
+
+<!--
+<div>
+Ampify can only happen with your support
+&mdash;
+Be one of the first 100! 
+</div>
+-->
+
+  <img src="gfx.espra.com.become-a-supporter.png" alt="Become A Supporter" style="margin-bottom: 10px; margin-top: 10px; margin-right: -30px; vertical-align: baseline; float: right;" />
+
+<table cellspacing="0px" cellpadding="0px" style="margin-left: 0px;">
+<tr><td class="male-counter"><img src="male3.png" alt="male" width="25px" height="34px" class="absmiddle" /><span id="male-lead">ONLY</span> <span id="male-count">999</span> SPACES LEFT</td></tr>
+<tr><td class="female-counter"><span id="female-lead">ONLY</span> <span id="female-count">999</span> SPACES LEFT<img src="female3.png" alt="female" width="25px" height="34px" class="absmiddle" /></td></tr>
+</table>
+
+<hr class="clear-right" />
+
+<!-- FORM -->
+
+<form name="supporterform" action="http://paypal.com" method="post">
+<div style="padding-right: 12px;">
+
+<input type="hidden" name="ip" value="" />
+<input type="hidden" name="country" value="" />
+<input type="hidden" name="country_id" value="" />
+<input type="hidden" name="region" value="" />
+<input type="hidden" name="city" value="" />
+<input type="hidden" name="lat" value="" />
+<input type="hidden" name="lon" value="" />
+<input type="hidden" name="supporter" value="" />
+<input type="hidden" name="referrer" value="" />
+<input type="hidden" name="first_referrer" value="" />
+<input type="hidden" name="useragent" value="" />
+<input type="hidden" name="os" value="" />
+<input type="hidden" name="browser" value="" />
+<input type="hidden" name="browser_version" value="" />
+
+<table cellspacing="0" cellpadding="0" id="supporter-form" class="male" width="100%">
+<tr><td class="label">
+  <label for="supporter-name">NAME</label>
+</td><td>
+  <div class="input-item">
+    <input type="text" name="donorname" id="supporter-name" size="18" />
+  </div>
+</td></tr>
+<tr><td class="label">
+  <label for="supporter-email">EMAIL ADDRESS</label>
+</td><td>
+  <div class="input-item">
+    <input type="text" name="donoremail" id="supporter-email" size="18" />
+  </div>
+</td></tr>
+<tr><td class="label">
+  <label for="supporter-amount">HOW MUCH CAN YOU AFFORD?</label>
+</td><td>
+  <div class="input-item">
+    <select id="supporter-amount" name="donoramount">
+      <option>£10/month</option>
+      <option>£20/month</option>
+      <option>£50/month</option>
+      <option>£100/month</option>
+    </select>
+  </div>
+</td></tr>
+<tr><td class="label">
+  <label for="supporter-gender">GENDER</label>
+</td><td>
+  <div class="input-item">
+    <select id="supporter-gender" name="donorgender" onchange="return change_gender_option();">
+      <option value="male">Male</option>
+      <option value="female">Female</option>
+    </select>
+  </div>
+</td></tr>
+<tr><td class="label">
+  <label for="supporter-site">TWITTER ID OR WEBSITE</label><br />
+  <span class="optional">[OPTIONAL]</span>
+</td><td>
+  <div class="input-item">
+    <input type="text" name="donorsite" id="supporter-site" size="18" />
+  </div>
+</td></tr>
+<tr><td class="label">
+  <label for="supporter-comment">WHY ARE YOU SUPPORTING?</label><br />
+  <span class="optional">[OPTIONAL]</span>
+</td><td>
+  <div class="input-item">
+    <textarea name="donorcomment" id="supporter-comment" cols="15" rows="4"></textarea>
+  </div>
+</td></tr>
+<tr><td colspan="2" id="supporter-submit">
+  <input id="support" type="submit" name="submit" value=" Support for 10 Months! " /><br />
+  <img src="payment.options.png" width="254px" height="16px" alt="Paypal and various other payment options accepted" class="absmiddle" />
+</td></tr>
+</table>
+
+</div>
+</form>
+
+<!-- END FORM -->
+
+<div style="color: #575757; margin: 20px 12px 12px 0; font-size: 19px; line-height: 25px;">
+
+<img style="float: left; margin-right: 5px;" src="gfx.espra.what.png" alt="?" />
+
+So, how do you benefit by being a supporter for 10 months?
+
+<hr class="clear" />
+
+</div>
+
+<!-- GET -->
+
+<div class="get-left">
+If you get in early as one of the first 1,000 male or female supporters, you
+get the special status of "Core Supporter", which means:
+<div class="get-item">
+<img src="dot-checked4.png" alt="checked" width="24px" height="24px" />
+You get a seat at the first term of the governing body for the Commons
+&middot;
+A potentially powerful position &mdash; especially since it will be
+the seed for all global trust map calculations.
+</div>
+<div class="get-item">
+<img src="dot-checked4.png" alt="checked" width="24px" height="24px" />
+You get exclusive access and privileges at Ampify related events and parties that will
+be happening in the future.
+</div>
+</div>
+
+<div class="get-right">
+All supporters get special privileges. For example:
+<div class="get-item">
+<img src="dot-checked4.png" alt="checked" width="24px" height="24px" />
+You get priority access to Ampify releases like private betas
+&middot;
+Giving you a chance to get a head start on everyone else.
+</div>
+<div class="get-item">
+<img src="dot-checked4.png" alt="checked" width="24px" height="24px" />
+You get 5 Tav Pecus for every £1 you contribute
+&middot;
+These could be very valuable when Ampify
+starts to have the kind of impact that it
+is setting out to.
+</div>
+<div class="get-item">
+<img src="dot-checked4.png" alt="checked" width="24px" height="24px" />
+You get permanent kudos for having made a new, open and exciting reality
+possible.
+</div>
+</div>
+
+<!-- END GET -->
+
+<hr class="clear" />
+
+<div class="quote">
+Yet somewhere in Britain, the counterculture dream still lives.
+</div>
+<div class="quote-attribution">
+&mdash;
+<a href="http://www.guardian.co.uk/technology/2001/jun/24/business.theobserver">guardian.co.uk</a> on Espra
+</div>
+
+<div class="tav-thanks">
+  <img src="tav.profile.jpg" alt="Tav" width="200px" height="266px" />
+  Thank you for taking the time to read this far.
+  <br /><br />
+  I hope I'll do justice to your expectations and make
+  the 10 month journey to Ampify an
+  exciting one for you.
+  <br /><br />
+  If you'd like to help even more, you could also make a one-off contribution
+  via <a href="http://www.paypal.com">paypal</a>
+  or <a href="#info-bank" class="more-link">bank transfer</a>. Thanks!
+  <div>&mdash; <a href="http://tav.espians.com" target="_blank" title="Visit Tav's Blog">Tav</a>, October 2009</div>
+  <hr class="clear" />
+</div>
+
+<hr class="clear" />
+
+<!-- COMMENTS -->
+
+<img src="gfx.espra.com.leave-a-comment.png" alt="Leave A Comment" style="margin-bottom: 10px; margin-top: 10px; margin-right: -30px; vertical-align: baseline; float: right;" />
+
+<hr class="clear" />
+
+<div class="the-disqus-section">
+<div id="disqus_thread"></div><script type="text/javascript" src="http://disqus.com/forums/espra/embed.js"></script><noscript><a href="http://espra.disqus.com/?url=ref">View the discussion thread.</a></noscript> <a href="http://disqus.com" class="dsq-brlink">blog comments powered by <span class="logo-disqus">Disqus</span></a>
+</div>
+
+<!-- END COMMENTS -->
+
+</div>
+
+<!-- END RIGHT -->  
+
+<!-- LEFT -->
+
+<div class="column-left">
+
+<!-- WATCH -->
+
+<div style="float: left;">
+  <img src="gfx.espra.com.watch-the-video.png" alt="Watch The Video!" style="margin-bottom: 0px; margin-left: -30px;" />
+</div>
+
+<hr class="clear-left" />
+
+<div>
+<div id="features" style="padding-left: 20px; padding-top: 10px; padding-right: 5px;">
+  <div id="feature-videos">
+  <object width="425" height="344"><param name="movie" value="http://www.youtube.com/v/weSM2-1IpqQ&amp;hl=en&amp;fs=1&amp;"></param><param name="allowFullScreen" value="true"></param><param name="wmode" value="opaque"></param><param name="allowscriptaccess" value="always"></param><embed src="http://www.youtube.com/v/weSM2-1IpqQ&amp;hl=en&amp;fs=1&amp;" type="application/x-shockwave-flash" wmode="opaque" allowscriptaccess="always" allowfullscreen="true" width="425" height="344"></embed></object>
+  </div>
+</div>
+</div>
+
+<hr class="clear" />
+
+
+<!-- END WATCH -->
+
+<div class="float: left"><img src="gfx.espra.com.help-spread-the-word.png" alt="Sign Up For Private Beta" style="margin-bottom: 10px; margin-top: 10px; margin-left: -30px;" /></div>
+
+<hr class="clear" />
+
+<div>
+  <ul class="share-buttons">
+    <li class="delicious"><a href="http://delicious.com/save?url=http%3A%2F%2Fespra.com&amp;title=Support+Espra%3A+Create+Weapons+of+Mass+Construction%21" title="Share on Delicious" target="_blank">Delicious</a></li>
+    <li class="digg"><a href="http://digg.com/submit?phase=2&amp;url=http%3A%2F%2Fespra.com&amp;title=Support+Espra%3A+Create+Weapons+of+Mass+Construction%21" title="Share on Digg" target="_blank">Digg</a></li>
+    <li class="reddit"><a href="http://reddit.com/submit?url=http%3A%2F%2Fespra.com&amp;title=Support+Espra%3A+Create+Weapons+of+Mass+Construction%21" title="Share on Reddit" target="_blank">Reddit</a></li>
+    <li class="stumbleupon"><a href="http://www.stumbleupon.com/submit?url=http%3A%2F%2Fespra.com&amp;title=Support+Espra%3A+Create+Weapons+of+Mass+Construction%21" title="Share on Stumbleupon" target="_blank">StumbleUpon</a></li>
+    <li class="twitter"><a href="http://twitter.com/home/?status=RT+%40tav+Support+Espra%3A+Create+Weapons+of+Mass+Construction%21+http%3A%2F%2Fespra.com" title="Share on Twitter" target="_blank">Twitter</a></li>
+    <li class="facebook"><a href="http://www.facebook.com/share.php?u=http%3A%2F%2Fespra.com&amp;t=Support+Espra%3A+Create+Weapons+of+Mass+Construction%21" title="Share on Facebook" target="_blank">Facebook</a></li>
+    <li class="sharethis"><a href="javascript:void(0);" id="sharethis-1" title="ShareThis">ShareThis</a></li>
+    <li class="myspace"><a href="http://www.myspace.com/Modules/PostTo/Pages/?l=3&amp;u=http%3A%2F%2Fespra.com&amp;t=Support+Espra%3A+Create+Weapons+of+Mass+Construction%21&amp;c=%3Cp%3EPowered+by+%3Ca+href%3D%22http%3A%2F%2Fsharethis.com%22%3EShareThis%3C%2Fa%3E%3C%2Fp%3E" title="Share on Myspace" target="_blank">Myspace</a></li>
+    <li class="technorati"><a href="http://www.technorati.com/faves?add=http%3A%2F%2Fespra.com" title="Share on Technorati" target="_blank">Technorati</a></li>
+    <li class="google"><a href="http://www.google.com/bookmarks/mark?op=edit&amp;bkmk=http%3A%2F%2Fespra.com&amp;title=Support+Espra%3A+Create+Weapons+of+Mass+Construction%21" title="Share on Google" target="_blank">Google</a></li>
+    <li class="yahoo"><a href="http://buzz.yahoo.com/buzz?targetUrl=http%3A%2F%2Fespra.com&amp;headline=Support+Espra%3A+Create+Weapons+of+Mass+Construction%21&amp;src=sharethis" title="Share on Yahoo!" target="_blank">Yahoo</a></li>
+  </ul>
+</div>
+
+<hr class="clear" />
+
+<div class="share-text">
+&uarr; It would be cool if you click on all the links where you have an account. Thanks!
+</div>
+
+<div class="promote">
+  <a class="fbshare" href="http://www.facebook.com/share.php?u=http%3A%2F%2Fespra.com&amp;t=Support+Espra%3A+Create+Weapons+of+Mass+Construction%21" title="Share on Facebook" target="_blank">&nbsp;</a>
+  <script type="text/javascript">
+  tweetmeme_url = 'http://espra.com';
+  tweetmeme_style = 'compact';
+  tweetmeme_source = 'tav';
+  tweetmeme_alias = 'http://espra.com';
+  </script>
+  <div class="promote-yahoo-buzz"><a href="http://buzz.yahoo.com/buzz?targetUrl=http%3A%2F%2Fespra.com&amp;headline=Support+Espra%3A+Create+Weapons+of+Mass+Construction%21&amp;src=sharethis" target="_blank" title="Buzz Up!"><img src="http://cloud.github.com/downloads/tav/plexnet/gfx.icon.yahoobuzz.png" alt="Share on Yahoo Buzz!" /></a></div>
+  <div class="promote-retweet"><script type="text/javascript" src="http://tweetmeme.com/i/scripts/button.js"></script></div>
+</div>
+
+<hr class="clear" />
+
+<img src="gfx.espra.com.stay-informed.png" alt="Stay Informed" style="margin-bottom: 10px; margin-top: 10px; margin-left: -30px; float: left;" />
+
+<hr class="clear" />
+
+<ul class="follow">
+<li>
+  <div>
+    <a href="http://www.facebook.com/Espians" title="Join the Espians on Facebook" target="_blank"><img src="gfx.icon.square.facebook.png" alt="Join the Espians on Facebook" width="64px" height="64px" /></a>
+  </div>
+  <a href="http://www.facebook.com/Espians" title="Join the Espians on Facebook" target="_blank">JOIN ESPIANS</a>
+</li>
+<li>
+  <div>
+    <a href="http://www.youtube.com/asktav" title="Subscribe to my Videos on YouTube" target="_blank"><img src="gfx.icon.square.youtube.png" alt="Subscribe to my Videos on YouTube" width="64px" height="64px" /></a>
+  </div>
+  <a href="http://www.youtube.com/asktav" title="Subscribe to my Videos on YouTube" target="_blank">SUBSCRIBE</a>
+</li>
+<li>
+  <div>
+    <a href="http://feeds2.feedburner.com/asktav" title="Subscribe to my Blog's RSS Feed" target="_blank"><img src="gfx.icon.square.rss.png" alt="Subscribe to my Blog's RSS Feed" width="64px" height="64px" /></a>
+  </div>
+  <a href="http://feeds2.feedburner.com/asktav" title="Subscribe to my Blog's RSS Feed" target="_blank">SUBSCRIBE</a>
+</li>
+<li>
+  <div>
+    <a href="http://twitter.com/tav" title="Follow @tav on Twitter" target="_blank"><img src="gfx.icon.square.twitter.png" alt="Follow @tav on Twitter" width="64px" height="64px" /></a>
+  </div>
+  <a href="http://twitter.com/tav" title="Follow @tav on Twitter" target="_blank">FOLLOW @TAV</a>
+</li>
+<!--
+-->
+</ul>
+
+<hr class="clear" />
+
+<img src="gfx.espra.com.get-involved.png" alt="Get Involved" style="margin-bottom: 10px; margin-top: 10px; margin-left: -30px; float: left;" />
+
+<hr class="clear" />
+
+<div class="action-items">
+  Please bear in mind that things are likely to be quite chaotic at the start.
+  <div class="action-link">
+	<a href="http://www.tentapp.com" title="Use Espra Tent" target="_blank"><img src="gfx.espra.logo.tent.png" width="96px" height="102px" alt="Tent"  class="action-left" /></a>
+    Most of the fun will be happening on <a href="http://www.tentapp.com" title="Use Espra Tent" target="_blank">Tent</a>. All supporters get access or you can ask for an invite. In either case, hope to see you soon at <a href="http://www.tentapp.com/" target="_blank" title="Use Espra Tent">http://tentapp.com</a>.
+  </div>
+  <hr class="clear" />
+  <div class="action-link">
+	<a href="http://help.espra.com" title="Visit Espra's Help Forum" target="_blank"><img src="gfx.espra.logo.tender.png" width="96px" height="96px" alt="Tender" class="action-left" /></a>
+    You can make suggestions and ask questions by visiting
+	<a href="http://help.espra.com" title="Visit Espra's Help Forum" target="_blank">http://help.espra.com</a> or
+    emailing <a href="mailto:help@espra.com">help@espra.com</a>.
+  </div>
+  <hr class="clear" />
+  <div class="action-link">
+	<a href="http://github.com/tav/plexnet" title="Get Coding on the Plexnet at GitHub" target="_blank"><img src="gfx.espra.logo.github.png" width="96px" height="96px" alt="GitHub" class="action-left" /></a>
+	If you're a coder, you can watch the <a href="http://github.com/tav/plexnet" title="Get Coding on the Plexnet at GitHub" target="_blank">plexnet repository</a> on GitHub. Send me pull requests if you're happy to commit your patches to the <a href="http://creativecommons.org/publicdomain/zero/1.0/" target="_blank" title="Public Domain">public domain</a>.
+  </div>
+  <hr class="clear" />
+  <div class="action-text">
+    You can use the <a href="http://twitter.com/search?q=%23espra" target="_blank" title="#espra">#espra</a> hashtag to join the <a href="http://search.twitter.com/search?q=%23espra+OR+tentapp+OR+%23espians+OR+%23trustmap+OR+from%3Aespians+OR+to%3Aespians+OR+plexnet" target="_blank" title="See the conversation on Twitter">conversation on Twitter</a>.
+    You can post your thoughts and links to the <a href="http://friendfeed.com/espians" target="_blank" title="Join the Espians FriendFeed room">Espians room</a> on FriendFeed.
+    You can also join the <a href="irc://irc.freenode.net/esp" title="Join #esp IRC Chat">#esp</a> channel on irc.freenode.net.
+  </div>
+  <div class="action-text">
+    Thank you and welcome to Espia!
+  </div>
+</div>
+
+<iframe src="http://friendfeed.com/search?q=espians+OR+espra+OR+plexnet+OR+tentapp+OR+group%3Aespra+OR+group%3Aespians&amp;embed=1" frameborder="0" height="3600px" width="430px" style="margin-left: 12px; border: 1px solid #aaa; width: 430px; max-width: 430px; margin-top: 12px;"></iframe>
+
+</div>
+
+<!-- END LEFT -->
+
+<hr class="clear" />
+
+</div>
+
+<!-- END ABOUT -->
+
+<!-- INFOPANES -->
+
+<div id="info-panes">
+  <div id="info-trustmaps">
+    <img src="tav-window2.jpg" />
+  </div>
+  <div id="info-pecus">
+    <img src="tav-window2.jpg" />
+  </div>
+  <div id="info-plexnet">
+    <img src="tav-window2.jpg" width="700px" height="700px" />
+  </div>
+  <div id="info-tav">
+    <img src="tav-window2.jpg" style="float: left;" />
+Booya!
+  </div>
+  <div id="info-bank">
+<table>
+<tr><td>ACCOUNT</td><td>Metanational Commons Limited</td></tr>
+<tr><td>BANK</td><td>Natwest</td></tr>
+<tr><td>SWIFT</td><td>MIDLGB2105G</td></tr>
+<tr><td>SORT CODE</td><td>40-01-07</td></tr>
+<tr><td>ACCOUNT NUMBER</td><td>41558226</td></tr>
+<tr><td>IBAN</td><td>GB28MIDl40010741558226</td></tr>
+</table>
+  </div>
+</div>
+
+<!-- END INFOPANES -->
+
+</div>

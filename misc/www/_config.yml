@@ -1,0 +1,8 @@
+site_author: Ampify Authors
+site_description: Help Create Weapons of Mass Construction
+site_license: This work has been placed into the Public Domain.
+site_title: Ampify
+site_url: http://www.ampify.it
+
+index_pages:
+- index.html: index.txt

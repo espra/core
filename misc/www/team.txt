@@ -1,0 +1,13 @@
+---
+layout: site
+license: Public Domain
+title: Team
+---
+
+Contact
+
+* Mamading Ceesay -- The Mentat
+* David Pinto -- The Social Artist
+* Sofia Bustamante -- The Social Architect
+* Danny Bruder -- The Impresario
+* James Arthur -- The Chief
