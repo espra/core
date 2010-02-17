@@ -118,8 +118,10 @@ def load_layout(name, path, layouts, deps=None):
     if front_matter:
         env = load_yaml(front_matter.group(1))
         layout = env.pop('layout', None)
-        if layout and (layout not in layouts):
-            deps = load_layout(layout, path, layouts)
+        if layout:
+            if layout not in layouts:
+                load_layout(layout, path, layouts)
+            deps = layouts[layout]['__deps__']
             if deps:
                 deps = [layout] + deps
             else:
@@ -136,8 +138,6 @@ def load_layout(name, path, layouts, deps=None):
         '__path__': template_path,
         '__template__': template,
         }
-
-    return deps
 
 # ------------------------------------------------------------------------------
 # our main skript funktion
