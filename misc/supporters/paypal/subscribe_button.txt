@@ -1,0 +1,10 @@
+Get a copy of the PayPal Website Payments Standard Integration Guide from 
+https://cms.paypal.com/cms_content/US/en_US/files/developer/PP_WebsitePaymentsStandard_IntegrationGuide.pdf
+
+The Checkout Experience With Subscribe Buttons - page 123
+Managing Subscriptions - page 131
+Sample HTML Code for a Basic Subscribe Button - page 177
+Sample HTML Code for a Subscribe Button With Limits on Billing Cycles - page 179
+Sample HTML Code for a Modify Subscription Button  - page 183
+Securing Your Website Payments Standard Buttons - page 285
+HTML Variables for Subscribe Buttons - page 377
