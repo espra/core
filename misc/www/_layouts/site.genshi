@@ -7,7 +7,7 @@ license: Public Domain
 
   menu_class = {}
 
-  for page in ['about', 'roadmap', 'supporters', 'code', 'faqs', 'blog', 'irc', 'team']:
+  for page in ['about', 'roadmap', 'supporters', 'code', 'blog', 'community', 'team']:
     if page == navigation_id:
       menu_class[page] = {'class': 'selected'}
       selected = True
@@ -18,17 +18,18 @@ license: Public Domain
 <head>
  <title py:if="defined('title')">Ampify :: ${title}</title>
  <title py:if="not defined('title')">${site_title}</title>
- <meta content="text/html; charset=utf-8" http-equiv="content-type" />
+ <meta http-equiv="content-language" content="en" />
+ <meta http-equiv="content-type" content="text/html; charset=utf-8" />
  <meta name="author" content="${site_author}" />
  <meta name="description" content="${site_description}" />
  <meta name="copyright" content="${site_license}" />
  <meta name="document-rating" content="general" />
- <meta http-equiv="content-language" content="en" />
- <meta name="verify-v1" content="aLcMPDDmDYvgufTDcJiiCOgPt/FOooMmGHiPj64BMbU=" />
  <link rel="stylesheet" type="text/css" media="screen" title="default" href="css/site.css" />
  <link rel="alternate" type="application/rss+xml" title="RSS Feed for Ampify" href="http://feeds2.feedburner.com/ampify" />
+ <py:if test="defined('typekit')">
  <script type="text/javascript" src="http://use.typekit.com/hdt8sni.js"></script>
  <script type="text/javascript">try{Typekit.load();}catch(e){}</script>
+ </py:if>
  <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.1/jquery.min.js"></script>
  <script type="text/javascript" src="http://w.sharethis.com/button/sharethis.js#publisher=65b4c59a-e069-4896-84b4-7d8d7dce2b77&amp;type=website&amp;post_services=email%2Cfacebook%2Cfriendfeed%2Csms%2Ctwitter%2Cdigg%2Cwindows_live%2Clinkedin%2Creddit%2Cgoogle_bmarks%2Cdelicious%2Cstumbleupon%2Cblogger%2Cybuzz%2Cslashdot%2Cbebo%2Cyahoo_bmarks%2Cmixx%2Ctechnorati%2Cpropeller%2Cwordpress%2Cnewsvine%2Cxanga%2Clivejournal"></script>
  <script type="text/javascript">
@@ -56,20 +57,19 @@ license: Public Domain
 <div id="body-wrapper"><div id="body">
 
 <div id="header">
-  <div id="logo"><a href="index.html"><img src="http://static1.ampify.it/logo.ampify.smallest.png" alt="Ampify" width="200px" height="45px" /></a></div>
+  <div id="logo"><a href="http://ampify.it"><img src="http://static.ampify.it/logo.ampify.smallest.png" alt="Ampify" width="200px" height="45px" /></a></div>
   <div id="menu-follow">
     <div><a href="http://www.facebook.com/Espians" title="Join Espians on Facebook"><img src="http://static.ampify.it/icon.facebook.gif" alt="Join Espians on Facebook" width="15px" height="15px" /></a></div>
     <div><a href="http://twitter.com/tav" title="Follow @tav on Twitter"><img src="http://static.ampify.it/icon.twitter.gif" alt="Follow @tav on Twitter" width="14px" height="14px" /></a></div>
     <div><a href="http://feeds2.feedburner.com/ampify" title="Subscribe to the RSS Feed"><img src="http://static.ampify.it/icon.rss.png" alt="Subscribe to the RSS Feed" width="14px" height="14px" /></a></div>
   </div>
   <div id="menu"><ul>
-    <li><a href="team.html" py:attrs="menu_class['team']">Team</a></li>
-    <li><a href="http://irclogs.ampify.it" py:attrs="menu_class['irc']">IRC</a></li>
+    <li><a href="http://ampify.it/team.html" py:attrs="menu_class['team']">Team</a></li>
     <li><a href="http://blog.ampify.it" py:attrs="menu_class['blog']">Blog</a></li>
-    <li><a href="faqs.html" py:attrs="menu_class['faqs']">FAQs</a></li>
+    <li><a href="http://ampify.it/community.html" py:attrs="menu_class['community']">Community</a></li>
     <li><a href="http://dev.ampify.it" py:attrs="menu_class['code']">Code</a></li>
     <li><a href="http://supporters.ampify.it" py:attrs="menu_class['supporters']">Supporters</a></li>
-    <li><a href="roadmap.html" py:attrs="menu_class['roadmap']">Roadmap</a></li>
+    <li><a href="http://ampify.it/roadmap.html" py:attrs="menu_class['roadmap']">Roadmap</a></li>
     <li><a href="http://ampify.it" py:attrs="menu_class['about']">About</a></li>
   </ul></div>
   <div id="menu-lang">

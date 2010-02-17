@@ -8,6 +8,7 @@ site_title: "Support Ampify: Help Create Weapons of Mass Construction!"
 site_url: http://www.ampify.it
 
 navigation_id: about
+typekit: enabled
 
 index_pages:
 - index.html: index.txt
