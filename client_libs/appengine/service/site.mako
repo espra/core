@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
   <meta content="text/html; charset=utf-8" http-equiv="content-type" />
-  <title>Espra Tent &#187; (page_title)</title>
+  <title>Ampify&#187; (page_title)</title>
   <meta http-equiv="imagetoolbar" content="no" />
   <meta name="MSSmartTagsPreventParsing" content="true" />
   <meta name="robots" content="index, follow" />
