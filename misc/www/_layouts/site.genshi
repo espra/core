@@ -153,9 +153,6 @@
 <hr class="clear" />
 
 <div py:if="defined('content')">
-<style type="text/css">
-#body { min-height: 200px; }
-</style>
 <div class="section">
 ${Markup(content)}
 </div>
@@ -166,16 +163,10 @@ ${Markup(content)}
 <!-- FOOTER -->
 
 <div id="footer"><div id="footer-content">
-
-<div id="footer-espians">
-<div class="footer-follow">
-  <a href="http://twitter.com/tav" title="Follow @tav"><img src="http://static.ampify.it/profile.tav.jpg" alt="@tav" width="69px" height="86px" /></a>
-  <div><a href="http://twitter.com/tav" title="Follow @tav">@tav</a></div>
-</div>
-</div>
-
+<table id="footer-espians">
+<tr></tr>
+</table>
 <hr class="clear" />
-
 <div class="footer-text">
   <div class="footer-menu">
     <a href="http://ampify.it">ABOUT</a>

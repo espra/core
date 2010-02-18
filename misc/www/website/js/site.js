@@ -260,24 +260,49 @@ try {
   BrowserDetect.init();
 } catch (err) {};
 
+/* No Copyright (-) 2009-2010 The Ampify Authors. The rest of this file is under
+ * under the Public Domain license that can be found in the root LICENSE file.
+ */
+
 // some konstants
 
-var country_selected = false;
-
-var IPINFO_KEYS = [
-  ['ip', 'Ip'],
-  ['country', 'CountryName'],
-  ['country_id', 'CountryCode'],
-  ['lat', 'Latitude'],
-  ['lon', 'Longitude'],
-  ['region', 'RegionName'],
-  ['city', 'City']
-  ];
+var country_selected = false,
+    ipinfo = {},
+    ipinfodb_queried = false,
+    language_options_revealed = false,
+    ESPIANS = [
+        'alextomkins',
+        'cre8radix',
+        'evangineer',
+        'evangineer',
+        'evangineer',
+        'happyseaurchin',
+        'jeffarch',
+        'jmccanewhitney',
+        'olasofia',
+        'oierw',
+        'sbp',
+        'sbp',
+        'tav',
+        'tav',
+        'tav',
+        'tav',
+        'thruflo',
+        'thruflo',
+        'yncyrydybyl'
+    ],
+    ESPIANS_COUNT = ESPIANS.length,
+    IPINFO_KEYS = [
+        ['ip', 'Ip'],
+        ['country', 'CountryName'],
+        ['country_id', 'CountryCode'],
+        ['lat', 'Latitude'],
+        ['lon', 'Longitude'],
+        ['region', 'RegionName'],
+        ['city', 'City']
+    ];
 
 // cache the ipinfo to be nice to the wonderful ipinfodb.com guys
-
-var ipinfo = {},
-    ipinfodb_queried = false;
 
 function ipinfo_handle (form, on_main_form) {
   if (!ipinfodb_queried) {
@@ -302,7 +327,7 @@ function ipinfo_handle (form, on_main_form) {
       $('#country-' + ipinfo['country_id'].toLowerCase()).attr('selected', 1);
   };
   */
-};
+}
 
 function ipinfo_get (form, on_main_form) {
   $.getJSON('http://ipinfodb.com/ip_query.php?output=json&callback=?', function (data) {
@@ -330,34 +355,28 @@ function ipinfo_get (form, on_main_form) {
     };
     */
   });
-};
+}
 
 function set_user_info (form, referrer) {
-
-  var first_referrer = $.cookie('referrer');
-
-  if (referrer) {
-    if (!first_referrer) {
-      first_referrer = referrer;
-      $.cookie('referrer', referrer, {expires: 300});
+    var first_referrer = $.cookie('referrer');
+    if (referrer) {
+        if (!first_referrer) {
+            first_referrer = referrer;
+            $.cookie('referrer', referrer, {expires: 300});
+        }
+        form['referrer'].value = referrer;
     }
-    form['referrer'].value = referrer;
-  }
-
-  if (first_referrer)
-    form['first_referrer'].value = first_referrer;
-
-  try {
-    form['browser'].value = BrowserDetect.browser;
-    form['browser_version'].value = BrowserDetect.version;
-    form['os'].value = BrowserDetect.OS;
-  } catch (err) {};
-
-  try {
-    form['useragent'].value = navigator.userAgent;
-  } catch (err) {};
-
-};
+    if (first_referrer)
+        form['first_referrer'].value = first_referrer;
+    try {
+        form['browser'].value = BrowserDetect.browser;
+        form['browser_version'].value = BrowserDetect.version;
+        form['os'].value = BrowserDetect.OS;
+    } catch (err) {};
+    try {
+        form['useragent'].value = navigator.userAgent;
+    } catch (err) {};
+}
 
 // ondocumentready funktion for the support page
 
@@ -388,8 +407,6 @@ function change_gender_option () {
     return false;
 }
 
-var language_options_revealed = false;
-
 function reveal_language_options () {
     if (language_options_revealed) {
         $('#menu-lang-form').hide();
@@ -407,3 +424,27 @@ function google_translate_page (lang_options) {
         parent.location=google_translate_url+lang_options.options[lang_options.selectedIndex].value;
     }
 }
+
+$(function () {
+    var chosen = [],
+        i,
+        selected,
+        notfound,
+        container;
+    for (i=0; i < 7; i++) {
+        notfound = true;
+        while (notfound) {
+            selected = ESPIANS[Math.floor(ESPIANS_COUNT * Math.random())];
+            if (chosen.indexOf(selected) == -1) {
+                chosen.push(selected);
+                notfound = false;
+            }
+        }
+    }
+    container = $('#footer-espians');
+    chosen.sort();
+    for (i=0; i < chosen.length; i++) {
+        selected = chosen[i];
+        $('<td class="footer-follow"><a href="http://twitter.com/'+selected+'" title="Follow @'+selected+'"><img src="http://static.ampify.it/profile.'+selected+'.jpg" alt="@'+selected+'" width="69px" height="86px" /></a><div><a href="http://twitter.com/'+selected+'" title="Follow @'+selected+'">@'+selected+'</a></div></td>').appendTo(container);
+    }
+});
