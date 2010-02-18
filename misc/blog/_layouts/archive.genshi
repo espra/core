@@ -1,3 +1,7 @@
+---
+layout: site
+license: Public Domain
+---
 <div xmlns:py="http://genshi.edgewall.org/">
 <?python
 
