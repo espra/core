@@ -4,7 +4,9 @@ site_license: Public Domain
 site_title: Ampify
 site_url: http://code.ampify.it
 
-navigation_id: code
+analytics_id: UA-90176-26
+section_id: code
+typekit: enabled
 
 index_pages:
 - archive.html: archive.genshi

@@ -1,7 +1,1 @@
----
-layout: site
----
-
-<div class="page">
-${Markup(content)}
-</div>
+../../misc/www/_layouts/page.genshi

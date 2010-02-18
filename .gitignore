@@ -5,12 +5,13 @@
 
 client_libs/appengine/secret.py
 client_libs/appengine/updated.py
-doc/_site
 doc/website/*.html
-doc/website/*.rss
 environ/local
 misc/devboard/siteconfig.py
 misc/devboard/updated.py
+misc/blog/website/*.html
+misc/blog/website/*.rss
+misc/www/website/*.html
 src/build/
 src/jsutil/ampsite.js
 src/zerodata/secret.py

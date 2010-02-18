@@ -12,3 +12,8 @@ def hello(ctx, name="world"):
 @register_service('site.root_object', token_required=False)
 def root(ctx):
     return Raw(u"Hello!")
+
+render(
+    analytics_id='UA-90176-27',
+    section_id='supporters',
+    )

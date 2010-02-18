@@ -1,7 +1,6 @@
 ---
 layout: site
 license: Public Domain
-navigation_id: team
 title: Team
 ---
 
