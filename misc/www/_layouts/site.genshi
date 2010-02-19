@@ -4,16 +4,17 @@
 
   section_data = {
     'about': [
-      ('Board of Mentors', 'http://ampify.it/board-of-mentors.html'),
-      ('Roadmap', 'http://ampify.it/roadmap.html'),
-      ('FAQs', 'http://ampify.it/faqs.html'),
-      ('Team', 'http://ampify.it/team.html'),
+      # ('Roadmap', 'http://ampify.it/roadmap.html'),
+      # ('Team', 'http://ampify.it/team.html'),
+      # ('Board of Mentors', 'http://ampify.it/board-of-mentors.html'),
+      # ('FAQs', 'http://ampify.it/faqs.html'),
+      # ('Support Ampify', 'http://ampify.it'),
       ],
     'supporters': [
       ],
     'code': [
+      ('Dev Home', 'http://dev.ampify.it'),
       ('Source Code', 'http://github.com/tav/ampify'),
-      ('Devboard', 'http://devboard.ampify.it'),
       ('Wiki', 'http://wiki.github.com/tav/ampify/'),
       ('Bug Tracker', 'http://github.com/tav/ampify/issues'),
       ('Mailing List', 'http://groups.google.com/group/ampify-dev'),
@@ -71,20 +72,13 @@
 <div id="body-outer"><div id="body-inner"><div id="body" class="clearfix">
 
 <div id="header">
-	<div id="logo"><a href="http://ampify.it"><img src="http://static.ampify.it/logo.ampify.smaller.png" alt="Ampify" width="300px" height="67px" /></a></div>
 	<div id="menu-follow">
 		<div><a href="http://www.facebook.com/Espians" title="Join Espians on Facebook"><img src="http://static.ampify.it/icon.facebook.gif" alt="Join Espians on Facebook" width="15px" height="15px" /></a></div>
 		<div><a href="http://twitter.com/tav" title="Follow @tav on Twitter"><img src="http://static.ampify.it/icon.twitter.gif" alt="Follow @tav on Twitter" width="14px" height="14px" /></a></div>
 		<div><a href="http://github.com/tav/ampify" title="Fork Ampify on GitHub"><img src="http://static.ampify.it/icon.github.png" alt="Join Espians on Facebook" width="15px" height="15px" /></a></div>
 		<div><a href="http://feeds2.feedburner.com/ampify" title="Subscribe to the RSS Feed"><img src="http://static.ampify.it/icon.rss.png" alt="Subscribe to the RSS Feed" width="14px" height="14px" /></a></div>
 	</div>
-	<div id="menu"><ul>
-		<li><a href="http://blog.ampify.it" py:attrs="menu_class['blog']">Blog</a></li>
-		<li><a href="http://ampify.it/community.html" py:attrs="menu_class['community']">Community</a></li>
-		<li><a href="http://dev.ampify.it" py:attrs="menu_class['code']">Code</a></li>
-		<li><a href="http://supporters.ampify.it" py:attrs="menu_class['supporters']">Supporters</a></li>
-		<li><a href="http://ampify.it" py:attrs="menu_class['about']">About</a></li>
-	</ul></div>
+	<div id="logo"><a href="http://ampify.it"><img src="http://static.ampify.it/logo.ampify.smallest.png" alt="Ampify" width="250px" height="56px" /></a></div>
 	<div id="menu-lang">
 		<a href="" title="Select Language" onclick="return reveal_language_options();"><img src="http://static.ampify.it/flag.english.jpg" alt="Select Language" width="22px" height="15px" /></a>
 		<br />
@@ -143,9 +137,17 @@
 			value="&amp;langpair=en|yi" id="openyi">Yiddish</option>
 		</select></form>
 	</div>
+	<div id="menu"><ul>
+		<li><a href="http://blog.ampify.it" py:attrs="menu_class['blog']">Blog</a></li>
+		<li><a href="http://ampify.it/community.html" py:attrs="menu_class['community']">Community</a></li>
+		<li><a href="http://dev.ampify.it" py:attrs="menu_class['code']">Code</a></li>
+		<li><a href="http://supporters.ampify.it" py:attrs="menu_class['supporters']">Supporters</a></li>
+		<li><a href="http://ampify.it" py:attrs="menu_class['about']">About</a></li>
+	</ul></div>
+	<hr class="clear-left" />
+	<div id="menu-sub" py:with="section_info=section_data[section_id]; last_menu_idx=len(section_info)-1"><py:for each="idx, (menu_item, menu_url) in enumerate(section_info)"><a href="${menu_url}">${menu_item}</a><span py:if="idx != last_menu_idx" class="menu-sub-sep"> | </span></py:for></div>
+	<hr class="clear" />
 </div>
-<hr class="clear" />
-<div id="menu-sub" py:with="section_info=section_data[section_id]; last_menu_idx=len(section_info)-1"><py:for each="idx, (menu_item, menu_url) in enumerate(section_info)"><a href="${menu_url}">${menu_item}</a><span py:if="idx != last_menu_idx" class="menu-sub-sep"> | </span></py:for></div>
 
 <div id="content" py:if="defined('content')">
 ${Markup(content)}
@@ -168,11 +170,6 @@ ${Markup(content)}
   </div>
   <div>
 	<a href="http://ampify.it/#help-spread-the-word" title="Help Spread The Word"><img src="http://static.ampify.it/gfx.help-spread-the-word.png" id="spread-button" alt="Help Spread The Word" width="372px" height="30px" /></a>
-	<!--
-	<a class="addthis_button" href="http://www.addthis.com/bookmark.php?v=250&amp;username=xa-4b7dbf35437e67d8"><img src="http://static.ampify.it/gfx.help-spread-the-word.png" id="spread-button" alt="Help Spread The Word" width="372px" height="30px" /></a><script type="text/javascript" src="http://s7.addthis.com/js/250/addthis_widget.js#username=xa-4b7dbf35437e67d8"></script>
-	<a class="a2a_dd" href="http://www.addtoany.com/share_save?linkname=Support%20Ampify%3A%20Help%20Create%20Weapons%20of%20Mass%20Construction!&amp;linkurl=http%3A%2F%2Fampify.it" title="Help Spread The Word"><img src="http://static.ampify.it/gfx.help-spread-the-word.png" id="spread-button" alt="Help Spread The Word" width="372px" height="30px" /></a><script type="text/javascript" src="http://static.addtoany.com/menu/page.js"></script>
-	<a href="#" class="sharethislink"><img src="http://static.ampify.it/gfx.help-spread-the-word.png" id="spread-button" alt="Help Spread The Word" width="372px" height="30px" /></a>
--->
   </div>
 </div>
 <hr class="clear" />
