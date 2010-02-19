@@ -25,7 +25,7 @@
       ('Chat Logs', 'http://irclogs.ampify.it'),
       ],
     'blog': [
-      ('Archive', 'http://blog.ampify.it/archive.html'),
+	  # ('Archive', 'http://blog.ampify.it/archive.html'),
       ]
     }
 

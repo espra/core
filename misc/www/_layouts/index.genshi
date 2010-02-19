@@ -42,11 +42,11 @@ Be one of the first 100!
 </div>
 -->
 
-  <img src="gfx.espra.com.become-a-supporter.png" alt="Become A Supporter" style="margin-bottom: 10px; margin-top: 10px; margin-right: -30px; vertical-align: baseline; float: right;" />
+  <img src="http://static.ampify.it/heading.become-a-supporter.png" alt="Become A Supporter" style="margin-bottom: 10px; margin-top: 10px; margin-right: -30px; vertical-align: baseline; float: right;" />
 
 <table cellspacing="0px" cellpadding="0px" style="margin-left: 0px;">
-<tr><td class="male-counter"><img src="male3.png" alt="male" width="25px" height="34px" class="absmiddle" /><span id="male-lead">ONLY</span> <span id="male-count">999</span> SPACES LEFT</td></tr>
-<tr><td class="female-counter"><span id="female-lead">ONLY</span> <span id="female-count">999</span> SPACES LEFT<img src="female3.png" alt="female" width="25px" height="34px" class="absmiddle" /></td></tr>
+<tr><td class="male-counter"><img src="http://static.ampify.it/icon.male-core.png" alt="male" width="25px" height="34px" class="absmiddle" /><span id="male-lead">ONLY</span> <span id="male-count">999</span> SPACES LEFT</td></tr>
+<tr><td class="female-counter"><span id="female-lead">ONLY</span> <span id="female-count">999</span> SPACES LEFT<img src="http://static.ampify.it/icon.female-core.png" alt="female" width="25px" height="34px" class="absmiddle" /></td></tr>
 </table>
 
 <hr class="clear-right" />
@@ -126,7 +126,7 @@ Be one of the first 100!
 </td></tr>
 <tr><td colspan="2" id="supporter-submit">
   <input id="support" type="submit" name="submit" value=" Support for 10 Months! " /><br />
-  <img src="payment.options.png" width="254px" height="16px" alt="Paypal and various other payment options accepted" class="absmiddle" />
+  <img src="http://static.ampify.it/gfx.payment-options.png" width="254px" height="16px" alt="Paypal and various other payment options accepted" class="absmiddle" />
 </td></tr>
 </table>
 
@@ -218,7 +218,7 @@ Yet somewhere in Britain, the counterculture dream still lives.
 
 <!-- COMMENTS -->
 
-<img src="gfx.espra.com.leave-a-comment.png" alt="Leave A Comment" style="margin-bottom: 10px; margin-top: 10px; margin-right: -30px; vertical-align: baseline; float: right;" />
+<img src="http://static.ampify.it/heading.leave-a-comment.png" alt="Leave A Comment" style="margin-bottom: 10px; margin-top: 10px; margin-right: -30px; vertical-align: baseline; float: right;" />
 
 <hr class="clear" />
 
@@ -239,7 +239,7 @@ Yet somewhere in Britain, the counterculture dream still lives.
 <!-- WATCH -->
 
 <div style="float: left;">
-  <img src="gfx.espra.com.watch-the-video.png" alt="Watch The Video!" style="margin-bottom: 0px; margin-left: -30px;" />
+  <img src="http://static.ampify.it/heading.watch-the-video.png" alt="Watch The Video!" style="margin-bottom: 0px; margin-left: -30px;" />
 </div>
 
 <hr class="clear-left" />
@@ -257,9 +257,28 @@ Yet somewhere in Britain, the counterculture dream still lives.
 
 <!-- END WATCH -->
 
-<div class="float: left"><img src="gfx.espra.com.help-spread-the-word.png" alt="Sign Up For Private Beta" style="margin-bottom: 10px; margin-top: 10px; margin-left: -30px;" /></div>
+<div id="help-spread-the-word"><img src="http://static.ampify.it/heading.help-spread-the-word.png" alt="Help Spread The Word" style="margin-bottom: 10px; margin-top: 10px; margin-left: -30px;" /></div>
 
 <hr class="clear" />
+
+<div class="promote">
+  <a class="promote-fb" href="http://www.facebook.com/share.php?u=http%3A%2F%2Fespra.com&amp;t=Support+Espra%3A+Create+Weapons+of+Mass+Construction%21" title="Share on Facebook">&nbsp;</a>
+  <script type="text/javascript">
+  tweetmeme_url = 'http://espra.com';
+  tweetmeme_style = 'compact';
+  tweetmeme_source = 'tav';
+  tweetmeme_alias = 'http://espra.com';
+  </script>
+  <a class="promote-google-buzz" href="http://www.google.com/reader/link" title="Buzz it on Google Buzz!">Buzz it</a>
+  <div class="promote-yahoo-buzz"><a href="http://buzz.yahoo.com/buzz?targetUrl=http%3A%2F%2Fespra.com&amp;headline=Support+Espra%3A+Create+Weapons+of+Mass+Construction%21&amp;src=sharethis" title="Buzz Up!"><img src="http://cloud.github.com/downloads/tav/plexnet/gfx.icon.yahoobuzz.png" alt="Share on Yahoo Buzz!" /></a></div>
+  <div class="promote-retweet"><script type="text/javascript" src="http://tweetmeme.com/i/scripts/button.js"></script></div>
+</div>
+
+<hr class="clear" />
+
+<div class="share-text">
+It would be super nice if you clicked on all the links where you have an account. Thanks!
+</div>
 
 <div>
   <ul class="share-buttons">
@@ -279,93 +298,70 @@ Yet somewhere in Britain, the counterculture dream still lives.
 
 <hr class="clear" />
 
-<div class="share-text">
-&uarr; It would be cool if you click on all the links where you have an account. Thanks!
-</div>
-
-<div class="promote">
-  <a class="fbshare" href="http://www.facebook.com/share.php?u=http%3A%2F%2Fespra.com&amp;t=Support+Espra%3A+Create+Weapons+of+Mass+Construction%21" title="Share on Facebook" target="_blank">&nbsp;</a>
-  <script type="text/javascript">
-  tweetmeme_url = 'http://espra.com';
-  tweetmeme_style = 'compact';
-  tweetmeme_source = 'tav';
-  tweetmeme_alias = 'http://espra.com';
-  </script>
-  <div class="promote-yahoo-buzz"><a href="http://buzz.yahoo.com/buzz?targetUrl=http%3A%2F%2Fespra.com&amp;headline=Support+Espra%3A+Create+Weapons+of+Mass+Construction%21&amp;src=sharethis" target="_blank" title="Buzz Up!"><img src="http://cloud.github.com/downloads/tav/plexnet/gfx.icon.yahoobuzz.png" alt="Share on Yahoo Buzz!" /></a></div>
-  <div class="promote-retweet"><script type="text/javascript" src="http://tweetmeme.com/i/scripts/button.js"></script></div>
-</div>
-
-<hr class="clear" />
-
-<img src="gfx.espra.com.stay-informed.png" alt="Stay Informed" style="margin-bottom: 10px; margin-top: 10px; margin-left: -30px; float: left;" />
+<img src="http://static.ampify.it/heading.stay-informed.png" alt="Stay Informed" style="margin-bottom: 10px; margin-top: 10px; margin-left: -30px; float: left;" />
 
 <hr class="clear" />
 
 <ul class="follow">
 <li>
   <div>
-    <a href="http://www.facebook.com/Espians" title="Join the Espians on Facebook" target="_blank"><img src="gfx.icon.square.facebook.png" alt="Join the Espians on Facebook" width="64px" height="64px" /></a>
+    <a href="http://www.facebook.com/Espians" title="Join the Espians on Facebook"><img src="http://static.ampify.it/icon.square.facebook.png" alt="Join the Espians on Facebook" width="64px" height="64px" /></a>
   </div>
-  <a href="http://www.facebook.com/Espians" title="Join the Espians on Facebook" target="_blank">JOIN ESPIANS</a>
+  <a href="http://www.facebook.com/Espians" title="Join the Espians on Facebook">JOIN ESPIANS</a>
 </li>
 <li>
   <div>
-    <a href="http://www.youtube.com/asktav" title="Subscribe to my Videos on YouTube" target="_blank"><img src="gfx.icon.square.youtube.png" alt="Subscribe to my Videos on YouTube" width="64px" height="64px" /></a>
+    <a href="http://www.youtube.com/asktav" title="Subscribe to my Videos on YouTube"><img src="http://static.ampify.it/icon.square.youtube.png" alt="Subscribe to my Videos on YouTube" width="64px" height="64px" /></a>
   </div>
-  <a href="http://www.youtube.com/asktav" title="Subscribe to my Videos on YouTube" target="_blank">SUBSCRIBE</a>
+  <a href="http://www.youtube.com/asktav" title="Subscribe to my Videos on YouTube">SUBSCRIBE</a>
 </li>
 <li>
   <div>
-    <a href="http://feeds2.feedburner.com/asktav" title="Subscribe to my Blog's RSS Feed" target="_blank"><img src="gfx.icon.square.rss.png" alt="Subscribe to my Blog's RSS Feed" width="64px" height="64px" /></a>
+    <a href="http://feeds.feedburner.com/ampify" title="Subscribe to the Ampify Blog's RSS Feed"><img src="http://static.ampify.it/icon.square.rss.png" alt="Subscribe to the Ampify Blog's RSS Feed" width="64px" height="64px" /></a>
   </div>
-  <a href="http://feeds2.feedburner.com/asktav" title="Subscribe to my Blog's RSS Feed" target="_blank">SUBSCRIBE</a>
+  <a href="http://feeds.feedburner.com/ampify" title="Subscribe to the Ampify Blog's RSS Feed">SUBSCRIBE</a>
 </li>
 <li>
   <div>
-    <a href="http://twitter.com/tav" title="Follow @tav on Twitter" target="_blank"><img src="gfx.icon.square.twitter.png" alt="Follow @tav on Twitter" width="64px" height="64px" /></a>
+    <a href="http://twitter.com/tav" title="Follow @tav on Twitter"><img src="http://static.ampify.it/icon.square.twitter.png" alt="Follow @tav on Twitter" width="64px" height="64px" /></a>
   </div>
-  <a href="http://twitter.com/tav" title="Follow @tav on Twitter" target="_blank">FOLLOW @TAV</a>
+  <a href="http://twitter.com/tav" title="Follow @tav on Twitter">FOLLOW @TAV</a>
 </li>
-<!--
--->
 </ul>
 
 <hr class="clear" />
 
-<img src="gfx.espra.com.get-involved.png" alt="Get Involved" style="margin-bottom: 10px; margin-top: 10px; margin-left: -30px; float: left;" />
+<img src="http://static.ampify.it/heading.get-involved.png" alt="Get Involved" style="margin-bottom: 10px; margin-top: 10px; margin-left: -30px; float: left;" />
 
 <hr class="clear" />
 
 <div class="action-items">
-  Please bear in mind that things are likely to be quite chaotic at the start.
+  Until <a href="http://dev.ampify.it/planfile.html">Ampify Zero</a> lands in a few months time, things are going to be quite geeky and chaotic.
   <div class="action-link">
-	<a href="http://www.tentapp.com" title="Use Espra Tent" target="_blank"><img src="gfx.espra.logo.tent.png" width="96px" height="102px" alt="Tent"  class="action-left" /></a>
-    Most of the fun will be happening on <a href="http://www.tentapp.com" title="Use Espra Tent" target="_blank">Tent</a>. All supporters get access or you can ask for an invite. In either case, hope to see you soon at <a href="http://www.tentapp.com/" target="_blank" title="Use Espra Tent">http://tentapp.com</a>.
+    <a href="irc://irc.freenode.net/esp" title="Join #esp IRC Chat"><img src="http://static.ampify.it/logo.irc.png" width="96px" height="102px" alt="IRC"  class="action-left" /></a>
+	If you are okay with that, please join <a href="irc://irc.freenode.net/esp" title="Join #esp IRC Chat">#esp</a> on <code>irc.freenode.net</code>. You can use <a href="http://webchat.freenode.net/?channels=esp" title="Join #esp IRC Chat">this webchat client</a> as well as browse the <a href="http://irclogs.ampify.it" title="See #esp IRC logs">chatlogs</a>.
   </div>
   <hr class="clear" />
   <div class="action-link">
-	<a href="http://help.espra.com" title="Visit Espra's Help Forum" target="_blank"><img src="gfx.espra.logo.tender.png" width="96px" height="96px" alt="Tender" class="action-left" /></a>
-    You can make suggestions and ask questions by visiting
-	<a href="http://help.espra.com" title="Visit Espra's Help Forum" target="_blank">http://help.espra.com</a> or
-    emailing <a href="mailto:help@espra.com">help@espra.com</a>.
+	<a href="http://github.com/tav/ampify" title="Get Coding on the Ampify Platform at GitHub"><img src="http://static.ampify.it/logo.github.png" width="96px" height="96px" alt="GitHub" class="action-left" /></a>
+	If you're a coder, you can fork the <a href="http://github.com/tav/ampify" title="Get Coding on the Ampify Platform at GitHub">ampify repository</a> on GitHub. Send me pull requests if you're happy to commit your patches to the <a href="http://dev.ampify.it/license.html" title="Public Domain">public domain</a>.
   </div>
   <hr class="clear" />
   <div class="action-link">
-	<a href="http://github.com/tav/plexnet" title="Get Coding on the Plexnet at GitHub" target="_blank"><img src="gfx.espra.logo.github.png" width="96px" height="96px" alt="GitHub" class="action-left" /></a>
-	If you're a coder, you can watch the <a href="http://github.com/tav/plexnet" title="Get Coding on the Plexnet at GitHub" target="_blank">plexnet repository</a> on GitHub. Send me pull requests if you're happy to commit your patches to the <a href="http://creativecommons.org/publicdomain/zero/1.0/" target="_blank" title="Public Domain">public domain</a>.
+	<a href="http://help.espra.com" title="Visit Ampify's Help Forum"><img src="http://static.ampify.it/logo.tender.png" width="96px" height="96px" alt="Tender" class="action-left" /></a>
+    If neither IRC nor coding is quite your thing, you can still get involved by making suggestions or asking questions at the <a href="http://help.ampify.it" title="Visit Ampify's Help Forum">Ampify help forums</a>.
   </div>
   <hr class="clear" />
   <div class="action-text">
-    You can use the <a href="http://twitter.com/search?q=%23espra" target="_blank" title="#espra">#espra</a> hashtag to join the <a href="http://search.twitter.com/search?q=%23espra+OR+tentapp+OR+%23espians+OR+%23trustmap+OR+from%3Aespians+OR+to%3Aespians+OR+plexnet" target="_blank" title="See the conversation on Twitter">conversation on Twitter</a>.
-    You can post your thoughts and links to the <a href="http://friendfeed.com/espians" target="_blank" title="Join the Espians FriendFeed room">Espians room</a> on FriendFeed.
-    You can also join the <a href="irc://irc.freenode.net/esp" title="Join #esp IRC Chat">#esp</a> channel on irc.freenode.net.
+    Use the <a href="http://twitter.com/search?q=%23ampify" title="#ampify">#ampify</a> hashtag to join the <a href="http://search.twitter.com/search?q=%23ampify+OR+%23espians+OR+%23trustmap+OR+from%3Aespians+OR+to%3Aespians+OR+from%3Aampify+OR+to%3Aampify" title="See the conversation on Twitter">conversation on Twitter</a>.
+    Likewise, you can post your thoughts/links to the <a href="http://friendfeed.com/espians" title="Join the Espians FriendFeed room">Espians room</a> on FriendFeed.
   </div>
   <div class="action-text">
     Thank you and welcome to Espia!
   </div>
 </div>
 
-<iframe src="http://friendfeed.com/search?q=espians+OR+espra+OR+plexnet+OR+tentapp+OR+group%3Aespra+OR+group%3Aespians&amp;embed=1" frameborder="0" height="3600px" width="430px" style="margin-left: 12px; border: 1px solid #aaa; width: 430px; max-width: 430px; margin-top: 12px;"></iframe>
+<iframe src="http://friendfeed.com/search?q=ampify+OR+espians+OR+group%3Aampify+OR+group%3Aespians&amp;embed=1" frameborder="0" height="3600px" width="430px" style="margin-left: 12px; border: 1px solid #aaa; width: 430px; max-width: 430px; margin-top: 12px;"></iframe>
 
 </div>
 

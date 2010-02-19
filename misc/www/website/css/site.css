@@ -14,17 +14,14 @@ html {
 
 body {
 	background-color: #000;
-	background-image: url('http://static1.ampify.it/gfx.bokehplex.jpg');
+	background-image: url(http://static1.ampify.it/gfx.bokehplex.jpg);
 	background-repeat: repeat;
 	font: 90%/1em 'Lucida Grande', 'Lucida Sans Unicode', Optima, Verdana, sans-serif;
 	height: 100%;
-	margin: 0;
-	padding: 0;
 	width: 100%;
 }
 
 a, a:visited, a:hover, a:active, a:hover {
-	color: #a9151b;
 	color: blue;
 	text-decoration: underline;
 }
@@ -33,33 +30,28 @@ a:hover {
 	text-decoration: none;
 }
 
-a.normal, a.normal:visited, a.normal:active, a.normal:hover {
-  color: #000;
-  text-decoration: none;
+a.promote-fb, a.promote-fb:active, a.promote-fb:hover, a.promote-fb:visited {
+	background: url(http://static.ampify.it/gfx.share-facebook-sprite.png) no-repeat;
+	color: transparent;
+	display: block;
+	float: left;
+	height: 22px;
+	margin: 0 16px 0 0px;
+	outline; none;
+	overflow: hidden;
+	position: relative;
+	text-indent: 9999px !important;
+	top: -2px;
+	vertical-align: middle;
+	width: 146px;
 }
 
-a.fbshare, a.fbshare:active, a.fbshare:hover, a.fbshare:visited {
-  background: url(share-facebook-sprite.png) no-repeat;
-  display: block;
-  float: left;
-  height: 22px;
-  outline; none;
-  overflow: hidden;
-  margin: 0 16px 0 0px;
-  position: relative;
-  text-indent: 9999px !important;
-  top: -2px;
-  vertical-align: middle;
-  width: 146px;
-  color: transparent;
+a.promote-fb:hover {
+	background-position: 0 -22px;
 }
 
-a.fbshare:hover {
-  background: url(share-facebook-sprite.png) no-repeat 0 -22px;
-}
-
-a.fbshare:active {
-  background: url(share-facebook-sprite.png) no-repeat 0 -44px;
+a.promote-fb:active {
+	background-position: 0 -44px;
 }
 
 code {
@@ -162,8 +154,8 @@ ul {
 
 #body-inner {
    	margin: 0 auto;
-	padding: 10px 40px 215px 40px;
-	width: 960px;
+	padding: 10px 20px 215px 20px;
+	width: 950px;
 }
 
 #body-outer {
@@ -197,15 +189,14 @@ body > #body-outer {
 	position: relative;
 	text-align: center;
 	width: 100%;
-	min-width: 960px;
+	min-width: 950px;
 }
 
 #footer-content {
 	margin: 0 auto;
-	max-width: 960px;
 	padding-top: 15px;
 	text-align: center;
-	width: 960px;
+	width: 950px;
 }
 
 #header {
@@ -301,6 +292,12 @@ body > #body-outer {
 	-webkit-border-radius: 5px;
 	-moz-border-radius: 5px;
 	padding: 5px;
+}
+
+/* Support site IDs */
+
+#help-spread-the-word {
+	float: left;
 }
 
 /* Class styles */
@@ -655,149 +652,168 @@ body > #body-outer {
   vertical-align: super;
 }
 
+/* classes for support page */
+
 .promote {
-  margin: 20px 0 50px 26px;
+	margin: 5px 0 0px 26px;
 }
 
 .promote-retweet {
-  margin-top: 2px;
-  float: left;
+	margin-top: 2px;
+	float: left;
 }
 
 .promote-yahoo-buzz {
-  margin: -2px 15px 0 0;
-  float: left;
-  padding-bottom: 5px;
+	margin: -2px 15px 0 0;
+	float: left;
+	padding-bottom: 5px;
+}
+
+.promote-google-buzz, .promote-google-buzz:active, .promote-google-buzz:visited, .promote-google-buzz:hover {
+	background: url(http://static.ampify.it/icon.google-buzz.png) no-repeat 0 3px;
+	color: #666;
+	float: left;
+	font-size: 0.9em;
+	font-weight: bold;
+	margin-top: -2px;
+	padding: 0 10px 5px 20px;
+	text-decoration: none;
+}
+
+.promote-google-buzz:hover {
+	text-decoration: underline;
 }
 
 .share-text {
-  font-size: 18px;
-  line-height: 24px;
-  margin: 12px 0 12px 26px;
-  color: #aaa;
+	font-size: 18px;
+	line-height: 24px;
+	margin: 0px 0 12px 26px;
+	color: #aaa;
 }
 
 /* thanks to mashable.com for these wonderful share icons + css!! thanks guys -- you rock!! */
 
 ul.share-buttons {
-  padding: 0;
-  margin: 12px 0 0 24px;
+	line-height: normal;
+	margin: 12px 0 0 24px;
+	padding: 0;
 }
 
 .share-buttons li {
-  list-style-type: none;
-  margin: 0 18px 12px 0;
-  padding-top: 1px;
-  display: inline;
-  float: left;
+	display: inline;
+	float: left;
+	list-style-type: none;
+	margin: 0 18px 12px 0;
+	padding-top: 1px;
 }
 
 .share-buttons a {
-  background: url(gfx.mashable.com.syndication.gif) no-repeat;
-  width: 46px;
-  height: 14px;
-  color: transparent;
-  color: #575757;
-  padding: 33px 0 0;
-  text-align: center;
-  font-size: 7px;
-  overflow: hidden;
-  display: block;
-  text-decoration: none;
-  white-space: nowrap;
+	background: url(http://static.ampify.it/gfx.mashable-syndication.gif) no-repeat;
+	color: #575757;
+	display: block;
+	font-size: 7px;
+	height: 14px;
+	overflow: hidden;
+	padding: 33px 0 0;
+	text-align: center;
+	text-decoration: none;
+	white-space: nowrap;
+	width: 46px;
 }
 
 .share-buttons a:hover {
-  text-decoration:none;
+	text-decoration:none;
 }
 
 .share-buttons .delicious a {
-  background-position: -138px 0;
+	background-position: -138px 0;
 }
 
 .share-buttons .delicious a:hover {
-  background-position: -138px -47px;
+	background-position: -138px -47px;
 }
 
 .share-buttons .digg a {
-  background-position: 0 0;
+	background-position: 0 0;
 }
 
 .share-buttons .digg a:hover {
-  background-position: 0 -47px;
+	background-position: 0 -47px;
 }
 
 .share-buttons .facebook a {
-  background-position: -184px 0;
+	background-position: -184px 0;
 }
 
 .share-buttons .facebook a:hover {
-  background-position: -184px -47px;
+	background-position: -184px -47px;
 }
 
 .share-buttons .google a {
-  background-position: -276px 0;
+	background-position: -276px 0;
 }
 
 .share-buttons .google a:hover {
-  background-position: -276px -47px;
+	background-position: -276px -47px;
 }
 
 .share-buttons .myspace a {
-  background-position: -230px 0;
+	background-position: -230px 0;
 }
 
 .share-buttons .myspace a:hover {
-  background-position: -230px -47px;
+	background-position: -230px -47px;
 }
 
 .share-buttons .reddit a {
-  background-position: -414px 0;
+	background-position: -414px 0;
 }
 
 .share-buttons .reddit a:hover {
-  background-position: -414px -47px;
+	background-position: -414px -47px;
 }
 
 .share-buttons .sharethis a {
-  background-position: -460px 0;
+	background-position: -460px 0;
 }
 
 .share-buttons .sharethis a:hover {
-  background-position: -460px -47px;
+	background-position: -460px -47px;
 }
 
 .share-buttons .stumbleupon a {
-  background-position: -92px 0;
+	background-position: -92px 0;
 }
 
 .share-buttons .stumbleupon a:hover {
-  background-position: -92px -47px;
+	background-position: -92px -47px;
 }
 
 .share-buttons .technorati a {
-  background-position: -322px 0;
+	background-position: -322px 0;
 }
 
 .share-buttons .technorati a:hover {
-  background-position: -322px -47px;
+	background-position: -322px -47px;
 }
 
 .share-buttons .twitter a {
-  background-position: -46px 0;
+	background-position: -46px 0;
 }
 
 .share-buttons .twitter a:hover {
-  background-position: -46px -47px;
+	background-position: -46px -47px;
 }
 
 .share-buttons .yahoo a {
-  background-position: -368px 0;
+	background-position: -368px 0;
 }
 
 .share-buttons .yahoo a:hover {
-  background-position: -368px -47px;
+	background-position: -368px -47px;
 }
+
+/* other */
 
 .quote {
   background: transparent url("http://cloud.github.com/downloads/tav/plexnet/gfx.blockquote.gif") no-repeat 0 0;
@@ -928,22 +944,6 @@ ul.share-buttons {
 }
 
 
-/* what's now #content */
-
-/*
-.section {
-  margin: 12px;
-}
-
-.section pre {
-  background-color: #000;
-  padding: 7px;
-  color: #fff;
-  font-size: 16px;
-  font-family: Monaco, "Courier New", Courier, monospace;
-}
-*/
-   
 .tav-thanks {
   font-size: 14px;
   line-height: 26px;

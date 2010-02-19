@@ -1,9 +1,10 @@
 ---
 layout: site
 ---
-
-<a href="http://www.addtoany.com/subscribe?linkname=Ampify&amp;linkurl=http%3A%2F%2Ffeed.feedburner.com%2Fampify">More Subscription Options</a>
+<div xmlns:py="http://genshi.edgewall.org/">
+  <a href="http://www.addtoany.com/subscribe?linkname=Ampify&amp;linkurl=http%3A%2F%2Ffeed.feedburner.com%2Fampify">More Subscription Options</a>
 
 <div class="page">
 ${Markup(content)}
+</div>
 </div>

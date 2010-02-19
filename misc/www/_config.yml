@@ -5,11 +5,10 @@ site_description:
 
 site_license: This work has been placed into the Public Domain.
 site_title: "Support Ampify: Help Create Weapons of Mass Construction!"
-site_url: http://www.ampify.it
+site_url: http://ampify.it
 
 analytics_id: UA-90176-24
 section_id: about
-typekit: enabled
 
 index_pages:
 - index.html: index.txt
