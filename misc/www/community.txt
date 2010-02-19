@@ -1,0 +1,10 @@
+---
+layout: site
+license: Public Domain
+section_id: community
+title: Community
+---
+
+Come join in!
+
+You can email help@ampify.it too.

@@ -981,7 +981,6 @@ ul.share-buttons {
 }
 
 .footer-follow a {
-  display: block;
   color: #fff;
   text-decoration: underline;
   font-size: 10px;
@@ -989,6 +988,10 @@ ul.share-buttons {
 
 .footer-follow a:hover {
   text-decoration: none;
+}
+
+.footer-follow div {
+	white-space: nowrap;
 }
 
 .footer-text {

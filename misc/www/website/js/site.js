@@ -294,6 +294,16 @@ var a2a_linkname="Support Ampify: Help Create Weapons of Mass Construction!",
         'thruflo',
         'yncyrydybyl'
     ],
+    ESPIAN_BLOGS = {
+        'cre8radix': 'http://cre8radix.net',
+        'happyseaurchin': 'http://2020worldwalk.blogspot.com',
+        'jeffarch': 'http://www.openideaproject.org/jeffspace',
+        'olasofia': 'http://sofiabustamante.com',
+        'sbp': 'http://inamidst.com',
+        'tav': 'http://tav.espians.com',
+        'thruflo': 'http://thruflo.com',
+        'yncyrydybyl': 'http://www.c-base.org'
+    },
     ESPIANS_COUNT = ESPIANS.length,
     IPINFO_KEYS = [
         ['ip', 'Ip'],
@@ -428,6 +438,7 @@ $(function () {
         i,
         selected,
         notfound,
+        extra,
         container;
     for (i=0; i < 7; i++) {
         notfound = true;
@@ -443,7 +454,11 @@ $(function () {
     chosen.sort();
     for (i=0; i < chosen.length; i++) {
         selected = chosen[i];
-        $('<td class="footer-follow"><a href="http://twitter.com/'+selected+'" title="Follow @'+selected+'"><img src="http://static.ampify.it/profile.'+selected+'.jpg" alt="@'+selected+'" width="69px" height="86px" /></a><div><a href="http://twitter.com/'+selected+'" title="Follow @'+selected+'">@'+selected+'</a></div></td>').appendTo(container);
+        extra = '';
+        if (ESPIAN_BLOGS[selected]) {
+            extra = ', <a href="'+ESPIAN_BLOGS[selected]+'">blog</a>';
+        }
+        $('<td class="footer-follow"><a href="http://twitter.com/'+selected+'" title="Follow @'+selected+'"><img src="http://static.ampify.it/profile.'+selected+'.jpg" alt="@'+selected+'" width="69px" height="86px" /></a><div><a href="http://twitter.com/'+selected+'" title="Follow @'+selected+'">@'+selected+'</a>'+extra+'</div></td>').appendTo(container);
     }
     $('.sharethislink').each(function () {
         SHARETHIS.addEntry({url: 'http://ampify.it'}, {button: false}).attachButton(this);
