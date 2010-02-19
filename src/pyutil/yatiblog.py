@@ -128,7 +128,11 @@ def load_layout(name, path, layouts, deps=None):
                 deps = [layout]
         content = replace_yaml_frontmatter('', content)
 
-    template = MarkupTemplate(content, encoding='utf-8')
+    try:
+        template = MarkupTemplate(content, encoding='utf-8')
+    except Exception:
+        print "Error parsing template:", name
+        raise
 
     layouts[name] = {
         '__deps__': deps,
