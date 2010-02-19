@@ -266,7 +266,10 @@ try {
 
 // some konstants
 
-var country_selected = false,
+var a2a_linkname="Support Ampify: Help Create Weapons of Mass Construction!",
+    a2a_linkurl="http://ampify.it",
+    a2a_onclick=1,
+    country_selected = false,
     ipinfo = {},
     ipinfodb_queried = false,
     language_options_revealed = false,
@@ -388,11 +391,6 @@ function init_support_page () {
     if (share_elem_1) {
         var share_button_1 = SHARETHIS.addEntry({url: 'http://ampify.it'}, {button: false});
         share_button_1.attachButton(share_elem_1);
-        }
-    var share_elem_2 = document.getElementById('sharethis-2');
-    if (share_elem_2) {
-        var share_button_2 = SHARETHIS.addEntry({url: 'http://ampify.it'}, {button: false});
-        share_button_2.attachButton(share_elem_2);
     }
 }
 
@@ -441,10 +439,13 @@ $(function () {
             }
         }
     }
-    container = $('#footer-espians');
+    container = $('#footer-espians-tr');
     chosen.sort();
     for (i=0; i < chosen.length; i++) {
         selected = chosen[i];
         $('<td class="footer-follow"><a href="http://twitter.com/'+selected+'" title="Follow @'+selected+'"><img src="http://static.ampify.it/profile.'+selected+'.jpg" alt="@'+selected+'" width="69px" height="86px" /></a><div><a href="http://twitter.com/'+selected+'" title="Follow @'+selected+'">@'+selected+'</a></div></td>').appendTo(container);
     }
+    $('.sharethislink').each(function () {
+        SHARETHIS.addEntry({url: 'http://ampify.it'}, {button: false}).attachButton(this);
+    });
 });

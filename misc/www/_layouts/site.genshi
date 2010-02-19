@@ -71,7 +71,7 @@
 <div id="body-outer"><div id="body-inner"><div id="body" class="clearfix">
 
 <div id="header">
-	<div id="logo"><a href="http://ampify.it"><img src="http://static.ampify.it/logo.ampify.smallest.png" alt="Ampify" width="200px" height="45px" /></a></div>
+	<div id="logo"><a href="http://ampify.it"><img src="http://static.ampify.it/logo.ampify.smaller.png" alt="Ampify" width="300px" height="67px" /></a></div>
 	<div id="menu-follow">
 		<div><a href="http://www.facebook.com/Espians" title="Join Espians on Facebook"><img src="http://static.ampify.it/icon.facebook.gif" alt="Join Espians on Facebook" width="15px" height="15px" /></a></div>
 		<div><a href="http://twitter.com/tav" title="Follow @tav on Twitter"><img src="http://static.ampify.it/icon.twitter.gif" alt="Follow @tav on Twitter" width="14px" height="14px" /></a></div>
@@ -84,11 +84,6 @@
 		<li><a href="http://dev.ampify.it" py:attrs="menu_class['code']">Code</a></li>
 		<li><a href="http://supporters.ampify.it" py:attrs="menu_class['supporters']">Supporters</a></li>
 		<li><a href="http://ampify.it" py:attrs="menu_class['about']">About</a></li>
-	</ul></div>
-	<div id="menu-sub" py:with="section_info=section_data[section_id]; last_menu_idx=len(section_info)-1"><ul>
-		<li py:for="idx, (menu_item, menu_url) in enumerate(section_info)">
-			<a href="${menu_url}" py:attrs="(idx == last_menu_idx) and {'style': 'font-size: 2em'} or {}">${menu_item}</a>
-		</li>
 	</ul></div>
 	<div id="menu-lang">
 		<a href="" title="Select Language" onclick="return reveal_language_options();"><img src="http://static.ampify.it/flag.english.jpg" alt="Select Language" width="22px" height="15px" /></a>
@@ -149,22 +144,18 @@
 		</select></form>
 	</div>
 </div>
-
 <hr class="clear" />
+<div id="menu-sub" py:with="section_info=section_data[section_id]; last_menu_idx=len(section_info)-1"><py:for each="idx, (menu_item, menu_url) in enumerate(section_info)"><a href="${menu_url}">${menu_item}</a><span py:if="idx != last_menu_idx" class="menu-sub-sep"> | </span></py:for></div>
 
-<div py:if="defined('content')">
-<div class="section">
+<div id="content" py:if="defined('content')">
 ${Markup(content)}
-</div>
 </div>
 
 </div></div></div>
 
-<!-- FOOTER -->
-
 <div id="footer"><div id="footer-content">
 <table id="footer-espians">
-<tr></tr>
+<tr id="footer-espians-tr"></tr>
 </table>
 <hr class="clear" />
 <div class="footer-text">
@@ -176,11 +167,15 @@ ${Markup(content)}
     &middot; <a href="http://blog.ampify.it">BLOG</a>
   </div>
   <div>
-    <a href="#" id="sharethis-2"><img src="http://static.ampify.it/gfx.help-spread-the-word.png" id="spread-button" alt="Help Spread The Word" /></a>
+	<a href="http://ampify.it/#help-spread-the-word" title="Help Spread The Word"><img src="http://static.ampify.it/gfx.help-spread-the-word.png" id="spread-button" alt="Help Spread The Word" width="372px" height="30px" /></a>
+	<!--
+	<a class="addthis_button" href="http://www.addthis.com/bookmark.php?v=250&amp;username=xa-4b7dbf35437e67d8"><img src="http://static.ampify.it/gfx.help-spread-the-word.png" id="spread-button" alt="Help Spread The Word" width="372px" height="30px" /></a><script type="text/javascript" src="http://s7.addthis.com/js/250/addthis_widget.js#username=xa-4b7dbf35437e67d8"></script>
+	<a class="a2a_dd" href="http://www.addtoany.com/share_save?linkname=Support%20Ampify%3A%20Help%20Create%20Weapons%20of%20Mass%20Construction!&amp;linkurl=http%3A%2F%2Fampify.it" title="Help Spread The Word"><img src="http://static.ampify.it/gfx.help-spread-the-word.png" id="spread-button" alt="Help Spread The Word" width="372px" height="30px" /></a><script type="text/javascript" src="http://static.addtoany.com/menu/page.js"></script>
+	<a href="#" class="sharethislink"><img src="http://static.ampify.it/gfx.help-spread-the-word.png" id="spread-button" alt="Help Spread The Word" width="372px" height="30px" /></a>
+-->
   </div>
 </div>
 <hr class="clear" />
-
 </div></div>
 
 </body>
