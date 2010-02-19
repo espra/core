@@ -292,7 +292,7 @@ var a2a_linkname="Support Ampify: Help Create Weapons of Mass Construction!",
     ESPIAN_BLOGS = {
         'cre8radix': 'http://cre8radix.net',
         'happyseaurchin': 'http://2020worldwalk.blogspot.com',
-        'jeffarch': 'http://www.openideaproject.org/jeffspace',
+        'jeffarch': 'http://adkblueline.blogspot.com/',
         'olasofia': 'http://sofiabustamante.com',
         'sbp': 'http://inamidst.com',
         'tav': 'http://tav.espians.com',
