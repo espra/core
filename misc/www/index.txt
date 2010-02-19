@@ -1,5 +1,0 @@
----
-layout: index
-license: Public Domain
----
-

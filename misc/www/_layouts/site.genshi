@@ -4,11 +4,6 @@
 
   section_data = {
     'about': [
-      # ('Roadmap', 'http://ampify.it/roadmap.html'),
-      # ('Team', 'http://ampify.it/team.html'),
-      # ('Board of Mentors', 'http://ampify.it/board-of-mentors.html'),
-      # ('FAQs', 'http://ampify.it/faqs.html'),
-      # ('Support Ampify', 'http://ampify.it'),
       ],
     'supporters': [
       ],
@@ -16,16 +11,18 @@
       ('Dev Home', 'http://dev.ampify.it'),
       ('Source Code', 'http://github.com/tav/ampify'),
       ('Wiki', 'http://wiki.github.com/tav/ampify/'),
+      ('Paste', 'http://paste.lisp.org/new/esp'),
       ('Bug Tracker', 'http://github.com/tav/ampify/issues'),
       ('Mailing List', 'http://groups.google.com/group/ampify-dev'),
       ('IRC Logs', 'http://irclogs.ampify.it'),
       ],
     'community': [
       ('Mailing List', 'http://groups.google.com/group/ampify'),
+      ('Help Forums', 'http://help.ampify.it'),
       ('Chat Logs', 'http://irclogs.ampify.it'),
+      ('Live Chat', 'http://webchat.freenode.net/?channels=esp')
       ],
     'blog': [
-	  # ('Archive', 'http://blog.ampify.it/archive.html'),
       ]
     }
 

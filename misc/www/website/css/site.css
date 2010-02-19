@@ -168,7 +168,6 @@ body > #body-outer {
 }
 
 #content {
-	padding-bottom: 20px;
 	line-height: 1.55em;
 }
 
@@ -386,6 +385,42 @@ body > #body-outer {
 	margin: 0;
 	padding-left: 25px;
 	padding-right: 6px;
+}
+
+
+.footer-follow {
+	margin: 0 45px 15px 0;
+	float: left;
+}
+
+.footer-follow a {
+	color: #fff;
+	text-decoration: underline;
+	font-size: 10px;
+}
+
+.footer-follow a:hover {
+	text-decoration: none;
+}
+
+.footer-follow div {
+	white-space: nowrap;
+}
+
+.footer-menu {
+	float: right;
+	margin: 17px 50px 0 0;
+	font-size: 10px;
+}
+
+.footer-menu a {
+	color: #fff;
+	padding-left: 5px;
+	padding-right: 5px;
+}
+
+.footer-text {
+	text-align: left;
 }
 
 /* Source code syntax highlighting */
@@ -974,41 +1009,6 @@ ul.share-buttons {
   text-decoration: none;
 }  
 */
-
-.footer-follow {
-  margin: 0 45px 15px 0;
-  float: left;
-}
-
-.footer-follow a {
-  color: #fff;
-  text-decoration: underline;
-  font-size: 10px;
-}
-
-.footer-follow a:hover {
-  text-decoration: none;
-}
-
-.footer-follow div {
-	white-space: nowrap;
-}
-
-.footer-text {
-  text-align: left;
-}
-
-.footer-menu {
-  float: right;
-  margin: 17px 50px 0 0;
-  font-size: 10px;
-}
-
-.footer-menu a {
-  color: #fff;
-  padding-left: 5px;
-  padding-right: 5px;
-}
 
 #info-panes {
   display: none;

@@ -6,17 +6,20 @@ title: Credits
 
 CREDITS:
 
-* The images/css/js resources are hosted thanks to http://github.com
-
-* The nice Symbol Signs open font from http://www.designworkplan.com/design/symbol-signs.htm was used to create the male/female/help icons.
+* The nice Symbol Signs open font from
+  http://www.designworkplan.com/design/symbol-signs.htm was used to create the
+  male/female/help icons.
 
 * The wonderful share icons are from http://mashable.com
 
-* The cool icons used in the getting involved section are from http://fasticon.com/freeware/index.php/web-2-icons/
+* The cool icons used in the getting involved section are from
+  http://fasticon.com/freeware/index.php/web-2-icons/
 
-* The form input css and graphic was adapted from our friends over at http://soundcloud.com
+* The form input css and graphic was adapted from our friends over at
+  http://soundcloud.com
 
-* The "help spread the word" graphic in the footer is from the super nice http://www.ageofstupid.net site.
+* The "help spread the word" graphic in the footer is from the super nice
+  http://www.ageofstupid.net site.
 
 * The small twitter/feed icons at the top right are from http://techmeme.com
 
@@ -54,9 +57,8 @@ CREDITS:
 * Likewise, URL Utils by `Ben Alman <http://benalman.com>`_ was adapted to do
   the fragment history/bookmarkability support.
 
-* `Fancybox <http://fancybox.net>`_ provides the slick lightbox effect.
-
-* The Espra logo was initially designed by `Nadine Gahr <http://twitter.com/c_atc>`_.
+* The Espra logo was initially designed by `Nadine Gahr
+  <http://twitter.com/c_atc>`_.
 
 * The Espra logo was further modified by `Matt Morse
   <http://twitter.com/Mut1ey>`_ who also did the footer gradients.

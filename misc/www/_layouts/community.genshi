@@ -1,0 +1,92 @@
+---
+layout: site
+license: Public Domain
+section_id: community
+---
+<div xmlns:py="http://genshi.edgewall.org/">
+
+<style type="text/css">
+.community-section {
+width: 500px;
+margin: 10px auto 10px auto;
+}
+.community-section-heading {
+font-size: 1.6em;
+margin-top: 10px;
+}
+.community-section-heading span {
+background-color: #efd7d7;
+line-height: 1.7em;
+}
+.community-section-text {
+padding: 10px 0 0 50px;
+line-height: 1.6em;
+}
+.community-banner {
+width: 540px;
+margin: 20px auto;
+font-size: 1.2em;
+line-height: 1.6em;
+}
+.community-banner-text {
+background-color: #f0f0f0;
+}
+</style>
+
+<div class="community-banner">
+<span class="community-banner-text">
+The community around Ampify is full of nice people who want to help others learn
+and have fun. Become part of the Espian family, learn from others, give back
+when you can and have fun!
+</span>
+</div>
+
+<div class="community-section">
+<div class="community-section-heading"><span>IRC Live Chat</span></div>
+<div class="community-section-text">
+
+The core of the community is currently on <a
+href="http://en.wikipedia.org/wiki/Internet_Relay_Chat">IRC</a>. Join <a
+href="irc://irc.freenode.net/esp" title="Join #esp IRC Chat">#esp</a> on
+<code>irc.freenode.net</code>. You can use <a
+href="http://webchat.freenode.net/?channels=esp" title="Join #esp IRC Chat">this
+webchat client</a> as well as browse the live <a href="http://irclogs.ampify.it"
+title="See #esp IRC logs">chatlogs</a>.
+
+</div>
+</div>
+
+<div class="community-section">
+<div class="community-section-heading"><span>Mailing Lists</span></div>
+<div class="community-section-text">
+
+You can engage others at <code>ampify@googlegroups.com</code>, the official <a
+href="http://groups.google.com/group/ampify">ampify mailing list</a>. Developers
+should use the <a
+href="http://groups.google.com/group/ampify-dev">ampify-dev</a> list. You can
+also email <a href="mailto:help@ampify.it">help@ampify.it</a>.
+
+</div>
+</div>
+
+<div class="community-section">
+<div class="community-section-heading"><span>Twitter</span></div>
+<div class="community-section-text">
+
+Use the <a href="http://twitter.com/search?q=%23ampify"
+title="#ampify">#ampify</a> hashtag to join the <a
+href="http://search.twitter.com/search?q=%23ampify+OR+%23espians+OR+%23trustmap+OR+from%3Aespians+OR+to%3Aespians+OR+from%3Aampify+OR+to%3Aampify"
+title="See the conversation on Twitter">conversation on Twitter</a>. Likewise,
+you can post your thoughts/links to the <a href="http://friendfeed.com/espians"
+title="Join the Espians FriendFeed room">Espians room</a> on FriendFeed.
+
+</div>
+</div>
+
+<div class="community-banner">
+<span class="community-banner-text">
+Thank you and welcome to Espia!
+</span>
+</div>
+
+</div>

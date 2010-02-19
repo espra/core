@@ -11,4 +11,5 @@ analytics_id: UA-90176-24
 section_id: about
 
 index_pages:
-- index.html: index.txt
+- index.html: index.genshi
+- community.html: community.genshi
