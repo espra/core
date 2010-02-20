@@ -54,11 +54,38 @@ a.promote-fb:active {
 	background-position: 0 -44px;
 }
 
+blockquote, p, dl, h1, h2, h3, h4, h5, h6, ol, ul {
+	padding-bottom: 10px;
+}
+
 code {
 	background-color: #f0f0f0;
 	border: 1px solid #dadada;
 	padding: 1px 3px;
 	font-family: Monaco, "DejaVu Sans Mono", "Bitstream Vera Sans Mono", monospace;
+}
+
+dl, ol, ul {
+	padding-left: 20px;
+}
+
+h1 {
+	font-size: 2.25em;
+}
+
+h1, h2 {
+	color: #c32528;
+	font-family: "museo-1", "museo-2", Verdana;
+	letter-spacing: 1px;
+	text-shadow: #eee 2px 2px 3px;
+}
+
+img {
+	border: 0;
+}
+
+label, input, select, textarea {
+	cursor: pointer;
 }
 
 pre {
@@ -86,29 +113,6 @@ pre code {
 	background-color: transparent;
 	border: 0;
 	padding: 0;
-}
-
-h1 {
-	font-size: 2.25em;
-}
-
-h1, h2 {
-	color: #c32528;
-	font-family: "museo-1", "museo-2", Verdana;
-	letter-spacing: 1px;
-	text-shadow: #eee 2px 2px 3px;
-}
-
-img {
-	border: 0;
-}
-
-label, input, select, textarea {
-	cursor: pointer;
-}
-
-p {
-	margin-bottom: 10px;
 }
 
 select {
@@ -235,6 +239,7 @@ body > #body-outer {
 
 #menu ul {
 	list-style-type: none;
+	padding: 0;
 }
 
 #menu ul li {
