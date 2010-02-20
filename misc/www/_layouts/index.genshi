@@ -4,6 +4,18 @@ license: Public Domain
 ---
 <div xmlns:py="http://genshi.edgewall.org/">
 
+<script type="text/javascript">
+  disqus_url = 'http://ampify.it';
+  disqus_title = 'Support Ampify: Create Weapons of Mass Construction!';
+  tweetmeme_url = 'http://ampify.it';
+  tweetmeme_style = 'compact';
+  tweetmeme_source = 'tav';
+  tweetmeme_alias = 'http://ampify.it';
+  if (document.location.protocol === 'file:') {
+    disqus_developer = 1;
+  }
+</script>
+
 <!-- ABOUT -->
 
 <div>
@@ -218,8 +230,9 @@ Yet somewhere in Britain, the counterculture dream still lives.
 <hr class="clear" />
 
 <div class="the-disqus-section">
-<div id="disqus_thread"></div><script type="text/javascript" src="http://disqus.com/forums/espra/embed.js"></script><noscript><a href="http://espra.disqus.com/?url=ref">View the discussion thread.</a></noscript> <a href="http://disqus.com" class="dsq-brlink">blog comments powered by <span class="logo-disqus">Disqus</span></a>
+<div id="disqus_thread"></div><script type="text/javascript" src="http://disqus.com/forums/ampify/embed.js"></script><noscript><a href="http://disqus.com/forums/ampify/?url=ref">View the discussion thread.</a></noscript><a href="http://disqus.com" class="dsq-brlink">blog comments powered by <span class="logo-disqus">Disqus</span></a>
 </div>
+
 
 <!-- END COMMENTS -->
 
@@ -258,12 +271,6 @@ Yet somewhere in Britain, the counterculture dream still lives.
 
 <div class="promote">
   <a class="promote-fb" href="http://www.facebook.com/share.php?u=http%3A%2F%2Fespra.com&amp;t=Support+Espra%3A+Create+Weapons+of+Mass+Construction%21" title="Share on Facebook">&nbsp;</a>
-  <script type="text/javascript">
-  tweetmeme_url = 'http://espra.com';
-  tweetmeme_style = 'compact';
-  tweetmeme_source = 'tav';
-  tweetmeme_alias = 'http://espra.com';
-  </script>
   <a class="promote-google-buzz" href="http://www.google.com/reader/link" title="Buzz it on Google Buzz!">Buzz it</a>
   <div class="promote-yahoo-buzz"><a href="http://buzz.yahoo.com/buzz?targetUrl=http%3A%2F%2Fespra.com&amp;headline=Support+Espra%3A+Create+Weapons+of+Mass+Construction%21&amp;src=sharethis" title="Buzz Up!"><img src="http://cloud.github.com/downloads/tav/plexnet/gfx.icon.yahoobuzz.png" alt="Share on Yahoo Buzz!" /></a></div>
   <div class="promote-retweet"><script type="text/javascript" src="http://tweetmeme.com/i/scripts/button.js"></script></div>
