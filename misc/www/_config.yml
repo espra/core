@@ -11,5 +11,6 @@ analytics_id: UA-90176-24
 section_id: about
 
 index_pages:
-- index.html: index.genshi
+- bank-transfer.html: bank-transfer.genshi
 - community.html: community.genshi
+- index.html: index.genshi

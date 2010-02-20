@@ -1,0 +1,43 @@
+---
+layout: page
+license: Public Domain
+title: Credits
+---
+<div xmlns:py="http://genshi.edgewall.org/">
+
+  <div class="support-page-banner"><span class="support-page-banner-text">You
+  can support Ampify even more and get more pecus for yourself by making a one-off
+  financial contribution.</span></div>
+
+  <div style="width: 125px; float: left; text-align: right;">
+    <img src="http://static.ampify.it/icon.paypal.cropped.png" />
+  </div>
+
+  <div style="width: 390px; float: left; margin-left: 20px;">
+  You can donate an amount of your choosing via <a href="https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&amp;hosted_button_id=LBYD6Y9FZKLD2">this paypal page</a>.
+  </div>
+
+  <hr class="clear" style="padding-bottom: 30px;" />
+
+  <div style="width: 125px; float: left; text-align: right">
+    <img src="http://static.ampify.it/icon.hsbc.png" width="125px" height="23px" />
+  </div>
+
+  <div style="width: 390px; float: left; margin-left: 20px;">
+
+    For amounts over £1,000 you might want to do a direct bank transfer:
+    <pre>Account:          Metanational Commons
+Bank:             HSBC
+Swift:            MIDLGB2105G
+Sort Code:        40-01-22
+Account Number:   61609637
+IBAN:             GB28MIDl40012261609637</pre>
+
+    Please be sure to use a unique reference like your Supporter ID in both
+    cases and thank you very much for your support!
+
+  </div>
+
+  <hr class="clear" style="padding-bottom: 20px;" />
+
+</div>
