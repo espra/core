@@ -435,7 +435,7 @@ $(function () {
         notfound,
         extra,
         container;
-    for (i=0; i < 7; i++) {
+    for (i=0; i < 6; i++) {
         notfound = true;
         while (notfound) {
             selected = ESPIANS[Math.floor(ESPIANS_COUNT * Math.random())];

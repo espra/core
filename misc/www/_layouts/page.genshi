@@ -1,7 +1,8 @@
 ---
 layout: site
+license: Public Domain
 ---
 
-<div class="page">
+<div id="main-support-page">
 ${Markup(content)}
 </div>

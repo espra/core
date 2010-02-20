@@ -137,9 +137,9 @@ Be one of the first 100!
 
 <div style="color: #575757; margin: 20px 12px 12px 0; font-size: 19px; line-height: 25px;">
 
-<img style="float: left; margin-right: 5px;" src="gfx.espra.what.png" alt="?" />
+<img style="float: left; margin-right: 5px;" src="http://static.ampify.it/gfx.circled-questionmark.png" alt="?" />
 
-So, how do you benefit by being a supporter for 10 months?
+So, how do you benefit by being one of the 1,000 male/female core supporters?
 
 <hr class="clear" />
 
@@ -148,41 +148,36 @@ So, how do you benefit by being a supporter for 10 months?
 <!-- GET -->
 
 <div class="get-left">
-If you get in early as one of the first 1,000 male or female supporters, you
-get the special status of "Core Supporter", which means:
 <div class="get-item">
-<img src="dot-checked4.png" alt="checked" width="24px" height="24px" />
+<img src="http://static.ampify.it/gfx.circled-tickmark.png" alt="checked" width="24px" height="24px" />
 You get a seat at the first term of the governing body for the Commons
 &middot;
-A potentially powerful position &mdash; especially since it will be
+A potentially powerful position &mdash; since it will be
 the seed for all global trust map calculations.
 </div>
 <div class="get-item">
-<img src="dot-checked4.png" alt="checked" width="24px" height="24px" />
+<img src="http://static.ampify.it/gfx.circled-tickmark.png" alt="checked" width="24px" height="24px" />
 You get exclusive access and privileges at Ampify related events and parties that will
 be happening in the future.
 </div>
 </div>
 
 <div class="get-right">
-All supporters get special privileges. For example:
 <div class="get-item">
-<img src="dot-checked4.png" alt="checked" width="24px" height="24px" />
-You get priority access to Ampify releases like private betas
+<img src="http://static.ampify.it/gfx.circled-tickmark.png" alt="checked" width="24px" height="24px" />
+You get priority access to Ampify rollouts like private betas
 &middot;
 Giving you a chance to get a head start on everyone else.
 </div>
 <div class="get-item">
-<img src="dot-checked4.png" alt="checked" width="24px" height="24px" />
-You get 5 Tav Pecus for every £1 you contribute
+<img src="http://static.ampify.it/gfx.circled-tickmark.png" alt="checked" width="24px" height="24px" />
+You get 10 pecus for every £1 you contribute
 &middot;
-These could be very valuable when Ampify
-starts to have the kind of impact that it
-is setting out to.
+These might turn out to be very valuable in the future.
 </div>
 <div class="get-item">
-<img src="dot-checked4.png" alt="checked" width="24px" height="24px" />
-You get permanent kudos for having made a new, open and exciting reality
+<img src="http://static.ampify.it/gfx.circled-tickmark.png" alt="checked" width="24px" height="24px" />
+Most importantly, you get permanent kudos for having made a new, open and exciting reality
 possible.
 </div>
 </div>
@@ -372,35 +367,5 @@ It would be super nice if you clicked on all the links where you have an account
 </div>
 
 <!-- END ABOUT -->
-
-<!-- INFOPANES -->
-
-<div id="info-panes">
-  <div id="info-trustmaps">
-    <img src="tav-window2.jpg" />
-  </div>
-  <div id="info-pecus">
-    <img src="tav-window2.jpg" />
-  </div>
-  <div id="info-plexnet">
-    <img src="tav-window2.jpg" width="700px" height="700px" />
-  </div>
-  <div id="info-tav">
-    <img src="tav-window2.jpg" style="float: left;" />
-Booya!
-  </div>
-  <div id="info-bank">
-<table>
-<tr><td>ACCOUNT</td><td>Metanational Commons Limited</td></tr>
-<tr><td>BANK</td><td>Natwest</td></tr>
-<tr><td>SWIFT</td><td>MIDLGB2105G</td></tr>
-<tr><td>SORT CODE</td><td>40-01-07</td></tr>
-<tr><td>ACCOUNT NUMBER</td><td>41558226</td></tr>
-<tr><td>IBAN</td><td>GB28MIDl40010741558226</td></tr>
-</table>
-  </div>
-</div>
-
-<!-- END INFOPANES -->
 
 </div>

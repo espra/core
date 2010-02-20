@@ -1,40 +1,12 @@
 ---
-layout: site
+layout: page
 license: Public Domain
 section_id: community
 ---
 <div xmlns:py="http://genshi.edgewall.org/">
 
-<style type="text/css">
-.community-section {
-width: 500px;
-margin: 10px auto 10px auto;
-}
-.community-section-heading {
-font-size: 1.6em;
-margin-top: 10px;
-}
-.community-section-heading span {
-background-color: #efd7d7;
-line-height: 1.7em;
-}
-.community-section-text {
-padding: 10px 0 0 50px;
-line-height: 1.6em;
-}
-.community-banner {
-width: 540px;
-margin: 20px auto;
-font-size: 1.2em;
-line-height: 1.6em;
-}
-.community-banner-text {
-background-color: #f0f0f0;
-}
-</style>
-
-<div class="community-banner">
-<span class="community-banner-text">
+<div class="support-page-banner">
+<span class="support-page-banner-text">
 The community around Ampify is full of nice people who want to help others learn
 and have fun. Become part of the Espian family, learn from others, give back
 when you can and have fun!
@@ -83,8 +55,8 @@ title="Join the Espians FriendFeed room">Espians room</a> on FriendFeed.
 </div>
 </div>
 
-<div class="community-banner">
-<span class="community-banner-text">
+<div class="support-page-banner">
+<span class="support-page-banner-text">
 Thank you and welcome to Espia!
 </span>
 </div>
