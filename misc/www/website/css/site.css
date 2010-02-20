@@ -132,9 +132,11 @@ table, table.docutils {
 	text-align: left;
 }
 
+/*
 table a {
 	text-decoration: none;
 }
+*/
 
 th {
 	border-bottom: 2px solid #808096;
