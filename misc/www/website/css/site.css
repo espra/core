@@ -245,6 +245,11 @@ body > #body-outer {
 	padding-top: 10px;
 }
 
+#main pre {
+	font-size: 14px;
+	font-family: "inconsolata-1", "inconsolata-2", Monaco, "DejaVu Sans Mono", "Bitstream Vera Sans Mono", monospace;
+}
+
 #main ul, #main ol {
 	padding-left: 35px;
 }
@@ -1145,4 +1150,152 @@ ul.share-buttons {
 
 .action-text {
   margin-top: 20px;
+}
+
+/* plan file related css */
+
+a.button {
+  background: transparent url('http://static.ampify.it/gfx.bg-button-a.gif') no-repeat scroll top right;
+  color: #444;
+  display: block;
+  float: left;
+  font: normal 12px arial, sans-serif;
+  height: 24px;
+  margin-right: 6px;
+  padding-right: 18px; /* sliding doors padding */
+  text-decoration: none;
+}
+
+a.button span {
+  background: transparent url('http://static.ampify.it/gfx.bg-button-span.gif') no-repeat;
+  display: block;
+  line-height: 14px;
+  padding: 5px 0 5px 18px;
+}
+
+a.button:active {
+  background-position: bottom right;
+  color: #000;
+  outline: none; /* hide dotted outline in Firefox */
+}
+
+a.button:active span {
+  background-position: bottom left;
+  padding: 6px 0 4px 18px; /* push text down 1px */
+}
+
+a.buttondown {
+  background: transparent url('http://static.ampify.it/gfx.bg-button-a.gif') no-repeat scroll top right;
+  color: #444;
+  display: block;
+  float: left;
+  font: normal 12px arial, sans-serif;
+  height: 24px;
+  margin-right: 6px;
+  padding-right: 18px; /* sliding doors padding */
+  text-decoration: none;
+  background-position: bottom right;
+  color: #000;
+  outline: none; /* hide dotted outline in Firefox */
+}
+
+a.buttondown span {
+  background: transparent url('http://static.ampify.it/gfx.bg-button-span.gif') no-repeat;
+  display: block;
+  line-height: 14px;
+  padding: 5px 0 5px 18px;
+  background-position: bottom left;
+  padding: 6px 0 4px 18px; /* push text down 1px */
+}
+
+.tag-segment {
+  text-align: right;
+}
+
+.tag-segment span {
+  color: #fff;
+  padding: 0.5em;
+  font-size: 0.7em;
+}
+
+.tag-link {
+  text-decoration: none;
+  color: #000;
+}
+
+.tag {
+  background-color: #696969;
+}
+
+.tag-val-done {
+  background-color: #007f16;
+  background-color: #00782d;
+  background-color: #006400;
+}
+
+.tag-val-needsreview {
+  background-color: #a4ff00;
+  color: #000 !important;
+}
+
+.tag-val-inreview {
+  background-color: #3056bf;
+}
+
+.tag-val-todo {
+  background-color: #a60c00;
+  background-color: #d0006e;
+  background-color: #8B0000;
+}
+
+.tag-val-wip {
+  background-color: #a66e00;
+  background-color: #ff550f;
+}
+
+.tag-type-1 {
+}
+
+.tag-type-2 { /* #hashtags */
+  background-color: #2a4580;
+  background-color: #696969;
+}
+
+.tag-type-dep {
+  display: none;
+}
+
+.tag-type-milestone {
+  background-color: #00008B;
+  background-color: #06276f;
+  background-color: #a4ff00; /* nice colour! */
+  /* color: #000 !important; */
+  background-color: #002ca6;
+  background-color: #3056bf;
+  background-color: #898989;
+}
+
+.tag-type-priority {
+  background-color: #481254;
+}
+
+.tag-type-zuser {
+  background-color: #4573d5;
+  background-color: #696969;
+}
+
+#plan-tags a, #site-tags a {
+  margin-bottom: 0.7em;
+}
+
+#plan-container {
+  margin-top: 1.2em;
+  margin-bottom: 2.4em;
+}
+
+.plan-help {
+  font-size: 0.9em;
+  font-weight: bold;
+  text-align: right;
+  margin-bottom: 1.4em;
 }

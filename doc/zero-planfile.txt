@@ -7,10 +7,17 @@ title: Zero Planfile
 Zero Planfile
 =============
 
+.. contents::   Table of Contents
+                :depth: 2
+                :backlinks: none
+
 Ampify Zero is building on top of existing technologies like Caja, jQuery, Git,
 App Engine, Go, Node.js, Python, Redis, S3, Sendgrid, Twilio and V8 as an
 initial step towards the decentralised vision of ``Ampify 1.0``. It is intended
 as a working demo and nothing more.
+
+.. plan:: bootstrap
+
 
 
 Node Structure
@@ -18,7 +25,7 @@ Node Structure
 
 A Node is started up using the ``ampnode`` executable.
 
-On startup all nodes establish a connection to the Seed node.
+On startup all nodes establish a live connection to the Seed node.
 
 .. class:: ascii-art
 
@@ -58,8 +65,14 @@ On startup all nodes establish a connection to the Seed node.
 Argonought
 ----------
 
-Argonought is a JSON-inspired serialisation format that offers us features not
-available in other formats:
+.. tag:: #miaow
+
+  ✓ Argonought is a JSON-inspired serialisation format that offers us features
+  not available in other formats.
+
+  * For example, it means that.
+
+Okay:
 
 * JSON-like simplicty.
 * Efficient binary encoding.
