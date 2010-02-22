@@ -1,3 +1,13 @@
+// No Copyright (-) 2010 The Ampify Authors. This file is under the
+// Public Domain license that can be found in the root LICENSE file.
+
+// friendly.js -- a widget that displays live search results from
+// Friendfeed, Twitter and more
+
+
+// Dates in JSON and dates in the FriendFeed extension elements in the
+// Atom and RSS feeds are in RFC 3339 format in UTC. You can parse
+// them with the strptime string "%Y-%m-%dT%H:%M:%SZ".
 // Beginning of logilab strptime implementation
 var _DATE_FORMAT_REGEXES = {
     'Y': new RegExp('^-?[0-9]+'),
