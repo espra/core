@@ -5,7 +5,8 @@ var _DATE_FORMAT_REGEXES = {
     'm': new RegExp('^[0-9]{1,2}'),
     'H': new RegExp('^[0-9]{1,2}'),
     'M': new RegExp('^[0-9]{1,2}')
-}
+};
+
 
 /*
  * _parseData does the actual parsing job needed by `strptime`
@@ -13,34 +14,30 @@ var _DATE_FORMAT_REGEXES = {
 var _parseDate = function (datestring, format) {
     var parsed = {};
     for (var i1=0,i2=0;i1<format.length;i1++,i2++) {
-    var c1 = format[i1];
-    var c2 = datestring[i2];
-	if (c1 == '%') {
-	   c1 = format[++i1];
-	   var data = _DATE_FORMAT_REGEXES[c1].exec(datestring.substring(i2));
+        var c1 = format[i1];
+        var c2 = datestring[i2];
+        if (c1 == '%') {
+            var test = 1;
+            c1 = format[++i1];
+            var data = _DATE_FORMAT_REGEXES[c1].exec(datestring.substring(i2));
 
-	   if (!data.length) {
-		    return null;
-	   }
+            if (!data.length) { return null; }
 
-	   data = data[0];
-	   i2 += data.length-1;
-	   var value = parseInt(data, 10);
+            data = data[0];
+            i2 += data.length-1;
+            var value = parseInt(data, 10);
 
-	   if (isNaN(value)) {
-	      return null;
-	   }
+            if (isNaN(value)) { return null; }
 
-	   parsed[c1] = value;
-	   continue;
-	}
+            parsed[c1] = value;
+            continue;
+        }
 
-	if (c1 != c2) {
-	   return null;
-	}
+        if (c1 != c2) { return null; }
     }
     return parsed;
 };
+
 
 /*
  * basic implementation of strptime. The only recognized formats
@@ -49,60 +46,50 @@ var _parseDate = function (datestring, format) {
 var strptime = function (datestring, format) {
     var parsed = _parseDate(datestring, format);
 
-    if (!parsed) {
-       return null;
-    }
+    if (!parsed) { return null; }
 
     // create initial date (!!! year=0 means 1900 !!!)
     var date = new Date(0, 0, 1, 0, 0);
     date.setFullYear(0); // reset to year 0
 
-    if (parsed.Y) {
-       date.setFullYear(parsed.Y);
-    }
+    if (parsed.Y) { date.setFullYear(parsed.Y); }
 
     if (parsed.m) {
 
-       if (parsed.m < 1 || parsed.m > 12) {
-          return null;
-       }
+        if (parsed.m < 1 || parsed.m > 12) { return null; }
 
-       // !!! month indexes start at 0 in javascript !!!
-       date.setMonth(parsed.m - 1);
+        // !!! month indexes start at 0 in javascript !!!
+        date.setMonth(parsed.m - 1);
     }
 
     if (parsed.d) {
 
-       if (parsed.m < 1 || parsed.m > 31) {
-          return null;
-       }
+        if (parsed.m < 1 || parsed.m > 31) { return null; }
 
-       date.setDate(parsed.d);
+        date.setDate(parsed.d);
     }
 
     if (parsed.H) {
 
-       if (parsed.H < 0 || parsed.H > 23) {
-          return null;
-       }
+        if (parsed.H < 0 || parsed.H > 23) { return null; }
 
-       date.setHours(parsed.H);
+        date.setHours(parsed.H);
     }
 
     if (parsed.M) {
 
-       if (parsed.M < 0 || parsed.M > 59) {
-          return null;
-       }
+        if (parsed.M < 0 || parsed.M > 59) { return null; }
 
-       date.setMinutes(parsed.M);
+        date.setMinutes(parsed.M);
     }
 
     return date;
 };
 // End of logilab strptime implementation
 
+
 var get_relative_time = function (from) {
+    var NOW = new Date;
     var date = new Date;
     date.setTime(Date.parse(from));
     var distance_in_seconds = ((NOW - date) / 1000);
