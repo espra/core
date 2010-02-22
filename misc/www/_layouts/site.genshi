@@ -43,7 +43,7 @@
 	<meta name="copyright" content="${site_license}" />
 	<meta name="document-rating" content="general" />
 	<link rel="stylesheet" type="text/css" media="screen" title="default" href="css/site.css" />
-	<link rel="alternate" type="application/rss+xml" title="RSS Feed for Ampify" href="http://feeds2.feedburner.com/ampify" />
+	<link rel="alternate" type="application/rss+xml" title="RSS Feed for Ampify" href="http://feeds.feedburner.com/ampify" />
 	<py:if test="defined('typekit')">
 	<script type="text/javascript" src="http://use.typekit.com/hdt8sni.js"></script>
 	<script type="text/javascript">try{Typekit.load();}catch(e){}</script>
@@ -70,7 +70,7 @@
 		<div><a href="http://www.facebook.com/Espians" title="Join Espians on Facebook"><img src="http://static.ampify.it/icon.facebook.gif" alt="Join Espians on Facebook" width="15px" height="15px" /></a></div>
 		<div><a href="http://twitter.com/tav" title="Follow @tav on Twitter"><img src="http://static.ampify.it/icon.twitter.gif" alt="Follow @tav on Twitter" width="14px" height="14px" /></a></div>
 		<div><a href="http://github.com/tav/ampify" title="Fork Ampify on GitHub"><img src="http://static.ampify.it/icon.github.png" alt="Join Espians on Facebook" width="15px" height="15px" /></a></div>
-		<div><a href="http://feeds2.feedburner.com/ampify" title="Subscribe to the RSS Feed"><img src="http://static.ampify.it/icon.rss.png" alt="Subscribe to the RSS Feed" width="14px" height="14px" /></a></div>
+		<div><a href="http://feeds.feedburner.com/ampify" title="Subscribe to the RSS Feed"><img src="http://static.ampify.it/icon.rss.png" alt="Subscribe to the RSS Feed" width="14px" height="14px" /></a></div>
 	</div>
 	<div id="logo"><a href="http://ampify.it"><img src="http://static1.ampify.it/logo.ampify.smallest.png" alt="Ampify" width="250px" height="56px" /></a></div>
 	<div id="menu-lang">
