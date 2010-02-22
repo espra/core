@@ -23,7 +23,7 @@ var _DATE_FORMAT_REGEXES = {
  */
 var _parseDate = function (datestring, format) {
     var parsed = {};
-    for (var i1=0,i2=0;i1<format.length;i1++,i2++) {
+    for (var i1 = 0, i2 = 0; i1 < format.length; i1++, i2++) {
         var c1 = format[i1];
         var c2 = datestring[i2];
         if (c1 == '%') {
