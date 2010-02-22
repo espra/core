@@ -29,7 +29,7 @@ function main() {
         );
     eval(posix.cat(jslint_path).wait());
     if (!file) {
-	    sys.puts("Usage: nodelint.js file.js");
+        sys.puts("Usage: nodelint.js file.js");
         process.exit(1);
     }
     try {
