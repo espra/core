@@ -11,13 +11,14 @@ Zero Planfile
                 :depth: 2
                 :backlinks: none
 
-Ampify Zero is building on top of existing technologies like Caja, jQuery, Git,
-App Engine, Go, Node.js, Python, Redis, S3, Sendgrid, Twilio and V8 as an
-initial step towards the decentralised vision of ``Ampify 1.0``. It is intended
-as a working demo and nothing more.
+Ampify Zero is as an initial step towards the decentralised vision of ``Ampify
+1.0``. It is intended as a working demo and nothing more. It builds on top of
+existing technologies like Caja, jQuery, Git, App Engine, Go, Node.js, Python,
+Redis, S3, Sendgrid, Twilio and V8.
 
-.. plan:: bootstrap
+.. plan:: zero
 
+  {"todo": ["wip", "todo"], "done": ["inreview", "needsreview", "done"]}
 
 
 Node Structure
@@ -65,52 +66,49 @@ On startup all nodes establish a live connection to the Seed node.
 Argonought
 ----------
 
-.. tag:: #miaow
-
-  ✓ Argonought is a JSON-inspired serialisation format that offers us features
-  not available in other formats.
-
-  * For example, it means that.
-
-Okay:
+Argonought is a JSON-inspired serialisation format that should offer us features
+not collectively available in other formats:
 
 * JSON-like simplicty.
 * Efficient binary encoding.
 * Lexicographically sortable encoding.
 
-As an example, consider how you would sort *really* long numbers on datastores
-like Google App Engine or SimpleDB. The latter only allows you to store strings
-and the former truncates anything greater than 64bits.
+.. tag:: #foundation, needsreview
 
-.. syntax:: irb
+  ✓ Implement support for lexicographically sortable representation of numbers.
 
-  >> (2 ** 29).class
-  => Fixnum
+    As an example, consider how you would sort *really* long numbers on
+    datastores like Google App Engine or SimpleDB. The latter only allows you to
+    store strings and the former truncates anything greater than 64bits.
 
-  >> (2 ** 30).class
-  => Bignum
+    .. syntax:: irb
 
-The official documentation for SimpleDB
-`recommends <http://developer.amazonwebservices.com/connect/entry.jspa?categoryID=152&externalID=1232>`_
+      >> (2 ** 29).class
+      => Fixnum
 
-.. syntax:: pycon
+      >> (2 ** 30).class
+      => Bignum
 
-  >>> '9' > '8'
-  True
+    The official documentation for SimpleDB `recommends
+    <http://developer.amazonwebservices.com/connect/entry.jspa?categoryID=152&externalID=1232>`_
 
-  >>> '10' > '9'
-  False
+    .. syntax:: pycon
 
-Argonought takes care of all of this hassle:
+      >>> '9' > '8'
+      True
 
+      >>> '10' > '9'
+      False
 
-.. syntax:: pycon
+    Argonought now takes care of all of this hassle:
 
-  >>> argonought.pack_number(8234364)
-  '\xfe\xa2\xa0'
+    .. syntax:: pycon
 
-  >>> a.pack_number(8234364) > a.pack_number(-234364)
-  True
+      >>> argonought.pack_number(8234364)
+      '\xfe\xa2\xa0'
+
+      >>> argonought.pack_number(8234364) > argonought.pack_number(-234364)
+      True
 
 
 Message
@@ -172,90 +170,101 @@ Asr
 Hosting
 -------
 
-✓ Investigate cloud service providers.
+.. tag:: #admin, @evangineer, @tav
 
-  Choosing good hosting provider(s) is going to be important for the long-term
-  success of Ampify. Unfortunately the current set of cloud services do not seem
-  to be spectacularly attractive choices.
+  ✓ Investigate cloud service providers.
 
-  Services like `Amazon EC2 <http://aws.amazon.com/ec2/>`_ are impressive from a
-  technical perspective. For example, Amazon's Elastic Load Balancer makes what
-  would otherwise be a pretty painful experience quite effortless.
+    Choosing good hosting provider(s) is going to be important for the long-term
+    success of Ampify. Unfortunately the current set of cloud services do not
+    seem to be spectacularly attractive choices.
 
-  However, on the flip side, the abstractions also introduces a lot of
-  additional complexities to manage. This is most notable with the case of >
-  Amazon's `Elastic Block Store <http://aws.amazon.com/ebs/>`_. Writing a file
-  to disk now involves half a dozen support structures!
+    Services like `Amazon EC2 <http://aws.amazon.com/ec2/>`_ are impressive from
+    a technical perspective. For example, Amazon's Elastic Load Balancer makes
+    what would otherwise be a pretty painful experience quite effortless.
 
-  Cloud offerings also make very little sense from a financial perspective. Not
-  only do comparable "raw metal" servers cost substantially less, but you also
-  get a noticeable increase in raw performance.
+    However, on the flip side, the abstractions also introduces a lot of
+    additional complexities to manage. This is most notable with the case of >
+    Amazon's `Elastic Block Store <http://aws.amazon.com/ebs/>`_. Writing a file
+    to disk now involves half a dozen support structures!
 
-  And, finally, multi-tenancy introduces a host of `novel security
-  considerations <http://people.csail.mit.edu/tromer/papers/cloudsec.pdf>`_.
-  Server management is complicated enough without having to worry about these
-  and other gaming issues.
+    Cloud offerings also make very little sense from a financial perspective.
+    Not only do comparable "raw metal" servers cost substantially less, but you
+    also get a noticeable increase in raw performance.
 
-✓ Investigate dedicated server providers.
+    And, finally, multi-tenancy introduces a host of `novel security
+    considerations <http://people.csail.mit.edu/tromer/papers/cloudsec.pdf>`_.
+    Server management is complicated enough without having to worry about these
+    and other gaming issues.
 
-  `Hostway <http://www.hostway.com/dedicated-servers/>`_ seem to have quite a
-  competitive offering with offers of good support and 100% uptime. The global
-  distribution (North America, Europe, East Asia) of their data centers is also
-  quite attractive with regards future expansion.
+.. tag:: #admin, @evangineer, @tav
 
-  Of the other providers, `Terremark <http://www.terremark.com>`_ looks quite
-  impressive, but do not seem to be affordable at a small scale. `Codero
-  <http://www.codero.com>`_ (USA) and `Hetzner <http://www.hetzner.de>`_
-  (Germany) are attractive price-wise, however they don't seem to be too
-  reliable with regards network connectivity.
+  ✓ Investigate dedicated server providers.
 
-✗ Investigate/negotiate deal with Hostway.
+    `Hostway <http://www.hostway.com/dedicated-servers/>`_ seem to have quite a
+    competitive offering with offers of good support and 100% uptime. The global
+    distribution (North America, Europe, East Asia) of their data centers is
+    also quite attractive with regards future expansion.
 
-  There are a number of issues to verify:
+    Of the other providers, `Terremark <http://www.terremark.com>`_ looks quite
+    impressive, but do not seem to be affordable at a small scale. `Codero
+    <http://www.codero.com>`_ (USA) and `Hetzner <http://www.hetzner.de>`_
+    (Germany) are attractive price-wise, however they don't seem to be too
+    reliable with regards network connectivity.
 
-  * What's their process for scheduled maintenance? Do they have an IRC channel
-    for live support?
+.. tag:: #admin, @tav
 
-    * They don't have an IRC channel, but do offer 24x7 support and ticketing
-      system.
+  ✗ Investigate/negotiate deal with Hostway.
 
-  * What are their limitations with regards to provisioning new servers? At what
-    rate can they handle orders for new servers?
+    There are a number of issues to verify:
 
-    * They can deploy new servers (from any of their default configs) within 24
-      hours, which could potentially be rushed. Custom configurations would take
-      longer though.
+    * What's their process for scheduled maintenance? Do they have an IRC
+      channel for live support?
 
-  * What are our options about deploying across their `various data centers
-    <http://www.hostway.com/infrastructure/>`_? What is the latency between
-    these locations?
+      * They don't have an IRC channel, but do offer 24x7 support and ticketing
+        system.
 
-    * We can choose which data centers to deploy to.
+    * What are their limitations with regards to provisioning new servers? At
+      what rate can they handle orders for new servers?
 
-  * Do they offer ECC RAM on their servers? What kind specifically?
+      * They can deploy new servers (from any of their default configs) within
+        24 hours, which could potentially be rushed. Custom configurations would
+        take longer though.
 
-    * Yes, the RAM on the servers we've been looking at is DDR3 ECC.
+    * What are our options about deploying across their `various data centers
+      <http://www.hostway.com/infrastructure/>`_? What is the latency between
+      these locations?
 
-  * Do they offer servers with Gigabit NIC? This will be quite important for the
-    frontend servers.
+      * We can choose which data centers to deploy to.
 
-    * All servers are fitted with Gigabit NICs.
+    * Do they offer ECC RAM on their servers? What kind specifically?
 
-  * What happens when servers exceed their allocated 2TB bandwidth? Is "internal"
-    bandwidth charged for? What about across their data centers?
+      * Yes, the RAM on the servers we've been looking at is DDR3 ECC.
 
-    * Excess bandwidth is charged for. We can prebuy various bandwidth plans.
-      And with regards internal traffic, we can arrange for our servers to be
-      setup on a private switch.
+    * Do they offer servers with Gigabit NIC? This will be quite important for
+      the frontend servers.
 
-  * Do they offer static IP addresses? What's their process for allocation of new
-    address blocks?
+      * All servers are fitted with Gigabit NICs.
 
-  Tav is currently engaged in a dialogue with Jamie Fryer from Hostway.
+    * What happens when servers exceed their allocated 2TB bandwidth? Is
+      "internal" bandwidth charged for? What about across their data centers?
 
-    ✗ http://code.google.com/p/tesseract-ocr/wiki/ReadMe
-    ✗ Language detection
-    ✗ Trust metrics calculation
+      * Excess bandwidth is charged for. We can prebuy various bandwidth plans.
+        And with regards internal traffic, we can arrange for our servers to be
+        setup on a private switch.
+
+    * Do they offer static IP addresses? What's their process for allocation of
+      new address blocks?
+
+    Tav is currently engaged in a dialogue with Jamie Fryer from Hostway.
+
+
+Remaining Blah
+--------------
+
+✗ http://code.google.com/p/tesseract-ocr/wiki/ReadMe
+✗ Language detection
+✗ Trust metrics calculation
+✗ Temporal visualiser
 
 Guess language
 

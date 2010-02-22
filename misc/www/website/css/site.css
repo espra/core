@@ -96,7 +96,7 @@ pre {
 	font: 12px/1.4em Monaco, "DejaVu Sans Mono", "Bitstream Vera Sans Mono", monospace;
 	overflow: auto;
 	padding: 7px 0 8px 7px;
-	margin: 10px 40px 0 50px;
+	margin: 10px 30px 0 30px;
 	-moz-border-radius: 5px;
 	-webkit-border-radius: 5px;
 	border-radius: 5px;
@@ -227,6 +227,10 @@ body > #body-outer {
 	width: 630px;
 	line-height: 2em;
 	font-size: 0.9em;
+}
+
+#main blockquote {
+	padding-left: 20px;
 }
 
 #main h1 {
@@ -1298,4 +1302,18 @@ a.buttondown span {
   font-weight: bold;
   text-align: right;
   margin-bottom: 1.4em;
+}
+
+.container {
+	padding-left: 20px;
+}
+
+.container blockquote {
+	padding: 0 0 0 30px;
+}
+
+.container > p:first-child {
+	font-weight: bold;
+	font-family: "museo-1", "museo-2", Verdana;
+	padding-bottom: 0;
 }

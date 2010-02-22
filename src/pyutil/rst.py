@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 # No Copyright (-) 2004-2010 The Ampify Authors. This file is under the
 # Public Domain license that can be found in the root LICENSE file.
 
@@ -170,6 +172,7 @@ from docutils.utils import new_document
 from pygments import highlight
 from pygments.formatters import HtmlFormatter
 from pygments.lexers import get_lexer_by_name, TextLexer
+from simplejson import loads as decode_json
 
 from io import IteratorParser
 
@@ -292,7 +295,7 @@ class TagDirective(Directive):
 
     has_content = True
 
-    def run(self, tag_cache={}):
+    def run(self, tag_cache={}, tag_normalised_cache={}, TODO=u'✗', DONE=u'✓'):
 
         if not self.content:
             return []
@@ -305,12 +308,26 @@ class TagDirective(Directive):
         tag_list_id = CURRENT_PLAN_ID or 'list'
 
         output = []; add = output.append
+        implicit_tags = {}
         tag_id = None
+
+        def add_tag(
+            ori_tag, tag_span, cache=tag_normalised_cache, add=add,
+            implicit_tags=implicit_tags,
+            done_tags=CURRENT_PLAN_SETTINGS.get('done', []),
+            todo_tags=CURRENT_PLAN_SETTINGS.get('todo', []),
+            ):
+            add(tag_span)
+            norm_tag = cache[ori_tag]
+            if norm_tag in done_tags:
+                implicit_tags['done'] = True
+            if norm_tag in todo_tags:
+                implicit_tags['todo'] = True
 
         for tag in arguments:
 
             if tag in tag_cache:
-                add(tag_cache[tag])
+                add_tag(tag, tag_cache[tag])
                 continue
 
             ori_tag = tag
@@ -360,7 +377,22 @@ class TagDirective(Directive):
                 )
 
             tag_cache[ori_tag] = tag_span
-            add(tag_span)
+            tag_normalised_cache[ori_tag] = tag_class
+            add_tag(ori_tag, tag_span)
+
+        content = u'\n'.join(self.content)
+        if content.startswith(TODO):
+            if 'todo' not in implicit_tags:
+                add(
+                    u'<span class="tag tag-type-1 tag-val-todo" '
+                     'tagname="TODO" tagnorm="todo">TODO</span> '
+                    )
+        elif content.startswith(DONE):
+            if 'done' not in implicit_tags:
+                add(
+                    u'<span class="tag tag-type-1 tag-val-done" '
+                     'tagname="DONE" tagnorm="done">DONE</span> '
+                    )
 
         output.sort()
 
@@ -380,22 +412,21 @@ class TagDirective(Directive):
             pass
             # add(u'<span class="tag tag-untagged"></span>')
 
-        output.append(u'<a class="tag-link" href="#tag-ref-%s-main">&middot;</a>' % tag_id)
+        add(u'<a class="tag-link" href="#tag-ref-%s-main">&middot;</a>' % tag_id)
         output.insert(
             0, (u'<div class="tag-segment" id="tag-ref-%s">' % tag_id)
             )
 
-        add(u'</div>')
+        output.append(u'</div>')
 
         tag_info = nodes.raw('', u''.join(output), format='html')
-        tag_content_container = nodes.bullet_list(
+        tag_content_container = nodes.container(
             ids=['tag-ref-%s-content' % tag_id]
             )
 
-        tag_content = nodes.list_item()
-        self.state.nested_parse(self.content, self.content_offset, tag_content)
-
-        tag_content_container += tag_content
+        self.state.nested_parse(
+            self.content, self.content_offset, tag_content_container
+            )
 
         prefix = nodes.raw('', u'<div id="tag-ref-%s-main" class="tag-content">' % tag_id, format='html')
         suffix = nodes.raw('', u'</div>', format='html')
@@ -409,18 +440,19 @@ directives.register_directive('tag', TagDirective)
 # ------------------------------------------------------------------------------
 
 CURRENT_PLAN_ID = None
+CURRENT_PLAN_SETTINGS = {}
 
 def plan_directive(name, arguments, options, content, lineno,
                    content_offset, block_text, state, state_machine):
     """Setup for tags relating to a plan file."""
 
     global CURRENT_PLAN_ID
+    global CURRENT_PLAN_SETTINGS
 
     if not CURRENT_PLAN_ID:
         raw_node = nodes.raw(
             '',
             '<div id="plan-container"></div>'
-            # '<script type="text/javascript" src="http://cloud.github.com/downloads/tav/plexnet/js.plan.js"></script>'
             '<script type="text/javascript" src="js/plan.js"></script>'
             '<hr class="clear" />',
             format='html'
@@ -428,13 +460,19 @@ def plan_directive(name, arguments, options, content, lineno,
     else:
         raw_node = nodes.raw('', '', format='html')
 
+    content = '\n'.join(content)
+    if content:
+        CURRENT_PLAN_SETTINGS = decode_json(content)
+    else:
+        CURRENT_PLAN_SETTINGS = {}
+
     CURRENT_PLAN_ID = arguments[0]
 
     return [raw_node]
 
 plan_directive.arguments = (1, 0, True)
 plan_directive.options = {}
-plan_directive.content = False
+plan_directive.content = True
 
 directives.register_directive('plan', plan_directive)
 
@@ -886,6 +924,10 @@ def render_rst(
 
         # strip out border="1"
         output = replace_table_borders(r'<table class="docutils">', output)
+
+        # pad out tick/cross marks
+        output = output.replace(u'<p>✓ ', u'<p>✓ &nbsp; ')
+        output = output.replace(u'<p>✗ ', u'<p>✗ &nbsp; ')
 
     if with_props:
         if format == 'html':
