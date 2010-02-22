@@ -1,20 +1,18 @@
 ---
 layout: page
-title: Documentation
 ---
 
 Ampify
 ======
 
-.. contents::   Table of Contents
-                :depth: 1
-                :backlinks: none
 
-The Ampify Platform aims to allow for micro-data powered application
-development. The goal for the 1.0 release is to have a fully decentralised
-platform, but right now we're working on creating version `Zero`.
+The Ampify Platform aims to make micro-data powered application development and
+decentralised collaboration super easy. For comparison, perhaps imagine a
+bastardised mix between Unix, IRC, App Engine, Xanadu and Wikis.
 
-Have a read of the planfile for `Ampify Zero <planfile.html>`_.
+The goal for the 1.0 release is to have a fully decentralised "internet
+operating system" style platform, but right now we're working on creating a
+basic, working proof of concept: version ``Zero``.
 
 
 Get Started
@@ -28,21 +26,23 @@ etc.) installed.
   # clone the source repository.
   $ git clone git://github.com/tav/ampify.git
 
-  # setup ampify related environment variables using the ampenv.sh bash script.
-  # you might also want to add this line to your ~/.profile or ~/.bashrc files.
+  # setup ampify related environment variables using the ampenv.sh
+  # bash script. you might also want to add the line to your ~/.profile
+  # or ~/.bashrc files.
   $ source ampify/environ/startup/ampenv.sh
 
-  # use the new git update command which will now be on your $PATH to keep the
-  # repository updated from now on — it also inits and updates git submodules.
+  # use the new git update command which will now be on your $PATH to
+  # keep the repository updated from now on — it also inits and updates
+  # git submodules.
   $ cd ampify
   $ git update
 
-  # configure your build (and verify you have the necessary dependencies).
+  # configure your build and verify you have the necessary dependencies.
   $ cd src
   $ ./configure
 
-  # build various aspects of the ampify platform and verify everything works by
-  # running the tests.
+  # build various aspects of the ampify platform and verify everything
+  # works by running the tests.
   $ make test
 
 
@@ -85,29 +85,16 @@ Get Involved
   # commit your changes to your local repository.
   $ git commit
 
-  # submit an issue to be reviewed on http://codereview.appspot.com — running this
-  # also checks with appropriate local revhooks before your submission is made.
+  # submit an issue to be reviewed on http://codereview.appspot.com
+  # — running this also checks with appropriate local revhooks before
+  # your submission is made.
   $ git review submit 
 
-  # make any changes and keep committing and submitting updates on the issue until
-  # the reviewers give a LGTM (Looks Good To Me) reply.
+  # make any changes and keep committing and submitting updates on the
+  # issue until the reviewers give a LGTM (Looks Good To Me) reply.
 
-  # once you have an okay, squash your various commits into a single commit and
-  # push to the remote repository.
+  # once you have an okay, squash your various commits into a single
+  # commit and push to the remote repository.
   $ git review push
 
-
-General Info
-------------
-
-* `AUTHORS <authors.html>`_ — A listing of those who have directly contributed
-  code/documentation to Ampify.
-
-* `CREDITS <credits.html>`_ — A listing of those who have contributed
-  indirectly.
-
-* `HISTORY <history.html>`_ — A brief history of Ampify.
-
-* `LICENSE <license.html>`_ — The Public Domain License for the Ampify platform.
-
-* `PLANFILE <planfile.html>`_ — The current planfile for Ampify Zero.
+* Have fun!

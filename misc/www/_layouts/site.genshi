@@ -8,10 +8,8 @@
     'supporters': [
       ],
     'code': [
-      ('Dev Home', 'http://dev.ampify.it'),
       ('Source Code', 'http://github.com/tav/ampify'),
       ('Wiki', 'http://wiki.github.com/tav/ampify/'),
-      ('Paste', 'http://paste.lisp.org/new/esp'),
       ('Bug Tracker', 'http://github.com/tav/ampify/issues'),
       ('Mailing List', 'http://groups.google.com/group/ampify-dev'),
       ('IRC Logs', 'http://irclogs.ampify.it'),

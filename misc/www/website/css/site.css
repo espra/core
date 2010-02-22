@@ -55,10 +55,11 @@ a.promote-fb:active {
 }
 
 blockquote, p, dl, h1, h2, h3, h4, h5, h6, ol, ul {
-	padding-bottom: 10px;
+	padding-top: 0.5em;
+	padding-bottom: 0.5em;
 }
 
-code {
+code, .literal {
 	background-color: #f0f0f0;
 	border: 1px solid #dadada;
 	padding: 1px 3px;
@@ -93,11 +94,9 @@ pre {
 	border: 1px solid #cacaca;
 	color: #101010;
 	font: 12px/1.4em Monaco, "DejaVu Sans Mono", "Bitstream Vera Sans Mono", monospace;
-	max-width: 600px;
-	margin: 15px auto;
 	overflow: auto;
 	padding: 7px 0 8px 7px;
-	width: 600px;
+	margin: 10px 40px 0 50px;
 	-moz-border-radius: 5px;
 	-webkit-border-radius: 5px;
 	border-radius: 5px;
@@ -126,10 +125,14 @@ strong {
 }
 
 table, table.docutils {
-	border: 0 !important;
-	border-collapse: collapse !important;
+	border: 0;
+	border-collapse: collapse;
 	margin: 0 auto;
 	text-align: left;
+}
+
+table.docutils {
+	margin: 5px 40px 10px 30px;
 }
 
 /*
@@ -219,15 +222,85 @@ body > #body-outer {
 }
 
 #main {
-	background-color: #fefefe;
+	float: left;
+	padding: 10px 30px 0 10px;
+	width: 630px;
+	line-height: 2em;
+	font-size: 0.9em;
+}
+
+#main h1 {
+	font-size: 1.5em;
+	padding-top: 20px;
+	padding-bottom: 0;
+}
+
+#main h1.title {
+	font-size: 1.8em;
+	padding-top: 0;
+	padding-bottom: 10px;
+}
+
+#main p {
+	padding-top: 10px;
+}
+
+#main ul, #main ol {
+	padding-left: 35px;
+}
+
+#main li {
+	padding-top: 5px;
+}
+
+#sidebar {
+	float: left;
+	width: 270px;
+	font-size: 0.9em;
+	line-height: 1.6em;
+}
+
+#sidebar a, #sidebar a:hover, #sidebar a:active, #sidebar a:visited {
+	text-decoration: none;
+}
+
+#sidebar a:hover {
+	text-decoration: underline;
+}
+
+#sidebar h3 {
+	text-align: right;
+	border-bottom: 1px solid #cacaca;
+	margin-bottom: 10px;
+}
+
+#sidebar ul {
+	list-style-type: none;
+	padding: 0;
+	margin: 0;
+}
+
+#sidebar li {
+	padding-bottom: 12px;
+}
+
+#sidebar li div, .sidebar-text {
+	color: #6e6e6e;
+	font-size: 0.9em;
+}
+
+#table-of-contents {
+	float: right;
+	margin: 10px 0 10px 20px;
 	border: 1px solid #cacaca;
-	margin: 10px auto;
-	padding: 8px 14px;
-	width: 700px;
-	-moz-border-radius: 5px;
-	-webkit-border-radius: 5px;
-	border-radius: 5px;
-	-webkit-box-shadow: 0px 0px 7px #cacaca;
+}
+
+#table-of-contents .topic-title {
+	display: none;
+}
+
+#table-of-contents ul {
+	padding: 0 20px 5px 20px;
 }
 
 #main-support-page {
