@@ -22,8 +22,14 @@ var _DATE_FORMAT_REGEXES = {
  * _parseData does the actual parsing job needed by `strptime`
  */
 var _parseDate = function (datestring, format) {
-    var parsed = {}, i1 = 0, i2 = 0, c1 = null, c2 = null,
-        test = 0, data = null, value = null;
+    var parsed = {},
+        i1 = 0,
+        i2 = 0,
+        c1 = null,
+        c2 = null,
+        test = 0,
+        data = null,
+        value = null;
 
     for (i1 = 0, i2 = 0; i1 < format.length; i1 + 1, i2 + 1) {
         c1 = format[i1];
@@ -62,7 +68,8 @@ var _parseDate = function (datestring, format) {
  * defined in _DATE_FORMAT_REGEXES (i.e. %Y, %d, %m, %H, %M)
  */
 var strptime = function (datestring, format) {
-    var parsed = null, date = null;
+    var parsed = null,
+        date = null;
 
     parsed = _parseDate(datestring, format);
 
@@ -121,8 +128,10 @@ var strptime = function (datestring, format) {
 
 
 var get_relative_time = function (from) {
-    var NOW = new Date(), date = new Date(),
-        distance_in_seconds = null, distance_in_minutes = null;
+    var NOW = new Date(),
+        date = new Date(),
+        distance_in_seconds = null,
+        distance_in_minutes = null;
 
     date.setTime(Date.parse(from));
     distance_in_seconds = ((NOW - date) / 1000);
