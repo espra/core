@@ -7,14 +7,10 @@ title: Zero Planfile
 Zero Planfile
 =============
 
-.. contents::   Table of Contents
-                :depth: 2
-                :backlinks: none
-
-Ampify Zero is as an initial step towards the decentralised vision of ``Ampify
-1.0``. It is intended as a working demo and nothing more. It builds on top of
-existing technologies like Caja, jQuery, Git, App Engine, Go, Node.js, Python,
-Redis, S3, Sendgrid, Twilio and V8.
+This is the planfile for Ampify Zero, an initial step towards the decentralised
+vision of ``Ampify 1.0``. It is intended as a working prototype and builds on
+top of existing technologies like Caja, jQuery, Git, App Engine, Go, Node.js,
+Python, Redis, S3, Sendgrid, Twilio and V8.
 
 .. plan:: zero
 
@@ -183,7 +179,7 @@ Hosting
     what would otherwise be a pretty painful experience quite effortless.
 
     However, on the flip side, the abstractions also introduces a lot of
-    additional complexities to manage. This is most notable with the case of >
+    additional complexities to manage. This is most notable with the case of
     Amazon's `Elastic Block Store <http://aws.amazon.com/ebs/>`_. Writing a file
     to disk now involves half a dozen support structures!
 
@@ -201,9 +197,9 @@ Hosting
   ✓ Investigate dedicated server providers.
 
     `Hostway <http://www.hostway.com/dedicated-servers/>`_ seem to have quite a
-    competitive offering with offers of good support and 100% uptime. The global
-    distribution (North America, Europe, East Asia) of their data centers is
-    also quite attractive with regards future expansion.
+    competitive offering with offers of good support and "100% uptime". The
+    global distribution (North America, Europe, East Asia) of their data centers
+    is also quite attractive with regards future expansion.
 
     Of the other providers, `Terremark <http://www.terremark.com>`_ looks quite
     impressive, but do not seem to be affordable at a small scale. `Codero

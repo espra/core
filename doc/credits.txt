@@ -6,7 +6,8 @@ title: Credits
 Credits
 =======
 
-In addition to the official `Ampify Authors <authors.html>`_, a number of
+In addition to the official `Ampify Authors <authors.html>`_ and `those credited
+elsewhere <http://tav.espians.com/pecu-allocations-by-tav.html>`_, a number of
 individuals have provided really helpful insights, support and inspiration:
 
 * `David Pinto <http://twitter.com/happyseaurchin>`_, ``happyseaurchin``
@@ -15,8 +16,10 @@ individuals have provided really helpful insights, support and inspiration:
 
 * `Sofia Bustamante <http://sofiabustamante.com>`_, ``olasofia``
 
-  * Provided Tav with lots of TLC.
-  * Provided inspiration for the Ampify name.
+  * Provided a lot of invaluable help/guidance at various stages.
+
+  * Helped identify specific elements of the Confluence model and isolate the
+    notion of "perspectives" from process work.
 
 * `Charles Goodier <http://doid.com>`_, ``mediovia``
 

@@ -61,3 +61,16 @@ History
 * John McCane-Whitney, Sean B. Palmer, Jan Ludewig and Gerry Gleason helped
   `figure out <http://www.openideaproject.org/irclogs/browse/esp/2009/07/24>`_ a
   relatively clean syntax for transclusions and services.
+
+**1999-2009**
+
+* An "iteration" took place every year or so, with various aspects of the
+  overall vision being attempted by lots of amazing people.
+
+* The vision of a decentralised application platform was `shared by Tav
+  <http://chatlogs.planetrdf.com/rdfig/2001-09-11.html#T03-17-00>`_ on the
+  ``#rdfig`` channel.
+
+**1999-10-27**
+
+* The Espian collective was founded by Tav.
