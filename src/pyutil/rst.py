@@ -421,7 +421,7 @@ def plan_directive(name, arguments, options, content, lineno,
             '',
             '<div id="plan-container"></div>'
             # '<script type="text/javascript" src="http://cloud.github.com/downloads/tav/plexnet/js.plan.js"></script>'
-            '<script type="text/javascript" src="js.plan.js"></script>'
+            '<script type="text/javascript" src="js/plan.js"></script>'
             '<hr class="clear" />',
             format='html'
             )
