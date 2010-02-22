@@ -245,6 +245,7 @@ replace_ampersands = re.compile('&(?![^\s&]*;)').sub
 replace_comments = re.compile(r'(?sm)\n?\s*<!--(.*?)\s-->\s*\n?').sub
 replace_plexlinks = re.compile('(?sm)\[\[(.*?)\]\]').sub
 replace_title_headings = re.compile('(?sm)<h1 class="title">(.*?)</h1>').sub
+replace_table_borders = re.compile('(?sm)<table border="1" class="docutils">').sub
 replace_whitespace = re.compile('[\v\f]').sub
 
 split_html_tags = re.compile('(?sm)<(.*?)>').split
@@ -420,7 +421,7 @@ def plan_directive(name, arguments, options, content, lineno,
             '',
             '<div id="plan-container"></div>'
             # '<script type="text/javascript" src="http://cloud.github.com/downloads/tav/plexnet/js.plan.js"></script>'
-            '<script type="text/javascript" src="js.plan.js"></script>'
+            '<script type="text/javascript" src="js/plan.js"></script>'
             '<hr class="clear" />',
             format='html'
             )
@@ -622,6 +623,8 @@ def escape_and_prettify(content):
                 _literal_block = ('style type="text/css"', '/style')
             elif block == 'script type="text/javascript"':
                 _literal_block = ('script type="text/javascript"', '/script')
+            elif block.startswith('pre class="'):
+                _literal_block = ('pre', '/pre')
 
         else:
 
@@ -880,6 +883,9 @@ def render_rst(
 
         # strip out title headings
         output = replace_title_headings('', output)
+
+        # strip out border="1"
+        output = replace_table_borders(r'<table class="docutils">', output)
 
     if with_props:
         if format == 'html':

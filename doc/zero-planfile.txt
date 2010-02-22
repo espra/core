@@ -1,13 +1,167 @@
 ---
 license: Public Domain
 layout: page
-title: Planfile
+title: Zero Planfile
 ---
 
-Planfile
-========
+Zero Planfile
+=============
 
-This is the current Planfile for `Ampify Zero <zero-architecture.html>`_:
+.. contents::   Table of Contents
+                :depth: 2
+                :backlinks: none
+
+Ampify Zero is building on top of existing technologies like Caja, jQuery, Git,
+App Engine, Go, Node.js, Python, Redis, S3, Sendgrid, Twilio and V8 as an
+initial step towards the decentralised vision of ``Ampify 1.0``. It is intended
+as a working demo and nothing more.
+
+.. plan:: bootstrap
+
+
+
+Node Structure
+--------------
+
+A Node is started up using the ``ampnode`` executable.
+
+On startup all nodes establish a live connection to the Seed node.
+
+.. class:: ascii-art
+
+::
+
+       +----------------+
+       | Internet Horde |
+       +----------------+
+             |                                  +-------------+
+             |             +-----------+        | Other Nodes |
+             ±             | Seed Node |        +-------------+
+             |             +-----------+              |
+             |              |     \                   |
+         +-------------+    |      \                  |
+         | Public Port |    |     +----------------------------------+
+         +-------------+    |     | Meta Port (Internal Access Only) |
+                \           |     +----------------------------------+
+                 \          |       /
+                  \         |      /
+       +===========\========|=====/====================================+
+       |            \       |    /                                     |
+       |          +----------------------+                             |
+       |          | Node: Parent Process |                             |
+       |          +----------------------+                             |
+       |                   |                                           |
+       |                   |                                           |
+       |    +-------------------------+-----------------------+        |
+       |    |                         |                       |        |
+       |  +----------------+          |            +----------------+  |
+       |  | Nodule Process |  +----------------+   | Nodule Process |  |
+       |  +----------------+  | Nodule Process |   +----------------+  |
+       |                      +----------------+                       |
+       |                                                               |
+       +===============================================================+
+
+
+Argonought
+----------
+
+.. tag:: #miaow
+
+  ✓ Argonought is a JSON-inspired serialisation format that offers us features
+  not available in other formats.
+
+  * For example, it means that.
+
+Okay:
+
+* JSON-like simplicty.
+* Efficient binary encoding.
+* Lexicographically sortable encoding.
+
+As an example, consider how you would sort *really* long numbers on datastores
+like Google App Engine or SimpleDB. The latter only allows you to store strings
+and the former truncates anything greater than 64bits.
+
+.. syntax:: irb
+
+  >> (2 ** 29).class
+  => Fixnum
+
+  >> (2 ** 30).class
+  => Bignum
+
+The official documentation for SimpleDB
+`recommends <http://developer.amazonwebservices.com/connect/entry.jspa?categoryID=152&externalID=1232>`_
+
+.. syntax:: pycon
+
+  >>> '9' > '8'
+  True
+
+  >>> '10' > '9'
+  False
+
+Argonought takes care of all of this hassle:
+
+
+.. syntax:: pycon
+
+  >>> argonought.pack_number(8234364)
+  '\xfe\xa2\xa0'
+
+  >>> a.pack_number(8234364) > a.pack_number(-234364)
+  True
+
+
+Message
+-------
+
+The message looks like:
+
+.. syntax:: go
+
+  type Message struct {
+      from         string
+      by           string
+      to           string
+      aspect       string
+      content      string
+      value_number big.Number
+      value_list   []string
+      version      int
+  }
+
+For example, the following message written by ``@tav`` and sent to ``#espians``::
+
+    /balance ~/account
+
+Would like the following in Ruby after being parsed:
+
+.. syntax:: ruby
+
+  {
+    :from => "tav",
+    :aspect => "/balance",
+    :to => "#espians",
+    :value_number => 9203180132
+  }
+
+Hmz
+
+Asr
+
+.. syntax:: pycon
+
+  >>> nodule.init()
+  [0, 'START']
+
+  >>> status == 12
+  True
+
+  >>> def foo():
+  ...     if N_set: return True
+  [0, 'START']
+
 
 * Git Review
 * Tests

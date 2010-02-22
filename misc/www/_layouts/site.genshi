@@ -8,10 +8,8 @@
     'supporters': [
       ],
     'code': [
-      ('Dev Home', 'http://dev.ampify.it'),
       ('Source Code', 'http://github.com/tav/ampify'),
       ('Wiki', 'http://wiki.github.com/tav/ampify/'),
-      ('Paste', 'http://paste.lisp.org/new/esp'),
       ('Bug Tracker', 'http://github.com/tav/ampify/issues'),
       ('Mailing List', 'http://groups.google.com/group/ampify-dev'),
       ('IRC Logs', 'http://irclogs.ampify.it'),
@@ -134,11 +132,15 @@
 		</select></form>
 	</div>
 	<div id="menu"><ul>
+		<py:if test="section_id != 'code'">
 		<li><a href="http://blog.ampify.it" py:attrs="menu_class['blog']">Blog</a></li>
 		<li><a href="http://ampify.it/community.html" py:attrs="menu_class['community']">Community</a></li>
+		</py:if>
 		<li><a href="http://dev.ampify.it" py:attrs="menu_class['code']">Code</a></li>
+		<py:if test="section_id != 'code'">
 		<li><a href="http://supporters.ampify.it" py:attrs="menu_class['supporters']">Supporters</a></li>
 		<li><a href="http://ampify.it" py:attrs="menu_class['about']">About</a></li>
+		</py:if>
 	</ul></div>
 	<hr class="clear-left" />
 	<div id="menu-sub" py:with="section_info=section_data[section_id]; last_menu_idx=len(section_info)-1"><py:for each="idx, (menu_item, menu_url) in enumerate(section_info)"><a href="${menu_url}">${menu_item}</a><span py:if="idx != last_menu_idx" class="menu-sub-sep"> | </span></py:for></div>
@@ -158,11 +160,14 @@ ${Markup(content)}
 <hr class="clear" />
 <div class="footer-text">
   <div class="footer-menu">
+		<py:if test="section_id != 'code'">
     <a href="http://ampify.it">ABOUT</a>
     &middot; <a href="http://supporters.ampify.it">SUPPORTERS</a>
-    &middot; <a href="http://dev.ampify.it">CODE</a>
+    &middot; </py:if><a href="http://dev.ampify.it">CODE</a>
+	<py:if test="section_id != 'code'">
     &middot; <a href="http://ampify.it/community.html">COMMUNITY</a>
     &middot; <a href="http://blog.ampify.it">BLOG</a>
+	</py:if>
   </div>
   <div>
 	<a href="http://ampify.it/#help-spread-the-word" title="Help Spread The Word"><img src="http://static.ampify.it/gfx.help-spread-the-word.png" id="spread-button" alt="Help Spread The Word" width="372px" height="30px" /></a>
