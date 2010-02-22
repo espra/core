@@ -266,10 +266,7 @@ try {
 
 // some konstants
 
-var a2a_linkname="Support Ampify: Help Create Weapons of Mass Construction!",
-    a2a_linkurl="http://ampify.it",
-    a2a_onclick=1,
-    country_selected = false,
+var country_selected = false,
     ipinfo = {},
     ipinfodb_queried = false,
     language_options_revealed = false,

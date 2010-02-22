@@ -435,6 +435,32 @@ body > #body-outer {
 	text-align: left;
 }
 
+/* quoted blocks with attribution */
+
+.quote {
+	background: transparent url(http://static.ampify.it/gfx.blockquote.gif) no-repeat 0 0;
+	padding: 6px 12px 0 40px;
+	color: #575757;
+	font-size: 22px;
+	line-height: 28px;
+}
+
+.quote-attribution {
+	color: #575757;
+	font-size: 14px;
+	text-align: right;
+	padding: 10px 12px 10px 0;
+}
+
+.quote-attribution a, .quote-attribution a:active, .quote-attribution a:visited {
+	color: #575757;
+	text-decoration: underline;
+}
+
+.quote-attribution a:hover {
+	text-decoration: none;
+}
+
 /* Source code syntax highlighting */
 
 .syntax .c { color: #919191 } /* Comment */
@@ -882,30 +908,6 @@ ul.share-buttons {
 
 /* other */
 
-.quote {
-  background: transparent url("http://cloud.github.com/downloads/tav/plexnet/gfx.blockquote.gif") no-repeat 0 0;
-  padding: 6px 12px 0 40px;
-  color: #575757;
-  font-size: 22px;
-  line-height: 28px;
-}
-
-.quote-attribution {
-  color: #575757;
-  font-size: 14px;
-  text-align: right;
-  padding: 10px 12px 10px 0;
-}
-
-.quote-attribution a, .quote-attribution a:active, .quote-attribution a:visited {
-  color: #575757;
-  text-decoration: underline;
-}
-
-.quote-attribution a:hover {
-  text-decoration: none;
-}
-
 #callout {
   background-color: #fff;
   margin-bottom: 10px;
@@ -948,7 +950,7 @@ ul.share-buttons {
 
 .input-item input, .input-item textarea {
   /* thanks soundcloud! */
-  background-image: url(button_repeat.png);
+  background-image: url(http://static.ampify.it/gfx.button-repeat.png);
   background-position: 0 -1200px;
   background-repeat: repeat-x;
   border: 1px solid #ccc;

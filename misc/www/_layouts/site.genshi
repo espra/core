@@ -50,8 +50,7 @@
 	<script type="text/javascript" src="http://use.typekit.com/hdt8sni.js"></script>
 	<script type="text/javascript">try{Typekit.load();}catch(e){}</script>
 	</py:if>
-	<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.1/jquery.min.js"></script>
-	<script type="text/javascript" src="http://w.sharethis.com/button/sharethis.js#publisher=65b4c59a-e069-4896-84b4-7d8d7dce2b77&amp;type=website&amp;post_services=email%2Cfacebook%2Cfriendfeed%2Csms%2Ctwitter%2Cdigg%2Cwindows_live%2Clinkedin%2Creddit%2Cgoogle_bmarks%2Cdelicious%2Cstumbleupon%2Cblogger%2Cybuzz%2Cslashdot%2Cbebo%2Cyahoo_bmarks%2Cmixx%2Ctechnorati%2Cpropeller%2Cwordpress%2Cnewsvine%2Cxanga%2Clivejournal"></script>
+	<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
 	<script type="text/javascript" src="js/site.js"></script>
 </head>
 <body>
