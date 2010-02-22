@@ -21,7 +21,7 @@ license: Public Domain
   <description>${site_description}</description>
   <language>en</language>
   <lastBuildDate>${datetime.utcnow().strftime("%a, %d %b %Y %H:%M:%S GMT")}</lastBuildDate>
-  <generator>Tav RSS Generator</generator>
+  <generator>Yatiblog RSS Generator</generator>
 
   <item py:for="item in sorted([i for i in items if ((i['__type__'] == 'txt') and i.get('x-created') and (i.get('x-type', 'blog') == 'blog'))], key=lambda x: x['x-created'], reverse=True)[:40]">
     <title>${Markup(item.get('title') or item.get('__title__'))}</title>
