@@ -62,53 +62,231 @@ On startup all nodes establish a live connection to the Seed node.
 Argonought
 ----------
 
-Argonought is a JSON-inspired serialisation format that should offer us features
-not collectively available in other formats:
+.. tag:: #foundation, @tav, wip
 
-* JSON-like simplicty.
-* Efficient binary encoding.
-* Lexicographically sortable encoding.
+  ✗ Implement a serialisation format.
 
-.. tag:: #foundation, needsreview
+    Argonought is a JSON-inspired serialisation format that should offer us
+    features not collectively available in other formats:
+
+    * JSON-like simplicty.
+    * Efficient binary encoding.
+    * Lexicographically sortable encoding.
+
+    Both `Protocol Buffers <http://code.google.com/p/protobuf/>`_ and `Thrift
+    <http://incubator.apache.org/thrift/>`_ can go fuck themselves. You'd think
+    that people would learn from the mistakes of `CORBA
+    <http://en.wikipedia.org/wiki/Common_Object_Request_Broker_Architecture>`_.
+
+.. tag:: #foundation, @tav, needsreview
 
   ✓ Implement support for lexicographically sortable representation of numbers.
 
-    As an example, consider how you would sort *really* long numbers on
-    datastores like Google App Engine or SimpleDB. The latter only allows you to
-    store strings and the former truncates anything greater than 64bits.
+    When dealing with numbers, people don't care about crap like whether it's an
+    unsigned 32bit integer or a 128bit decimal. Even programmers have been
+    spoilt by automatic type coercion in many dynamic languages, e.g.
 
     .. syntax:: irb
 
-      >> (2 ** 29).class
+      >> 1000000.class
       => Fixnum
 
-      >> (2 ** 30).class
+      >> 10000000000.class
       => Bignum
 
-    The official documentation for SimpleDB `recommends
+    Unfortunately this support is not reflected in most datastores. App Engine,
+    for example, indexes strings up to 500 bytes in length but `truncates
+    <http://code.google.com/appengine/docs/python/datastore/typesandpropertyclasses.html#IntegerProperty>`_
+    integer values greater than 64bits.
+
+    If one were to try and encode the number as a string to take advantage of
+    the extra space, the naive approach fails quite quickly:
+
+    .. syntax:: irb
+
+      >> '9' > '8'
+      => true
+
+      >> '1000' > '9'
+      => false
+
+    The official documentation for SimpleDB even `recommends
     <http://developer.amazonwebservices.com/connect/entry.jspa?categoryID=152&externalID=1232>`_
+    the usual tricks of negative-number offsetting and zero padding as a
+    solution to this problem:
+
+    .. syntax:: irb
+
+      >> '1000' > '0009'
+      => false
+
+    But this approach gets a massive FAIL since it requires not only having to
+    predefine the largest possible value (the exact problem we're trying to
+    avoid!), but also ends up wasting a lot of space due to the zero padding.
+
+    To solve these and other problems, Argonought implements a very efficient
+    encoding of numbers so that they can be sorted in `lexicographical order
+    <http://en.wikipedia.org/wiki/Lexicographical_order>`_:
 
     .. syntax:: pycon
 
-      >>> '9' > '8'
-      True
-
-      >>> '10' > '9'
-      False
-
-    Argonought now takes care of all of this hassle:
-
-    .. syntax:: pycon
-
-      >>> argonought.pack_number(8234364)
+      >>> argonought.pack_number(8234364)             # takes just 3 bytes!
       '\xfe\xa2\xa0'
 
       >>> argonought.pack_number(8234364) > argonought.pack_number(-234364)
       True
 
+    It can handle, subject to memory limits, numbers of whatever size --
+    including arbitrary precision decimals like
+    ``1.618033988749894848204586834365638``.
+
+.. tag:: #admin, @tav
+
+  ✓ Investigate DNS.
+
+    `Dynect <http://dyn.com/dynect>`_, UltraDNS, `DNS Made Easy
+    <https://www.dnsmadeeasy.com>`_.
+
+
+.. tag:: #admin, @evangineer, wip
+
+  ✗ Investigate load balancing solutions.
+
+    In public deployments, requests should be load balanced across Ampify
+    frontend servers. Hardware load balancers simply don't offer enough value to
+    justify their cost, so we need to find a decent software-based solution.
+
+    There are a number of `LVS <http://www.linuxvirtualserver.org>`_ (Linux
+    Virtual Server) components that are worth exploring: `ldirectord
+    <http://www.vergenet.net/linux/ldirectord/>`_, `heartbeat
+    <http://www.linux-ha.org>`_, `keepalived <http://www.keepalived.org>`_, etc.
+    Hosting companies like Hostway also offer managed LVS which might be
+    worthwhile.
+
+    Whatever option is decided upon, it should be based on open source software,
+    have redundancy for the load balancer itself and deal with health checks for
+    both HTTP and HTTPS backend servers.
+
+.. tag:: #admin, @tav
+
+  ✓ Investigate frontend web servers.
+
+    Decided on `nginx <http://nginx.org/en/>`_ as it offers pretty good
+    performance without using as much in the way of resources as alternatives
+    like `Cherokee <http://www.cherokee-project.com>`_ and `lighttpd
+    <http://www.lighttpd.net>`_.
+
+
+Status Monitoring
+-----------------
+
+.. tag:: #admin, @tav, @evangineer
+
+  ✓ Investigate off-site uptime and latency monitoring services.
+
+    It's important to have off-site monitoring so that we can quickly know about
+    issues that end users might be experiencing. We could run something like
+    `Nagios <http://www.nagios.org>`_ on a bunch of off-site VPS nodes, but it's
+    bloated and ugly.
+
+    The same goes for `monitis <http://monitis.com>`_ which is a pretty decent
+    third-party monitoring and notification service. Its competitor `Pingdom
+    <http://www.pingdom.com>`_ looks a lot prettier but charges too much without
+    offering enough flexibility. Conclusion: code our own monitoring service.
+
+.. tag:: #admin
+
+  ✗ Implement data gatherers for remonit -- a remote monitoring tool.
+
+    The remonit tool should support configurable monitoring of a number of
+    different factors by wrapping around mature Unix tools:
+
+    * Network latency using ``ping -c 1``.
+
+    * Network routing using ``traceroute``.
+
+    * DNS lookup speed and results using ``host -v``.
+
+    * HTTP/HTTPS latency and responses -- with string, headers and status code
+      check.
+
+.. tag:: #admin
+
+  ✗ Implement the configuration system for remonit.
+
+    The config system should be painless to manage and support monitoring of
+    various worst-case scenarios for the local ``remonit id``. The remonit app
+    should also support live reloading of the config when sent a `SIGHUP
+    <http://en.wikipedia.org/wiki/SIGHUP>`_.
+
+.. tag:: #admin
+
+  ✗ Implement data persistence layer for remonit.
+
+    The data gathered by remonit should be persisted to a local `Redis
+    <http://code.google.com/p/redis/>`_ instance according to the configuration.
+    The redis data should be pruned every so often and saved to S3 so that we
+    have historic data for the future.
+
+.. tag:: #admin
+
+  ✗ Implement a notification system for remonit.
+
+    Certain events from remonit's data gatherers should trigger configurable
+    notifications. Notifications should support "dampeners" so as to avoid
+    notification floods.
+
+    There should be notifiers for email (via `SendGrid
+    <http://sendgrid.com/>`_), SMS (via `BulkSMS <http://www.bulksms.co.uk/>`_,
+    `Growl <http://growl.info/>`_ (OS X Desktop) and `Prowl
+    <http://prowl.weks.net/>`_ (iPhone). [There might be useful code in the
+    `aeservmon <http://github.com/mrsteveman1/aeservmon>`_ app.]
+
+.. tag:: #admin
+
+  ✗ Export the remonit data over a web interface.
+
+    A basic web application should be implemented which exports the local
+    remonit data as JSON over HTTP with the following API:
+
+    * ``get/<id>`` -- return the full data associated with the given ID.
+
+.. tag:: #admin
+
+  ✗ Setup off-site servers for running remonit.
+
+    `Linode <http://www.linode.com>`_ provide a really nice VPS hosting service.
+    We can setup one linode in the U.S. and another in the U.K. -- enabling us
+    to have off-site monitoring of the North American and European Ampify data
+    centers:
+
+    * eu.status.ampify.it
+    * us.status.ampify.it
+
+    We'd need to find a decent Asian VPS host for monitoring our Asian data
+    center when it goes live.
+
+.. tag:: #admin
+
+  ✗ Implement the status.ampify.it app.
+
+    The app should should be implemented as a `Sinatra
+    <http://www.sinatrarb.com/>`_ app on `Heroku <http://heroku.com>`_ as this
+    would mean that the site would be on EC2 -- away from the rest of our
+    deployment. The site should be pretty to look at as well as useful.
+
+    It should takie the JSON data from the various remonit web instances and
+    display it as sexy `Google Charts
+    <http://code.google.com/apis/charttools/>`_ like on the `App Engine Status
+    <http://code.google.com/status/appengine/>`_ page. It should also support
+    broadcast messages, including scheduled maintenance announcements, like on
+    the `GitHub Status <http://status.github.com>`_ site.
+
 
 Message
 -------
+
+Redis 32-bit
 
 The message looks like:
 
@@ -178,10 +356,10 @@ Hosting
     a technical perspective. For example, Amazon's Elastic Load Balancer makes
     what would otherwise be a pretty painful experience quite effortless.
 
-    However, on the flip side, the abstractions also introduces a lot of
+    However, on the flip side, the abstractions also introduce a lot of
     additional complexities to manage. This is most notable with the case of
     Amazon's `Elastic Block Store <http://aws.amazon.com/ebs/>`_. Writing a file
-    to disk now involves half a dozen support structures!
+    to disk involves half a dozen support structures!
 
     Cloud offerings also make very little sense from a financial perspective.
     Not only do comparable "raw metal" servers cost substantially less, but you
@@ -204,10 +382,10 @@ Hosting
     Of the other providers, `Terremark <http://www.terremark.com>`_ looks quite
     impressive, but do not seem to be affordable at a small scale. `Codero
     <http://www.codero.com>`_ (USA) and `Hetzner <http://www.hetzner.de>`_
-    (Germany) are attractive price-wise, however they don't seem to be too
-    reliable with regards network connectivity.
+    (Germany) are very attractive price-wise, but may not have the most reliable
+    network connectivity.
 
-.. tag:: #admin, @tav
+.. tag:: #admin, @tav, @evangineer, wip
 
   ✗ Investigate/negotiate deal with Hostway.
 
@@ -239,19 +417,23 @@ Hosting
     * Do they offer servers with Gigabit NIC? This will be quite important for
       the frontend servers.
 
-      * All servers are fitted with Gigabit NICs.
+      * All servers are fitted with Gigabit NICs and it's quite easy to have the
+        connection switched from 100Mb/s to 1Gb/s.
 
     * What happens when servers exceed their allocated 2TB bandwidth? Is
       "internal" bandwidth charged for? What about across their data centers?
 
-      * Excess bandwidth is charged for. We can prebuy various bandwidth plans.
-        And with regards internal traffic, we can arrange for our servers to be
-        setup on a private switch.
+      * Excess bandwidth is charged for at $0.35/GB. We can prebuy bandwidth
+        (as long as it's over 2TB) at a rate of $0.09/GB.
+        
+      * We can arrange for our servers to be setup on a private switch in which
+        case we wouldn't be charged for internal traffic.
 
     * Do they offer static IP addresses? What's their process for allocation of
       new address blocks?
 
-    Tav is currently engaged in a dialogue with Jamie Fryer from Hostway.
+    Tav and Mamading are currently engaged in a dialogue with Jamie Fryer from
+    Hostway.
 
 
 Remaining Blah
