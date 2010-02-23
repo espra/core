@@ -1,0 +1,44 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+      "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+  <head>
+    <link rel="stylesheet" href="qunit.css" type="text/css"/>
+    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.4/jquery.min.js"> </script>
+    <script type="text/javascript" src="qunit.js"></script>
+    <script type="text/javascript">
+    var divide = function(a,b) {
+      return a / b;
+    };
+
+    if (typeof fireunit === "object") {
+      QUnit.log = fireunit.ok;
+      QUnit.done = fireunit.testDone;
+    }
+    else {
+      QUnit.log = function(result, message) {
+        if (window.console && window.console.log) {
+          window.console.log(result +' :: '+ message);
+        }
+      };
+    }
+
+     // --- Unittest Code goes here ---
+    $(document).ready(function(){
+      module("Basic Unit Test");
+      test("Sample test", function() {
+        expect(1);
+        equals(divide(4,2),
+          2,
+          'Expected 2 as the result, result was: ' + divide(4,2));
+      });
+    });
+    </script>
+  </head>
+  <body>
+    <h1 id="qunit-header">Friendly unit testing</h1>
+    <h2 id="qunit-banner"></h2>
+    <h2 id="qunit-userAgent"></h2>
+    <ol id="qunit-tests">
+    </ol>
+  </body>
+</html>
