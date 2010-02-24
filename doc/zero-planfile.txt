@@ -140,13 +140,55 @@ Argonought
     including arbitrary precision decimals like
     ``1.618033988749894848204586834365638``.
 
+
+Continuous Integration
+----------------------
+
+
+Request Handling
+----------------
+
 .. tag:: #admin, @tav
 
-  ✓ Investigate DNS.
+  ✓ Investigate managed DNS providers.
 
-    `Dynect <http://dyn.com/dynect>`_, UltraDNS, `DNS Made Easy
-    <https://www.dnsmadeeasy.com>`_.
+    Any effort to provide high availability is buggered if a user's first action
+    -- doing a DNS lookup for ``ampify.it`` -- is unresponsive/faulty. We're
+    currently using Linode's super nice DNS service that comes with our VPS, but
+    should find another provider as we outgrow it.
 
+    `UltraDNS <http://www.ultradns.com>`_ is the big boy in the managed DNS
+    world and are priced so high that only other big boys could afford it. `DNS
+    Made Easy <https://www.dnsmadeeasy.com>`_, in comparison, costs over 100x
+    less! They have an impressive offering at very affordable prices:
+
+    * DNS servers running on a globally distributed `anycast network
+      <http://en.wikipedia.org/wiki/Anycast>`_ -- so users should get their
+      queries answered faster.
+
+    * Automated updating of A records to failover IPs if their monitoring system
+      (which runs every 2-4 minutes) detects our servers to be unresponsive.
+
+    One major feature they lack is geo-location based serving of records. For
+    example sending requests from Italy to our European data center and requests
+    from Brazil to our North American data center. They do suggest on their
+    `Facebook page <http://www.facebook.com/dnsmadeeasy>`_ that support for this
+    might get added later this year.
+
+    The more expensive `Dynect <http://dyn.com/dynect>`_ service -- who provide
+    everything offered by DNS Made Easy and even seem to be marginally faster --
+    has geo-location based serving as part of their `Global Server Load Balancer
+    <http://dyn.com/dynect-traffic-management>`_ solution.
+
+    Their combined monitoring, load balancing and geo-routing sounds so good
+    that it's tempting to forego any kind of LVS based load balancing at our
+    data centers. However this has a few drawbacks:
+
+    * It will not be possible to enable people to point a root/apex domain at
+      our servers as it will not have a relatively stable IP address.
+
+    * The monitoring by Dynect is not going to be as responsive as an LVS
+      director running on the local network.
 
 .. tag:: #admin, @evangineer, wip
 
@@ -165,16 +207,144 @@ Argonought
 
     Whatever option is decided upon, it should be based on open source software,
     have redundancy for the load balancer itself and deal with health checks for
-    both HTTP and HTTPS backend servers.
+    HTTP, HTTPS and SMTP backend servers.
+
+.. tag:: #admin
+
+  ✗ Setup network monitoring infrastructure.
+
+    Monitoring of resource usage is essential for detecting attacks and
+    identifying potential bottlenecks to optimise -- not to mention capacity
+    planning! Thankfully there's increased support for protocols like `SNMP
+    <http://en.wikipedia.org/wiki/Simple_Network_Management_Protocol>`_
+    nowadays.
+
+    There a number of tools that can help with the monitoring, e.g. `rrdtool
+    <http://oss.oetiker.ch/rrdtool/>`_, `munin
+    <http://munin.projects.linpro.no>`_, `shinken
+    <http://www.shinken-monitoring.org>`_, `cacti <http://www.cacti.net>`_,
+    `mrtg <http://oss.oetiker.ch/mrtg/>`_, etc. The appropriate tools should be
+    setup on our frontend servers and an overview should be accessible at a
+    centralised location.
+
+.. tag:: #admin
+
+  ✗ Define the server firewall infrastructure.
+
+    There should be a set of `iptables <http://www.netfilter.org>`_
+    configurations:
+
+    * Frontend severs should only allow external access to ports 8025, 8080 and
+      8443 for TCP traffic.
+
+    * Internal traffic should be able to connect on all non-privileged ports.
+
+    We should have a decent default configuration which protects against common
+    `denial of service <http://en.wikipedia.org/wiki/Denial-of-service_attack>`_
+    attack patterns. It should also be possible to do live updates of denied
+    hosts on our servers in addition to working with our hosting companies to
+    block them on incoming switches.
+
+.. tag:: #admin
+
+  ✗ Buy an SSL certificate for ampify.it.
+
+    We should only serve Ampify requests over SSL. While this means a lot of
+    additional cost to us due to the extra resources used by secure connections,
+    the security benefit to end users will make this worthwhile, e.g. protection
+    against `main in the middle attacks
+    <http://en.wikipedia.org/wiki/Man-in-the-middle_attack>`_.
+
+    There are only a few root Certificate Authorities recognised by most
+    browsers. Most of the companies like `GeoTrust
+    <http://www.geotrust.com/ssl/compare-ssl-certificates.html>`_ (Equifax) and
+    `Thawte <http://www.thawte.com/>`_ are owned by Verisign. They take
+    advantage of their monopoly by charging through the roof for something that
+    costs very little.
+
+    There are a number of cheaper SSL certificate providers like `Comodo
+    <http://www.instantssl.com>`_ and `GoDaddy
+    <https://www.godaddy.com/ssl/ssl-certificates.aspx>`_ who offer "chained
+    root" certificates -- which may possibly not work in a substantial portion
+    of browsers.
+
+    Given potential concerns about chained root certs, we should probably just
+    buy from `RapidSSL
+    <http://www.rapidssl.com/ssl-certificate-products/ssl-certificate.htm>`_, a
+    GeoTrust subsidiary who offer much cheaper single root certs (by skipping on
+    the pointless insurance). As of this writing they are offering a wildcard
+    cert for $199.
+
+    As for `EV certificates
+    <http://en.wikipedia.org/wiki/Extended_Validation_Certificate>`_, there's no
+    conclusive evidence that the green bar provides any real additional value,
+    so we'll skip that for now.
 
 .. tag:: #admin, @tav
 
   ✓ Investigate frontend web servers.
 
-    Decided on `nginx <http://nginx.org/en/>`_ as it offers pretty good
-    performance without using as much in the way of resources as alternatives
-    like `Cherokee <http://www.cherokee-project.com>`_ and `lighttpd
-    <http://www.lighttpd.net>`_.
+    In an ideal world the Ampify Proxy node would be a production level
+    ``HTTP/1.1`` compliant web server. But unfortunately that's a while off and
+    until then we need to have a decent web server in front of it.
+
+    There are a number of decent options available nowadays. Of these, `nginx
+    <http://nginx.org/en/>`_ offers pretty good performance and stability.
+    `Cherokee <http://www.cherokee-project.com>`_ and `lighttpd
+    <http://www.lighttpd.net>`_ are decent alternatives but do not inspire as
+    much confidence as nginx.
+
+.. tag:: #admin
+
+  ✗ Put together an nginx package for redpill.
+
+    Nginx has two different branches: 0.7.x (stable) and 0.8.x (development).
+    The development branch should be tested for stability, otherwise the package
+    should be based on the stable branch.
+
+    The package build file should ensure that the ``http_ssl``, ``http_gzip``,
+    ``http_proxy`` and any other `relevant modules
+    <http://wiki.nginx.org/NginxModules>`_ are built -- minimising needless
+    bloat and dependencies (i.e. security holes) as much as possible.
+
+.. tag:: #admin
+
+  ✗ Define a configuration file for the nginx servers.
+
+    There needs to be a default nginx config file we can use across all of our
+    frontend servers. This should cover everything from ensuring that requests
+    are served over SSL (redirecting non-secured connections) to passing on the
+    request to the Ampify proxy nodes.
+
+    We'll be using ``proxy_pass`` since `FastCGI
+    <http://en.wikipedia.org/wiki/FastCGI>`_ doesn't seem to offer enough of a
+    performance benefit. Special care should be taken to handle the request IP
+    address and gzip encoding -- the `tornado config
+    <http://www.tornadoweb.org/documentation#running-tornado-in-production>`_ is
+    a good starting point.
+
+    It's unfortunate that nginx doesn't have HAProxy's really useful `stats page
+    <http://demo.1wt.eu>`_, but perhaps something could be approximated using
+    `nginx-rrd <http://www.nginx.eu/nginx-rrd.html>`_?
+
+.. tag:: #admin
+
+  ✗ Implement ping responses on the frontend.
+
+    A number of different services from the monitoring systems of our DNS
+    providers to the LVS director will be doing health checks on our frontend
+    web servers. These should support the following responses:
+
+    * ``/a/ping.frontend`` -- a response page on the frontend nginx servers
+      which should simply return the plain text ``pong``.
+
+    * ``/a/ping.proxy`` -- a response service on the proxy node behind the
+      frontend servers. This should respond with appropriate values for the
+      following JSON structure:
+
+      .. syntax:: javascript
+
+        {"zone": "eu-1", "timestamp": 1266978987.705}
 
 
 Status Monitoring
@@ -210,6 +380,8 @@ Status Monitoring
     * HTTP/HTTPS latency and responses -- with string, headers and status code
       check.
 
+    * SSL certificate verification.
+
 .. tag:: #admin
 
   ✗ Implement the configuration system for remonit.
@@ -221,7 +393,7 @@ Status Monitoring
 
 .. tag:: #admin
 
-  ✗ Implement data persistence layer for remonit.
+  ✗ Implement a data persistence layer for remonit.
 
     The data gathered by remonit should be persisted to a local `Redis
     <http://code.google.com/p/redis/>`_ instance according to the configuration.
@@ -247,9 +419,21 @@ Status Monitoring
   ✗ Export the remonit data over a web interface.
 
     A basic web application should be implemented which exports the local
-    remonit data as JSON over HTTP with the following API:
+    remonit data as `JSONP <http://en.wikipedia.org/wiki/JSON#JSONP>`_ over HTTP
+    with the following API:
 
-    * ``get/<id>`` -- return the full data associated with the given ID.
+    * ``/get/<id>`` -- return the full data associated with the given event ID.
+
+    * ``/info/<profile>/<year>/<month>/<day>`` -- return a mapping of
+      configuration IDs to a list of [timestamp, event ID, latency value, error
+      state, optional throughput value] for the given date and profile.
+
+    * ``/list/<profile>`` -- return a list of configurations (name, id and
+      description) associated with the given profile.
+
+    * ``/status/<year>/<month>/<day>`` -- return a mapping of profiles to a list
+      of summary state (okay/disrupted) for the 8 days leading up to the
+      specified date (including the current state).
 
 .. tag:: #admin
 
@@ -275,71 +459,13 @@ Status Monitoring
     would mean that the site would be on EC2 -- away from the rest of our
     deployment. The site should be pretty to look at as well as useful.
 
-    It should takie the JSON data from the various remonit web instances and
+    It should take the JSON data from the various remonit web instances and
     display it as sexy `Google Charts
     <http://code.google.com/apis/charttools/>`_ like on the `App Engine Status
     <http://code.google.com/status/appengine/>`_ page. It should also support
     broadcast messages, including scheduled maintenance announcements, like on
     the `GitHub Status <http://status.github.com>`_ site.
 
-
-Message
--------
-
-Redis 32-bit
-
-The message looks like:
-
-.. syntax:: go
-
-  type Message struct {
-      from         string
-      by           string
-      to           string
-      aspect       string
-      content      string
-      value_number big.Number
-      value_list   []string
-      version      int
-  }
-
-For example, the following message written by ``@tav`` and sent to ``#espians``::
-
-    /balance ~/account
-
-Would like the following in Ruby after being parsed:
-
-.. syntax:: ruby
-
-  {
-    :from => "tav",
-    :aspect => "/balance",
-    :to => "#espians",
-    :value_number => 9203180132
-  }
-
-Hmz
-
-Asr
-
-.. syntax:: pycon
-
-  >>> nodule.init()
-  [0, 'START']
-
-  >>> status == 12
-  True
-
-  >>> def foo():
-  ...     if N_set: return True
-  [0, 'START']
-
-
-* Git Review
-* Tests
-* Build
-* Devboard (incl. contributor agreement)
-* Documentation style + LICENSE
 
 Hosting
 -------
@@ -434,6 +560,65 @@ Hosting
 
     Tav and Mamading are currently engaged in a dialogue with Jamie Fryer from
     Hostway.
+
+
+Message
+-------
+
+Redis 32-bit
+
+The message looks like:
+
+.. syntax:: go
+
+  type Message struct {
+      from         string
+      by           string
+      to           string
+      aspect       string
+      content      string
+      value_number big.Number
+      value_list   []string
+      version      int
+  }
+
+For example, the following message written by ``@tav`` and sent to ``#espians``::
+
+    /balance ~/account
+
+Would like the following in Ruby after being parsed:
+
+.. syntax:: ruby
+
+  {
+    :from => "tav",
+    :aspect => "/balance",
+    :to => "#espians",
+    :value_number => 9203180132
+  }
+
+Hmz
+
+Asr
+
+.. syntax:: pycon
+
+  >>> nodule.init()
+  [0, 'START']
+
+  >>> status == 12
+  True
+
+  >>> def foo():
+  ...     if N_set: return True
+  [0, 'START']
+
+
+* Git Review
+* Tests
+* Build
+* Devboard (incl. contributor agreement)
+* Documentation style + LICENSE
 
 
 Remaining Blah
@@ -717,3 +902,5 @@ And, then:
 ✗ Redis configuration
 ✗ Runner scripts
 ✗ Git repository app sync
+
+IANA-reserved IPs
