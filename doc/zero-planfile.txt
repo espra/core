@@ -74,8 +74,8 @@ Argonought
     * Lexicographically sortable encoding.
 
     Both `Protocol Buffers <http://code.google.com/p/protobuf/>`_ and `Thrift
-    <http://incubator.apache.org/thrift/>`_ can go fuck themselves. You'd think
-    that people would learn from the mistakes of `CORBA
+    <http://incubator.apache.org/thrift/>`_ are technically
+    inadequate. They haven't learnt from the mistakes of `CORBA
     <http://en.wikipedia.org/wiki/Common_Object_Request_Broker_Architecture>`_.
 
 .. tag:: #foundation, @tav, needsreview
@@ -252,7 +252,7 @@ Request Handling
     We should only serve Ampify requests over SSL. While this means a lot of
     additional cost to us due to the extra resources used by secure connections,
     the security benefit to end users will make this worthwhile, e.g. protection
-    against `main in the middle attacks
+    against `man in the middle attacks
     <http://en.wikipedia.org/wiki/Man-in-the-middle_attack>`_.
 
     There are only a few root Certificate Authorities recognised by most
@@ -284,7 +284,7 @@ Request Handling
 
   ✓ Investigate frontend web servers.
 
-    In an ideal world the Ampify Proxy node would be a production level
+    In an ideal world the Ampify proxy node would be a production level
     ``HTTP/1.1`` compliant web server. But unfortunately that's a while off and
     until then we need to have a decent web server in front of it.
 
@@ -345,6 +345,18 @@ Request Handling
       .. syntax:: javascript
 
         {"zone": "eu-1", "timestamp": 1266978987.705}
+
+.. tag:: #admin, #security, @evangineer
+
+  ✗ Conduct pentesting of the frontend infrastructure.
+
+    Unfortunately the Internet isn't as friendly a place as we might like it to
+    be. There are folks who would like to break into our servers just for fun.
+    As the saying goes, "If you can't beat them, join them". Pre-launch, we need
+    to conduct thorough `penetration testing
+    <http://en.wikipedia.org/wiki/Penetration_test>`_ of our servers to ensure
+    that they can keep out the script kiddies and more `capable adversaries
+    <http://googleblog.blogspot.com/2010/01/new-approach-to-china.html>`_.
 
 
 Status Monitoring
@@ -411,8 +423,8 @@ Status Monitoring
     There should be notifiers for email (via `SendGrid
     <http://sendgrid.com/>`_), SMS (via `BulkSMS <http://www.bulksms.co.uk/>`_),
     `Growl <http://growl.info/>`_ (OS X Desktop) and `Prowl
-    <http://prowl.weks.net/>`_ (iPhone). [There might be useful code in the
-    `aeservmon <http://github.com/mrsteveman1/aeservmon>`_ app.]
+    <http://prowl.weks.net/>`_ (iPhone). Perhaps take a look at `aeservmon
+    <http://github.com/mrsteveman1/aeservmon>`_ for any relevant code.
 
 .. tag:: #admin
 
