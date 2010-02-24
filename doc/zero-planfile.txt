@@ -346,6 +346,17 @@ Request Handling
 
         {"zone": "eu-1", "timestamp": 1266978987.705}
 
+  ✗ Conduct pentesting of the frontend infrastucture
+
+    Unfortunately the Internet isn't as friendly a place as we might
+    like it to be. There are folks who would like to break into our
+    servers just for fun.  As the saying goes, "If you can't beat
+    them, join them".  Pre-launch, we will conduct thorough `penetration
+    testing <http://en.wikipedia.org/wiki/Penetration_test>` of our
+    servers to ensure that they can keep out the `script kiddies
+    <http://en.wikipedia.org/wiki/Script_kiddie>` & more capable adversaries. 
+
+.. tag:: #admin #security @evangineer
 
 Status Monitoring
 -----------------
