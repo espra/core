@@ -1,235 +1,275 @@
 // No Copyright (-) 2009-2010 The Ampify Authors. This file is under the
 // Public Domain license that can be found in the root LICENSE file.
 
-var remove_item = function (array, item) {
-  var i = 0;
-  while (i < array.length) {
-    if (array[i] == item) {
-      array.splice(i, 1);
-    } else {
-      i++;
+/*jslint plusplus: false */
+/*global $, alert, window */
+
+(function () {
+
+    function remove_item(array, item) {
+        var i = 0;
+        while (i < array.length) {
+            if (array[i] === item) {
+                array.splice(i, 1);
+            } else {
+                i += 1;
+            }
+        }
     }
-  }
-};
 
-var dump_dict = function (ob) {
-  for (var key in ob) {
-	alert("key: " + key);
-	alert("val: " + ob[key]);
-  }
-};
+    $(function () {
 
-$(function () {
+        var item,
+            i,
+            j,
+            x,
+            segment,
+            TAG2NAME = {},
+            NAME2TAG = {},
+            TAG2NORM = {},
+            NORM2TAG = {},
+            TAG2DISPLAYNAMES = {},
+            ITEM2DEPS = {},
+            IDS2TAGS = {},
+            IDS2TAGSETS = {},
+            ALL_IDS = [],
+            PARENT_IDS = {},
+            IDS2PARENTS = {},
+            segments = $('.tag-segment').get(),
+            plan_container = $('#plan-container'),
+            plan = $('<div id="plan-tags"></div>'),
+            all = $('<a class="button" href="" id="tag-all"><span>All</span></a>'),
+            help = $('<div class="plan-help">↙ Use these buttons to filter for items with ALL the selected tags ↙</div><hr class="clear" />'),
+            CURRENT_TAGS = [],
+            VALID_CHARS = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ-_0123456789',
+            VALID_CHAR_DICT = {},
+            last_prefix = '',
+            key,
+            requested_tags,
+            tag,
+            tagnames = [],
+            tagname,
+            tagid,
+            button,
+            new_prefix;
 
-  var item;
-  var i;
-  var segment;
+        // deps = $('<a class="button" href="" id="tag-deps"><span>Show Dependencies</span></a>'),
 
-  var TAG2NAME = {};
-  var NAME2TAG = {};
-  var TAG2NORM = {};
-  var NORM2TAG = {};
-  var TAG2DISPLAYNAMES = {};
-  var ITEM2DEPS = {};
-  var IDS2TAGS = {};
+        // add <p /> wrapping to certain elements
+        $('div.container > blockquote').each(function () {
+            var p_elems = $('p', this);
+            if (p_elems.length === 0) {
+                $(this).wrapInner('<p />');
+            }
+        });
 
-  var segments = $('.tag-segment').get();
+        function extract_metadata() {
+            var tag = this.className,
+                dep,
+                id;
+            if (tag === 'tag-link') {
+                return true;
+            }
+            if (tag.indexOf('tag-type-dep') !== -1) {
+                dep = tag.split(' ')[2].slice(12);
+                ITEM2DEPS[item] = dep; // @/@ implement dependency analysis
+                return true;
+            }
+            tag = tag.split(' ');
+            remove_item(tag, 'tag');
+            tag = tag.join('-');
+            id = item + '-main';
+            if (id in IDS2TAGS) {
+                IDS2TAGS[id].push(tag);
+            } else {
+                IDS2TAGS[id] = [tag];
+            }
+            if (!(tag in TAG2NAME)) {
+                TAG2NAME[tag] = this.getAttribute('tagname');
+                NAME2TAG[this.getAttribute('tagname')] = tag;
+            }
+            if (!(tag in TAG2NORM)) {
+                TAG2NORM[tag] = this.getAttribute('tagnorm');
+                NORM2TAG[this.getAttribute('tagnorm')] = tag;
+            }
+            if (!(tag in TAG2DISPLAYNAMES)) {
+                if (!this.innerText) {
+                    TAG2DISPLAYNAMES[tag] = this.innerHTML; // this.textContent;
+                } else {
+                    TAG2DISPLAYNAMES[tag] = this.innerText;
+                }
+            }
+            return true;
+        }
+        
+        for (i = 0; i < segments.length; i++) {
+            segment = segments[i];
+            item = '#' + segment.id;
+            $(item).children().each(extract_metadata);
+        }
 
-  for (i=0; i < segments.length; i++) {
-	segment = segments[i];
-	item = '#' + segment.id;
+        $.each(IDS2TAGS, function (k, v) {
+            var dict = {},
+                m,
+                parent_id;
+            for (m = 0; m < v.length; m++) {
+                dict[v[m]] = 1;
+            }
+            IDS2TAGSETS[k] = dict;
+            ALL_IDS.push(k);
+            parent_id = '#' + $(k).parent().attr('id');
+            if (parent_id) {
+                if (!(parent_id in PARENT_IDS)) {
+                    PARENT_IDS[parent_id] = 1;
+                }
+                IDS2PARENTS[k] = parent_id;
+            }
+        });
 
-	$(item).children().each(function () {
-      var tag = this.className;
-	  if (tag == 'tag-link')
-		return true;
-	  if (tag.indexOf('tag-type-dep') != -1) {
-		var dep = tag.split(' ')[2].slice(12);
-		ITEM2DEPS[item] = dep; // @/@ implement dependency analysis
-		return true;
-	  }
-	  tag = tag.split(' ');
-	  remove_item(tag, 'tag');
-	  tag = tag.join('-');
-	  var id = item + '-main';
-      if (id in IDS2TAGS) {
-		IDS2TAGS[id].push(tag);
-	  } else {
-		IDS2TAGS[id] = [tag];
-	  }
-    if (!(tag in TAG2NAME))
-	  TAG2NAME[tag] = this.getAttribute('tagname');
-      NAME2TAG[this.getAttribute('tagname')] = tag;
-    if (!(tag in TAG2NORM))
-	  TAG2NORM[tag] = this.getAttribute('tagnorm');
-      NORM2TAG[this.getAttribute('tagnorm')] = tag;
-    if (!(tag in TAG2DISPLAYNAMES))
-	  if (!this.innerText) {
-	    TAG2DISPLAYNAMES[tag] = this.innerHTML; // this.textContent;
-	  } else {
-	    TAG2DISPLAYNAMES[tag] = this.innerText;
-	  }
-	return true;
-	});
+        $('.section').each(function () {
+            var parent_id = '#' + this.id;
+            if (!(parent_id in PARENT_IDS)) {
+                PARENT_IDS[parent_id] = 1;
+            }
+        });
 
-  }
+        function tag_button_handler() {
 
-  var IDS2TAGSETS = {};
-  var ALL_IDS = [];
-  var PARENT_IDS = {};
-  var IDS2PARENTS = {};
+            var hash,
+                par,
+                tag = this.id,
+                self = $(this),
+                SHOWN_PARENTS,
+                j,
+                m,
+                citem_id,
+                citem_tags,
+                show,
+                t,
+                ct;
 
-  $.each(IDS2TAGS, function (k, v) {
-	var dict = {};
-	for (var m=0; m<v.length; m++)
-	  dict[v[m]] = 1;
-    IDS2TAGSETS[k] = dict;
-    ALL_IDS.push(k);
-    var parent_id = '#' + $(k).parent().attr('id');
-	if (parent_id) {
-	  if (!(parent_id in PARENT_IDS))
-		PARENT_IDS[parent_id] = 1;
-	  IDS2PARENTS[k] = parent_id;
-	}
-  });
+            for (par in PARENT_IDS) {
+                if (PARENT_IDS.hasOwnProperty(par)) {
+                    $(par).show();
+                }
+            }
 
-  $('.section').each(function () {
-    var parent_id = '#' + this.id;
-    if (!(parent_id in PARENT_IDS))
-      PARENT_IDS[parent_id] = 1;
-  });
+            if (tag === 'tag-all') {
+                $('.tag-content').show();
+                $('#plan-tags a').removeClass("buttondown");
+                self.addClass("buttondown");
+                CURRENT_TAGS.length = 0;
+                if (window.location.hash) {
+                    hash = "#";
+                } else {
+                    hash = null;
+                }
+            } else {
+                $('#tag-all').removeClass('buttondown');
+                self.toggleClass("buttondown");
+                if (self.hasClass('buttondown')) {
+                    CURRENT_TAGS.push(tag);
+                } else {
+                    remove_item(CURRENT_TAGS, tag);
+                }
+                if (CURRENT_TAGS.length === 0) {
+                    $('.tag-content').show();
+                    $('#plan-tags a').removeClass("buttondown");
+                    $('#tag-all').addClass("buttondown");
+                    hash = '#';
+                } else {
+                    SHOWN_PARENTS = {};
+                    $('.tag-content').hide();
+                    for (j = 0; j < ALL_IDS.length; j++) {
+                        citem_id = ALL_IDS[j];
+                        citem_tags = IDS2TAGSETS[citem_id];
+                        show = true;
+                        for (t = 0; t < CURRENT_TAGS.length; t++) {
+                            ct = CURRENT_TAGS[t];
+                            if (!(ct in citem_tags)) {
+                                show = false;
+                                break;
+                            }
+                        }
+                        if (show === true) {
+                            $(citem_id).show();
+                            SHOWN_PARENTS[IDS2PARENTS[citem_id]] = true;
+                        }
+                    }
+                    for (par in PARENT_IDS) {
+                        if (PARENT_IDS.hasOwnProperty(par)) {
+                            if (!(par in SHOWN_PARENTS)) {
+                                $(par).hide();
+                            }
+                        }
+                    }
+                    hash = "#";
+                    for (m = 0; m < CURRENT_TAGS.length; m++) {
+                        if (m !== 0) {
+                            hash += ',';
+                        }
+                        hash += TAG2NORM[CURRENT_TAGS[m]];
+                    }
+                }
+            }
 
-  var tag_button_handler = function () {
+            if (hash) {
+                window.location.hash = hash;
+            }
 
-        var hash;
-        var par;
-		var tag = this.id;
-		var self = $(this);
+            this.blur();
+            return false;
 
-		for (par in PARENT_IDS)
-		  $(par).show();
+        }
 
-		if (tag == 'tag-all') {
-		  $('.tag-content').show();
-		  $('#plan-tags a').removeClass("buttondown");
-		  self.addClass("buttondown");
-		  CURRENT_TAGS.length = 0;
-          if (window.location.hash) {
-			hash = "#";
-		  } else {
-			hash = null;
-		  }
-		} else {
-		  $('#tag-all').removeClass('buttondown');
-		  self.toggleClass("buttondown");
-		  if (self.hasClass('buttondown')) {
-			CURRENT_TAGS.push(tag);
-		  } else {
-			remove_item(CURRENT_TAGS, tag);
-		  }
-		  if (CURRENT_TAGS.length == 0) {
-			$('.tag-content').show();
-			$('#plan-tags a').removeClass("buttondown");
-			$('#tag-all').addClass("buttondown");
-			hash = '#';
-		  } else {
-            SHOWN_PARENTS = {};
-			$('.tag-content').hide();
-			for (var j=0; j<ALL_IDS.length; j++) {
-              var citem_id = ALL_IDS[j];
-			  var citem_tags = IDS2TAGSETS[citem_id];
-			  var show = true;
-			  for (var t=0;	t<CURRENT_TAGS.length; t++) {
-				var ct = CURRENT_TAGS[t];
-				if (!(ct in citem_tags)) {
-				  show = false;
-				  break;
-				}
-			  }
-			  if (show == true) {
-				$(citem_id).show();
-				SHOWN_PARENTS[IDS2PARENTS[citem_id]] = true;
-			  }
-			}
-			for (par in PARENT_IDS) {
-			  if (!(par in SHOWN_PARENTS)) {
-				$(par).hide();
-			  }
-			}
-            hash = "#";
-			for (var m=0; m < CURRENT_TAGS.length; m++) {
-			  if (m != 0)
-				hash += ',';
-			  hash += TAG2NORM[CURRENT_TAGS[m]];
-			  }
-			}
-		}
+        all.click(tag_button_handler);
+        plan.append(help);
+        plan.append(all);
+        // plan.append(deps);
 
-		if (hash)
-		  window.location.hash = hash;
+        for (key in TAG2NAME) {
+            if (TAG2NAME.hasOwnProperty(key)) {
+                tagnames.push([key, TAG2NAME[key]]);
+            }
+        }
 
-		this.blur();
-		return false;
+        // for (var key in TAG2DISPLAYNAMES)
+        //     tagnames.push([key, TAG2DISPLAYNAMES[key]]);
 
-  };
+        tagnames.sort();
 
-  var plan_container = $('#plan-container');
-  var plan = $('<div id="plan-tags"></div>');
-  var all = $('<a class="button" href="" id="tag-all"><span>All</span></a>');
-  // var deps = $('<a class="button" href="" id="tag-deps"><span>Show Dependencies</span></a>');
-  var help = $('<div class="plan-help">↙ Use these buttons to filter for items with ALL the selected tags ↙</div><hr class="clear" />');
+        for (i = 0; i < tagnames.length; i++) {
+            tagname = tagnames[i];
+            tagid = tagname[0];
+            button = $(
+                '<a class="button" href="" id="' + tagid + '"><span>' + tagname[1] + '</span></a>'
+            ).click(tag_button_handler);
+            new_prefix = tagid.slice(0, tagid.indexOf('-tag-val-'));
+            if (new_prefix !== last_prefix) {
+                if (last_prefix) {
+                    plan.append($('<hr class="clear" />'));
+                }
+                last_prefix = new_prefix;
+            }
+            plan.append(button);
+        }
 
-  all.click(tag_button_handler);
-  plan.append(help);
-  plan.append(all);
-  // plan.append(deps);
+        plan_container.append(plan);
 
-  var tagnames = [];
+        for (j = 0; j < VALID_CHARS.length; j++) {
+            VALID_CHAR_DICT[VALID_CHARS[j]] = true;
+        }
 
-  for (var key in TAG2NAME)
-    tagnames.push([key, TAG2NAME[key]]);
+        if (window.location.hash) {
+            requested_tags = window.location.hash.substr(1).split(',');
+            for (x = 0; x < requested_tags.length; x++) {
+                tag = requested_tags[x];
+                $('#' + NORM2TAG[tag.toLowerCase()]).click();
+            }
+        } else {
+            $('#tag-all').click();
+        }
 
-//   for (var key in TAG2DISPLAYNAMES)
-// 	tagnames.push([key, TAG2DISPLAYNAMES[key]]);
+    });
 
-  tagnames.sort();
-
-  CURRENT_TAGS = [];
-  var last_prefix = '';
-
-  for (i=0; i<tagnames.length; i++) {
-	var tagname =	tagnames[i];
-	var tagid = tagname[0];
-	var button = $(
-	  '<a class="button" href="" id="'+tagid+'"><span>'+tagname[1]+'</span></a>'
-	  ).click(tag_button_handler);
-    var new_prefix = tagid.slice(0, tagid.indexOf('-tag-val-'));
-	if (new_prefix != last_prefix) {
-	  if (last_prefix)
-        plan.append($('<hr class="clear" />'));
-	  last_prefix = new_prefix;
-	}
-	plan.append(button);
-  }
-
-  plan_container.append(plan);
-
-  VALID_CHARS = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ-_0123456789';
-  VALID_CHAR_DICT = {};
-
-  for (var j=0; j < VALID_CHARS.length; j++) {
-    VALID_CHAR_DICT[VALID_CHARS[j]] = true;
-  }
-
-  if (window.location.hash) {
-    var requested_tags = window.location.hash.substr(1).split(',');
-    for (var x=0; x < requested_tags.length; x++) {
-      var tag = requested_tags[x];
-	  $('#' + NORM2TAG[tag.toLowerCase()]).click();
-    }
-  } else {
-    $('#tag-all').click();
-  }
-
-});
-
+}());
