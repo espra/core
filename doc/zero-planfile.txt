@@ -215,7 +215,7 @@ Request Handling
 
     Monitoring of resource usage is essential for detecting attacks and
     identifying potential bottlenecks to optimise -- not to mention capacity
-    planning! Thankfully there's increased support for protocols like `SNMP
+    planning. Thankfully there's increased support for protocols like `SNMP
     <http://en.wikipedia.org/wiki/Simple_Network_Management_Protocol>`_
     nowadays.
 
@@ -224,8 +224,8 @@ Request Handling
     <http://munin.projects.linpro.no>`_, `shinken
     <http://www.shinken-monitoring.org>`_, `cacti <http://www.cacti.net>`_,
     `mrtg <http://oss.oetiker.ch/mrtg/>`_, etc. The appropriate tools should be
-    setup on our frontend servers and an overview should be accessible at a
-    centralised location.
+    setup on our frontend servers and an overview should be accessible at
+    centralised location(s).
 
 .. tag:: #admin
 
@@ -234,8 +234,8 @@ Request Handling
     There should be a set of `iptables <http://www.netfilter.org>`_
     configurations:
 
-    * Frontend severs should only allow external access to ports 8025, 8080 and
-      8443 for TCP traffic.
+    * Frontend severs should only allow for external TCP traffic to ports 25, 80
+      and 443.
 
     * Internal traffic should be able to connect on all non-privileged ports.
 
@@ -243,7 +243,7 @@ Request Handling
     `denial of service <http://en.wikipedia.org/wiki/Denial-of-service_attack>`_
     attack patterns. It should also be possible to do live updates of denied
     hosts on our servers in addition to working with our hosting companies to
-    block them on incoming switches.
+    block hosts at the network switches.
 
 .. tag:: #admin
 
@@ -265,15 +265,15 @@ Request Handling
     There are a number of cheaper SSL certificate providers like `Comodo
     <http://www.instantssl.com>`_ and `GoDaddy
     <https://www.godaddy.com/ssl/ssl-certificates.aspx>`_ who offer "chained
-    root" certificates -- which may possibly not work in a substantial portion
-    of browsers.
+    root" certificates -- which may possibly not work in as wide a range of
+    browsers as the bundled single root ones.
 
     Given potential concerns about chained root certs, we should probably just
     buy from `RapidSSL
     <http://www.rapidssl.com/ssl-certificate-products/ssl-certificate.htm>`_, a
-    GeoTrust subsidiary who offer much cheaper single root certs (by skipping on
-    the pointless insurance). As of this writing they are offering a wildcard
-    cert for $199.
+    GeoTrust subsidiary who offer much cheaper -- by skipping on the insurance
+    cover -- single root certs. As of this writing they are offering a wildcard
+    cert for $199/year.
 
     As for `EV certificates
     <http://en.wikipedia.org/wiki/Extended_Validation_Certificate>`_, there's no
