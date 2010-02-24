@@ -289,10 +289,12 @@ Request Handling
     until then we need to have a decent web server in front of it.
 
     There are a number of decent options available nowadays. Of these, `nginx
-    <http://nginx.org/en/>`_ offers pretty good performance and stability.
-    `Cherokee <http://www.cherokee-project.com>`_ and `lighttpd
-    <http://www.lighttpd.net>`_ are decent alternatives but do not inspire as
-    much confidence as nginx.
+    <http://nginx.org/en/>`_ offers good performance, stability and even support
+    for `upgrading the nginx binary
+    <http://wiki.nginx.org/NginxCommandLine#Upgrading_To_a_New_Binary_On_The_Fly>`_
+    without downtime. `Cherokee <http://www.cherokee-project.com>`_ and
+    `lighttpd <http://www.lighttpd.net>`_ are decent alternatives but do not
+    inspire as much confidence as nginx.
 
 .. tag:: #admin
 
@@ -323,9 +325,11 @@ Request Handling
     <http://www.tornadoweb.org/documentation#running-tornado-in-production>`_ is
     a good starting point.
 
-    It's unfortunate that nginx doesn't have HAProxy's really useful `stats page
-    <http://demo.1wt.eu>`_, but perhaps something could be approximated using
-    `nginx-rrd <http://www.nginx.eu/nginx-rrd.html>`_?
+    The configuration should be optimised based on benchmarking using ``ab`` or
+    ``httperf``. It's unfortunate that nginx doesn't have HAProxy's really
+    useful `stats page <http://demo.1wt.eu>`_, but perhaps something could be
+    approximated using `nginx-rrd <http://www.nginx.eu/nginx-rrd.html>`_ to help
+    with identifying bottlenecks.
 
 .. tag:: #admin
 
@@ -916,3 +920,11 @@ And, then:
 ✗ Git repository app sync
 
 IANA-reserved IPs
+
+.. raw:: html
+
+  <style type="text/css">
+  #message, #remaining-blah, #node-structure, #argonought, #continuous-integration {
+    display: none !important;
+  }
+  </style>
