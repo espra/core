@@ -11,7 +11,7 @@
 /*global JSLINT */
 /*jslint evil: true, regexp: false */
 
-var posix = require('posix'),
+var fs = require('fs'),
     posixpath = require('./posixpath'),
     sys = require('sys');
 
@@ -27,13 +27,13 @@ function main() {
         jslint_path = posixpath.join(
             posixpath.dirname(__filename), 'jslint.js'
         );
-    eval(posix.cat(jslint_path).wait());
+    eval(fs.readFileSync(jslint_path));
     if (!file) {
         sys.puts("Usage: nodelint.js file.js");
         process.exit(1);
     }
     try {
-        source = posix.cat(file).wait();
+        source = fs.readFileSync(file);
     } catch (err) {
         sys.puts("Error: Opening file <" + file + ">");
         sys.puts(err);
