@@ -234,8 +234,8 @@ Request Handling
     There should be a set of `iptables <http://www.netfilter.org>`_
     configurations:
 
-    * Frontend severs should only allow for external TCP traffic to ports 25, 80
-      and 443.
+    * Frontend servers should only allow for external TCP traffic to ports 25,
+      80 and 443.
 
     * Internal traffic should be able to connect on all non-privileged ports.
 
@@ -409,7 +409,7 @@ Status Monitoring
     notification floods.
 
     There should be notifiers for email (via `SendGrid
-    <http://sendgrid.com/>`_), SMS (via `BulkSMS <http://www.bulksms.co.uk/>`_,
+    <http://sendgrid.com/>`_), SMS (via `BulkSMS <http://www.bulksms.co.uk/>`_),
     `Growl <http://growl.info/>`_ (OS X Desktop) and `Prowl
     <http://prowl.weks.net/>`_ (iPhone). [There might be useful code in the
     `aeservmon <http://github.com/mrsteveman1/aeservmon>`_ app.]
@@ -463,8 +463,8 @@ Status Monitoring
     display it as sexy `Google Charts
     <http://code.google.com/apis/charttools/>`_ like on the `App Engine Status
     <http://code.google.com/status/appengine/>`_ page. It should also support
-    broadcast messages, including scheduled maintenance announcements, like on
-    the `GitHub Status <http://status.github.com>`_ site.
+    broadcast messages like on the `GitHub Status <http://status.github.com>`_
+    site -- as well as scheduled maintenance announcements and calendar.
 
 
 Hosting
