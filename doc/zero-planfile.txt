@@ -234,8 +234,8 @@ Request Handling
     There should be a set of `iptables <http://www.netfilter.org>`_
     configurations:
 
-    * Frontend servers should only allow for external TCP traffic to ports 25,
-      80 and 443.
+    * Frontend servers should only allow for external TCP traffic to ports 8025,
+      8080 and 8443.
 
     * Internal traffic should be able to connect on all non-privileged ports.
 
@@ -264,16 +264,10 @@ Request Handling
 
     There are a number of cheaper SSL certificate providers like `Comodo
     <http://www.instantssl.com>`_ and `GoDaddy
-    <https://www.godaddy.com/ssl/ssl-certificates.aspx>`_ who offer "chained
-    root" certificates -- which may possibly not work in as wide a range of
-    browsers as the bundled single root ones.
-
-    Given potential concerns about chained root certs, we should probably just
-    buy from `RapidSSL
+    <https://www.godaddy.com/ssl/ssl-certificates.aspx>`_. `RapidSSL
     <http://www.rapidssl.com/ssl-certificate-products/ssl-certificate.htm>`_, a
-    GeoTrust subsidiary who offer much cheaper -- by skipping on the insurance
-    cover -- single root certs. As of this writing they are offering a wildcard
-    cert for $199/year.
+    GeoTrust subsidiary, also offer fairly cheap certs. As of this writing they
+    are offering a wildcard cert for $199/year.
 
     As for `EV certificates
     <http://en.wikipedia.org/wiki/Extended_Validation_Certificate>`_, there's no
@@ -578,6 +572,105 @@ Hosting
     Hostway.
 
 
+Finances
+--------
+
+.. tag:: #admin, @tav
+
+  ✗ Have a pre-launch meeting with the accountant.
+
+    Need to have a meeting with the accountant to go over a number of details,
+    including:
+
+    * VAT registration
+    * Annual returns (due 31st March)
+
+.. tag:: #admin, @olasofia, @tav
+
+  ✓ Setup a bank account for Metanational Commons.
+
+    A bank account has been setup with `HSBC <http://www.hsbc.co.uk/>`_ for
+    Metanational Commons with Sofia having primary access to the account.
+
+.. tag:: #admin, @tav
+
+  ✓ Setup a Paypal account for Metanational Commons.
+
+    A Paypal account has been setup, verified and linked to the HSBC account.
+
+.. tag:: #admin, @tav
+
+  ✓ Investigate payment processors for handling membership subscriptions.
+
+    `Braintree <http://www.braintreepaymentsolutions.com/>`_ sound like a pretty
+    awesome payment processor. They offer a combined merchant account and
+    payment gateway. And their API is such that our servers `never have to
+    <http://www.braintreepaymentsolutions.com/services/pci-compliance>`_ even
+    touch user's credit card details!
+
+.. tag:: #admin, @tav
+
+  ✗ Contact Braintree.
+
+    Tav has emailed Braintree asking about their pricing, sign up process and
+    whether they already have a Python library for their API.
+
+
+Admin
+-----
+
+.. tag:: #admin, @tav
+
+    ✓ Setup source repository for Ampify.
+
+      A repository has been setup on GitHub for the reasons outlined in our
+      "`getting started with git
+      <http://www.espians.com/getting-started-with-git.html#why-git>`_" article.
+      It can be found at `github.com/tav/ampify
+      <http://github.com/tav/ampify>`_.
+
+      To clone the repo::
+
+        git clone git://github.com/tav/ampify.git
+
+      Those who've got write access should instead::
+
+        git clone git@github.com:tav/ampify.git
+
+.. tag:: #admin, @tav
+
+  ✓ Buy ampify.it and related domains.
+
+    The following domains have been bought:
+
+    * ampify.it
+    * ampifyit.com
+    * ampify.me
+    * ampify.org
+    * ampify.net
+
+    The domain ``ampify.com`` seems to be owned by someone called Bri Holt
+    according to the `WHOIS records <http://whois.domaintools.com/ampify.com>`_.
+    Tav has emailed him about buying the domain but hasn't heard anything back.
+    Since people tend to search it's not really a problem, but would be very
+    nice to have.
+
+.. tag:: #admin, @tav, @olasofia
+
+  ✓ Register Metanational Commons Ltd.
+
+    The entity "Metanational Commons Ltd." has been officially registered with
+    `Companies House <http://www.companieshouse.gov.uk/>`_ as Company No.
+    ``06834341`` in England & Wales . The following individuals are the current
+    officials for the company:
+
+    * Tav (Vageesan Sivapathasundaram)
+    * Sofia Bustamante
+
+    The official address is at our accountant's place to make handling of admin
+    forms easier.
+
+
 Message
 -------
 
@@ -636,10 +729,6 @@ Asr
 * Devboard (incl. contributor agreement)
 * Documentation style + LICENSE
 
-
-Remaining Blah
---------------
-
 ✗ http://code.google.com/p/tesseract-ocr/wiki/ReadMe
 ✗ Language detection
 ✗ Trust metrics calculation
@@ -651,16 +740,6 @@ Guess language
 
 ✗ Nodules
 ✗ Language guesser
-
-The absolute basics:
-
-    ✓ Setup git repository for ampify
-    ✗ Buy SSL certificate
-    ✓ Buy ampify.it
-    ✗ Send in verification documents to the Italian registrar
-    ✗ Buy ampify.im | .com variants
-
-And, then:
 
 ✓ Weblite base framework
 ✓ Weblite service loader
@@ -684,10 +763,13 @@ And, then:
 ✗ nodebrowser.js runner
 ✗ nodebrowser.js testing
 
+http://www.cyberciti.biz/tips/setting-processor-affinity-certain-task-or-process.html
+taskset (part of schedutils) for cpu affinity on linux
+
+✗ Go build script
 ✗ Python testing framework
 ✗ Python testing runner
 
-✗ Go build script
 ✗ Go testing framework
 ✗ Go testing runner
 
@@ -910,8 +992,6 @@ And, then:
 ✗ XMPP integration
 ✗ Google Wave bot
 
-✗ EC2 setup
-✗ ELB setup
 ✗ DNS setup
 ✗ AMI setup
 ✗ Nginx configuration
@@ -920,6 +1000,155 @@ And, then:
 ✗ Git repository app sync
 
 IANA-reserved IPs
+
+✗ Code activity on GitHub
+
+✗ FAQs on Tender
+✗ <meta name="verify-v1" content="aLcMPDDmDYvgufTDcJiiCOgPt/FOooMmGHiPj64BMbU=" />
+
+✗ optimise page load with different asset subdomains
+✗ fallback for when 2000 supporters reached
+✗ redis-based stat.ampify.it
+✗ Update HSBC IBAN/BIC details
+
+✗ Main template
+✗ Main css
+✗ Main javascript
+✗ Main index
+
+✗ Blog template
+✗ Blog index
+✗ Blog rss
+✗ Blog first entry
+
+✗ Disqus on Blog
+✗ Feedburner for Blog
+
+✗ TypeKit
+
+✗ Devboard template
+✗ Devboard handler
+✗ Devboard auth
+✗ Devboard GitHub post receive
+✗ Devboard breakpad
+✗ Devboard tree status
+✗ Devboard build status
+
+✗ Devsite template
+✗ Devsite index
+✗ Devsite article: git review
+
+✗ Planfile structure
+✗ Planfile content
+✗ Planfile diagrams
+
+✗ Git review
+✗ Git review config
+✗ Git review style validator
+✗ Git review gofmt
+✗ Git review revhooks
+✗ Git review watchlist
+✗ Breakpad
+
+✗ Build slave config
+✗ Build slave runner
+✗ Python test framework
+✗ Python tests
+✗ Go test framework
+✗ Go tests
+✗ Javascript test framework
+✗ Javascript tests
+✗ Test runner
+
+✗ ./configure
+✗ Makefile
+✗ git update
+
+✗ Paypal subscription docs
+✗ Paypal subscription implementation
+✗ Paypal subscription test
+
+✗ Supporters site template
+✗ Supporters site handler
+✗ Supporters site auth
+✗ Supporters site signup
+✗ Supporters site model
+✗ Supporters site post signup + initial mail
+✗ Supporters site graphics
+✗ Supporters site management
+
+✗ Sendgrid subscription
+✗ Supporters site sendgrid support
+✗ Supporters site mail outs
+
+✗ Trustmaps: update to the .com site
+✗ Trustmaps: quick fixes
+✗ Trustmaps: docs clean up
+✗ Trustmaps: stream
+✗ Trustmaps: article for blog
+✗ Trustmaps: video
+
+✗ App engine rate limit increase: trustmaps
+✗ App engine rate limit increase: supporters
+✗ Twitter rate limit increase
+✗ Change passwords (twitter, facebook, gmail, etc.)
+
+✗ Espians website articles
+
+✗ Video storyline
+✗ Video imagery
+✗ Video writing
+✗ Video voice
+✗ Video music
+✗ Video upload
+
+✗ DNS settings
+✗ Apache setup
+✗ Possibly get a linode backup + DNS changes
+✗ Blog article on ampify
+✗ Email espians
+
+✗ Post: ping.fm, espians fb/twitter, ampify twitter
+✗ DM twitter followers framework
+✗ DM twitter followers
+
+
+http://docs.jquery.com/QUnit
+http://ejohn.org/blog/test-swarm-alpha-open/
+http://github.com/jelmer/dulwich/blob/master/dulwich/server.py
+http://github.com/jeresig/testswarm/
+http://testswarm.com/
+http://testswarm.com/job/2/
+http://www.austintek.com/LVS/LVS-HOWTO/HOWTO/LVS-HOWTO.rewrite_ports.html
+http://github.com/lg/murder
+http://66.102.9.132/search?q=cache:eWcESlDEifAJ:open-content.net/specs/draft-jchapweske-thex-02.html+thex+content&cd=3&hl=en&ct=clnk&client=safari
+
+http://code.google.com/p/google-caja/wiki/CajaCajole
+http://www.codebasehq.com/features
+
+http://howtonode.org/do-it-fast
+http://howtonode.org/control-flow-part-ii
+http://github.com/creationix/do#readme
+http://ejohn.org/blog/ecmascript-5-objects-and-properties/
+http://code.google.com/p/google-caja/wiki/JsHtmlSanitizer
+
+http://standardinterface.org/
+http://github.com/280north/aristo
+
+http://allmydata.org/source/tahoe-lafs/trunk/docs/about.html
+
+https://calomel.org/nginx.html
+
+http://api.pyamf.org/
+http://fmspy.org/docs/en/userguide.html#features
+http://sziebert.net/posts/server-side-stream-recording-updated/
+http://rtmpy.org/wiki/IrcChannel
+
+http://linux.softpedia.com/get/Programming/Libraries/redis-queue-54702.shtml
+
+http://news.ycombinator.com/item?id=180311
+
+http://code.google.com/p/pycopia/
 
 .. raw:: html
 
