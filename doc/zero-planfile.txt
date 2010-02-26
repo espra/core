@@ -59,10 +59,35 @@ On startup all nodes establish a live connection to the Seed node.
        +===============================================================+
 
 
+ZeroData
+--------
+
+.. tag:: #backend, @tav, wip
+
+  ✗ Define the Message type structure.
+
+    The Message type is the heart of Ampify.
+
+    .. syntax:: go
+
+      type Message struct {
+         from         string         // who is the message from?
+         by           string
+         to           string
+         aspect       string
+         content      string
+         value_number big.Number
+         value_list   []string
+         version      int
+     }
+
+    It abstracts out many of 
+
+
 Argonought
 ----------
 
-.. tag:: #foundation, @tav, wip
+.. tag:: #backend, @tav, wip
 
   ✗ Implement a serialisation format.
 
@@ -78,13 +103,13 @@ Argonought
     inadequate. They haven't learnt from the mistakes of `CORBA
     <http://en.wikipedia.org/wiki/Common_Object_Request_Broker_Architecture>`_.
 
-.. tag:: #foundation, @tav, needsreview
+.. tag:: #backend, @tav, needsreview
 
   ✓ Implement support for lexicographically sortable representation of numbers.
 
-    When dealing with numbers, people don't care about crap like whether it's an
-    unsigned 32bit integer or a 128bit decimal. Even programmers have been
-    spoilt by automatic type coercion in many dynamic languages, e.g.
+    When dealing with numbers, people don't care about whether it's an unsigned
+    32-bit integer or a 128-bit decimal. Even programmers have been spoilt by
+    automatic type coercion in many dynamic languages, e.g.
 
     .. syntax:: irb
 
@@ -97,7 +122,7 @@ Argonought
     Unfortunately this support is not reflected in most datastores. App Engine,
     for example, indexes strings up to 500 bytes in length but `truncates
     <http://code.google.com/appengine/docs/python/datastore/typesandpropertyclasses.html#IntegerProperty>`_
-    integer values greater than 64bits.
+    integer values greater than 64 bits.
 
     If one were to try and encode the number as a string to take advantage of
     the extra space, the naive approach fails quite quickly:
@@ -156,7 +181,7 @@ Continuous Integration
 Request Handling
 ----------------
 
-.. tag:: #admin, @tav
+.. tag:: #sysadmin, @tav
 
   ✓ Investigate managed DNS providers.
 
@@ -198,7 +223,7 @@ Request Handling
     * The monitoring by Dynect is not going to be as responsive as an LVS
       director running on the local network.
 
-.. tag:: #admin, @evangineer, wip
+.. tag:: #sysadmin, @evangineer, wip
 
   ✗ Investigate load balancing solutions.
 
@@ -217,7 +242,7 @@ Request Handling
     have redundancy for the load balancer itself and deal with health checks for
     HTTP, HTTPS and SMTP backend servers.
 
-.. tag:: #admin
+.. tag:: #sysadmin
 
   ✗ Setup network monitoring infrastructure.
 
@@ -235,7 +260,7 @@ Request Handling
     setup on our frontend servers and an overview should be accessible at
     centralised location(s).
 
-.. tag:: #admin
+.. tag:: #sysadmin
 
   ✗ Define the server firewall infrastructure.
 
@@ -253,7 +278,7 @@ Request Handling
     hosts on our servers in addition to working with our hosting companies to
     block hosts at the network switches.
 
-.. tag:: #admin
+.. tag:: #operations, #security
 
   ✗ Buy an SSL certificate for ampify.it.
 
@@ -282,7 +307,7 @@ Request Handling
     conclusive evidence that the green bar provides any real additional value,
     so we'll skip that for now.
 
-.. tag:: #admin, @tav
+.. tag:: #sysadmin, @tav
 
   ✓ Investigate frontend web servers.
 
@@ -298,7 +323,7 @@ Request Handling
     `lighttpd <http://www.lighttpd.net>`_ are decent alternatives but do not
     inspire as much confidence as nginx.
 
-.. tag:: #admin
+.. tag:: #sysadmin
 
   ✗ Put together an nginx package for redpill.
 
@@ -311,7 +336,7 @@ Request Handling
     <http://wiki.nginx.org/NginxModules>`_ are built -- minimising needless
     bloat and dependencies (i.e. security holes) as much as possible.
 
-.. tag:: #admin
+.. tag:: #sysadmin, #security
 
   ✗ Define a configuration file for the nginx servers.
 
@@ -333,7 +358,7 @@ Request Handling
     approximated using `nginx-rrd <http://www.nginx.eu/nginx-rrd.html>`_ to help
     with identifying bottlenecks.
 
-.. tag:: #admin
+.. tag:: #sysadmin, #backend
 
   ✗ Implement ping responses on the frontend.
 
@@ -352,7 +377,7 @@ Request Handling
 
         {"zone": "eu-1", "timestamp": 1266978987.705}
 
-.. tag:: #admin, #security, @evangineer
+.. tag:: #sysadmin, #security, @evangineer
 
   ✗ Conduct pentesting of the frontend infrastructure.
 
@@ -368,7 +393,7 @@ Request Handling
 Status Monitoring
 -----------------
 
-.. tag:: #admin, @tav, @evangineer
+.. tag:: #sysadmin, @tav, @evangineer
 
   ✓ Investigate off-site uptime and latency monitoring services.
 
@@ -382,7 +407,7 @@ Status Monitoring
     <http://www.pingdom.com>`_ looks a lot prettier but charges too much without
     offering enough flexibility. Conclusion: code our own monitoring service.
 
-.. tag:: #admin
+.. tag:: #sysadmin, #backend
 
   ✗ Implement data gatherers for remonit -- a remote monitoring tool.
 
@@ -400,7 +425,7 @@ Status Monitoring
 
     * SSL certificate verification.
 
-.. tag:: #admin
+.. tag:: #sysadmin, #backend
 
   ✗ Implement the configuration system for remonit.
 
@@ -409,7 +434,7 @@ Status Monitoring
     should also support live reloading of the config when sent a `SIGHUP
     <http://en.wikipedia.org/wiki/SIGHUP>`_.
 
-.. tag:: #admin
+.. tag:: #sysadmin, #backend
 
   ✗ Implement a data persistence layer for remonit.
 
@@ -418,7 +443,7 @@ Status Monitoring
     The redis data should be pruned every so often and saved to S3 so that we
     have historic data for the future.
 
-.. tag:: #admin
+.. tag:: #sysadmin, #backend
 
   ✗ Implement a notification system for remonit.
 
@@ -432,7 +457,7 @@ Status Monitoring
     <http://prowl.weks.net/>`_ (iPhone). Perhaps take a look at `aeservmon
     <http://github.com/mrsteveman1/aeservmon>`_ for any relevant code.
 
-.. tag:: #admin
+.. tag:: #sysadmin, #backend
 
   ✗ Export the remonit data over a web interface.
 
@@ -453,7 +478,7 @@ Status Monitoring
       of summary state (okay/disrupted) for the 8 days leading up to the
       specified date (including the current state).
 
-.. tag:: #admin
+.. tag:: #sysadmin, #backend, #operations
 
   ✗ Setup off-site servers for running remonit.
 
@@ -468,7 +493,7 @@ Status Monitoring
     We'd need to find a decent Asian VPS host for monitoring our Asian data
     center when it goes live.
 
-.. tag:: #admin
+.. tag:: #sysadmin, #backend, #operations
 
   ✗ Implement the status.ampify.it app.
 
@@ -488,7 +513,7 @@ Status Monitoring
 Hosting
 -------
 
-.. tag:: #admin, @evangineer, @tav
+.. tag:: #operations, @evangineer, @tav
 
   ✓ Investigate cloud service providers.
 
@@ -514,7 +539,7 @@ Hosting
     Server management is complicated enough without having to worry about these
     and other gaming issues.
 
-.. tag:: #admin, @evangineer, @tav
+.. tag:: #operations, @evangineer, @tav
 
   ✓ Investigate dedicated server providers.
 
@@ -529,7 +554,7 @@ Hosting
     (Germany) are very attractive price-wise, but may not have the most reliable
     network connectivity.
 
-.. tag:: #admin, @tav, @evangineer, wip
+.. tag:: #operations, @tav, @evangineer, wip
 
   ✗ Investigate/negotiate deal with Hostway.
 
@@ -645,11 +670,18 @@ Finances
     ID <http://www.irs.gov/businesses/small/article/0,,id=102767,00.html>`_
     (EIN) and a US bank account.
 
+.. tag:: #legal
 
-Admin
------
+  ✗ Define a terms of service and privacy policy.
 
-.. tag:: #admin, @tav
+    We need to have a decent terms of service and privacy policy documents for
+    the Ampify service.
+
+
+Miscellaneous
+-------------
+
+.. tag:: #operations, @tav
 
     ✓ Setup a source repository for Ampify.
 
@@ -667,7 +699,7 @@ Admin
 
         git clone git@github.com:tav/ampify.git
 
-.. tag:: #admin, @tav
+.. tag:: #operations, @tav
 
   ✓ Buy ampify.it and related domains.
 
@@ -691,20 +723,6 @@ Message
 
 Redis 32-bit
 
-The message looks like:
-
-.. syntax:: go
-
-  type Message struct {
-      from         string
-      by           string
-      to           string
-      aspect       string
-      content      string
-      value_number big.Number
-      value_list   []string
-      version      int
-  }
 
 For example, the following message written by ``@tav`` and sent to ``#espians``::
 
@@ -1156,7 +1174,7 @@ http://code.google.com/p/pycopia/
 .. raw:: html
 
   <style type="text/css">
-  #message, #remaining-blah, #node-structure, #argonought, #continuous-integration {
+  #message, #remaining-blah, #node-structure, #continuous-integration {
     display: none !important;
   }
   </style>
