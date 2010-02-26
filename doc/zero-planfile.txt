@@ -561,7 +561,7 @@ Hosting
 
       * Excess bandwidth is charged for at $0.35/GB. We can prebuy bandwidth
         (as long as it's over 2TB) at a rate of $0.09/GB.
-        
+
       * We can arrange for our servers to be setup on a private switch in which
         case we wouldn't be charged for internal traffic.
 
@@ -833,7 +833,7 @@ taskset (part of schedutils) for cpu affinity on linux
 
 ✗ Reaction definition
 ✗ Builtin incr/decr reactions
-✗ Calling of before/after reactions✗ 
+✗ Calling of before/after reactions
 ✗ Private messaging
 ✗ Espra credits allocation
 ✗ Espra credits usage
