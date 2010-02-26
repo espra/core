@@ -144,6 +144,14 @@ Argonought
 Continuous Integration
 ----------------------
 
+✗ Javascript testing framework
+✗ Javascript testing runner
+✗ Python testing framework
+✗ Python testing runner
+
+✗ Go testing framework
+✗ Go testing runner
+
 
 Request Handling
 ----------------
@@ -575,6 +583,21 @@ Hosting
 Finances
 --------
 
+.. tag:: #admin, @tav, @olasofia
+
+  ✓ Register Metanational Commons Limited.
+
+    The entity "Metanational Commons Limited" has been officially registered
+    with `Companies House <http://www.companieshouse.gov.uk/>`_ as Company No.
+    ``06834341`` in England & Wales . The following individuals are the current
+    officials for the company:
+
+    * Tav (Vageesan Sivapathasundaram)
+    * Sofia Bustamante
+
+    The official address is at our accountant's place to make handling of admin
+    forms easier.
+
 .. tag:: #admin, @tav
 
   ✗ Have a pre-launch meeting with the accountant.
@@ -584,6 +607,10 @@ Finances
 
     * VAT registration
     * Annual returns (due 31st March)
+
+    It might also be worth spending some time looking into incorporating a US
+    subsidiary -- as an `LLC
+    <http://en.wikipedia.org/wiki/Limited_liability_company>`_ or a C-Corp.
 
 .. tag:: #admin, @olasofia, @tav
 
@@ -610,10 +637,13 @@ Finances
 
 .. tag:: #admin, @tav
 
-  ✗ Contact Braintree.
+  ✓ Contact Braintree.
 
-    Tav has emailed Braintree asking about their pricing, sign up process and
-    whether they already have a Python library for their API.
+    Tav emailed Braintree asking about their pricing, sign up process and
+    whether they already have a Python library for their API. Unfortunately they
+    only provide merchant accounts for US companies -- we'd need a `Federal Tax
+    ID <http://www.irs.gov/businesses/small/article/0,,id=102767,00.html>`_
+    (EIN) and a US bank account.
 
 
 Admin
@@ -621,7 +651,7 @@ Admin
 
 .. tag:: #admin, @tav
 
-    ✓ Setup source repository for Ampify.
+    ✓ Setup a source repository for Ampify.
 
       A repository has been setup on GitHub for the reasons outlined in our
       "`getting started with git
@@ -654,21 +684,6 @@ Admin
     Tav has emailed him about buying the domain but hasn't heard anything back.
     Since people tend to search it's not really a problem, but would be very
     nice to have.
-
-.. tag:: #admin, @tav, @olasofia
-
-  ✓ Register Metanational Commons Ltd.
-
-    The entity "Metanational Commons Ltd." has been officially registered with
-    `Companies House <http://www.companieshouse.gov.uk/>`_ as Company No.
-    ``06834341`` in England & Wales . The following individuals are the current
-    officials for the company:
-
-    * Tav (Vageesan Sivapathasundaram)
-    * Sofia Bustamante
-
-    The official address is at our accountant's place to make handling of admin
-    forms easier.
 
 
 Message
@@ -706,10 +721,6 @@ Would like the following in Ruby after being parsed:
     :value_number => 9203180132
   }
 
-Hmz
-
-Asr
-
 .. syntax:: pycon
 
   >>> nodule.init()
@@ -732,9 +743,6 @@ Asr
 ✗ http://code.google.com/p/tesseract-ocr/wiki/ReadMe
 ✗ Language detection
 ✗ Trust metrics calculation
-✗ Temporal visualiser
-
-Guess language
 
 ✗ Weather Theme as ambient system status indicator
 
@@ -755,8 +763,6 @@ Guess language
 ✗ Javascript third party dependencies
 
 ✗ Build script for jsutil
-✗ Javascript testing framework
-✗ Javascript testing runner
 
 ✗ nodebrowser.js builder
 ✗ nodebrowser.js port of env.js
@@ -767,18 +773,10 @@ http://www.cyberciti.biz/tips/setting-processor-affinity-certain-task-or-process
 taskset (part of schedutils) for cpu affinity on linux
 
 ✗ Go build script
-✗ Python testing framework
-✗ Python testing runner
-
-✗ Go testing framework
-✗ Go testing runner
 
 ✗ Python client setup.py/build script
 ✗ Python client testing framework
 ✗ Python client testing runner
-
-✗ Overview documentation
-✗ Architecture documentation
 
 ✓ Appengine base yaml files
 ✓ Site configuration file
@@ -794,6 +792,12 @@ taskset (part of schedutils) for cpu affinity on linux
 ✗ Membership
 ✗ Membership payment (via PayPal)
 ✗ Terms of service acceptance with updates
+
+http://orestis.gr/blog/2008/02/09/moving-to-numpy/
+6.8 billion people according to the UN
+http://en.wikipedia.org/wiki/World_population
+
+http://orestis.gr/blog/2008/03/25/django-localdates-ping/
 
 ✗ Login
 ✗ Email
@@ -994,7 +998,6 @@ taskset (part of schedutils) for cpu affinity on linux
 
 ✗ DNS setup
 ✗ AMI setup
-✗ Nginx configuration
 ✗ Redis configuration
 ✗ Runner scripts
 ✗ Git repository app sync
