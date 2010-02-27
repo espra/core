@@ -263,7 +263,7 @@
         if (window.location.hash) {
             requested_tags = window.location.hash.substr(1).split(',');
             for (x = 0; x < requested_tags.length; x++) {
-                tag = requested_tags[x];
+                tag = decodeURIComponent(requested_tags[x]);
                 $('#' + NORM2TAG[tag.toLowerCase()]).click();
             }
         } else {

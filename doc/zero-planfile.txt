@@ -696,11 +696,11 @@ Launch
 
 .. tag:: #dev
 
-  ✓ Implement static site generation for the blog/dev site.
+  ✓ Implement a static site generator for our sites.
 
     We experimented with using `Markdown
     <http://daringfireball.net/projects/markdown/syntax>`_ and `Jekyll
-    <http://jekyllrb.com>`_. Jekyll was great, but Markdown didn't suit this
+    <http://jekyllrb.com>`_. Jekyll was great, but Markdown didn't suit our
     particular use, so we updated ``yatiblog``, our ancient `reStructuredText
     <http://docutils.sourceforge.net/rst.html>`_ based static site generator,
     with Jekyll's `YAML front matter
@@ -708,8 +708,10 @@ Launch
     is working out quite well.
 
     When yatiblog is run, it converts all the ``.txt`` files in the directory to
-    ``.html`` files according to the ``layout`` variable specified in the file's
-    YAML front matter::
+    ``.html`` files in a ``website`` subdirectory according to the ``layout``
+    variable specified in each txt file's YAML front matter, e.g.
+
+    .. syntax:: yaml
 
       ---
       layout: page
@@ -718,16 +720,17 @@ Launch
 
     All other specified variables are passed onto the layout file, which are
     `Genshi <http://genshi.edgewall.org/>`_ templates within a special
-    ``_layouts`` directory. A layout can also define a layout for itself,
-    allowing ease of re-use of templates.
+    ``_layouts`` directory. So in the above example, ``page.genshi`` could make
+    use of ``${title}``. A layout can also define a layout for itself, allowing
+    ease of re-use of templates.
 
     The variables defined on a page also shadow the variables defined in a
     layout so one can have default values for variables which can be over-ridden
     on a per page/layout basis.
 
-    There needs to be a special ``_config.yml`` file which can define any
-    default env variables and must also define a special ``index_pages``
-    variable:
+    Yatiblog requires that there be a special ``_config.yml`` file in the source
+    directory which defines default variables. This MUST include a list of
+    mappings for the ``index_pages``, e.g.
 
     .. syntax:: yaml
 
@@ -736,8 +739,50 @@ Launch
       - index.html: index.genshi
       - feed.rss: feed.genshi
 
-    This will define any pages which must be generated after all other pages are
-    created.
+    This will define the specified "index" pages to be generated after all other
+    pages are created. Yatiblog also compares the modified time of the various
+    files and does a comprehensive dependency analysis so that only necessary
+    files are regenerated.
+
+.. tag:: #dev, #ui, @tav
+
+  ✓ Implement a planfile generator and client-side app.
+
+    Planfiles are intended as a happy medium between a minimal TODO text file
+    and a full blown web-based issue tracker. Two complementary
+    `reStructuredText directives
+    <http://docutils.sourceforge.net/docs/ref/rst/directives.html>`_ have been
+    created to support the creation of HTML planfiles from the plain text
+    variant.
+
+    The ``plan`` directive inserts some Javascript into generated HTML files for
+    a client-side web application which will allow viewers to filter plan items
+    based on tags. The app has special support for bookmark-able filter URLs via
+    the fragment identifier and will degrade gracefully on older browsers.
+
+    .. syntax:: rst
+
+      .. plan:: project-id
+
+    It does, however, expect certain CSS classes to be defined and for the
+    `plan.js <http://dev.ampify.it/js/plan.js>`_ file to be accessible at
+    ``/js/plan.js``.
+
+    Individual plan items are easy to define. Just nest them inside the ``tag``
+    directive which allows for plan items to be tagged with arbitrary tags.,
+    e.g.
+
+    .. syntax:: rst
+
+      .. tag:: #dev, #ui, @tav, WIP
+
+        ✗ Implement a planfile generator and client-side app.
+
+          This is what a sample plan item would look like.
+
+    There is special support for ``#hashtags``, ``@names`` and even
+    ``milestone:`` and ``dep:`` style tags. These will have different CSS
+    classes and can therefore be visually disambiguated easily.
 
 .. tag:: #outreach
 
@@ -888,13 +933,19 @@ Admin
       It can be found at `github.com/tav/ampify
       <http://github.com/tav/ampify>`_.
 
-      To clone the repo::
+      To clone the repo:
 
-        git clone git://github.com/tav/ampify.git
+      .. syntax:: bash
 
-      Those who've got write access should instead::
+        $ git clone git://github.com/tav/ampify.git
 
-        git clone git@github.com:tav/ampify.git
+      Those who've got write access should instead:
+
+      .. syntax:: bash
+
+        $ git clone git@github.com:tav/ampify.git
+
+      Ask Tav if you'd like write access.
 
 .. tag:: #legal, @tav, needsreview
 

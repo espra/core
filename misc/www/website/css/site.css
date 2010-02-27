@@ -407,6 +407,14 @@ body > #body-outer {
 	vertical-align: middle;
 }
 
+.boxed {
+	border: 1px solid #cacaca;
+	-moz-border-radius: 5px;
+	-webkit-border-radius: 5px;
+	border-radius: 5px;
+	-webkit-box-shadow: 0px 0px 7px #cacaca;
+}
+
 .center {
 	text-align: center;
 }
@@ -641,6 +649,13 @@ body > #body-outer {
 .syntax.css .nc { color: #c32528 }
 .syntax.css .nf { color: #c32528 }
 .syntax.css .nt { color: #c32528 }
+
+.syntax.rst .k { color: #5d90cd }
+.syntax.rst .ow { color: #5d90cd }
+.syntax.rst .p { color: #5d90cd }
+
+.syntax.yaml .l-Scalar-Plain { color: #5d90cd }
+.syntax.yaml .p-Indicator { color: #101010 }
 
 /* classes for support pages */
 
