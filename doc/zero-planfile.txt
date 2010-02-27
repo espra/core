@@ -17,12 +17,11 @@ Python, Redis, S3, Sendgrid, Twilio and V8.
   {"todo": ["wip", "todo"], "done": ["inreview", "needsreview", "done"]}
 
 
-Node Structure
---------------
+Overview of the Architecture
+----------------------------
 
-A Node is started up using the ``ampnode`` executable.
-
-On startup all nodes establish a live connection to the Seed node.
+A Node is started up using the ``ampnode`` executable. On startup all nodes
+establish a live connection to the Seed node.
 
 .. class:: ascii-art
 
@@ -62,34 +61,35 @@ On startup all nodes establish a live connection to the Seed node.
 ZeroData
 --------
 
-.. tag:: #backend, @tav, wip
+.. tag:: #dev, @tav, wip
 
   ✗ Define the Message type structure.
 
-    The Message type is the heart of Ampify.
+    The Message type is the heart of Ampify. Here's a start at its definition:
 
     .. syntax:: go
 
       type Message struct {
          from         string         // who is the message from?
-         by           string
-         to           string
-         aspect       string
-         content      string
-         value_number big.Number
+         by           string         // who is the message authored by?
+         to           string         // where is the message sent to?
+         aspect       string         // what /aspect is being defined?
+         content      string         // the raw message body
+         value_number big.Number     // the message value
          value_list   []string
          version      int
      }
 
-    It abstracts out many of 
+    It combines a number of different data models into a pretty flexible generic
+    one.
 
 
 Argonought
 ----------
 
-.. tag:: #backend, @tav, wip
+.. tag:: #dev, @tav, wip
 
-  ✗ Implement a serialisation format.
+  ✗ Define a serialisation format.
 
     Argonought is a JSON-inspired serialisation format that should offer us
     features not collectively available in other formats:
@@ -103,11 +103,11 @@ Argonought
     inadequate. They haven't learnt from the mistakes of `CORBA
     <http://en.wikipedia.org/wiki/Common_Object_Request_Broker_Architecture>`_.
 
-.. tag:: #backend, @tav, needsreview
+.. tag:: #dev, @tav, needsreview
 
   ✓ Implement support for lexicographically sortable representation of numbers.
 
-    When dealing with numbers, people don't care about whether it's an unsigned
+    When dealing with numbers, most people don't care whether it's an unsigned
     32-bit integer or a 128-bit decimal. Even programmers have been spoilt by
     automatic type coercion in many dynamic languages, e.g.
 
@@ -234,7 +234,7 @@ Request Handling
     There are a number of `LVS <http://www.linuxvirtualserver.org>`_ (Linux
     Virtual Server) components that are worth exploring: `ldirectord
     <http://www.vergenet.net/linux/ldirectord/>`_, `heartbeat
-    <http://www.linux-ha.org>`_, `keepalived <http://www.keepalived.org>`_, etc.
+    <http://www.linux-ha.org>`_, `keepalived <http://www.keepalived.org>`_, &c.
     Hosting companies like Hostway also offer managed LVS which might be
     worthwhile.
 
@@ -256,7 +256,7 @@ Request Handling
     <http://oss.oetiker.ch/rrdtool/>`_, `munin
     <http://munin.projects.linpro.no>`_, `shinken
     <http://www.shinken-monitoring.org>`_, `cacti <http://www.cacti.net>`_,
-    `mrtg <http://oss.oetiker.ch/mrtg/>`_, etc. The appropriate tools should be
+    `mrtg <http://oss.oetiker.ch/mrtg/>`_, &c. The appropriate tools should be
     setup on our frontend servers and an overview should be accessible at
     centralised location(s).
 
@@ -358,7 +358,7 @@ Request Handling
     approximated using `nginx-rrd <http://www.nginx.eu/nginx-rrd.html>`_ to help
     with identifying bottlenecks.
 
-.. tag:: #sysadmin, #backend
+.. tag:: #sysadmin, #dev
 
   ✗ Implement ping responses on the frontend.
 
@@ -407,7 +407,7 @@ Status Monitoring
     <http://www.pingdom.com>`_ looks a lot prettier but charges too much without
     offering enough flexibility. Conclusion: code our own monitoring service.
 
-.. tag:: #sysadmin, #backend
+.. tag:: #sysadmin, #dev
 
   ✗ Implement data gatherers for remonit -- a remote monitoring tool.
 
@@ -425,7 +425,7 @@ Status Monitoring
 
     * SSL certificate verification.
 
-.. tag:: #sysadmin, #backend
+.. tag:: #sysadmin, #dev
 
   ✗ Implement the configuration system for remonit.
 
@@ -434,7 +434,7 @@ Status Monitoring
     should also support live reloading of the config when sent a `SIGHUP
     <http://en.wikipedia.org/wiki/SIGHUP>`_.
 
-.. tag:: #sysadmin, #backend
+.. tag:: #sysadmin, #dev
 
   ✗ Implement a data persistence layer for remonit.
 
@@ -443,7 +443,7 @@ Status Monitoring
     The redis data should be pruned every so often and saved to S3 so that we
     have historic data for the future.
 
-.. tag:: #sysadmin, #backend
+.. tag:: #sysadmin, #dev
 
   ✗ Implement a notification system for remonit.
 
@@ -457,7 +457,7 @@ Status Monitoring
     <http://prowl.weks.net/>`_ (iPhone). Perhaps take a look at `aeservmon
     <http://github.com/mrsteveman1/aeservmon>`_ for any relevant code.
 
-.. tag:: #sysadmin, #backend
+.. tag:: #sysadmin, #dev
 
   ✗ Export the remonit data over a web interface.
 
@@ -478,7 +478,7 @@ Status Monitoring
       of summary state (okay/disrupted) for the 8 days leading up to the
       specified date (including the current state).
 
-.. tag:: #sysadmin, #backend, #operations
+.. tag:: #sysadmin, #dev, #operations
 
   ✗ Setup off-site servers for running remonit.
 
@@ -493,7 +493,7 @@ Status Monitoring
     We'd need to find a decent Asian VPS host for monitoring our Asian data
     center when it goes live.
 
-.. tag:: #sysadmin, #backend, #operations
+.. tag:: #sysadmin, #dev, #operations
 
   ✗ Implement the status.ampify.it app.
 
@@ -605,10 +605,208 @@ Hosting
     Hostway.
 
 
-Finances
---------
+Launch
+------
 
-.. tag:: #admin, @tav, @olasofia
+.. tag:: #outreach, #ui, @tav
+
+  ✓ Design an Ampify logo.
+
+    There is now an Ampify logo:
+
+    .. raw:: html
+
+      <div class="center"><img
+        src="http://static.ampify.it/logo.ampify.small.png" alt="Ampify"
+        /></div>
+
+    It is derived from the Tamil `Aayutha Ezhuthu
+    <http://en.wikipedia.org/wiki/ஃ>`_ and Roerich's `Banner of Peace
+    <http://commons.wikimedia.org/wiki/File:Banner_of_Peace_from_the_Roerich_Pact.svg>`_
+    inspired Espian logo by Nadine Gahr with touches from Matt Morse. The
+    typeface used is `Cholla Unicase
+    <http://www.emigre.com/fontpage.php?PChoU.html>`_ from Emigre.
+
+.. tag:: #outreach, @tav, @thruflo, @evangineer, @olasofia, wip
+
+  ✗ Figure out the launch strategy.
+
+    The whole Espian vision is pretty broad. We need to present Ampify in a way
+    that is both accessible and attractive to the initial target audience.
+    Current thoughts are to make an invitation to people to become one of 6,000
+    founding members to change the course of history:
+
+    * Create Weapons of Mass Construction!
+
+.. tag:: #outreach
+
+  ✗ Create the storyboard for the launch video.
+
+    We need to convey the entire vision in an easily understandable, fast paced
+    narrative within 10 minutes.
+
+.. tag:: #outreach
+
+  ✗ Create the content for the launch video.
+
+    A combination of Apple's `Keynote <http://www.apple.com/iwork/keynote/>`_
+    and `Motion <http://www.apple.com/finalcutstudio/motion/>`_ should be used
+    to create evocative content for the video. It is justifiable to pack in a
+    lot of information, e.g.
+
+    .. raw:: html
+
+      <div class="center"><img
+        src="http://static.ampify.it/presentation.sample-screen.png" alt=""
+        width="524px" height="384px" class="boxed"
+        /></div>
+
+    However the layout of the content should both be pleasant and allow for
+    readers/viewers to easily ignore detail that they're not interested in.
+
+.. tag:: #outreach, @cre8radix
+
+  ✗ Compose the sound track for the launch video.
+
+    The effectiveness of the launch video can be dramatically increased by
+    complementing it with a good sound track. The emotional palette should
+    correspond to the message we're trying to convey.
+
+.. tag:: #outreach
+
+  ✗ Record the voice-over for the launch video.
+
+    The voice-over should be in plain English so as to be accessible to as wide
+    an audience as possible. Detail should be left to the visual content.
+
+.. tag:: #outreach
+
+  ✗ Encode the launch video for publishing.
+
+    There a number of different encodings we could use. ``H.264`` will probably
+    yield the most effective distribution.
+
+.. tag:: #outreach
+
+  ✗ Upload the launch video to YouTube/Vimeo.
+
+    The video needs to be uploaded to the `YouTube account
+    <http://www.youtube.com/asktav>`_. We also have the `1,000,000th
+    <http://vimeo.com/1000000>`_ video spot on Vimeo which might be worth using.
+
+.. tag:: #dev
+
+  ✓ Implement static site generation for the blog/dev site.
+
+    We experimented with using `Markdown
+    <http://daringfireball.net/projects/markdown/syntax>`_ and `Jekyll
+    <http://jekyllrb.com>`_. Jekyll was great, but Markdown didn't suit this
+    particular use, so we updated ``yatiblog``, our ancient `reStructuredText
+    <http://docutils.sourceforge.net/rst.html>`_ based static site generator,
+    with Jekyll's `YAML front matter
+    <http://wiki.github.com/mojombo/jekyll/yaml-front-matter>`_ feature -- which
+    is working out quite well.
+
+    When yatiblog is run, it converts all the ``.txt`` files in the directory to
+    ``.html`` files according to the ``layout`` variable specified in the file's
+    YAML front matter::
+
+      ---
+      layout: page
+      title: Zero Planfile
+      ---
+
+    All other specified variables are passed onto the layout file, which are
+    `Genshi <http://genshi.edgewall.org/>`_ templates within a special
+    ``_layouts`` directory. A layout can also define a layout for itself,
+    allowing ease of re-use of templates.
+
+    The variables defined on a page also shadow the variables defined in a
+    layout so one can have default values for variables which can be over-ridden
+    on a per page/layout basis.
+
+    There needs to be a special ``_config.yml`` file which can define any
+    default env variables and must also define a special ``index_pages``
+    variable:
+
+    .. syntax:: yaml
+
+      index_pages:
+      - archive.html: archive.genshi
+      - index.html: index.genshi
+      - feed.rss: feed.genshi
+
+    This will define any pages which must be generated after all other pages are
+    created.
+
+.. tag:: #outreach
+
+  ✗ Paypal subscription docs
+  ✗ Paypal subscription implementation
+  ✗ Paypal subscription test
+  ✗ Supporters site template
+  ✗ Supporters site handler
+  ✗ Supporters site auth
+  ✗ Supporters site signup
+  ✗ Supporters site model
+  ✗ Supporters site post signup + initial mail
+  ✗ Supporters site graphics
+  ✗ Supporters site management
+
+.. tag:: #outreach
+
+  ✗ Update the articles on espians.com.
+
+    Some people will inevitably check out the `espians.com
+    <http://www.espians.com>`_ site, so updating some of the articles on it
+    could avoid possible confusions that may otherwise arise.
+
+.. tag:: #outreach, #dev
+
+  ✗ Implement an Ampify app to help DM followers on Twitter.
+
+    Whilst not a great collaboration platform, `Twitter <http://twitter.com>`_
+    is a very effective broadcast mechanism. We should leverage this to help
+    spread the word. It is quite likely that those who're following us will be
+    interested in Ampify, so on launch day we should DM them all asking for
+    their help in retweeting.
+
+    By doing so, we can also personally inform them about Ampify in a way that's
+    relevant to them. However, since many followers would be common to various
+    Espians, we need to have a small utility app on Ampify which would:
+
+    1. Figure out who our followers are and show which of us they are following.
+
+    2. Allow us to mark them as having been contacted so that they don't get
+       spammed by many of us contacting them at once.
+
+    3. Open a new window for each follower which shows their current timeline in
+       one frame (in case they've already found out about Ampify from elsewhere)
+       and the form for sending them a DM in another.
+
+.. tag:: #outreach
+
+  ✗ Launch!
+
+    We need to get everyone together for an organised launch over a 48 hour
+    period:
+
+    * Aggregator sites (Hacker News, Reddit, Digg, Slashdot, Techmeme, &c.)
+    * Major blogs (ReadWriteWeb, TechCrunch, Boing Boing, &c.)
+    * Facebook (including various Groups/Pages)
+    * Twitter
+    * Selected mailing lists
+    * Selected individuals
+    * Selected communities (TED, GitHub, EDGE, nettime, &c.)
+
+    Care should be taken so as to spread the initial outreach to as diverse a
+    community as possible.
+
+
+Admin
+-----
+
+.. tag:: #operations, @tav, @olasofia
 
   ✓ Register Metanational Commons Limited.
 
@@ -623,7 +821,7 @@ Finances
     The official address is at our accountant's place to make handling of admin
     forms easier.
 
-.. tag:: #admin, @tav
+.. tag:: #operations, @tav
 
   ✗ Have a pre-launch meeting with the accountant.
 
@@ -637,20 +835,20 @@ Finances
     subsidiary -- as an `LLC
     <http://en.wikipedia.org/wiki/Limited_liability_company>`_ or a C-Corp.
 
-.. tag:: #admin, @olasofia, @tav
+.. tag:: #operations, @olasofia, @tav
 
   ✓ Setup a bank account for Metanational Commons.
 
     A bank account has been setup with `HSBC <http://www.hsbc.co.uk/>`_ for
     Metanational Commons with Sofia having primary access to the account.
 
-.. tag:: #admin, @tav
+.. tag:: #operations, @tav
 
   ✓ Setup a Paypal account for Metanational Commons.
 
     A Paypal account has been setup, verified and linked to the HSBC account.
 
-.. tag:: #admin, @tav
+.. tag:: #operations, @tav
 
   ✓ Investigate payment processors for handling membership subscriptions.
 
@@ -660,7 +858,7 @@ Finances
     <http://www.braintreepaymentsolutions.com/services/pci-compliance>`_ even
     touch user's credit card details!
 
-.. tag:: #admin, @tav
+.. tag:: #operations, @tav
 
   ✓ Contact Braintree.
 
@@ -672,14 +870,13 @@ Finances
 
 .. tag:: #legal
 
-  ✗ Define a terms of service and privacy policy.
+  ✗ Define the Terms of Service and Privacy Policy.
 
-    We need to have a decent terms of service and privacy policy documents for
-    the Ampify service.
-
-
-Miscellaneous
--------------
+    We need to have a decent `terms of service
+    <http://en.wikipedia.org/wiki/Terms_of_service>`_ and `privacy policy
+    <http://en.wikipedia.org/wiki/Privacy_policy>`_ for the Ampify service. They
+    should be easily readable and focus on giving users as much control as
+    possible while minimising our exposure to litigation.
 
 .. tag:: #operations, @tav
 
@@ -698,6 +895,17 @@ Miscellaneous
       Those who've got write access should instead::
 
         git clone git@github.com:tav/ampify.git
+
+.. tag:: #legal, @tav, needsreview
+
+  ✓ Define a Public Domain License.
+
+    It is insane that we cannot simply put our work into the Public Domain. So
+    we need a license that approximates that as much as possible. A license
+    based heavily on `Creative Commons Zero
+    <http://creativecommons.org/publicdomain/zero/1.0/>`_ with additional
+    clauses for grant of patent rights has now been put together as our `LICENSE
+    <http://github.com/tav/ampify/blob/master/LICENSE>`_.
 
 .. tag:: #operations, @tav
 
@@ -722,7 +930,6 @@ Message
 -------
 
 Redis 32-bit
-
 
 For example, the following message written by ``@tav`` and sent to ``#espians``::
 
@@ -751,12 +958,6 @@ Would like the following in Ruby after being parsed:
   ...     if N_set: return True
   [0, 'START']
 
-
-* Git Review
-* Tests
-* Build
-* Devboard (incl. contributor agreement)
-* Documentation style + LICENSE
 
 ✗ http://code.google.com/p/tesseract-ocr/wiki/ReadMe
 ✗ Language detection
@@ -1047,6 +1248,7 @@ IANA-reserved IPs
 
 ✗ TypeKit
 
+* Devboard (incl. contributor agreement)
 ✗ Devboard template
 ✗ Devboard handler
 ✗ Devboard auth
@@ -1085,19 +1287,6 @@ IANA-reserved IPs
 ✗ Makefile
 ✗ git update
 
-✗ Paypal subscription docs
-✗ Paypal subscription implementation
-✗ Paypal subscription test
-
-✗ Supporters site template
-✗ Supporters site handler
-✗ Supporters site auth
-✗ Supporters site signup
-✗ Supporters site model
-✗ Supporters site post signup + initial mail
-✗ Supporters site graphics
-✗ Supporters site management
-
 ✗ Sendgrid subscription
 ✗ Supporters site sendgrid support
 ✗ Supporters site mail outs
@@ -1114,25 +1303,11 @@ IANA-reserved IPs
 ✗ Twitter rate limit increase
 ✗ Change passwords (twitter, facebook, gmail, etc.)
 
-✗ Espians website articles
-
-✗ Video storyline
-✗ Video imagery
-✗ Video writing
-✗ Video voice
-✗ Video music
-✗ Video upload
-
 ✗ DNS settings
 ✗ Apache setup
 ✗ Possibly get a linode backup + DNS changes
 ✗ Blog article on ampify
 ✗ Email espians
-
-✗ Post: ping.fm, espians fb/twitter, ampify twitter
-✗ DM twitter followers framework
-✗ DM twitter followers
-
 
 http://docs.jquery.com/QUnit
 http://ejohn.org/blog/test-swarm-alpha-open/
