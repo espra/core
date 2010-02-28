@@ -2,41 +2,34 @@
       "http://www.w3.org/TR/html4/loose.dtd">
 <html>
   <head>
+    <title>Friendly Test Suite</title>
     <link rel="stylesheet" href="qunit.css" type="text/css"/>
-    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.4/jquery.min.js"> </script>
-    <script type="text/javascript" src="qunit.js"></script>
-    <script type="text/javascript">
-    var divide = function(a,b) {
-      return a / b;
-    };
+    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+    <script src="qunit.js"></script>
+    <script src="jquery.lint.js"></script>
 
-    if (typeof fireunit === "object") {
-      QUnit.log = fireunit.ok;
-      QUnit.done = fireunit.testDone;
+    <script>
+/*global fireunit, QUnit, window*/
+    if (typeof fireunit !== "undefined") {
+        QUnit.log = fireunit.ok;
+        QUnit.done = fireunit.testDone;
     }
     else {
-      QUnit.log = function(result, message) {
-        if (window.console && window.console.log) {
-          window.console.log(result +' :: '+ message);
-        }
-      };
+        QUnit.log = function (result, message) {
+            if (window.console && window.console.log) {
+                window.console.log(result + ' :: ' + message);
+            }
+        };
     }
-
-     // --- Unittest Code goes here ---
-    $(document).ready(function(){
-      module("Basic Unit Test");
-      test("Sample test", function() {
-        expect(1);
-        equals(divide(4,2),
-          2,
-          'Expected 2 as the result, result was: ' + divide(4,2));
-      });
-    });
     </script>
-  </head>
+
+    <script src="../../src/jsutil/friendly.js"></script>  
+    <script src="friendly_test.js"></script>  
+</head>
   <body>
-    <h1 id="qunit-header">Friendly unit testing</h1>
+    <h1 id="qunit-header">Friendly Test Suite</h1>
     <h2 id="qunit-banner"></h2>
+    <div id="qunit-testrunner-toolbar"></div>
     <h2 id="qunit-userAgent"></h2>
     <ol id="qunit-tests">
     </ol>
