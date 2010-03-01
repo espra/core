@@ -166,16 +166,289 @@ Argonought
     ``1.618033988749894848204586834365638``.
 
 
-Continuous Integration
-----------------------
+Development Process
+-------------------
 
-✗ Javascript testing framework
-✗ Javascript testing runner
-✗ Python testing framework
-✗ Python testing runner
+.. tag:: #operations, @tav, @evangineer
 
-✗ Go testing framework
-✗ Go testing runner
+  ✓ Investigate code review and continuous integration tools.
+
+    There are numerous `continuous integration
+    <http://en.wikipedia.org/wiki/Continuous_integration>`_ tools and services
+    out there. Of the commercial ones, `TeamCity
+    <http://www.jetbrains.com/teamcity/>`_ is a nice offering -- but is limited
+    to just Java, .NET and Ruby. `Hudson <http://hudson-ci.org>`_ and `Buildbot
+    <http://buildbot.net/trac>`_ are very impressive open source offerings but
+    only handle the build, test and notification phases.
+
+    The Go project has a nice custom build `status dashboard
+    <http://godashboard.appspot.com>`_ which is worth a mention. On the
+    browser-based Javascript front, `TestSwarm <http://testswarm.com/>`_ offers
+    a glimpse of the future -- `distributed testing
+    <http://wiki.github.com/jeresig/testswarm/>`_ by casual visitors of various
+    bits of Javascript code!
+
+    From a code review perspective, nothing seems to beat `rietveld
+    <http://code.google.com/p/rietveld/>`_ which is also hosted at
+    `codereview.appspot.com <http://codereview.appspot.com>`_. Unfortunately its
+    user interface isn't exactly appealing. In contrast, GitHub has a really
+    sexy interface for making `code comments
+    <http://github.com/blog/42-commit-comments>`_ but it's only for commits.
+
+    With regards development practises relating to these tools, the Chromium
+    project is quite exemplary:
+
+    * Various `presubmit
+      <http://www.chromium.org/developers/how-tos/depottools/presubmit-scripts>`_
+      scripts are run before code is submitted for review.
+
+    * A really simple `watchlist
+      <http://dev.chromium.org/developers/contributing-code/watchlists>`_
+      mechanism allows for interested developers of specific code paths to be
+      automatically be cc'ed into the review.
+
+    * Developers can run their uncommitted patches on `try servers
+      <http://dev.chromium.org/developers/try-server-usage>`_ to check whether
+      it works on different platforms.
+
+    * There is even a process for `tree sheriffs
+      <http://dev.chromium.org/developers/tree-sheriffs>`_ to maintain a healthy
+      `tree status <http://chromium-status.appspot.com/>`_ when committed builds
+      fail for some reason.
+
+.. tag:: #dev, #ui, @tav
+
+  ✓ Implement a planfile generator and client-side app.
+
+    Planfiles are intended as a happy medium between a minimal TODO text file
+    and a full blown web-based issue tracker. Two complementary
+    `reStructuredText directives
+    <http://docutils.sourceforge.net/docs/ref/rst/directives.html>`_ have been
+    created to support the creation of HTML planfiles from the plain text
+    variant.
+
+    The ``plan`` directive inserts some Javascript into generated HTML files for
+    a client-side web application which will allow viewers to filter plan items
+    based on tags. The app has special support for bookmark-able filter URLs via
+    the fragment identifier and will degrade gracefully on older browsers.
+
+    .. syntax:: rst
+
+      .. plan:: project-id
+
+    It does, however, expect certain CSS classes to be defined and for the
+    `plan.js <http://dev.ampify.it/js/plan.js>`_ file to be accessible at
+    ``/js/plan.js``.
+
+    Individual plan items are easy to define. Just nest them inside the ``tag``
+    directive which allows for plan items to be tagged with arbitrary tags.,
+    e.g.
+
+    .. syntax:: rst
+
+      .. tag:: #dev, #ui, @tav, WIP
+
+        ✗ Implement a planfile generator and client-side app.
+
+          This is what a sample plan item would look like.
+
+    There is special support for ``#hashtags``, ``@names`` and even
+    ``milestone:`` and ``dep:`` style tags. These will have different CSS
+    classes and can therefore be visually disambiguated easily. Displaying of
+    items based on dependency analysis isn't there yet, but could be added
+    relatively easily.
+
+.. tag:: #dev, @tav
+
+  ✓ Implement a static site generator for our documentation/sites.
+
+    In our experimentation with using `Markdown
+    <http://daringfireball.net/projects/markdown/syntax>`_ and `Jekyll
+    <http://jekyllrb.com>`_, Jekyll was great but Markdown didn't suit our
+    particular use. So we updated ``yatiblog``, our ancient `reStructuredText
+    <http://docutils.sourceforge.net/rst.html>`_ based static site generator,
+    with Jekyll's `YAML front matter
+    <http://wiki.github.com/mojombo/jekyll/yaml-front-matter>`_ feature -- which
+    is working out quite well.
+
+    When yatiblog is run, it converts all the ``.txt`` files in the directory to
+    ``.html`` files in a ``website`` subdirectory according to the ``layout``
+    variable specified in each txt file's YAML front matter, e.g.
+
+    .. syntax:: yaml
+
+      ---
+      layout: page
+      title: Zero Planfile
+      ---
+
+    All other specified variables are passed onto the layout file, which are
+    `Genshi <http://genshi.edgewall.org/>`_ templates within a special
+    ``_layouts`` directory. So in the above example, ``page.genshi`` could make
+    use of ``${title}``. A layout can also define a layout for itself, allowing
+    ease of re-use of templates.
+
+    The variables defined on a page also shadow the variables defined in a
+    layout so one can have default values for variables which can be over-ridden
+    on a per page/layout basis.
+
+    Yatiblog requires that there be a special ``_config.yml`` file in the source
+    directory which defines default variables. This MUST include a list of
+    mappings for the ``index_pages``, e.g.
+
+    .. syntax:: yaml
+
+      index_pages:
+      - archive.html: archive.genshi
+      - index.html: index.genshi
+      - feed.rss: feed.genshi
+
+    This will generate the specified "index" pages after all other pages are
+    created. Yatiblog also compares the modified time of the various files and
+    does a comprehensive dependency analysis so that only necessary files are
+    regenerated whenever ``yatiblog`` is run.
+
+.. http://unicode.org/reports/tr36/tr36-8.html
+
+   ✗ Javascript testing framework
+   ✗ Javascript testing runner
+   ✗ Python testing framework
+   ✗ Python testing runner
+   ✗ Go testing framework
+   ✗ Go testing runner
+
+
+Safe Execution
+--------------
+
+.. tag:: #security, @tav, @evangineer
+
+  ✓ Design a safe execution architecture.
+
+    Our safe execution architecture works by using multiple layers of isolation.
+    On the outermost layer we have a process which has full access to the raw
+    network, memory and processor. Only absolutely trusted code should execute
+    in this environment.
+
+    Over time, even this should be minimised as much as possible. As Mark S.
+    Miller would tell us, security against malicious threats and protection
+    against unintended bugs are just `two sides of the same coin
+    <http://www.erights.org/talks/thesis/>`_.
+
+    The innermost layer is where the actual execution of arbitrary code provided
+    by users takes place. The outermost layer communicates to this layer by a
+    series of IPC calls using `Unix domain sockets
+    <http://en.wikipedia.org/wiki/Unix_domain_socket>`_.
+
+    Intermediary layers provide various layers of isolation to ensure that
+    resource usage does not exceed certain limits -- especially network access
+    to the outer world which will be absolutely denied except through RPC calls
+    to the outermost layer.
+
+
+.. tag:: #security, @evangineer, @GReaper
+
+  ✗ Investigate virtualised environment options.
+
+    There are a number of virtualisation and paravirtualisation projects that
+    have gained mainstream adoption in recent times, e.g. `Xen
+    <http://xen.org/>`_, `KVM <http://www.linux-kvm.org/page/Main_Page>`_, &c.
+    Unfortunately these are quite bloated for our needs.
+
+    In contrast there are a handful of Vritualised Environment offerings that
+    are quite interesting. These allow one to manage `chroot
+    <http://en.wikipedia.org/wiki/Chroot>`_-like containers without duplicating
+    resources unnecessarily. And thankfully, unlike chroots, they are quite
+    hardened against `privilege escalation
+    <http://en.wikipedia.org/wiki/Privilege_escalation>`_.
+
+    On Linux there are 3 different toolsets to support this:
+
+    * `OpenVZ <http://wiki.openvz.org>`_ -- an impressive open source offering
+      from the company behind the commercial `Parallels
+      <http://www.parallels.com>`_ virtualisation products.
+
+    * `Linux-VServer <http://linux-vserver.org>`_ -- a similar offering to
+      OpenVZ but one that has been around much longer. It offers decent security
+      primitives like barriers and vfs namespaces.
+
+    * `LXC <http://openvz.org/pipermail/devel/2008-September/014314.html>`_ --
+      the only one of the three which is in the kernel mainline. It looks very
+      promising but doesn't seem to be production ready just yet.
+
+    Unfortunately we don't have much experience in this field to properly choose
+    between OpenVZ and VServer. Everyone seems to be either ideologically biased
+    or have too much of a rose-tinted perspective to provide a proper technical
+    evaluation of the two.
+
+    Another issue to bear in mind is the long term maintenance of whatever
+    option we decide to go for -- since maintaining kernel patches isn't much of
+    a pleasant affair.
+
+.. tag:: #security, @tav, @evangineer
+
+  ✓ Investigate seccomp sandboxing.
+
+    The Linux kernel has a really nice sandboxing mode called `seccomp
+    <http://en.wikipedia.org/wiki/Seccomp>`_. Threads can switch it on by
+    doing a ``prctl`` system call with the ``PR_SET_SECCOMP`` argument. After
+    that, the thread can't make any further system calls besides using
+    ``read()`` and ``write()`` on already opened file descriptors and
+    ``sigreturn()`` and ``exit()``.
+
+    Any other system call will result in it being immediately terminated via a
+    ``SIGKILL`` from the kernel. It's a rather elegant model with super minimal
+    performance overhead. It can even be activated in languages like Ruby using
+    ``syscall()`` and in Python using:
+
+    .. syntax:: python
+
+      import ctypes
+
+      # use the constant defined in /usr/include/linux/prctl.h
+      PR_SET_SECCOMP = 22
+
+      libc = ctypes.CDLL('/lib/libc.so.6')
+      libc.prctl(PR_SET_SECCOMP, 1)
+
+    As explained in Adam Langley's `Chromium's Sandbox
+    <http://www.imperialviolet.org/2009/08/26/seccomp.html>`_ article, seccomp
+    is very desirable as it makes it very easy to prevent attacks.
+    Unfortunately, one very quickly runs into needing various system calls, e.g.
+    ``mmap`` for allocating memory.
+
+    To solve this, Google are currently developing a wrapper `seccompsandbox
+    <http://code.google.com/p/seccompsandbox/wiki/overview>`_ which allows a
+    process to be split into trusted and untrusted threads. The trusted thread
+    receives requests to make system calls from the untrusted thread over a
+    socket pair. It then validates the system call against `syscall_table.c
+    <http://seccompsandbox.googlecode.com/svn/trunk/syscall_table.c>`_ before
+    performing it.
+
+    Unfortunately the wrapper is currently not usable outside of Chromium and
+    porting it is no `parkwalkian affair <http://inamidst.com/notes/phenomic>`_
+    as it requires disassembling memory and writing the entire trusted thread in
+    assembler.
+
+    But at some point we should be able to leverage it to embed processes like
+    Python, Ruby and Javascript interpreters. And, when we do invest time into
+    that, we should definitely review `this thread
+    <http://marc.info/?l=linux-kernel&m=123579069630311>`_ on the kernel list.
+
+.. tag:: #security, @fijal, wip
+
+  ✗ Implement PyPy sandbox support for the JIT.
+
+    The `JIT support <http://codespeak.net/pypy/dist/pypy/doc/jit/index.html>`_
+    in PyPy is becoming quite impressive and will be extremely well suited for
+    "number crunching" in the cloud. Unfortunately it complicates matters with
+    regards the PyPy sandbox.
+
+    But thankfully ``fijal`` is now on the case -- he is working on making the
+    sandbox work with JIT on the ``jit-sandbox`` branch on the `PyPy subversion
+    <http://codespeak.net/svn/pypy/branch/jit-sandbox/>`_ repository.
+
+.. http://codespeak.net/pypy/dist/pypy/doc/sandbox.html
 
 
 Request Handling
@@ -693,96 +966,6 @@ Launch
     The video needs to be uploaded to the `YouTube account
     <http://www.youtube.com/asktav>`_. We also have the `1,000,000th
     <http://vimeo.com/1000000>`_ video spot on Vimeo which might be worth using.
-
-.. tag:: #dev
-
-  ✓ Implement a static site generator for our sites.
-
-    We experimented with using `Markdown
-    <http://daringfireball.net/projects/markdown/syntax>`_ and `Jekyll
-    <http://jekyllrb.com>`_. Jekyll was great, but Markdown didn't suit our
-    particular use, so we updated ``yatiblog``, our ancient `reStructuredText
-    <http://docutils.sourceforge.net/rst.html>`_ based static site generator,
-    with Jekyll's `YAML front matter
-    <http://wiki.github.com/mojombo/jekyll/yaml-front-matter>`_ feature -- which
-    is working out quite well.
-
-    When yatiblog is run, it converts all the ``.txt`` files in the directory to
-    ``.html`` files in a ``website`` subdirectory according to the ``layout``
-    variable specified in each txt file's YAML front matter, e.g.
-
-    .. syntax:: yaml
-
-      ---
-      layout: page
-      title: Zero Planfile
-      ---
-
-    All other specified variables are passed onto the layout file, which are
-    `Genshi <http://genshi.edgewall.org/>`_ templates within a special
-    ``_layouts`` directory. So in the above example, ``page.genshi`` could make
-    use of ``${title}``. A layout can also define a layout for itself, allowing
-    ease of re-use of templates.
-
-    The variables defined on a page also shadow the variables defined in a
-    layout so one can have default values for variables which can be over-ridden
-    on a per page/layout basis.
-
-    Yatiblog requires that there be a special ``_config.yml`` file in the source
-    directory which defines default variables. This MUST include a list of
-    mappings for the ``index_pages``, e.g.
-
-    .. syntax:: yaml
-
-      index_pages:
-      - archive.html: archive.genshi
-      - index.html: index.genshi
-      - feed.rss: feed.genshi
-
-    This will define the specified "index" pages to be generated after all other
-    pages are created. Yatiblog also compares the modified time of the various
-    files and does a comprehensive dependency analysis so that only necessary
-    files are regenerated.
-
-.. tag:: #dev, #ui, @tav
-
-  ✓ Implement a planfile generator and client-side app.
-
-    Planfiles are intended as a happy medium between a minimal TODO text file
-    and a full blown web-based issue tracker. Two complementary
-    `reStructuredText directives
-    <http://docutils.sourceforge.net/docs/ref/rst/directives.html>`_ have been
-    created to support the creation of HTML planfiles from the plain text
-    variant.
-
-    The ``plan`` directive inserts some Javascript into generated HTML files for
-    a client-side web application which will allow viewers to filter plan items
-    based on tags. The app has special support for bookmark-able filter URLs via
-    the fragment identifier and will degrade gracefully on older browsers.
-
-    .. syntax:: rst
-
-      .. plan:: project-id
-
-    It does, however, expect certain CSS classes to be defined and for the
-    `plan.js <http://dev.ampify.it/js/plan.js>`_ file to be accessible at
-    ``/js/plan.js``.
-
-    Individual plan items are easy to define. Just nest them inside the ``tag``
-    directive which allows for plan items to be tagged with arbitrary tags.,
-    e.g.
-
-    .. syntax:: rst
-
-      .. tag:: #dev, #ui, @tav, WIP
-
-        ✗ Implement a planfile generator and client-side app.
-
-          This is what a sample plan item would look like.
-
-    There is special support for ``#hashtags``, ``@names`` and even
-    ``milestone:`` and ``dep:`` style tags. These will have different CSS
-    classes and can therefore be visually disambiguated easily.
 
 .. tag:: #outreach
 
@@ -1393,14 +1576,18 @@ http://rtmpy.org/wiki/IrcChannel
 
 http://linux.softpedia.com/get/Programming/Libraries/redis-queue-54702.shtml
 
+http://a.thymer.com/accounts/register/
 http://news.ycombinator.com/item?id=180311
 
 http://code.google.com/p/pycopia/
 
+Map this
+calendar schedule
+
 .. raw:: html
 
   <style type="text/css">
-  #message, #remaining-blah, #node-structure, #continuous-integration {
+  #message {
     display: none !important;
   }
   </style>
