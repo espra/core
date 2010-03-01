@@ -5,13 +5,13 @@ This is the official list of the Ampify Authors ("The Contributors"), listed in
 alphabetical order:
 
   +----------------------------+--------------------+--------------------------+----------------+
-  | Name                       | Nick               | Email                    | Country        |
+  | Name                       | Nick               | Email                    | Location       |
   +============================+====================+==========================+================+
   | `James Arthur`_            | thruflo            | thruflo@googlemail.com   | U.K.           |
   +----------------------------+--------------------+--------------------------+----------------+
   | `Jeff Archambeault`_       | jeffarch           | jjarchambeault@gmail.com | U.S.A          |
   +----------------------------+--------------------+--------------------------+----------------+
-  | Maciej Fijalkowski         | fijal              | fijall@gmail.com         | Poland         |
+  | `Maciej Fijalkowski`_      | fijal              | fijall@gmail.com         | Europe         |
   +----------------------------+--------------------+--------------------------+----------------+
   | `Mamading Ceesay`_         | evangineer         | mamading@gmail.com       | U.K.           |
   +----------------------------+--------------------+--------------------------+----------------+
@@ -25,10 +25,11 @@ alphabetical order:
 .. Please keep the listing in Alphabetical Order, thanks!
 
 .. _James Arthur: http://thruflo.com
+.. _Jeff Archambeault: http://www.openideaproject.org/jeffspace
+.. _Maciej Fijalkowski: http://morepypy.blogspot.com
 .. _Mamading Ceesay: http://twitter.com/evangineer
 .. _Sean B. Palmer: http://inamidst.com
 .. _Tav: http://tav.espians.com
-.. _Jeff Archambeault: http://www.openideaproject.org/jeffspace
 
 By adding yourself to this list, you explicitly agree to affirm all of your
 Contributions to the Public Domain according to the Public Domain license that
