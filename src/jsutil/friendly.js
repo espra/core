@@ -6,125 +6,38 @@
 
 
 // Dates in JSON and dates in the FriendFeed extension elements in the
-// Atom and RSS feeds are in RFC 3339 format in UTC. You can parse
-// them with the strptime string "%Y-%m-%dT%H:%M:%SZ".
-// Beginning of logilab strptime implementation
-var _DATE_FORMAT_REGEXES = {
-    'Y': new RegExp('^-?[0-9]+'),
-    'd': new RegExp('^[0-9]{1,2}'),
-    'm': new RegExp('^[0-9]{1,2}'),
-    'H': new RegExp('^[0-9]{1,2}'),
-    'M': new RegExp('^[0-9]{1,2}')
-};
+// Atom and RSS feeds are in RFC 3339 format in UTC.
 
+// convert rfc3339 formatted date to a normal javascript date object
+// see http://www.johngirvin.com/blog/archives/reading-friendfeed-with-jquery.html
+function rfc3339_to_date(val) {
+    var pattern = /^(\d{4})(?:-(\d{2}))?(?:-(\d{2}))?(?:[Tt](\d{2}):(\d{2}):(\d{2})(?:\.(\d*))?)?([Zz])?(?:([+\-])(\d{2}):(\d{2}))?$/,
+        m = pattern.exec(val),
+        year = m[1] ? m[1] : 0,
+        month = m[2] ? m[2] - 1 : 0,
+        day = m[3] ? m[3] : 0,
+        hour = m[4] ? m[4] : 0,
+        minute = m[5] ? m[5] : 0,
+        second = m[6] ? m[6] : 0,
+        millis = m[7] ? m[7] : 0,
+        gmt = m[8],
+        dir = m[9],
+        offhour = m[10] ? m[10] : 0,
+        offmin = m[11] ? m[11] : 0,
+        offset = 0;
 
-/*
- * _parseData does the actual parsing job needed by `strptime`
- */
-var _parseDate = function (datestring, format) {
-    var parsed = {},
-        i1 = 0,
-        i2 = 0,
-        c1 = null,
-        c2 = null,
-        test = 0,
-        data = null,
-        value = null;
+    if (dir && offhour && offmin) {
+        offset = ((offhour * 60) + offmin);
 
-    for (i1 = 0, i2 = 0; i1 < format.length; i1 + 1, i2 + 1) {
-        c1 = format[i1];
-        c2 = datestring[i2];
-        if (c1 === '%') {
-            test = 1;
-            c1 = format[++i1];
-            data = _DATE_FORMAT_REGEXES[c1].exec(datestring.substring(i2));
-
-            if (!data.length) {
-                return null;
-            }
-
-            data = data[0];
-            i2 += data.length - 1;
-            value = parseInt(data, 10);
-
-            if (isNaN(value)) {
-                return null;
-            }
-
-            parsed[c1] = value;
-            continue;
-        }
-
-        if (c1 !== c2) {
-            return null;
+        if (dir === "+") {
+            minute -= offset;
+        } else if (dir === "-") {
+            minute += offset;
         }
     }
-    return parsed;
-};
 
-
-/*
- * basic implementation of strptime. The only recognized formats
- * defined in _DATE_FORMAT_REGEXES (i.e. %Y, %d, %m, %H, %M)
- */
-var strptime = function (datestring, format) {
-    var parsed = null,
-        date = null;
-
-    parsed = _parseDate(datestring, format);
-
-    if (!parsed) {
-        return null;
-    }
-
-    // create initial date (!!! year=0 means 1900 !!!)
-    date = new Date(0, 0, 1, 0, 0);
-    date.setFullYear(0); // reset to year 0
-
-    if (parsed.Y) {
-        date.setFullYear(parsed.Y);
-    }
-
-    if (parsed.m) {
-
-        if (parsed.m < 1 || parsed.m > 12) {
-            return null;
-        }
-
-        // !!! month indexes start at 0 in javascript !!!
-        date.setMonth(parsed.m - 1);
-    }
-
-    if (parsed.d) {
-
-        if (parsed.m < 1 || parsed.m > 31) {
-            return null;
-        }
-
-        date.setDate(parsed.d);
-    }
-
-    if (parsed.H) {
-
-        if (parsed.H < 0 || parsed.H > 23) {
-            return null;
-        }
-
-        date.setHours(parsed.H);
-    }
-
-    if (parsed.M) {
-
-        if (parsed.M < 0 || parsed.M > 59) {
-            return null;
-        }
-
-        date.setMinutes(parsed.M);
-    }
-
-    return date;
-};
-// End of logilab strptime implementation
+    return new Date(Date.UTC(year, month, day, hour, minute, second, millis));
+}
 
 
 var get_relative_time = function (from) {
