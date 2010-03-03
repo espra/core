@@ -7,10 +7,18 @@ title: Zero Planfile
 Zero Planfile
 =============
 
+.. contents::   Table of Contents
+                :depth: 2
+                :backlinks: none
+
 This is the planfile for Ampify Zero, an initial step towards the decentralised
 vision of ``Ampify 1.0``. It is intended as a working prototype and builds on
 top of existing technologies like Caja, jQuery, Git, App Engine, Go, Node.js,
 Python, Redis, S3, Sendgrid, Twilio and V8.
+
+.. raw:: html
+
+  <hr class="clear" />
 
 .. plan:: zero
 
@@ -319,6 +327,24 @@ Development Process
    ✗ Go testing framework
    ✗ Go testing runner
 
+.. tag::
+
+  ✗ Create a Makefile for the Go packages.
+
+    There's an `experimental goinstall
+    <http://groups.google.com/group/golang-nuts/browse_thread/thread/f091704771128e32/303bed8870daf055>`_
+    which allows for one to install packages with a command like ``goinstall
+    github.com/hoisie/web.go.git``. The package can then be imported in code
+    using:
+
+    .. syntax:: go
+
+      import "github.com/hoisie/web.go.git"
+
+    The command will also recursively download all remote packages defined in
+    the import statements of the packages it's installing -- making it super
+    nice to use.
+
 
 Safe Execution
 --------------
@@ -513,6 +539,27 @@ Safe Execution
     <http://www.cs.berkeley.edu/~daw/papers/setuid-usenix02.pdf>`_ and `Security
     In-Depth for Linux Software <http://www.cr0.org/paper/jt-ce-sid_linux.pdf>`_
     documents have a lot of good pointers worth following.
+
+.. tag:: #dev, #security
+
+  ✗ Implement a setuid sandbox wrapper for Linux.
+
+    The Chromium guys have implemented a pretty decent `Setuid Sandbox
+    <http://code.google.com/p/chromium/wiki/LinuxSUIDSandbox>`_. It provides a
+    wrapper for chrooting, root privileges dropping and uid/gid switching. A
+    co-operative process which wants to be sandboxed, will have to communicate
+    with it so that it can ``clone()`` with ``CLONE_FS`` and then ``chroot()``
+    to an empty directory.
+
+    The kernel needs to be compiled with `PID namesapces
+    <http://lwn.net/Articles/259217/>`_ support so that ``CLONE_NEWPID`` can be
+    used to prevent the sandboxed process from ``ptrace()``-ing other processes.
+    The source for the sandbox can be found in the Chromium repository: `here
+    <http://src.chromium.org/viewvc/chrome/trunk/src/sandbox/linux/suid/>`_.
+
+    The code is currently geared for use by just Chromium. We need to extract
+    out the useful bits and make it into a sandbox implementation suited to our
+    specific use for supporting safe execution.
 
 .. tag:: #security, @evangineer
 
@@ -1305,8 +1352,9 @@ Admin
     Since people tend to search it's not really a problem, but would be very
     nice to have.
 
-Mooka
------
+
+Internationalisation
+--------------------
 
 .. tag:: #dev
 
@@ -1787,3 +1835,6 @@ geoip
   }
   </style>
 
+  <script>
+    $('a[href=#message]').parent().hide();
+  </script>

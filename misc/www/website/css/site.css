@@ -588,11 +588,12 @@ body > #body-outer {
 
 .syntax .m { color: #3677a9 } /* Literal.Number */ /* darkish pastely blue */
 .syntax .m { color: #00a33f } /* Literal.Number */ /* brightish green */
-.syntax .mf { color: #00a33f } /* Literal.Number.Float */
-.syntax .mh { color: #00a33f } /* Literal.Number.Hex */
-.syntax .mi { color: #00a33f } /* Literal.Number.Integer */
-.syntax .il { color: #00a33f } /* Literal.Number.Integer.Long */
-.syntax .mo { color: #00a33f } /* Literal.Number.Oct */
+.syntax .m { color: #5d90cd } /* Literal.Number */ /* pastely blue */
+.syntax .mf { color: #5d90cd } /* Literal.Number.Float */
+.syntax .mh { color: #5d90cd } /* Literal.Number.Hex */
+.syntax .mi { color: #5d90cd } /* Literal.Number.Integer */
+.syntax .il { color: #5d90cd } /* Literal.Number.Integer.Long */
+.syntax .mo { color: #5d90cd } /* Literal.Number.Oct */
 
 .syntax .bp { color: #a535ae } /* Name.Builtin.Pseudo */
 .syntax .n { color: #101010 } /* Name */
@@ -625,19 +626,19 @@ body > #body-outer {
 .syntax .s { color: #dd1144 } /* Literal.String */ /* darkish red */
 .syntax .s { color: #c32528 } /* Literal.String */ /* espian red */
 .syntax .s { color: #39946a } /* Literal.String */ /* pastely greeny */
-.syntax .s { color: #00a33f } /* Literal.String */ /* brightish green */
 .syntax .s { color: #5d90cd } /* Literal.String */ /* pastely blue */
-.syntax .sb { color: #5d90cd } /* Literal.String.Backtick */
-.syntax .sc { color: #5d90cd } /* Literal.String.Char */
-.syntax .sd { color: #5d90cd } /* Literal.String.Doc */
-.syntax .se { color: #5d90cd } /* Literal.String.Escape */
-.syntax .sh { color: #5d90cd } /* Literal.String.Heredoc */
-.syntax .si { color: #5d90cd } /* Literal.String.Interpol */
-.syntax .sr { color: #5d90cd } /* Literal.String.Regex */
-.syntax .ss { color: #5d90cd } /* Literal.String.Symbol */
-.syntax .sx { color: #5d90cd } /* Literal.String.Other */
-.syntax .s1 { color: #5d90cd } /* Literal.String.Single */
-.syntax .s2 { color: #5d90cd } /* Literal.String.Double */
+.syntax .s { color: #00a33f } /* Literal.String */ /* brightish green */
+.syntax .sb { color: #00a33f } /* Literal.String.Backtick */
+.syntax .sc { color: #00a33f } /* Literal.String.Char */
+.syntax .sd { color: #00a33f } /* Literal.String.Doc */
+.syntax .se { color: #00a33f } /* Literal.String.Escape */
+.syntax .sh { color: #00a33f } /* Literal.String.Heredoc */
+.syntax .si { color: #00a33f } /* Literal.String.Interpol */
+.syntax .sr { color: #00a33f } /* Literal.String.Regex */
+.syntax .ss { color: #00a33f } /* Literal.String.Symbol */
+.syntax .sx { color: #00a33f } /* Literal.String.Other */
+.syntax .s1 { color: #00a33f } /* Literal.String.Single */
+.syntax .s2 { color: #00a33f } /* Literal.String.Double */
 
 .syntax .w { color: #101010 } /* Text.Whitespace */
 .syntax .x { color: #101010 } /* Other */
@@ -1301,6 +1302,7 @@ a.buttondown span {
 .tag-type-zuser {
   background-color: #4573d5;
   background-color: #696969;
+  background-color: #3056bf;
 }
 
 #plan-tags a, #site-tags a {
@@ -1315,7 +1317,6 @@ a.buttondown span {
 .plan-help {
   font-size: 0.9em;
   font-weight: bold;
-  text-align: right;
   margin-bottom: 1.4em;
 }
 
