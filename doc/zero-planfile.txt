@@ -192,8 +192,10 @@ Development Process
     <http://code.google.com/p/rietveld/>`_ which is also hosted at
     `codereview.appspot.com <http://codereview.appspot.com>`_. Unfortunately its
     user interface isn't exactly appealing. In contrast, GitHub has a really
-    sexy interface for making `code comments
-    <http://github.com/blog/42-commit-comments>`_ but it's only for commits.
+    sexy interface for making `commit comments
+    <http://github.com/blog/42-commit-comments>`_ that can be aggregated in
+    `compare views
+    <http://github.com/blog/612-introducing-github-compare-view>`_.
 
     With regards development practises relating to these tools, the Chromium
     project is quite exemplary:
@@ -346,7 +348,7 @@ Safe Execution
     to the outermost layer.
 
 
-.. tag:: #security, @evangineer, @GReaper
+.. tag:: #sysadmin, @evangineer, @GReaper
 
   ✗ Investigate virtualised environment options.
 
@@ -432,8 +434,155 @@ Safe Execution
 
     But at some point we should be able to leverage it to embed processes like
     Python, Ruby and Javascript interpreters. And, when we do invest time into
-    that, we should definitely review `this thread
+    that, we should review `this thread
     <http://marc.info/?l=linux-kernel&m=123579069630311>`_ on the kernel list.
+
+.. tag:: #security, @tav
+
+  ✓ Investigate sandboxing using Native Client.
+
+    `Native Client <http://code.google.com/p/nativeclient/>`_ (NaCl) is perhaps
+    the most exciting development in security since public key cryptography and
+    object capability. It sets out to provide a secure sandbox for running
+    native code in web applications.
+
+    Its design consist of two layers of defence to ensure that unsafe x86
+    instructions are not executed -- providing protection from buffer overflow
+    exploits, illegal filesystem access and even resource exhaustion attacks.
+
+    It's possible to port large applications to run on top of the Native Client
+    Runtime without too much trouble. There have already been ports of both
+    `Ruby on NaCl
+    <http://nativeclient.googlecode.com/svn/trunk/src/native_client/tests/ruby/README>`_
+    and `Python on NaCl
+    <http://lackingrhoticity.blogspot.com/search/label/native-client>`_ with
+    varying degrees of success.
+
+    Unfortunately NaCl still needs a little bit more development before it can
+    be used in anger, e.g. support for 64-bit platforms, handling of JIT'd
+    interpreters, dynamic linking and use outside of browser environments.
+
+.. tag:: #security, @evangineer, @tav
+
+  ✓ Investigate access limiting in Linux.
+
+    The `POSIX Capabilities
+    <http://ftp.kernel.org/pub/linux/libs/security/linux-privs/kernel-2.4/capfaq-0.2.txt>`_
+    in the Linux kernel are so useless that they defy belief. They provide a way
+    for a root-privileged process to drop various privileges. But, in practise,
+    they add an additional attack vector that we have to protect against.
+
+    In contrast, `setrlimit <http://linux.die.net/man/2/setrlimit>`_ is a useful
+    system call that allows us to set hard limits on a process's resource usage,
+    e.g.
+
+    .. syntax:: pycon
+
+      >>> import os
+      >>> import resource
+
+      >>> # set (soft, hard) limit so new processes can't be created
+      >>> resource.setrlimit(resource.RLIMIT_NPROC, (0, 0))
+
+      >>> # set limits so new file descriptors can't be created
+      >>> resource.setrlimit(resource.RLIMIT_NOFILE, (0, 0))
+
+      >>> # creating new processes will now fail
+      >>> os.system('ls')
+      -1
+
+      >>> # and the process can't later increase the limits, woo!
+      >>> resource.setrlimit(resource.RLIMIT_NPROC, (1, 1))
+      Traceback (most recent call last):
+        File "<stdin>", line 1, in <module>
+      ValueError: not allowed to raise maximum limit
+
+    This isn't quite perfect, e.g. ``unlink()`` and ``rename()`` still work --
+    but it's a start. Next up we can use `chroot
+    <http://en.wikipedia.org/wiki/Chroot>`_ to drop access to the file system.
+    This is quite tricky to get right and there a number of issues `to take into
+    account <http://unixwiz.net/techtips/chroot-practices.html>`_.
+
+    For starters, the ``chroot()`` call needs root privileges. So we need to
+    make the call, drop capability privileges and then switch to an unused
+    real/effective/saved UID and GID. This is a lot more complicated than it
+    sounds. See the setuid sandbox below for more info.
+
+    The `Writing Secure Privileged Programs
+    <https://www.lca2010.org.nz/slides/50125.pdf>`_, `Setuid Demystified
+    <http://www.cs.berkeley.edu/~daw/papers/setuid-usenix02.pdf>`_ and `Security
+    In-Depth for Linux Software <http://www.cr0.org/paper/jt-ce-sid_linux.pdf>`_
+    documents have a lot of good pointers worth following.
+
+.. tag:: #security, @evangineer
+
+  ✗ Investigate mandatory access control in Linux.
+
+    There a number of `mandatory access control
+    <http://en.wikipedia.org/wiki/Mandatory_access_control>`_ mechanisms on
+    Linux. Most of these make use of the `LSM
+    <http://www.usenix.org/event/sec02/full_papers/wright/wright_html/index.html>`_
+    (Linux Security Module) in the kernel:
+
+    * `SELinux <http://www.nsa.gov/research/selinux/index.shtml>`_ is the big
+      boy. Unfortunately it's so complicated that it's pretty hard to figure out
+      if a policy is actually secure.
+
+    * `Tomoyo <http://tomoyo.sourceforge.jp/>`_ is relatively lightweight and
+      uses pathname-based controls to separate security domains.
+
+    * `AppArmor <https://wiki.ubuntu.com/AppArmor>`_ is a similar alternative
+      but its future is seemingly uncertain since Novell laid off the dev team.
+
+    * `SMACK <http://schaufler-ca.com>`_ offers an even simpler labels-based
+      approach.
+
+    * `PaX/grsecurity <http://www.grsecurity.net/features.php>`_ are a series of
+      kernel patches for general all-round "hardened" protection.
+
+    Most of these are so complex that one wonders whether they offer any real
+    security. This `article
+    <http://www.ibm.com/developerworks/linux/library/l-lxc-security/index.html?S_TACT=105AGX01&S_CMP=LP>`_
+    offers a brief comparison of SELinux and SMACK setups and is a good
+    companion read to the `Linux Kernel Security Overview
+    <http://namei.org/presentations/linux-kernel-security-kca09.pdf>`_
+    presentation.
+
+.. tag:: #security, @tav
+
+  ✓ Investigate the PyPy sandbox.
+
+    PyPy-based interpreters can be translated with a special ``--sandbox``
+    option so that they run under a special `sandboxed mode
+    <http://codespeak.net/pypy/dist/pypy/doc/sandbox.html>`_. The translation
+    ensures that system calls are marshalled to ``stdout`` and waits for them to
+    be executed and returned from a controller process via ``stdin``.
+
+    The controller process can validate the calls and present whatever view it
+    wants, e.g. a virtual filesystem, to the sandboxed process. Since the
+    sandbox needs to make certain system calls itself, e.g. to allocate memory,
+    these are enabled with a ``sandboxsafe=True`` on a case-by-case basis:
+
+    .. syntax:: python
+
+      malloc_fn_ptr = rffi.llexternal(
+          GC_MALLOC,
+          [lltype.Signed],
+          llmemory.GCREF,
+          compilation_info=compilation_info,
+          sandboxsafe=True,
+          _nowrapper=True
+          )
+
+    This is done in such a way that although the garbage collector can allocate
+    memory, other functions trying to call ``malloc()`` will have to be
+    validated and run by the controller process. Of course the controller
+    process only has to implement calls that make sense for it to call.
+
+    It would be really cool to add ``seccomp`` support to the sandboxed process
+    as an additional layer of defence -- any such implementation would have to
+    take into consideration issues like fishing GC roots from the stack of the
+    various threads.
 
 .. tag:: #security, @fijal, wip
 
@@ -447,9 +596,6 @@ Safe Execution
     But thankfully ``fijal`` is now on the case -- he is working on making the
     sandbox work with JIT on the ``jit-sandbox`` branch on the `PyPy subversion
     <http://codespeak.net/svn/pypy/branch/jit-sandbox/>`_ repository.
-
-.. http://codespeak.net/pypy/dist/pypy/doc/sandbox.html
-
 
 Request Handling
 ----------------
@@ -1159,6 +1305,57 @@ Admin
     Since people tend to search it's not really a problem, but would be very
     nice to have.
 
+Mooka
+-----
+
+.. tag:: #dev
+
+
+
+
+.. tag:: #dev
+
+  ✗ Implement basic language guessing.
+
+    Being able to guess languages will mean that we won't have to waste
+    resources trying to have it translated into itself needlessly. Google
+    provide a `Language Detection API
+    <http://code.google.com/apis/ajaxlanguage/documentation/#Detect>`_ but this
+    requires additional requests to be made.
+
+    Thankfully, it isn't too complicated to do it ourselves. As a first pass, we
+    can leverage the `Unicode Character Database <http://unicode.org/ucd/>`_ to
+    detect the use of foreign language scripts, e.g. Japanese.
+
+    .. syntax:: pycon
+
+      >>> import unicodedata
+
+      >>> unicodedata.name(u'ホ')
+      'KATAKANA LETTER HO'
+
+    Secondly, we can do an `n-grams <http://en.wikipedia.org/wiki/N-gram>`_
+    based statistical analysis of the content against pre-generated models for
+    various languages. As a starting point we can use existing models from
+    `various <http://pypi.python.org/pypi/guess-language>`_ `open
+    <http://ngramj.sourceforge.net/>`_ `source
+    <http://odur.let.rug.nl/~vannoord/TextCat/>`_ initiatives.
+
+.. tag:: #dev, milestone:post-launch
+
+  ✗ Generate language models from Wikipedia.
+
+    `Wikipedia <http://www.wikipedia.org/>`_ acts as a reasonably sized corpus
+    for various languages. A mix of `various
+    <http://evanjones.ca/software/wikipedia2text.html>`__ `techniques
+    <http://blog.afterthedeadline.com/2009/12/04/generating-a-plain-text-corpus-from-wikipedia/>`_
+    could be used to extract markup-free plain text from it to derive better
+    language models.
+
+    The same opportunity should also be used to generate word-based n-grams as
+    well as character-based ones -- giving us a chance to develop other
+    interesting applications besides just plain old language guessing.
+
 
 Message
 -------
@@ -1193,14 +1390,11 @@ Would like the following in Ruby after being parsed:
   [0, 'START']
 
 
-✗ http://code.google.com/p/tesseract-ocr/wiki/ReadMe
-✗ Language detection
 ✗ Trust metrics calculation
 
 ✗ Weather Theme as ambient system status indicator
 
 ✗ Nodules
-✗ Language guesser
 
 ✓ Weblite base framework
 ✓ Weblite service loader
@@ -1495,10 +1689,6 @@ IANA-reserved IPs
 ✗ Devsite index
 ✗ Devsite article: git review
 
-✗ Planfile structure
-✗ Planfile content
-✗ Planfile diagrams
-
 ✗ Git review
 ✗ Git review config
 ✗ Git review style validator
@@ -1584,6 +1774,11 @@ http://code.google.com/p/pycopia/
 Map this
 calendar schedule
 
+Planfile IE
+
+magic
+geoip
+
 .. raw:: html
 
   <style type="text/css">
@@ -1591,3 +1786,4 @@ calendar schedule
     display: none !important;
   }
   </style>
+
