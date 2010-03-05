@@ -588,6 +588,7 @@ body > #body-outer {
 
 .syntax .m { color: #3677a9 } /* Literal.Number */ /* darkish pastely blue */
 .syntax .m { color: #00a33f } /* Literal.Number */ /* brightish green */
+.syntax .m { color: #1550a2 } /* Literal.Number */ /* darker blue */
 .syntax .m { color: #5d90cd } /* Literal.Number */ /* pastely blue */
 .syntax .mf { color: #5d90cd } /* Literal.Number.Float */
 .syntax .mh { color: #5d90cd } /* Literal.Number.Hex */
@@ -604,7 +605,8 @@ body > #body-outer {
 .syntax .nc { color: #101010 } /* Name.Class */
 .syntax .nd { color: #6d8091 } /* Name.Decorator */
 .syntax .ne { color: #af956f } /* Name.Exception */
-.syntax .nf { color: #101010 } /* Name.Function */
+.syntax .nf { color: #3677a9 } /* Name.Function */
+.syntax .nf { color: #1550a2 } /* Name.Function */
 .syntax .ni { color: #101010 } /* Name.Entity */
 .syntax .nl { color: #101010 } /* Name.Label */
 .syntax .nn { color: #101010 } /* Name.Namespace */
@@ -618,9 +620,10 @@ body > #body-outer {
 .syntax .vi { color: #101010 } /* Name.Variable.Instance */
 .syntax .py { color: #101010 } /* Name.Property */
 
+.syntax .o { color: #ff5600 } /* Operator */ /* orangy */
+.syntax .o { color: #101010 } /* Operator */
 .syntax .ow { color: #101010 } /* Operator.Word */
 
-.syntax .o { color: #101010 } /* Operator */
 .syntax .p { color: #101010 } /* Punctuation */
 
 .syntax .s { color: #dd1144 } /* Literal.String */ /* darkish red */
