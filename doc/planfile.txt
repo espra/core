@@ -173,6 +173,50 @@ Argonought
     including arbitrary precision decimals like
     ``1.618033988749894848204586834365638``.
 
+.. tag:: #dev, @tav, wip
+
+  ✗ Define a plexname normalisation algorithm.
+
+    Plexnames should be comparable.
+
+    .. syntax:: python
+
+        @register_service()
+        def get_canonical_plexname(plexname):
+            """Return a canonical form of a plexname."""
+
+            if u'\u0345' in plexname: # COMBINING GREEK YPOGEGRAMMENI
+                plexname = normalise_unicode('NFD', plexname)
+
+            canonised = []
+            space = False
+
+            for char in plexname:
+                if (category(char) in ['Cc', 'Zs']) or (ord(char) in SPECIALS):
+                    space = True
+                    continue
+                if space:
+                    space = False
+                    if canonised:
+                        canonised.append(u'-')
+                if char in CASE_MAP:
+                    canonised.append(CASE_MAP[char])
+                else:
+                    canonised.append(char)
+
+            plexname = normalise_unicode('NFKD', u''.join(canonised))
+            canonised[:] = []
+
+            for char in plexname:
+                if char in CASE_MAP:
+                    canonised.append(CASE_MAP[char])
+                else:
+                    canonised.append(char)
+
+            return normalise_unicode('NFKC', u''.join(canonised))
+
+    And, there's a lot of blah.
+
 
 Development Process
 -------------------
@@ -1838,3 +1882,34 @@ geoip
   <script>
     $('a[href=#message]').parent().hide();
   </script>
+
+
+References
+----------
+
+.. [Ardia-2008]
+
+    `Court Orders Wikileaks.org Shutdown
+    <http://www.citmedialaw.org/blog/2008/court-orders-wikileaksorg-shutdown-then-grants-limited-reprieve>`_
+
+    David Ardia, Citizen Media Law Project, February 2008.
+
+.. [Beck-2002]
+
+    `Test Driven Development: By Example
+    <http://www.amazon.com/Test-Driven-Development-Addison-Wesley-Signature/dp/0321146530>`_
+
+    Kent Beck, Addison-Wesley Professional, 2002.
+
+.. [Berners-Lee-1989]
+
+    `Information Management: A Proposal
+    <http://www.w3.org/History/1989/proposal.html>`_
+
+    Tim Berners-Lee, CERN, 1989.
+
+.. [Berners-Lee-1998]
+
+    `Cool URIs Don't Change <http://www.w3.org/Provider/Style/URI>`_
+
+    Tim Berners-Lee, W3C, 1998.
