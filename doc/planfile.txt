@@ -595,6 +595,26 @@ Safe Execution
     <http://namei.org/presentations/linux-kernel-security-kca09.pdf>`_
     presentation.
 
+   Using VirtualBox, created a virtual machine with a minimal Ubuntu Karmic Koala install.  Following the `Kernel Mainline Builds instructions
+   <https://wiki.ubuntu.com/KernelTeam/MainlineBuilds?action=show&redirect=KernelMainlineBuilds>`_
+   have obtained `Karmic packages for vanilla 2.6.31.12 kernel and its sources <http://kernel.ubuntu.com/~kernel-ppa/mainline/v2.6.31.12/>`_. Found the `Ubuntu to Mainline kernel mapping <http://kernel.ubuntu.com/~kernel-ppa/info/kernel-version-map.html>`_
+   to be a useful resource in doing so. After installing the packages and
+   rebooting the virtual machine, following the `VServer Installation on Linux 2.6 instructions <http://linux-vserver.org/Installation_on_Linux_2.6>`_, applied the `combined VServer 2.3/grsecurity patch
+   <http://people.linux-vserver.org/~harry/patch-2.6.31.12-vs2.3.0.36.28-grsec2.1.14-20100303.diff>`_
+   to the sources. Reused .config from Christoph Lukas'
+   2.6.31-19-vserver kernel obtained from his `Karmic package repo
+   <http://linux-vserver.org/Installation_on_Ubuntu#Karmic_2>`_.  He
+   also has a `ubuntu-karmic-vserver git repo
+   <http://git.pingworks.net/?p=ubuntu-karmic-vserver.git/.git;a=summary>`_. Ran
+   'make oldconfig' and 'make menuconfig' to configure grsecurity/PaX
+   options.  Used `this VServer Administration wiki page
+   <http://wiki.yobi.be/wiki/Vserver_administration#Vanilla_with_GrSec.2C_still_the_Debian_way>`_
+   and `this config file
+   <http://people.linux-vserver.org/~harry/config-2.6.22.19-g-v>`_
+   along to inform the `Grsecurity and PaX Configuration Options
+   <http://en.wikibooks.org/wiki/Grsecurity/Appendix/Grsecurity_and_PaX_Configuration_Options>`_
+   that were chosen.  Used the command `fakeroot make-kpkg --initrd --append-to-version=-vserver-grsecurity --revision=20100305 kernel_image kernel_headers` to kick off the custom kernel build.
+
 .. tag:: #security, @tav
 
   ✓ Investigate the PyPy sandbox.
