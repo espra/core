@@ -639,7 +639,7 @@ Safe Execution
     <http://namei.org/presentations/linux-kernel-security-kca09.pdf>`_
     presentation.
 
-   Using VirtualBox, created a virtual machine with a minimal Ubuntu Karmic Koala install.  Following the `Kernel Mainline Builds instructions
+   Using VirtualBox, created a 64-bit virtual machine with a minimal Ubuntu Karmic Koala install.  Following the `Kernel Mainline Builds instructions
    <https://wiki.ubuntu.com/KernelTeam/MainlineBuilds?action=show&redirect=KernelMainlineBuilds>`_
    have obtained `Karmic packages for vanilla 2.6.31.12 kernel and its sources <http://kernel.ubuntu.com/~kernel-ppa/mainline/v2.6.31.12/>`_. Found the `Ubuntu to Mainline kernel mapping <http://kernel.ubuntu.com/~kernel-ppa/info/kernel-version-map.html>`_
    to be a useful resource in doing so. After installing the packages and
@@ -657,7 +657,7 @@ Safe Execution
    <http://people.linux-vserver.org/~harry/config-2.6.22.19-g-v>`_
    along to inform the `Grsecurity and PaX Configuration Options
    <http://en.wikibooks.org/wiki/Grsecurity/Appendix/Grsecurity_and_PaX_Configuration_Options>`_
-   that were chosen.  Used the command `fakeroot make-kpkg --initrd --append-to-version=-vserver-grsecurity --revision=20100305 kernel_image kernel_headers` to kick off the custom kernel build.
+   that were chosen.  Used the command `fakeroot make-kpkg --initrd --revision=20100306 kernel_image kernel_headers` to kick off the custom kernel build.
 
 .. tag:: #security, @tav
 
