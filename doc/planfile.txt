@@ -710,6 +710,31 @@ Safe Execution
     sandbox work with JIT on the ``jit-sandbox`` branch on the `PyPy subversion
     <http://codespeak.net/svn/pypy/branch/jit-sandbox/>`_ repository.
 
+Deployment Scenarios
+------------------
+
+.. tag:: #operations, @evangineer, @tav
+
+  ✗ Implement Ampify Server
+
+   The first deployment scenario for the Ampify Platform will be
+   running the Ampify Engine (backend) natively on high performance
+   dedicated servers in a data centre environment.
+
+  ✗ Implement Ampify Desktop
+
+   The next scenario has the Ampify Engine running in a virtual
+   environment hosted on the user's regular desktop OS (Windows,
+   Mac OS X, Linux) alongside the Ampify Browser which itself will be
+   a native application.
+
+  ✗ Implement Ampify OS
+
+   The final scenario has the Ampify Engine and Ampify Browser running
+   natively on mobile devices such as netbooks, tablets, smartphones
+   and smartbooks, eventually moving up to running on laptops and
+   desktops.
+
 Request Handling
 ----------------
 
