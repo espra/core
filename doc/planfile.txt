@@ -727,7 +727,8 @@ Deployment Scenarios
     Server Edition base install.
 
     In the RHEL/CentOS world, KickStart would be used to construct the
-    desired minimal install.  Need to find the Ubuntu/Debian equivalent.
+    desired minimal install.  `Preseed
+    <http://wiki.debian.org/DebianInstaller/Preseed>`_ is the Ubuntu/Debian equivalent.
 
 .. tag:: #operations, @evangineer, @tav
 
