@@ -713,7 +713,7 @@ Safe Execution
 Deployment Scenarios
 --------------------
 
-.. tag:: #operations, @evangineer, @tav
+.. tag:: #operations
 
   ✗ Implement Ampify Server.
 
@@ -730,7 +730,7 @@ Deployment Scenarios
     desired minimal install.  `Preseed
     <http://wiki.debian.org/DebianInstaller/Preseed>`_ is the Ubuntu/Debian equivalent.
 
-.. tag:: #operations, @evangineer, @tav
+.. tag:: #operations
 
   ✗ Implement Ampify Desktop.
 
@@ -745,7 +745,15 @@ Deployment Scenarios
     `VirtualBox <http://www.virtualbox.org/>`_.  Another option is
     `QEMU <http://wiki.qemu.org/Main_Page>`_.
 
-.. tag:: #operations, @evangineer, @tav
+.. tag:: #operations
+
+  ✗ Implement Ampify Mobile.
+
+    Another scenario has the Ampify Browser only running natively on
+    mobile devices such as smartphones running iPhone OS, Android,
+    `MeeGo <http://meego.com/>`_ and possibly Blackberry.
+
+.. tag:: #operations
 
   ✗ Implement Ampify OS.
 
@@ -757,7 +765,7 @@ Deployment Scenarios
 
     The open question is whether to build this up from the same
     base used for the Ampify Server or possibly use `Chromium OS
-    <http://www.chromium.org/chromium-os>`_ for a base.
+    <http://www.chromium.org/chromium-os>`_ or MeeGo for a base.
 
 Request Handling
 ----------------
