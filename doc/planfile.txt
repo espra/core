@@ -742,14 +742,16 @@ Deployment Scenarios
     An open question is which desktop virtualization environment to
     use.  It needs to be one that is freely redistributable which
     probably disqualifies VMware and possibly the non-OSE version of
-    `VirtualBox <http://www.virtualbox.org/>`_.
+    `VirtualBox <http://www.virtualbox.org/>`_.  Another option is
+    `QEMU <http://wiki.qemu.org/Main_Page>`_.
 
 .. tag:: #operations, @evangineer, @tav
 
   ✗ Implement Ampify OS.
 
     The final scenario has the Ampify Engine and Ampify Browser running
-    natively on mobile devices such as netbooks, tablets, smartphones
+    natively on mobile devices such as netbooks, tablets (such as the
+    `Notion Ink Adam <http://www.notionink.in/adamoverview.php>`_), smartphones
     and smartbooks, eventually moving up to running on laptops and
     desktops.
 
