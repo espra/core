@@ -656,10 +656,10 @@ Safe Execution
     obtained from
     his `Karmic package repo <http://linux-vserver.org/Installation_on_Ubuntu#Karmic_2>`_.  He also has a `ubuntu-karmic-vserver git repo <http://git.pingworks.net/?p=ubuntu-karmic-vserver.git/.git;a=summary>`_.
 
-    Ran 'make oldconfig' and 'make menuconfig' to configure grsecurity/PaX
+    Ran ``make oldconfig`` and ``make menuconfig`` to configure grsecurity/PaX
     options.  Used `this VServer Administration wiki page <http://wiki.yobi.be/wiki/Vserver_administration#Vanilla_with_GrSec.2C_still_the_Debian_way>`_ and `this config file <http://people.linux-vserver.org/~harry/config-2.6.22.19-g-v>`_
     to inform the `Grsecurity and PaX Configuration Options <http://en.wikibooks.org/wiki/Grsecurity/Appendix/Grsecurity_and_PaX_Configuration_Options>`_ that were chosen.
-    Used the command `fakeroot make-kpkg --initrd --revision=20100306 kernel_image kernel_headers` to kick off the custom kernel build.
+    Used the command ``fakeroot make-kpkg --initrd --revision=20100306 kernel_image kernel_headers`` to kick off the custom kernel build.
 
 .. tag:: #security, @tav
 
@@ -711,29 +711,48 @@ Safe Execution
     <http://codespeak.net/svn/pypy/branch/jit-sandbox/>`_ repository.
 
 Deployment Scenarios
-------------------
+--------------------
 
 .. tag:: #operations, @evangineer, @tav
 
-  ✗ Implement Ampify Server
+  ✗ Implement Ampify Server.
 
-   The first deployment scenario for the Ampify Platform will be
-   running the Ampify Engine (backend) natively on high performance
-   dedicated servers in a data centre environment.
+    The first deployment scenario for the Ampify Platform will be
+    running the Ampify Engine (backend) natively on high performance
+    dedicated servers in a data centre environment.
 
-  ✗ Implement Ampify Desktop
+    Ideally we'd use a minimal Ubuntu LTS base as a foundation for
+    this, something that's more stripped down than the default Ubuntu
+    Server Edition base install.  In the RHEL/CentOS world, KickStart
+    would be used to construct the desired minimal install.  Need to
+    find the Ubuntu/Debian equivalent.
 
-   The next scenario has the Ampify Engine running in a virtual
-   environment hosted on the user's regular desktop OS (Windows,
-   Mac OS X, Linux) alongside the Ampify Browser which itself will be
-   a native application.
+.. tag:: #operations, @evangineer, @tav
 
-  ✗ Implement Ampify OS
+  ✗ Implement Ampify Desktop.
 
-   The final scenario has the Ampify Engine and Ampify Browser running
-   natively on mobile devices such as netbooks, tablets, smartphones
-   and smartbooks, eventually moving up to running on laptops and
-   desktops.
+    The next scenario has the Ampify Engine running in a virtual
+    environment hosted on the user's regular desktop OS (Windows,
+    Mac OS X, Linux) alongside the Ampify Browser which itself will be
+    a native application.
+
+    An open question is which desktop virtualization environment to
+    use.  It needs to be one that is freely redistributable which
+    probably disqualifies VMware and possibly the non-OSE version of
+    VirtualBox.
+
+.. tag:: #operations, @evangineer, @tav
+
+  ✗ Implement Ampify OS.
+
+    The final scenario has the Ampify Engine and Ampify Browser running
+    natively on mobile devices such as netbooks, tablets, smartphones
+    and smartbooks, eventually moving up to running on laptops and
+    desktops.
+
+    The open question is whether to build this up from a variant of the
+    base used for the Ampify Server or possibly use ChromiumOS for a
+    base.
 
 Request Handling
 ----------------
