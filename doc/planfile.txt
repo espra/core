@@ -721,11 +721,13 @@ Deployment Scenarios
     running the Ampify Engine (backend) natively on high performance
     dedicated servers in a data centre environment.
 
-    Ideally we'd use a minimal Ubuntu LTS base as a foundation for
+    Ideally we'd use a minimal Ubuntu LTS base (`Lucid Lynx?
+    <https://wiki.ubuntu.com/LucidReleaseSchedule>`_) as a foundation for
     this, something that's more stripped down than the default Ubuntu
-    Server Edition base install.  In the RHEL/CentOS world, KickStart
-    would be used to construct the desired minimal install.  Need to
-    find the Ubuntu/Debian equivalent.
+    Server Edition base install.
+
+    In the RHEL/CentOS world, KickStart would be used to construct the
+    desired minimal install.  Need to find the Ubuntu/Debian equivalent.
 
 .. tag:: #operations, @evangineer, @tav
 
@@ -739,7 +741,7 @@ Deployment Scenarios
     An open question is which desktop virtualization environment to
     use.  It needs to be one that is freely redistributable which
     probably disqualifies VMware and possibly the non-OSE version of
-    VirtualBox.
+    `VirtualBox <http://www.virtualbox.org/>`_.
 
 .. tag:: #operations, @evangineer, @tav
 
@@ -750,9 +752,9 @@ Deployment Scenarios
     and smartbooks, eventually moving up to running on laptops and
     desktops.
 
-    The open question is whether to build this up from a variant of the
-    base used for the Ampify Server or possibly use ChromiumOS for a
-    base.
+    The open question is whether to build this up from the same
+    base used for the Ampify Server or possibly use `Chromium OS
+    <http://www.chromium.org/chromium-os>`_ for a base.
 
 Request Handling
 ----------------
