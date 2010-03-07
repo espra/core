@@ -30,6 +30,10 @@ a:hover {
 	text-decoration: none;
 }
 
+a.citation-reference {
+	text-decoration: none;
+}
+
 a.promote-fb, a.promote-fb:active, a.promote-fb:hover, a.promote-fb:visited {
 	background: url(http://static.ampify.it/gfx.share-facebook-sprite.png) no-repeat;
 	color: transparent;
@@ -64,6 +68,7 @@ code, .literal {
 	border: 1px solid #dadada;
 	padding: 1px 3px;
 	font-family: Monaco, "DejaVu Sans Mono", "Bitstream Vera Sans Mono", monospace;
+	font-size: 12px;
 }
 
 dl, ol, ul {
@@ -149,6 +154,33 @@ th {
 table.docutils td {
 	border-bottom: 1px solid #ccc;
 	padding: 9px 8px 8px 8px;
+}
+
+table.citation {
+	margin: 0;
+	margin-top: 10px;
+	width: 100%;
+}
+
+table.citation td {
+	border: 0;
+	padding: 0;
+}
+
+table.citation td.label {
+	padding-right: 15px;
+	text-align: right;
+	width: 14em;
+}
+
+table.citation p {
+	padding: 0 !important;
+}
+
+table.citation a.fn-backref {
+	text-decoration: none;
+	font-style: italic;
+	color: #000;
 }
 
 ul {

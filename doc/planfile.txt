@@ -1250,7 +1250,7 @@ Launch
     .. raw:: html
 
       <div class="center"><img
-        src="http://static.ampify.it/presentation.sample-screen.png" alt=""
+        src="http://static.ampify.it/img.presentation-sample-screen.png" alt=""
         width="524px" height="384px" class="boxed"
         /></div>
 
@@ -1454,12 +1454,31 @@ Admin
 
   ✓ Define a Public Domain License.
 
-    It is insane that we cannot simply put our work into the Public Domain. So
-    we need a license that approximates that as much as possible. A license
-    based heavily on `Creative Commons Zero
+    It is insane that we cannot simply declare our work to be in the Public
+    Domain. The folk at CERN and Tim Berners-Lee were able to place the first
+    implementation of the Web into the Public Domain with this simple document:
+
+    .. raw:: html
+
+      <div class="center"><a
+        href="http://tenyears-www.web.cern.ch/tenyears%2Dwww/Declaration/Page2.html"><img
+        src="http://static.ampify.it/img.cern-public-domain-page-2.png"
+        width="447px" height="552px" alt="Public Domain Document" /></a>
+      </div>
+
+    Unfortunately we live in more complex times, where we have to take into
+    account issues like `moral rights
+    <http://en.wikipedia.org/wiki/Moral_rights_(copyright_law)>`_ and their
+    implications. Therefore we need a Public Domain declaration that also
+    doubles up as a license approximating it for the jurisdictions where one can
+    no longer place works into the Public Domain.
+
+    A document based heavily on `Creative Commons Zero
     <http://creativecommons.org/publicdomain/zero/1.0/>`_ with additional
-    clauses for grant of patent rights has now been put together as our `LICENSE
-    <http://github.com/tav/ampify/blob/master/LICENSE>`_.
+    clauses for grant of patent rights has now been put together as our `Public
+    Domain License <license.html>`_. The license is seen as a mere transitional
+    requirement until international law adapts to the post intellectual property
+    reality.
 
 .. tag:: #operations, @tav
 
@@ -1852,6 +1871,7 @@ IANA-reserved IPs
 ✗ TypeKit
 
 * Devboard (incl. contributor agreement)
+
 ✗ Devboard template
 ✗ Devboard handler
 ✗ Devboard auth
@@ -1972,6 +1992,26 @@ geoip
   <script>
     $('a[href=#message]').parent().hide();
   </script>
+
+
+Conventions
+-----------
+
+  Whilst this document is not meant to be `normative
+  <http://en.wikipedia.org/wiki/Normative>`_, it hopefully provides a basis for
+  Ampify specifications to eventually emerge. These will be reviewed and
+  accepted as part of the Open Culture Standards Index (OCSI) in a manner
+  similar to Python Enhancement Proposals [PEP-1]_, i.e. an open process with
+  the `BDFL <http://en.wikipedia.org/wiki/Benevolent_Dictator_For_Life>`_ (Tav)
+  giving final approval.
+
+  In the meantime, the key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL
+  NOT", "SHOULD", "SHOULD NOT", "RECOMMENDED", "MAY", and "OPTIONAL" should be
+  interpreted as described in RFC 2199 [RFC-2119]_.
+
+  The use of Go, Javascript, Python and Ruby syntax in code snippets is only for
+  the purposes of clarity in expression. It seemed to make better sense than
+  inventing arbitrary syntax for pseudo-code [Norvig-2000]_.
 
 
 References
@@ -2167,6 +2207,12 @@ References
     `Python for Lisp Programmers <http://norvig.com/python-lisp.html>`_
 
     Peter Norvig, 2000.
+
+.. [PEP-1]
+
+    `PEP Purpose and Guidelines <http://www.python.org/dev/peps/pep-0001/>`_
+
+    Barry Warsaw, Jeremy Hylton, David Goodger, June 2000.
 
 .. [RFC-768]
 
