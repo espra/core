@@ -749,9 +749,9 @@ Deployment Scenarios
 
   ✗ Implement Ampify Mobile.
 
-    Another scenario has the Ampify Browser only running natively on
-    mobile devices such as smartphones running iPhone OS, Android,
-    `MeeGo <http://meego.com/>`_ and possibly Blackberry.
+    Another scenario has the Ampify Browser running as a native
+    application on mobile devices such as smartphones running iPhone
+    OS, Android, `MeeGo <http://meego.com/>`_ and possibly Blackberry.
 
     It should be possible to port the Ampify Browser to all mobile
     platforms that have a `WebKit <http://gizmodo.com/5271098/every-mobile-browser-should-give-up-and-just-go-webkit>`_ implementation.
