@@ -4,17 +4,18 @@ layout: page
 title: Zero Planfile
 ---
 
-Zero Planfile
-=============
+Ampify Planfile
+===============
 
 .. contents::   Table of Contents
                 :depth: 2
                 :backlinks: none
 
-This is the planfile for Ampify Zero, an initial step towards the decentralised
+This is the planfile for Ampify, an initial step towards the decentralised
 vision of ``Ampify 1.0``. It is intended as a working prototype and builds on
 top of existing technologies like Caja, jQuery, Git, App Engine, Go, Node.js,
-Python, Redis, S3, Sendgrid, Twilio and V8.
+Python, Redis, S3, Sendgrid, Twilio and V8. [Berners-Lee-1989]_
+
 
 .. raw:: html
 
@@ -1801,6 +1802,13 @@ IANA-reserved IPs
 ✗ Devsite index
 ✗ Devsite article: git review
 
+See the video of an `attractive city generator
+<http://www.youtube.com/watch?v=ei812Ze8y-w>`_ by the folks at ETH's `CAAD
+<http://www.mas.caad.arch.ethz.ch/>`_ department. It's an interesting case study
+of using
+
+http://www.mas.caad.arch.ethz.ch/Exhibition/Helvepolis
+
 ✗ Git review
 ✗ Git review config
 ✗ Git review style validator
@@ -1933,4 +1941,277 @@ References
     `Cool URIs Don't Change <http://www.w3.org/Provider/Style/URI>`_
 
     Tim Berners-Lee, W3C, 1998.
+
+.. [Bush-2007]
+
+    `IPv6 Transition & Operational Reality
+    <http://www.nanog.org/mtg-0710/presentations/Bush-v6-op-reality.pdf>`_
+
+    Randy Bush, NANOG, 2007.
+
+.. [Candea-2003]
+
+    `Crash-Only Software
+    <http://web.archive.org/web/20060110174009/http://swig.stanford.edu/~candea/papers/crashonly/>`_
+
+    George Candea and Armando Fox, Proceedings of the 9th Workshop on Hot Topics
+    in Operating Systems (HotOS-IX), Lihue, Hawaii, May 2003.
+
+.. [Cawley-2008]
+
+    `Code is Data, and It Always Has Been
+    <http://www.bofh.org.uk/articles/2008/04/07/code-is-data-and-it-always-has-been>`_
+
+    Piers Cawley, April 2008.
+
+.. [Cerf-2006]
+
+    `Prepared Statement of Vinton G. Cerf
+    <http://commerce.senate.gov/pdf/cerf-020706.pdf>`_
+
+    Vinton G. Cerf, U.S. Senate Committee on Commerce, Science, and
+    Transportation Hearing on “Network Neutrality”, February 2006.
+
+.. [Cheng-2008]
+
+    `Keeping Network Solutions from Cashing in on Your Subdomains
+    <http://arstechnica.com/news.ars/post/20080410-keeping-network-solutions-from-cashing-in-on-your-subdomains.html>`_
+
+    Jacqui Cheng, Ars Technica, April 2008.
+
+.. [Edwards-2004]
+
+    `Manifesto of the Programmer Liberation Front
+    <http://alarmingdevelopment.org/index.php?p=5>`_
+
+    Jonathan Edwards, June 2004.
+
+.. [Edwards-2006]
+
+    `First Class Copy & Paste <http://hdl.handle.net/1721.1/32980>`_
+
+    Jonathan Edwards, MIT CSAIL, May 2006.
+
+.. [Edwards-2007]
+
+    `No Ifs, Ands, or Buts <http://subtextual.org/OOPSLA07.pdf>`_
+
+    Jonathan Edwards, OOPSLA, October 2007.
+
+.. [Eich-2007]
+
+    `What Does "Open" Mean?
+    <http://developer.mozilla.org/presentations/sxsw2007/the_open_web/>`_
+
+    Brendan Eich, Mozilla Corporation, 2007.
+
+.. [Egnor-2001]
+
+    `Airhook -- Reliable, efficient transmission control for networks that suck
+    <http://airhook.ofb.net/>`_
+
+    Dan Egnor, 2001.
+
+.. [FIPS-180-1]
+
+    `Secure Hash Standard <http://www.itl.nist.gov/fipspubs/fip180-1.htm>`_
+
+    National Institute of Standards and Technology, U.S. Department Of Commerce,
+    April 1995.
+
+.. [Fitzpatrick-2007]
+
+    `Thoughts on the Social Graph <http://bradfitz.com/social-graph-problem/>`_
+
+    Brad Fitzpatrick, August 2007.
+
+.. [Frankston-2001]
+
+    `DNS: A Safe Haven for URLs and Internet Identifiers
+    <http://www.frankston.com/?name=DNSSafeHaven>`_
+
+    Bob Frankston, August 2001.
+
+.. [Gabriel-2007]
+
+    `Design Beyond Human Abilities
+    <http://dreamsongs.com/Files/DesignBeyondHumanAbilitiesSimp.pdf>`_
+
+    Richard P. Gabriel, November 2007.
+
+.. [Iskold-2008]
+
+    `Top 10 Traits of a Rockstar Software Engineer
+    <http://www.readwriteweb.com/archives/top_10_software_engineer_traits.php>`_
+
+    Alex Iskold, ReadWriteWeb, 2008.
+
+.. [Kawasaki-2006]
+
+    `The Art of Innovation
+    <http://blog.guykawasaki.com/2006/01/the_art_of_inno.html>`_
+
+    Guy Kawasaki, 2006
+
+.. [Kegel-2001]
+
+    `The C10K Problem <http://www.kegel.com/c10k.html>`_
+
+    Dan Kegel, 2001.
+
+.. [Leggett-2008]
+
+    `Let's Get Crackin'!
+    <http://www.fightfortheopenweb.com/2008/04/10/lets-get-crackin/>`_
+
+    Russell Leggett, April 2008.
+
+.. [Levien-2000]
+
+    `Advogato's Trust Metric <http://advogato.org/trust-metric.html>`_
+
+    Raph Levien, February 2000.
+
+.. [Levien-2004]
+
+    `Attack Resistant Trust Metrics <http://www.levien.com/thesis/compact.pdf>`_
+
+    Raph Levien, Draft Thesis, 2004.
+
+.. [Miller-1988]
+
+    `Markets and Computation: Agoric Open Systems
+    <http://www.agorics.com/Library/agoricpapers/aos/aos.0.html>`_
+
+    Mark S. Miller and K. Eric Drexler, The Ecology of Computation, Bernardo
+    Huberman (ed.) Elsevier Science Publishers/North-Holland, 1988.
+
+.. [Neuberg-2003]
+
+    `Introduction to the Peer-to-Peer Sockets Project
+    <http://www.onjava.com/pub/a/onjava/2003/12/03/p2psockets.html>`_
+
+    Brad Neuberg, March 2003.
+
+.. [Neuberg-2008]
+
+    `What Is the Open Web and Why Is It Important?
+    <http://codinginparadise.org/weblog/2008/04/whats-open-web-and-why-is-it-important.html>`_
+
+    Brad Neuberg, April 2008.
+
+.. [Norvig-2000]
+
+    `Python for Lisp Programmers <http://norvig.com/python-lisp.html>`_
+
+    Peter Norvig, 2000.
+
+.. [RFC-768]
+
+    `User Datagram Protocol <http://www.rfc-editor.org/rfc/rfc768.txt>`_
+
+    Jon Postel, August 1980.
+
+.. [RFC-793]
+
+    `Transmission Control Protocol <http://www.rfc-editor.org/rfc/rfc793.txt>`_
+
+    IST, DARPA, September 1981.
+
+.. [RFC-1034]
+
+    `Domain names - Concepts and Facilities
+    <http://www.rfc-editor.org/rfc/rfc1034.txt>`_
+
+    Paul Mockapetris, November 1987.
+
+.. [RFC-2119]
+
+    `Key words for use in RFCs to Indicate Requirement Levels
+    <http://www.rfc-editor.org/rfc/rfc2119.txt>`_
+
+    Scott Bradner, March 1997.
+
+.. [RFC-2460]
+
+    `Internet Protocol, Version 6 (IPv6) Specification
+    <http://www.rfc-editor.org/rfc/rfc2460.txt>`_
+
+    Stephen E. Deering and Robert M. Hinden, December 1998.
+
+.. [RFC-2616]
+
+    `Hypertext Transfer Protocol -- HTTP/1.1
+    <http://www.rfc-editor.org/rfc/rfc2616.txt>`_
+
+    Roy Fielding, et al., June 1999.
+
+.. [RFC-3056]
+
+    `Connection of IPv6 Domains via IPv4 Clouds
+    <http://www.rfc-editor.org/rfc/rfc3056.txt>`_
+
+    Brian E. Carpenter and Keith Moore, February 2001.
+
+.. [RFC-3280]
+
+    `Internet X.509 Public Key Infrastructure Certificate and Certificate
+    Revocation List (CRL) Profile <http://www.rfc-editor.org/rfc/rfc3280.txt>`_
+
+    Russell Housley, et al., April 2002.
+
+.. [RFC-3330]
+
+    `Special-Use IPv4 Addresses <http://www.rfc-editor.org/rfc/rfc3330.txt>`_
+
+    IANA, September 2002.
+
+.. [RFC-3489]
+
+    `STUN - Simple Traversal of User Datagram Protocol (UDP) Through Network
+    Address Translators (NATs) <http://www.rfc-editor.org/rfc/rfc3489.txt>`_
+
+    Jonathan Rosenberg, et al., March 2003.
+
+.. [RFC-3513]
+
+    `Internet Protocol Version 6 (IPv6) Addressing Architecture
+    <http://www.rfc-editor.org/rfc/rfc3513.txt>`_
+
+    Robert M. Hinden & Stephen E. Deering, April 2003.
+
+.. [RFC-4122]
+
+    `A Universally Unique IDentifier (UUID) URN Namespace
+    <http://www.rfc-editor.org/rfc/rfc4122.txt>`_
+
+    Paul J. Leach, et al., July 2005.
+
+.. [RFC-4346]
+
+    `The Transport Layer Security (TLS) Protocol Version 1.1
+    <http://www.rfc-editor.org/rfc/rfc4346.txt>`_
+
+    Tim Dierks and Eric Rescorla, April 2006.
+
+.. [RFC-4380]
+
+    `Teredo: Tunneling IPv6 over UDP through Network Address Translations (NATs)
+    <http://www.rfc-editor.org/rfc/rfc4380.txt>`_
+
+    Christian Huitema, February 2006.
+
+.. [Saffer-2007]
+
+    `A Call to Arms for Interaction Designers
+    <http://www.adaptivepath.com/blog/2007/08/28/a-call-to-arms-for-interaction-designers/>`_
+
+    Dan Saffer, Adaptive Path, 2007.
+
+.. [Slee-2007]
+
+    `Thrift: Scalable Cross-Language Services Implementation
+    <http://developers.facebook.com/thrift/thrift-20070401.pdf>`_
+
+    Mark Slee, Aditya Agarwal and Marc Kwiatkowski, Facebook, 2007.
 
