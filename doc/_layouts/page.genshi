@@ -17,7 +17,7 @@ ${Markup(content)}
 <ul>
   <li>
 	<a href="http://dev.ampify.it/#get-started">Getting Started</a>
-	<div>A quickstart guide to setting up Ampify.</div>
+	<div>A quickstart guide to setting up the environment for Ampify development.</div>
   </li>
   <li>
 	<a href="http://dev.ampify.it/#get-involved">Getting Involved</a>
