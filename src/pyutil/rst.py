@@ -295,7 +295,10 @@ class TagDirective(Directive):
 
     has_content = True
 
-    def run(self, tag_cache={}, tag_normalised_cache={}, TODO=u'✗', DONE=u'✓'):
+    def run(
+        self, tag_cache={}, tag_normalised_cache={}, TODO=u'✗', DONE=u'✓',
+        letters='abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ -'
+        ):
 
         if not self.content:
             return []
@@ -397,11 +400,19 @@ class TagDirective(Directive):
         output.sort()
 
         if not tag_id:
+            tag_id = '-'.join(''.join([
+                char for char in
+                content.split('\n')[0].strip()[1:].strip()
+                if char in letters
+                ]).split()).lower()
+
+        if not tag_id:
             global TAG_COUNTER
             TAG_COUNTER = TAG_COUNTER + 1
             tag_id = 'temp-%s' % TAG_COUNTER
 
-        tag_id = '%s-%s' % (tag_list_id, tag_id)
+        # tag_id = '%s-planitem-%s' % (tag_list_id, tag_id)
+        tag_id = 'planitem-%s' % tag_id
 
         if tag_id in SEEN_TAGS_CACHE:
             raise DirectiveError(2, "The tag id %r has already been used!" % tag_id)
@@ -412,23 +423,23 @@ class TagDirective(Directive):
             pass
             # add(u'<span class="tag tag-untagged"></span>')
 
-        add(u'<a class="tag-link" href="#tag-ref-%s-main">&middot;</a>' % tag_id)
+        add(u'<a class="tag-link" href="#%s">&middot;</a>' % tag_id)
         output.insert(
-            0, (u'<div class="tag-segment" id="tag-ref-%s">' % tag_id)
+            0, (u'<div class="tag-segment" id="%s-tags">' % tag_id)
             )
 
         output.append(u'</div>')
 
         tag_info = nodes.raw('', u''.join(output), format='html')
         tag_content_container = nodes.container(
-            ids=['tag-ref-%s-content' % tag_id]
+            ids=['%s-content' % tag_id]
             )
 
         self.state.nested_parse(
             self.content, self.content_offset, tag_content_container
             )
 
-        prefix = nodes.raw('', u'<div id="tag-ref-%s-main" class="tag-content">' % tag_id, format='html')
+        prefix = nodes.raw('', u'<div id="%s" class="tag-content">' % tag_id, format='html')
         suffix = nodes.raw('', u'</div>', format='html')
 
         return [prefix, tag_content_container, tag_info, suffix]

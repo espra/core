@@ -20,6 +20,8 @@
     $(function () {
 
         var item,
+            item_id,
+            id,
             i,
             j,
             x,
@@ -65,20 +67,18 @@
 
         function extract_metadata() {
             var tag = this.className,
-                dep,
-                id;
+                dep;
             if (tag === 'tag-link') {
                 return true;
             }
             if (tag.indexOf('tag-type-dep') !== -1) {
                 dep = tag.split(' ')[2].slice(12);
-                ITEM2DEPS[item] = dep; // @/@ implement dependency analysis
+                ITEM2DEPS[id] = dep; // @/@ implement dependency analysis
                 return true;
             }
             tag = tag.split(' ');
             remove_item(tag, 'tag');
             tag = tag.join('-');
-            id = item + '-main';
             if (id in IDS2TAGS) {
                 IDS2TAGS[id].push(tag);
             } else {
@@ -104,8 +104,9 @@
         
         for (i = 0; i < segments.length; i++) {
             segment = segments[i];
-            item = '#' + segment.id;
-            $(item).children().each(extract_metadata);
+            item_id = '#' + segment.id;
+            id = item_id.slice(0, item_id.lastIndexOf('-tag'));
+            $(item_id).children().each(extract_metadata);
         }
 
         $.each(IDS2TAGS, function (k, v) {

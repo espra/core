@@ -439,6 +439,12 @@ body > #body-outer {
 	vertical-align: middle;
 }
 
+/* align */
+
+.align-right {
+	text-align: right;
+}
+
 .boxed {
 	border: 1px solid #cacaca;
 	-moz-border-radius: 5px;
@@ -1273,7 +1279,7 @@ a.buttondown span {
   font-size: 0.7em;
 }
 
-.tag-link {
+.tag-link, .tag-link:active, .tag-link:hover, .tag-link:visited {
   text-decoration: none;
   color: #000;
 }
