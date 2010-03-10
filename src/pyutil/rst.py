@@ -174,9 +174,9 @@ from pygments.formatters import HtmlFormatter
 from pygments.lexers import get_lexer_by_name, TextLexer
 
 try:
-    from json import loads as decode_json
-except ImportError:
     from simplejson import loads as decode_json
+except ImportError:
+    from json import loads as decode_json
 
 from io import IteratorParser
 
