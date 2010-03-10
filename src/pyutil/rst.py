@@ -522,19 +522,6 @@ syntax_directive.content = True
 
 directives.register_directive('syntax', syntax_directive)
 
-def block_directive(name, arguments, options, content, lineno,
-                     content_offset, block_text, state, state_machine):
-
-    root = nodes.container(ids=['block-id']) 
-    state.nested_parse(content, content_offset, root)
-    return [nodes.raw('', '<fieldset id="block_id">', format='html'), root,
-            nodes.raw('', '</fieldset>', format='html')]
-
-block_directive.argumetns = (1, 0, False)
-block_directive.content = True
-
-directives.register_directive('block', block_directive)
-
 def doctest2html(content):
     """Convert doctest strings to CSS'd HTML."""
 
