@@ -7,50 +7,18 @@ title: Ampify Planfile
 Ampify Planfile
 ===============
 
+Ampify is a vision of an open and decentralised application platform. This
+planfile documents the various steps towards the ``0.1`` release on
+September 2010. If you'd like to help make it a reality, do join us on the
+``#esp`` channel on ``irc.freenode.net``. |contents|
+
 .. contents::   Table of Contents
                 :depth: 2
                 :backlinks: none
 
-Ampify is a vision of an open and decentralised application platform. This
-planfile documents the various steps towards the ``0.1`` release -- slated for
-September 2010.
-
-Ampify builds on top of Open Web principles [Neuberg-2008]_ and it is hoped that
-by the time of the ``Ampify 1.0`` release that it'll be a worthy successor to
-the 20-year old World Wide Web [Berners-Lee-1989]_.
-
-Wherever appropriate, Ampify will make use of existing open source technologies
-as much as possible, e.g. Caja_, Chromium_, CoffeeScript_, Dirac_, FFmpeg_,
-FreeSWITCH_, Git_, Go_, jQuery_, Mapnik_, `Native Client`_, Node.js_, PyPy_,
-Python_, QuantLib_, Redis_, Ruby_, Theora_, V8_, &c.
-
-Ampify is a very ambitious undertaking -- one that is quite likely to fail. But
-if you'd like to help make it a reality, do join us on the ``#esp`` channel on
-``irc.freenode.net``.
-
 .. class:: align-right
 
-    -- Thanks, tav@espians.com
-
-.. _Caja: http://code.google.com/p/google-caja/
-.. _Chromium: http://www.chromium.org
-.. _CoffeeScript: http://jashkenas.github.com/coffee-script/
-.. _Dirac: http://diracvideo.org
-.. _FFmpeg: http://ffmpeg.org
-.. _FreeSWITCH: http://www.freeswitch.org
-.. _Git: http://git-scm.com
-.. _Go: http://golang.org
-.. _jQuery: http://jquery.com
-.. _Mapnik: http://mapnik.org
-.. _Native Client: http://code.google.com/p/nativeclient/
-.. _Node.js: http://nodejs.org
-.. _PyPy: http://codespeak.net/pypy/dist/pypy/doc/
-.. _Python: http://www.python.org
-.. _QuantLib: http://quantlib.org
-.. _Redis: http://code.google.com/p/redis/
-.. _Ruby: http://www.ruby-lang.org
-.. _Theora: http://www.theora.org
-.. _V8: http://code.google.com/p/v8/
+  -- Thanks, tav@espians.com
 
 .. raw:: html
 
@@ -59,6 +27,68 @@ if you'd like to help make it a reality, do join us on the ``#esp`` channel on
 .. plan:: ampify
 
   {"todo": ["wip", "todo"], "done": ["inreview", "needsreview", "done"]}
+
+
+Rationale
+---------
+
+  Ampify is an open source competitor to the various proprietary platforms that
+  currently threaten to fragment the Open Web [Neuberg-2008]_ -- a bastion of
+  freedom against the companies that want to own everyone's identities and those
+  that want to control what developers can do.
+
+  Technological complexity is fast becoming unmanageable:
+
+  .. class:: math center
+
+    `Platforms`  ✕  `APIs`  ✕  `Devices`  ＝  `Brittle.Complexity`
+
+  Innovation slows down as developers try to assess, learn, code, test and
+  deploy for the various platforms -- again and again and again. Our collective
+  efforts are wasted on working around technical incompatabilities and
+  shortcomings instead of creating value.
+
+  .. raw:: html
+
+      <div class="center"><img
+        src="http://static.ampify.it/img.dev-platform-options-2009.png" alt=""
+        width="512px" height="384px" class="boxed"
+        /></div>
+
+  We desperately need a period of convergence at a much higher level than what
+  we currently get from web browsers. Incompatibility on issues like structured
+  data, video delivery, convenient access, richer interfaces and authentication
+  keep giving opportunities for closed platforms to gain adoption.
+
+  The fact is, the Web is over 20 years old [Berners-Lee-1989]_ and was never
+  developed with today's applications in mind. As a result, countless developers
+  have had to independently solve the same problems over and over, e.g.
+  identity, scalability, security, messaging, &c.
+
+  .. class:: sidebox
+
+    "Ease developer pain and take innovation to the next curve"
+
+  We need solutions that will take innovation to the next curve
+  [Kawasaki-2006]_. Ampify is one such solution. It builds on top of the Open
+  Web principles and will hopefully be a worthy successor to the Web someday.
+
+  The design and development of Ampify will be driven by a few key principles:
+
+  * Decentralisation and openness.
+  * Ease of use.
+  * Speed, security and scalability.
+  * Simplicity beyond complexity.
+
+  Wherever appropriate, Ampify will make use of existing open source
+  technologies as much as possible, e.g. Caja_, Chromium_, CoffeeScript_,
+  Dirac_, FFmpeg_, FreeSWITCH_, Git_, Go_, jQuery_, Mapnik_, `Native Client`_,
+  Node.js_, PyPy_, Python_, QuantLib_, Redis_, Ruby_, Theora_, V8_, &c.
+
+  Ampify is without doubt a very ambitious undertaking. And, despite having had
+  over 10 years of research, it is going to be quite a challenge to pull off.
+  But if you'd like to make it real, do join us on the ``#esp`` channel on
+  ``irc.freenode.net``. All are welcome!
 
 
 Overview of the Architecture
@@ -1285,7 +1315,7 @@ Launch
 
       <div class="center"><img
         src="http://static.ampify.it/img.presentation-sample-screen.png" alt=""
-        width="524px" height="384px" class="boxed"
+        width="512px" height="384px" class="boxed"
         /></div>
 
     However the layout of the content should both be pleasant and allow for
@@ -2198,7 +2228,7 @@ References
 .. [Leggett-2008]
 
     `Let's Get Crackin'!
-    <http://www.fightfortheopenweb.com/2008/04/10/lets-get-crackin/>`_
+    <http://web.archive.org/web/20080414042913/http://www.fightfortheopenweb.com/>`_
 
     Russell Leggett, April 2008.
 
@@ -2356,4 +2386,40 @@ References
     <http://developers.facebook.com/thrift/thrift-20070401.pdf>`_
 
     Mark Slee, Aditya Agarwal and Marc Kwiatkowski, Facebook, 2007.
+
+.. |contents| raw:: html
+
+  [ <a href="#table-of-contents" class="table-of-contents-handler">Table of Contents</a> ]
+
+.. _Caja: http://code.google.com/p/google-caja/
+.. _Chromium: http://www.chromium.org
+.. _CoffeeScript: http://jashkenas.github.com/coffee-script/
+.. _Dirac: http://diracvideo.org
+.. _FFmpeg: http://ffmpeg.org
+.. _FreeSWITCH: http://www.freeswitch.org
+.. _Git: http://git-scm.com
+.. _Go: http://golang.org
+.. _jQuery: http://jquery.com
+.. _Mapnik: http://mapnik.org
+.. _Native Client: http://code.google.com/p/nativeclient/
+.. _Node.js: http://nodejs.org
+.. _PyPy: http://codespeak.net/pypy/dist/pypy/doc/
+.. _Python: http://www.python.org
+.. _QuantLib: http://quantlib.org
+.. _Redis: http://code.google.com/p/redis/
+.. _Ruby: http://www.ruby-lang.org
+.. _Theora: http://www.theora.org
+.. _V8: http://code.google.com/p/v8/
+
+.. _combinatorial explosion: http://en.wikipedia.org/wiki/Combinatorial_explosion
+
+
+Redpill
+-------
+
+  .. class:: sidebox
+
+  "We need to learn new designs, design frameworks, and design approaches from
+  naturally occurring, ultra large scale systems (e.g. biology, ecology)"
+  [Gabriel-2007]_
 
