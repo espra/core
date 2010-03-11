@@ -565,6 +565,13 @@ body > #body-outer {
 	text-align: left;
 }
 
+/* math-like variables */
+
+.math cite {
+	font-size: 1.4em;
+	padding: 4px;
+}
+
 /* quoted blocks with attribution */
 
 .quote {
@@ -595,7 +602,6 @@ body > #body-outer {
 
 .sidebox {
 	background-color: #efc4c5;
-	color: #222;
 	float: right;
 	font-family: "refrigerator-deluxe-1", "refrigerator-deluxe-2", 'Lucida Grande', 'Lucida Sans Unicode', Optima, Verdana, sans-serif;
 	font-size: 1.5em;
