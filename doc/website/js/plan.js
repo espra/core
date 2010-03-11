@@ -26,6 +26,8 @@
             j,
             x,
             segment,
+            tag_fragment_updated = false,
+            tag_fragment_found = false,
             TAG2NAME = {},
             NAME2TAG = {},
             TAG2NORM = {},
@@ -215,7 +217,15 @@
             }
 
             if (hash) {
-                window.location.hash = hash;
+                if (hash === "#") {
+                    if (tag_fragment_updated) {
+                        window.location.hash = hash;
+                    } else {
+                        tag_fragment_updated = true;
+                    }
+                } else {
+                    window.location.hash = hash;
+                }
             }
 
             this.blur();
@@ -264,10 +274,15 @@
         if (window.location.hash) {
             requested_tags = window.location.hash.substr(1).split(',');
             for (x = 0; x < requested_tags.length; x++) {
-                tag = decodeURIComponent(requested_tags[x]);
-                $('#' + NORM2TAG[tag.toLowerCase()]).click();
+                tag = decodeURIComponent(requested_tags[x]).toLowerCase();
+                if (NORM2TAG[tag]) {
+                    tag_fragment_found = true;
+                    $('#' + NORM2TAG[tag]).click();
+                }
             }
-        } else {
+        }
+
+        if (!tag_fragment_found) {
             $('#tag-all').click();
         }
 
