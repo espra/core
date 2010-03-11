@@ -425,13 +425,35 @@ function google_translate_page (lang_options) {
     }
 }
 
+var table_of_contents_display_status = true;
+
+function show_table_of_contents () {
+    if (!table_of_contents_display_status) {
+        table_of_contents_display_status = true;
+        document.getElementById('table-of-contents').style.display = 'block';
+    } else {
+        table_of_contents_display_status = false;
+        document.getElementById('table-of-contents').style.display = 'none';
+        return false;
+    }
+    return false;
+}
+
 $(function () {
     var chosen = [],
         i,
         selected,
         notfound,
         extra,
-        container;
+        container,
+        content_handlers=$('.table-of-contents-handler');
+    if (content_handlers.length) {
+        if (window.location.hash.substr(1) != 'table-of-contents') {
+            $('.contents').hide();
+            table_of_contents_display_status = false;
+        };
+        content_handlers.click(show_table_of_contents);
+    }
     for (i=0; i < 6; i++) {
         notfound = true;
         while (notfound) {
