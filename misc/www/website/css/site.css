@@ -453,6 +453,7 @@ body > #body-outer {
 	-webkit-border-radius: 5px;
 	border-radius: 5px;
 	-webkit-box-shadow: 0px 0px 7px #cacaca;
+	margin-top: 10px;
 }
 
 .center {
@@ -606,8 +607,8 @@ body > #body-outer {
 	font-family: "refrigerator-deluxe-1", "refrigerator-deluxe-2", 'Lucida Grande', 'Lucida Sans Unicode', Optima, Verdana, sans-serif;
 	font-size: 1.5em;
 	margin-left: 10px;
-	margin-top: 5px;
-	padding: 10px 15px;
+	margin-top: 10px;
+	padding: 10px 8px 10px 12px;
 	text-align: left;
 	width: 175px;
 }
