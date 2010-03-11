@@ -1,7 +1,7 @@
 ---
 license: Public Domain
 layout: page
-title: Zero Planfile
+title: Ampify Planfile
 ---
 
 Ampify Planfile
@@ -11,17 +11,52 @@ Ampify Planfile
                 :depth: 2
                 :backlinks: none
 
-This is the planfile for Ampify, an initial step towards the decentralised
-vision of ``Ampify 1.0``. It is intended as a working prototype and builds on
-top of existing technologies like Caja, jQuery, Git, App Engine, Go, Node.js,
-Python, Redis, S3, Sendgrid, Twilio and V8. [Berners-Lee-1989]_
+Ampify is a vision of an open and decentralised application platform. This
+planfile documents the various steps towards the ``0.1`` release -- slated for
+September 2010.
 
+Ampify builds on top of Open Web principles [Neuberg-2008]_ and it is hoped that
+by the time of the ``Ampify 1.0`` release that it'll be a worthy successor to
+the 20-year old World Wide Web [Berners-Lee-1989]_.
+
+Wherever appropriate, Ampify will make use of existing open source technologies
+as much as possible, e.g. Caja_, Chromium_, CoffeeScript_, Dirac_, FFmpeg_,
+FreeSWITCH_, Git_, Go_, jQuery_, Mapnik_, `Native Client`_, Node.js_, PyPy_,
+Python_, QuantLib_, Redis_, Ruby_, Theora_, V8_, &c.
+
+Ampify is a very ambitious undertaking -- one that is quite likely to fail. But
+if you'd like to help make it a reality, do join us on the ``#esp`` channel on
+``irc.freenode.net``.
+
+.. class:: align-right
+
+    -- Thanks, tav@espians.com
+
+.. _Caja: http://code.google.com/p/google-caja/
+.. _Chromium: http://www.chromium.org
+.. _CoffeeScript: http://jashkenas.github.com/coffee-script/
+.. _Dirac: http://diracvideo.org
+.. _FFmpeg: http://ffmpeg.org
+.. _FreeSWITCH: http://www.freeswitch.org
+.. _Git: http://git-scm.com
+.. _Go: http://golang.org
+.. _jQuery: http://jquery.com
+.. _Mapnik: http://mapnik.org
+.. _Native Client: http://code.google.com/p/nativeclient/
+.. _Node.js: http://nodejs.org
+.. _PyPy: http://codespeak.net/pypy/dist/pypy/doc/
+.. _Python: http://www.python.org
+.. _QuantLib: http://quantlib.org
+.. _Redis: http://code.google.com/p/redis/
+.. _Ruby: http://www.ruby-lang.org
+.. _Theora: http://www.theora.org
+.. _V8: http://code.google.com/p/v8/
 
 .. raw:: html
 
   <hr class="clear" />
 
-.. plan:: zero
+.. plan:: ampify
 
   {"todo": ["wip", "todo"], "done": ["inreview", "needsreview", "done"]}
 
@@ -512,10 +547,9 @@ Safe Execution
 
   ✓ Investigate sandboxing using Native Client.
 
-    `Native Client <http://code.google.com/p/nativeclient/>`_ (NaCl) is perhaps
-    the most exciting development in security since public key cryptography and
-    object capability. It sets out to provide a secure sandbox for running
-    native code in web applications.
+    `Native Client`_ (NaCl) is perhaps the most exciting development in security
+    since public key cryptography and object capability. It sets out to provide
+    a secure sandbox for running native code in web applications.
 
     Its design consist of two layers of defence to ensure that unsafe x86
     instructions are not executed -- providing protection from buffer overflow
@@ -1486,11 +1520,11 @@ Admin
 
     The following domains have been bought:
 
-    * ampify.it
-    * ampifyit.com
-    * ampify.me
-    * ampify.org
-    * ampify.net
+    * ``ampify.it`` -- the main site and root deployment frontend
+    * ``ampnode.com`` -- a well known host for seed nodes
+    * ``ampnest.com`` -- a static assets domain
+    * ``ampify.net`` -- backend hosts for the root deployment
+    * ``ampifyit.com``, ``ampify.org``, ``ampify.me`` -- redirects to main
 
     The domain ``ampify.com`` seems to be owned by someone called Bri Holt
     according to the `WHOIS records <http://whois.domaintools.com/ampify.com>`_.
