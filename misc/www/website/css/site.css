@@ -332,6 +332,7 @@ body > #body-outer {
 
 #table-of-contents {
 	border: 1px solid #cacaca;
+	display: none;
 	float: left;
 	margin-top: 10px;
 }
@@ -1400,4 +1401,10 @@ a.buttondown span {
 	font-weight: bold;
 	font-family: "museo-1", "museo-2", Verdana;
 	padding-bottom: 0;
+}
+
+/* ignore this support */
+
+#ignore-this {
+	display: none !important;
 }
