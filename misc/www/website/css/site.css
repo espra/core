@@ -331,17 +331,19 @@ body > #body-outer {
 }
 
 #table-of-contents {
-	float: right;
-	margin: 10px 0 10px 20px;
 	border: 1px solid #cacaca;
+	float: left;
+	margin-top: 10px;
 }
 
 #table-of-contents .topic-title {
-	display: none;
+	font-family: "refrigerator-deluxe-1", "refrigerator-deluxe-2", 'Lucida Grande', 'Lucida Sans Unicode', Optima, Verdana, sans-serif;
+	font-size: 1.5em;
+	padding: 10px 0 10px 10px;
 }
 
 #table-of-contents ul {
-	padding: 0 20px 5px 20px;
+	padding: 0 20px 15px 45px;
 }
 
 #main-support-page {
@@ -451,6 +453,7 @@ body > #body-outer {
 	-webkit-border-radius: 5px;
 	border-radius: 5px;
 	-webkit-box-shadow: 0px 0px 7px #cacaca;
+	margin-top: 10px;
 }
 
 .center {
@@ -563,6 +566,13 @@ body > #body-outer {
 	text-align: left;
 }
 
+/* math-like variables */
+
+.math cite {
+	font-size: 1.4em;
+	padding: 4px;
+}
+
 /* quoted blocks with attribution */
 
 .quote {
@@ -587,6 +597,20 @@ body > #body-outer {
 
 .quote-attribution a:hover {
 	text-decoration: none;
+}
+
+/* sidebox */
+
+.sidebox {
+	background-color: #efc4c5;
+	float: right;
+	font-family: "refrigerator-deluxe-1", "refrigerator-deluxe-2", 'Lucida Grande', 'Lucida Sans Unicode', Optima, Verdana, sans-serif;
+	font-size: 1.5em;
+	margin-left: 10px;
+	margin-top: 10px;
+	padding: 10px 8px 10px 12px;
+	text-align: left;
+	width: 175px;
 }
 
 /* Source code syntax highlighting */
@@ -1295,8 +1319,9 @@ a.buttondown span {
 }
 
 .tag-val-needsreview {
-  background-color: #a4ff00;
-  color: #000 !important;
+	background-color: #a4ff00; /* bright lime-ish green */
+	background-color: #ffe2ff;
+	color: #000 !important;
 }
 
 .tag-val-inreview {
@@ -1310,8 +1335,9 @@ a.buttondown span {
 }
 
 .tag-val-wip {
-  background-color: #a66e00;
-  background-color: #ff550f;
+	background-color: #ff550f; /* orange */
+	background-color: #b1f2ec;
+	color: #000 !important;
 }
 
 .tag-type-1 {
@@ -1356,9 +1382,10 @@ a.buttondown span {
 }
 
 .plan-help {
-  font-size: 0.9em;
-  font-weight: bold;
-  margin-bottom: 1.4em;
+	font-size: 0.9em;
+	font-weight: bold;
+	margin-bottom: 1.4em;
+	text-align: right;
 }
 
 .container {

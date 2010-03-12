@@ -10,8 +10,5 @@ import pylibs
 from pyutil.yatiblog import main
 
 
-try:
+if __name__ == '__main__':
     main()
-except Exception, error:
-    print "Error: got a fatal %s!" % error.__class__.__name__
-    print error
