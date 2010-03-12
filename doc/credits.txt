@@ -32,3 +32,38 @@ individuals have provided really helpful insights, support and inspiration:
 * ``smw`` and ``tml`` on the #go-nuts IRC channel:
 
   * Suggested using syscall.OS to define runtime.Platform.
+
+
+Plexnet Credits
+---------------
+
+For their inspiration:
+
+* Allen Short, Bryce Wilcox-O'Hearn, Daniel Biddle, Douglas Crockford, Luke
+  Graybill, Mark S. Miller, Øyvind Selbek, Peter-Paul Koch, Simon Michael, Steve
+  Alexander, Tavin Cole and Tim Jenks.
+
+For being there when the Plexnet vision came to be, back in summer 2001:
+
+* Mathew Ryden and Fenton Whelan.
+
+For having had the balls to try something equally ambitious decades ago:
+
+* Ted Nelson.
+
+For having created the Open Web in the first place:
+
+* Tim Berners-Lee.
+
+For improvements to the planfile document:
+
+* Mark Poole, Simeon Scott.
+
+For being instrumental in forging the Plexnet from abstract vision to technical
+realism:
+
+* Alex Tomkins, James Arthur, Jeffry Archambeault, Luke Graybill, Mathew Ryden,
+  Øyvind Selbek, Phillip J. Eby, Sean B. Palmer, Stefan Plantikow, Thomas
+  Salfield and Yan Minagawa.
+
+Thank you!
