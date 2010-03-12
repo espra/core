@@ -87,8 +87,8 @@ Rationale
 
   Ampify is without doubt a very ambitious undertaking. And, despite having had
   over 10 years of research, it is going to be quite a challenge to pull off.
-  But if you'd like to make it real, do join us on the ``#esp`` channel on
-  ``irc.freenode.net``. All are welcome!
+  But if you'd like to help make it a reality, do join us on the ``#esp``
+  channel on ``irc.freenode.net``. All are welcome!
 
 
 Overview of the Architecture
@@ -1550,11 +1550,11 @@ Admin
 
     The following domains have been bought:
 
-    * ``ampify.it`` -- the main site and root deployment frontend
-    * ``ampnode.com`` -- a well known host for seed nodes
-    * ``ampnest.com`` -- a static assets domain
-    * ``ampify.net`` -- backend hosts for the root deployment
-    * ``ampifyit.com``, ``ampify.org``, ``ampify.me`` -- redirects to main
+    * ``ampify.it`` -- the host for the root deployment.
+    * ``ampnode.com`` -- a well known host for seed nodes.
+    * ``ampnest.com`` -- a host for static assets on the root deployment.
+    * ``ampify.net`` -- backend hosts for the root deployment.
+    * ``ampifyit.com``, ``ampify.org``, ``ampify.me`` -- alternate redirects.
 
     The domain ``ampify.com`` seems to be owned by someone called Bri Holt
     according to the `WHOIS records <http://whois.domaintools.com/ampify.com>`_.
@@ -1594,12 +1594,12 @@ Internationalisation
 
     Secondly, we can do an `n-grams <http://en.wikipedia.org/wiki/N-gram>`_
     based statistical analysis of the content against pre-generated models for
-    various languages. As a starting point we can use existing models from
-    `various <http://pypi.python.org/pypi/guess-language>`_ `open
+    various languages [Cavnar-1994]_. As a starting point we can use existing
+    models from `various <http://pypi.python.org/pypi/guess-language>`_ `open
     <http://ngramj.sourceforge.net/>`_ `source
     <http://odur.let.rug.nl/~vannoord/TextCat/>`_ initiatives.
 
-.. tag:: #dev, milestone:post-launch
+.. tag:: #dev
 
   ✗ Generate language models from Wikipedia.
 
@@ -1615,8 +1615,8 @@ Internationalisation
     interesting applications besides just plain old language guessing.
 
 
-Message
--------
+Ignore This
+-----------
 
 Redis 32-bit
 
@@ -1924,6 +1924,8 @@ IANA-reserved IPs
 ✗ Main javascript
 ✗ Main index
 
+hmz
+
 ✗ Blog template
 ✗ Blog index
 ✗ Blog rss
@@ -2045,18 +2047,6 @@ Planfile IE
 magic
 geoip
 
-.. raw:: html
-
-  <style type="text/css">
-  #message {
-    display: none !important;
-  }
-  </style>
-
-  <script>
-    $('a[href=#message]').parent().hide();
-  </script>
-
 
 Conventions
 -----------
@@ -2064,10 +2054,10 @@ Conventions
   Whilst this document is not meant to be `normative
   <http://en.wikipedia.org/wiki/Normative>`_, it hopefully provides a basis for
   Ampify specifications to eventually emerge. These will be reviewed and
-  accepted as part of the Open Culture Standards Index (OCSI) in a manner
-  similar to Python Enhancement Proposals [PEP-1]_, i.e. an open process with
-  the `BDFL <http://en.wikipedia.org/wiki/Benevolent_Dictator_For_Life>`_ (Tav)
-  giving final approval.
+  accepted as part of the Open Culture Standards Index (OCSI) in a process
+  similar to the Python Enhancement Proposals [PEP-1]_, i.e. an open process
+  with the `BDFL <http://en.wikipedia.org/wiki/Benevolent_Dictator_For_Life>`_
+  (Tav) giving final approval.
 
   In the meantime, the key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL
   NOT", "SHOULD", "SHOULD NOT", "RECOMMENDED", "MAY", and "OPTIONAL" should be
@@ -2122,6 +2112,15 @@ References
 
     George Candea and Armando Fox, Proceedings of the 9th Workshop on Hot Topics
     in Operating Systems (HotOS-IX), Lihue, Hawaii, May 2003.
+
+.. [Cavnar-1994]
+
+    `N-Gram-Based Text Categorization
+    <http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.53.9367>`_
+
+    William B. Cavnar and John M. Trenkle, Proceedings of the 3rd Annual
+    Symposium on Document Analysis and Information Retrieval (SDAIR-94), Las
+    Vegas, April 1994.
 
 .. [Cawley-2008]
 

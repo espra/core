@@ -164,18 +164,6 @@ def run_app(
 
         handler, store_needed = api_definition
 
-        # check if the datastore and memcache services are available
-        if store_needed:
-            disabled = None
-            if not CapabilitySet('datastore_v3', capabilities=['write']).is_enabled():
-                disabled = 'datastore'
-            elif not CapabilitySet('memcache', methods=['set']).is_enabled():
-                disabled = 'memcache'
-            if disabled:
-                write(ERROR_HEADER)
-                write(DISABLED % disabled)
-                return
-
         try:
             # try and respond with the result of calling the api handler
             args = tuple(args)
