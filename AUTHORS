@@ -7,6 +7,8 @@ alphabetical order:
   +----------------------------+--------------------+--------------------------+----------------+
   | Name                       | Nick               | Email                    | Location       |
   +============================+====================+==========================+================+
+  | `Benjamin Peterson`        | gutworth           | benjamin@python.org      | U.S.A          |
+  +============================+====================+==========================+================+
   | `James Arthur`_            | thruflo            | thruflo@googlemail.com   | U.K.           |
   +----------------------------+--------------------+--------------------------+----------------+
   | `Jeff Archambeault`_       | jeffarch           | jjarchambeault@gmail.com | U.S.A          |
@@ -24,6 +26,7 @@ alphabetical order:
 
 .. Please keep the listing in Alphabetical Order, thanks!
 
+.. _Benjamin Peterson: http://pybites.blogspot.com
 .. _James Arthur: http://thruflo.com
 .. _Jeff Archambeault: http://www.openideaproject.org/jeffspace
 .. _Maciej Fijalkowski: http://morepypy.blogspot.com
