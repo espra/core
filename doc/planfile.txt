@@ -1563,13 +1563,20 @@ Admin
     nice to have.
 
 
-Internationalisation
---------------------
+Contextualisation
+-----------------
 
 .. tag:: #dev
 
+  ✗ Implement location to timezone mapping.
 
+    .. syntax:: python
 
+      def get_timezone_at(latitude: number, longitude: number) -> string:
+          return timezone
+
+    The ``tzlocations`` space will be reserved for the data needed by the
+    service.
 
 .. tag:: #dev
 
