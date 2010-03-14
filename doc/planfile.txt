@@ -1174,9 +1174,9 @@ Hosting
 
   ✓ Investigate cloud service providers.
 
-    Choosing good hosting provider(s) is going to be important for the long-term
-    success of Ampify. Unfortunately the current set of cloud services do not
-    seem to be spectacularly attractive choices.
+    Choosing good hosting provider(s) for the Commons deployment is going to be
+    important for the long-term success of Ampify. Unfortunately the current set
+    of cloud services do not seem to be spectacularly attractive choices.
 
     Services like `Amazon EC2 <http://aws.amazon.com/ec2/>`_ are impressive from
     a technical perspective. For example, Amazon's Elastic Load Balancer makes
@@ -1191,10 +1191,9 @@ Hosting
     Not only do comparable "raw metal" servers cost substantially less, but you
     also get a noticeable increase in raw performance.
 
-    And, finally, multi-tenancy introduces a host of `novel security
-    considerations <http://people.csail.mit.edu/tromer/papers/cloudsec.pdf>`_.
-    Server management is complicated enough without having to worry about these
-    and other gaming issues.
+    And, finally, multi-tenancy introduces a host of novel security
+    considerations [Ristenpart-2009]_. Server management is complicated enough
+    without having to worry about these and other gaming issues.
 
 .. tag:: #operations, @evangineer, @tav
 
@@ -1570,12 +1569,19 @@ Contextualisation
 
   ✗ Implement location to timezone mapping.
 
+    Knowing the local time in different parts of the world is very useful --
+    whether one is travelling or simply wanting to know if it's a reasonable
+    time to call a fellow collaborator on the other side of the planet.
+
+    To help facilitate this, there will be a single utility function as part of
+    the ``timezone`` service:
+
     .. syntax:: python
 
-      def get_timezone_at(latitude: number, longitude: number) -> string:
+      def get_timezone_at(latitude:number, longitude:number) -> string:
           return timezone
 
-    The ``tzlocations`` space will be reserved for the data needed by the
+    The ``/tzlocations`` namespace will be reserved for the data needed by the
     service.
 
 .. tag:: #dev
@@ -1596,7 +1602,7 @@ Contextualisation
 
       >>> import unicodedata
 
-      >>> unicodedata.name(u'ホ')
+      >>> unicodedata.name('ホ')
       'KATAKANA LETTER HO'
 
     Secondly, we can do an `n-grams <http://en.wikipedia.org/wiki/N-gram>`_
@@ -1605,6 +1611,26 @@ Contextualisation
     models from `various <http://pypi.python.org/pypi/guess-language>`_ `open
     <http://ngramj.sourceforge.net/>`_ `source
     <http://odur.let.rug.nl/~vannoord/TextCat/>`_ initiatives.
+
+    The language guessing should be exposed as a function of the ``language``
+    service:
+
+    .. syntax:: python
+
+      def guess(text:string) -> list:
+          return list_of_guesses
+
+    For example, calling it with the following snippet of `Madras Tamil
+    <http://en.wikipedia.org/wiki/Madras_Tamil>`_ written in English, it should
+    return something like:
+
+    .. syntax:: pycon
+
+      >>> guess("Enna da oru leave letter kooda kudukama poitta?")
+      [(</lang/madras-tamil/latin>, 0.9714), (</lang/en>, 0.0672)]
+
+    That is, it should return a list of ``(language-identifier, likelihood)``
+    tuples -- in descending order of likelihood.
 
 .. tag:: #dev
 
@@ -1653,6 +1679,10 @@ Would like the following in Ruby after being parsed:
   >>> def foo():
   ...     if N_set: return True
   [0, 'START']
+
+invisible mode
+
+calendar/locatrion merge
 
 
 ✗ Trust metrics calculation
@@ -2356,7 +2386,7 @@ References
     `Internet Protocol Version 6 (IPv6) Addressing Architecture
     <http://www.rfc-editor.org/rfc/rfc3513.txt>`_
 
-    Robert M. Hinden & Stephen E. Deering, April 2003.
+    Robert M. Hinden and Stephen E. Deering, April 2003.
 
 .. [RFC-4122]
 
@@ -2378,6 +2408,14 @@ References
     <http://www.rfc-editor.org/rfc/rfc4380.txt>`_
 
     Christian Huitema, February 2006.
+
+.. [Ristenpart-2009]
+
+    `Hey, You, Get Off of My Cloud: Exploring Information Leakage in Third-Party
+    Compute Clouds <http://people.csail.mit.edu/tromer/papers/cloudsec.pdf>`_
+
+    Thomas Ristenpart, Eran Tromer, Hovav Shacham and Stefan Savage, CCS’09,
+    Chicago, November 2009.
 
 .. [Saffer-2007]
 
