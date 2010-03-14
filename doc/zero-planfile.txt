@@ -1,0 +1,2012 @@
+---
+license: Public Domain
+layout: page
+title: Zero Planfile
+---
+
+Zero Planfile
+=============
+
+This is the planfile for ``Ampify Zero``, an initial step towards the
+decentralised vision of Ampify 1.0. It is intended as a working prototype and is
+implemented as a traditional web application using existing technologies like
+`App Engine`_, CoffeeScript_, jQuery_, Keyspace_, `Node.js`_, PyPy_, Redis_, S3_
+and SendGrid_.
+
+If you'd like to help make it a reality, do join fellow collaborators on the
+``#esp`` channel on ``irc.freenode.net``. |contents|
+
+.. contents::   Table of Contents
+                :depth: 2
+                :backlinks: none
+
+.. class:: align-right
+
+  -- Thanks, tav@espians.com
+
+.. raw:: html
+
+  <hr class="clear" />
+
+.. plan:: ampify
+
+  {"todo": ["wip", "todo"], "done": ["inreview", "needsreview", "done"]}
+
+
+Overview of the Architecture
+----------------------------
+
+A Node is started up using the ``ampnode`` executable. On startup all nodes
+establish a live connection to the Seed node.
+
+.. class:: ascii-art
+
+::
+
+       +----------------+
+       | Internet Horde |
+       +----------------+
+             |                                  +-------------+
+             |             +-----------+        | Other Nodes |
+             ±             | Seed Node |        +-------------+
+             |             +-----------+              |
+             |              |     \                   |
+         +-------------+    |      \                  |
+         | Public Port |    |     +----------------------------------+
+         +-------------+    |     | Meta Port (Internal Access Only) |
+                \           |     +----------------------------------+
+                 \          |       /
+                  \         |      /
+       +===========\========|=====/====================================+
+       |            \       |    /                                     |
+       |          +----------------------+                             |
+       |          | Node: Parent Process |                             |
+       |          +----------------------+                             |
+       |                   |                                           |
+       |                   |                                           |
+       |    +-------------------------+-----------------------+        |
+       |    |                         |                       |        |
+       |  +----------------+          |            +----------------+  |
+       |  | Nodule Process |  +----------------+   | Nodule Process |  |
+       |  +----------------+  | Nodule Process |   +----------------+  |
+       |                      +----------------+                       |
+       |                                                               |
+       +===============================================================+
+
+
+ZeroData
+--------
+
+.. tag:: #dev, @tav, wip
+
+  ✗ Define the Message type structure.
+
+    The Message type is the heart of Ampify. Here's a start at its definition:
+
+    .. syntax:: go
+
+      type Message struct {
+         from         string         // who is the message from?
+         by           string         // who is the message authored by?
+         to           string         // where is the message sent to?
+         aspect       string         // what /aspect is being defined?
+         content      string         // the raw message body
+         value_number big.Number     // the message value
+         value_list   []string
+         version      int
+     }
+
+    It combines a number of different data models into a pretty flexible generic
+    one.
+
+
+Argonought
+----------
+
+.. tag:: #dev, @tav, wip
+
+  ✗ Define a serialisation format.
+
+    Argonought is a JSON-inspired serialisation format that should offer us
+    features not collectively available in other formats:
+
+    * JSON-like simplicty.
+    * Efficient binary encoding.
+    * Lexicographically sortable encoding.
+
+    Both `Protocol Buffers <http://code.google.com/p/protobuf/>`_ and `Thrift
+    <http://incubator.apache.org/thrift/>`_ are technically
+    inadequate. They haven't learnt from the mistakes of `CORBA
+    <http://en.wikipedia.org/wiki/Common_Object_Request_Broker_Architecture>`_.
+
+.. tag:: #dev, @tav, needsreview
+
+  ✓ Implement support for lexicographically sortable representation of numbers.
+
+    When dealing with numbers, most people don't care whether it's an unsigned
+    32-bit integer or a 128-bit decimal. Even programmers have been spoilt by
+    automatic type coercion in many dynamic languages, e.g.
+
+    .. syntax:: irb
+
+      >> 1000000.class
+      => Fixnum
+
+      >> 10000000000.class
+      => Bignum
+
+    Unfortunately this support is not reflected in most datastores. App Engine,
+    for example, indexes strings up to 500 bytes in length but `truncates
+    <http://code.google.com/appengine/docs/python/datastore/typesandpropertyclasses.html#IntegerProperty>`_
+    integer values greater than 64 bits.
+
+    If one were to try and encode the number as a string to take advantage of
+    the extra space, the naive approach fails quite quickly:
+
+    .. syntax:: irb
+
+      >> '9' > '8'
+      => true
+
+      >> '1000' > '9'
+      => false
+
+    The official documentation for SimpleDB even `recommends
+    <http://developer.amazonwebservices.com/connect/entry.jspa?categoryID=152&externalID=1232>`_
+    the usual tricks of negative-number offsetting and zero padding as a
+    solution to this problem:
+
+    .. syntax:: irb
+
+      >> '1000' > '0009'
+      => false
+
+    But this approach gets a massive FAIL since it requires not only having to
+    predefine the largest possible value (the exact problem we're trying to
+    avoid!), but also ends up wasting a lot of space due to the zero padding.
+
+    To solve these and other problems, Argonought implements a very efficient
+    encoding of numbers so that they can be sorted in `lexicographical order
+    <http://en.wikipedia.org/wiki/Lexicographical_order>`_:
+
+    .. syntax:: pycon
+
+      >>> argonought.pack_number(8234364)             # takes just 3 bytes!
+      '\xfe\xa2\xa0'
+
+      >>> argonought.pack_number(8234364) > argonought.pack_number(-234364)
+      True
+
+    It can handle, subject to memory limits, numbers of whatever size --
+    including arbitrary precision decimals like
+    ``1.618033988749894848204586834365638``.
+
+.. tag:: #dev, @tav, wip
+
+  ✗ Define a plexname normalisation algorithm.
+
+    Plexnames should be comparable.
+
+    .. syntax:: python
+
+        @register_service()
+        def get_canonical_plexname(plexname):
+            """Return a canonical form of a plexname."""
+
+            if u'\u0345' in plexname: # COMBINING GREEK YPOGEGRAMMENI
+                plexname = normalise_unicode('NFD', plexname)
+
+            canonised = []
+            space = False
+
+            for char in plexname:
+                if (category(char) in ['Cc', 'Zs']) or (ord(char) in SPECIALS):
+                    space = True
+                    continue
+                if space:
+                    space = False
+                    if canonised:
+                        canonised.append(u'-')
+                if char in CASE_MAP:
+                    canonised.append(CASE_MAP[char])
+                else:
+                    canonised.append(char)
+
+            plexname = normalise_unicode('NFKD', u''.join(canonised))
+            canonised[:] = []
+
+            for char in plexname:
+                if char in CASE_MAP:
+                    canonised.append(CASE_MAP[char])
+                else:
+                    canonised.append(char)
+
+            return normalise_unicode('NFKC', u''.join(canonised))
+
+    And, there's a lot of blah.
+
+
+Development Process
+-------------------
+
+.. tag:: #operations, @tav, @evangineer
+
+  ✓ Investigate code review and continuous integration tools.
+
+    There are numerous `continuous integration
+    <http://en.wikipedia.org/wiki/Continuous_integration>`_ tools and services
+    out there. Of the commercial ones, `TeamCity
+    <http://www.jetbrains.com/teamcity/>`_ is a nice offering -- but is limited
+    to just Java, .NET and Ruby. `Hudson <http://hudson-ci.org>`_ and `Buildbot
+    <http://buildbot.net/trac>`_ are very impressive open source offerings but
+    only handle the build, test and notification phases.
+
+    The Go project has a nice custom build `status dashboard
+    <http://godashboard.appspot.com>`_ which is worth a mention. On the
+    browser-based Javascript front, `TestSwarm <http://testswarm.com/>`_ offers
+    a glimpse of the future -- `distributed testing
+    <http://wiki.github.com/jeresig/testswarm/>`_ by casual visitors of various
+    bits of Javascript code!
+
+    From a code review perspective, nothing seems to beat `rietveld
+    <http://code.google.com/p/rietveld/>`_ which is also hosted at
+    `codereview.appspot.com <http://codereview.appspot.com>`_. Unfortunately its
+    user interface isn't exactly appealing. In contrast, GitHub has a really
+    sexy interface for making `commit comments
+    <http://github.com/blog/42-commit-comments>`_ that can be aggregated in
+    `compare views
+    <http://github.com/blog/612-introducing-github-compare-view>`_.
+
+    With regards development practises relating to these tools, the Chromium
+    project is quite exemplary:
+
+    * Various `presubmit
+      <http://www.chromium.org/developers/how-tos/depottools/presubmit-scripts>`_
+      scripts are run before code is submitted for review.
+
+    * A really simple `watchlist
+      <http://dev.chromium.org/developers/contributing-code/watchlists>`_
+      mechanism allows for interested developers of specific code paths to be
+      automatically be cc'ed into the review.
+
+    * Developers can run their uncommitted patches on `try servers
+      <http://dev.chromium.org/developers/try-server-usage>`_ to check whether
+      it works on different platforms.
+
+    * There is even a process for `tree sheriffs
+      <http://dev.chromium.org/developers/tree-sheriffs>`_ to maintain a healthy
+      `tree status <http://chromium-status.appspot.com/>`_ when committed builds
+      fail for some reason.
+
+.. tag:: #dev, #ui, @tav
+
+  ✓ Implement a planfile generator and client-side app.
+
+    Planfiles are intended as a happy medium between a minimal TODO text file
+    and a full blown web-based issue tracker. Two complementary
+    `reStructuredText directives
+    <http://docutils.sourceforge.net/docs/ref/rst/directives.html>`_ have been
+    created to support the creation of HTML planfiles from the plain text
+    variant.
+
+    The ``plan`` directive inserts some Javascript into generated HTML files for
+    a client-side web application which will allow viewers to filter plan items
+    based on tags. The app has special support for bookmark-able filter URLs via
+    the fragment identifier and will degrade gracefully on older browsers.
+
+    .. syntax:: rst
+
+      .. plan:: project-id
+
+    It does, however, expect certain CSS classes to be defined and for the
+    `plan.js <http://dev.ampify.it/js/plan.js>`_ file to be accessible at
+    ``/js/plan.js``.
+
+    Individual plan items are easy to define. Just nest them inside the ``tag``
+    directive which allows for plan items to be tagged with arbitrary tags.,
+    e.g.
+
+    .. syntax:: rst
+
+      .. tag:: #dev, #ui, @tav, WIP
+
+        ✗ Implement a planfile generator and client-side app.
+
+          This is what a sample plan item would look like.
+
+    There is special support for ``#hashtags``, ``@names`` and even
+    ``milestone:`` and ``dep:`` style tags. These will have different CSS
+    classes and can therefore be visually disambiguated easily. Displaying of
+    items based on dependency analysis isn't there yet, but could be added
+    relatively easily.
+
+.. tag:: #dev, @tav
+
+  ✓ Implement a static site generator for our documentation/sites.
+
+    In our experimentation with using `Markdown
+    <http://daringfireball.net/projects/markdown/syntax>`_ and `Jekyll
+    <http://jekyllrb.com>`_, Jekyll was great but Markdown didn't suit our
+    particular use. So we updated ``yatiblog``, our ancient `reStructuredText
+    <http://docutils.sourceforge.net/rst.html>`_ based static site generator,
+    with Jekyll's `YAML front matter
+    <http://wiki.github.com/mojombo/jekyll/yaml-front-matter>`_ feature -- which
+    is working out quite well.
+
+    When yatiblog is run, it converts all the ``.txt`` files in the directory to
+    ``.html`` files in a ``website`` subdirectory according to the ``layout``
+    variable specified in each txt file's YAML front matter, e.g.
+
+    .. syntax:: yaml
+
+      ---
+      layout: page
+      title: Zero Planfile
+      ---
+
+    All other specified variables are passed onto the layout file, which are
+    `Genshi <http://genshi.edgewall.org/>`_ templates within a special
+    ``_layouts`` directory. So in the above example, ``page.genshi`` could make
+    use of ``${title}``. A layout can also define a layout for itself, allowing
+    ease of re-use of templates.
+
+    The variables defined on a page also shadow the variables defined in a
+    layout so one can have default values for variables which can be over-ridden
+    on a per page/layout basis.
+
+    Yatiblog requires that there be a special ``_config.yml`` file in the source
+    directory which defines default variables. This MUST include a list of
+    mappings for the ``index_pages``, e.g.
+
+    .. syntax:: yaml
+
+      index_pages:
+      - archive.html: archive.genshi
+      - index.html: index.genshi
+      - feed.rss: feed.genshi
+
+    This will generate the specified "index" pages after all other pages are
+    created. Yatiblog also compares the modified time of the various files and
+    does a comprehensive dependency analysis so that only necessary files are
+    regenerated whenever ``yatiblog`` is run.
+
+.. http://unicode.org/reports/tr36/tr36-8.html
+
+   ✗ Javascript testing framework
+   ✗ Javascript testing runner
+   ✗ Python testing framework
+   ✗ Python testing runner
+   ✗ Go testing framework
+   ✗ Go testing runner
+
+.. tag::
+
+  ✗ Create a Makefile for the Go packages.
+
+    There's an `experimental goinstall
+    <http://groups.google.com/group/golang-nuts/browse_thread/thread/f091704771128e32/303bed8870daf055>`_
+    which allows for one to install packages with a command like ``goinstall
+    github.com/hoisie/web.go.git``. The package can then be imported in code
+    using:
+
+    .. syntax:: go
+
+      import "github.com/hoisie/web.go.git"
+
+    The command will also recursively download all remote packages defined in
+    the import statements of the packages it's installing -- making it super
+    nice to use.
+
+
+Safe Execution
+--------------
+
+.. tag:: #security, @tav, @evangineer
+
+  ✓ Design a safe execution architecture.
+
+    Our safe execution architecture works by using multiple layers of isolation.
+    On the outermost layer we have a process which has full access to the raw
+    network, memory and processor. Only absolutely trusted code should execute
+    in this environment.
+
+    Over time, even this should be minimised as much as possible. As Mark S.
+    Miller would tell us, security against malicious threats and protection
+    against unintended bugs are just `two sides of the same coin
+    <http://www.erights.org/talks/thesis/>`_.
+
+    The innermost layer is where the actual execution of arbitrary code provided
+    by users takes place. The outermost layer communicates to this layer by a
+    series of IPC calls using `Unix domain sockets
+    <http://en.wikipedia.org/wiki/Unix_domain_socket>`_.
+
+    Intermediary layers provide various layers of isolation to ensure that
+    resource usage does not exceed certain limits -- especially network access
+    to the outer world which will be absolutely denied except through RPC calls
+    to the outermost layer.
+
+
+.. tag:: #sysadmin, @evangineer, @GReaper
+
+  ✗ Investigate virtualised environment options.
+
+    There are a number of virtualisation and paravirtualisation projects that
+    have gained mainstream adoption in recent times, e.g. `Xen
+    <http://xen.org/>`_, `KVM <http://www.linux-kvm.org/page/Main_Page>`_, &c.
+    Unfortunately these are quite bloated for our needs.
+
+    In contrast there are a handful of Vritualised Environment offerings that
+    are quite interesting. These allow one to manage `chroot
+    <http://en.wikipedia.org/wiki/Chroot>`_-like containers without duplicating
+    resources unnecessarily. And thankfully, unlike chroots, they are quite
+    hardened against `privilege escalation
+    <http://en.wikipedia.org/wiki/Privilege_escalation>`_.
+
+    On Linux there are 3 different toolsets to support this:
+
+    * `OpenVZ <http://wiki.openvz.org>`_ -- an impressive open source offering
+      from the company behind the commercial `Parallels
+      <http://www.parallels.com>`_ virtualisation products.
+
+    * `Linux-VServer <http://linux-vserver.org>`_ -- a similar offering to
+      OpenVZ but one that has been around much longer. It offers decent security
+      primitives like barriers and vfs namespaces.
+
+    * `LXC <http://openvz.org/pipermail/devel/2008-September/014314.html>`_ --
+      the only one of the three which is in the kernel mainline. It looks very
+      promising but doesn't seem to be production ready just yet.
+
+    Unfortunately we don't have much experience in this field to properly choose
+    between OpenVZ and VServer. Everyone seems to be either ideologically biased
+    or have too much of a rose-tinted perspective to provide a proper technical
+    evaluation of the two.
+
+    Another issue to bear in mind is the long term maintenance of whatever
+    option we decide to go for -- since maintaining kernel patches isn't much of
+    a pleasant affair.
+
+.. tag:: #security, @tav, @evangineer
+
+  ✓ Investigate seccomp sandboxing.
+
+    The Linux kernel has a really nice sandboxing mode called `seccomp
+    <http://en.wikipedia.org/wiki/Seccomp>`_. Threads can switch it on by
+    doing a ``prctl`` system call with the ``PR_SET_SECCOMP`` argument. After
+    that, the thread can't make any further system calls besides using
+    ``read()`` and ``write()`` on already opened file descriptors and
+    ``sigreturn()`` and ``exit()``.
+
+    Any other system call will result in it being immediately terminated via a
+    ``SIGKILL`` from the kernel. It's a rather elegant model with super minimal
+    performance overhead. It can even be activated in languages like Ruby using
+    ``syscall()`` and in Python using:
+
+    .. syntax:: python
+
+      import ctypes
+
+      # use the constant defined in /usr/include/linux/prctl.h
+      PR_SET_SECCOMP = 22
+
+      libc = ctypes.CDLL('/lib/libc.so.6')
+      libc.prctl(PR_SET_SECCOMP, 1)
+
+    As explained in Adam Langley's `Chromium's Sandbox
+    <http://www.imperialviolet.org/2009/08/26/seccomp.html>`_ article, seccomp
+    is very desirable as it makes it very easy to prevent attacks.
+    Unfortunately, one very quickly runs into needing various system calls, e.g.
+    ``mmap`` for allocating memory.
+
+    To solve this, Google are currently developing a wrapper `seccompsandbox
+    <http://code.google.com/p/seccompsandbox/wiki/overview>`_ which allows a
+    process to be split into trusted and untrusted threads. The trusted thread
+    receives requests to make system calls from the untrusted thread over a
+    socket pair. It then validates the system call against `syscall_table.c
+    <http://seccompsandbox.googlecode.com/svn/trunk/syscall_table.c>`_ before
+    performing it.
+
+    Unfortunately the wrapper is currently not usable outside of Chromium and
+    porting it is no `parkwalkian affair <http://inamidst.com/notes/phenomic>`_
+    as it requires disassembling memory and writing the entire trusted thread in
+    assembler.
+
+    But at some point we should be able to leverage it to embed processes like
+    Python, Ruby and Javascript interpreters. And, when we do invest time into
+    that, we should review `this thread
+    <http://marc.info/?l=linux-kernel&m=123579069630311>`_ on the kernel list.
+
+.. tag:: #security, @tav
+
+  ✓ Investigate sandboxing using Native Client.
+
+    `Native Client`_ (NaCl) is perhaps the most exciting development in security
+    since public key cryptography and object capability. It sets out to provide
+    a secure sandbox for running native code in web applications.
+
+    Its design consist of two layers of defence to ensure that unsafe x86
+    instructions are not executed -- providing protection from buffer overflow
+    exploits, illegal filesystem access and even resource exhaustion attacks.
+
+    It's possible to port large applications to run on top of the Native Client
+    Runtime without too much trouble. There have already been ports of both
+    `Ruby on NaCl
+    <http://nativeclient.googlecode.com/svn/trunk/src/native_client/tests/ruby/README>`_
+    and `Python on NaCl
+    <http://lackingrhoticity.blogspot.com/search/label/native-client>`_ with
+    varying degrees of success.
+
+    Unfortunately NaCl still needs a little bit more development before it can
+    be used in anger, e.g. support for 64-bit platforms, handling of JIT'd
+    interpreters, dynamic linking and use outside of browser environments.
+
+.. tag:: #security, @evangineer, @tav
+
+  ✓ Investigate access limiting in Linux.
+
+    The `POSIX Capabilities
+    <http://ftp.kernel.org/pub/linux/libs/security/linux-privs/kernel-2.4/capfaq-0.2.txt>`_
+    in the Linux kernel are so useless that they defy belief. They provide a way
+    for a root-privileged process to drop various privileges. But, in practise,
+    they add an additional attack vector that we have to protect against.
+
+    In contrast, `setrlimit <http://linux.die.net/man/2/setrlimit>`_ is a useful
+    system call that allows us to set hard limits on a process's resource usage,
+    e.g.
+
+    .. syntax:: pycon
+
+      >>> import os
+      >>> import resource
+
+      >>> # set (soft, hard) limit so new processes can't be created
+      >>> resource.setrlimit(resource.RLIMIT_NPROC, (0, 0))
+
+      >>> # set limits so new file descriptors can't be created
+      >>> resource.setrlimit(resource.RLIMIT_NOFILE, (0, 0))
+
+      >>> # creating new processes will now fail
+      >>> os.system('ls')
+      -1
+
+      >>> # and the process can't later increase the limits, woo!
+      >>> resource.setrlimit(resource.RLIMIT_NPROC, (1, 1))
+      Traceback (most recent call last):
+        File "<stdin>", line 1, in <module>
+      ValueError: not allowed to raise maximum limit
+
+    This isn't quite perfect, e.g. ``unlink()`` and ``rename()`` still work --
+    but it's a start. Next up we can use `chroot
+    <http://en.wikipedia.org/wiki/Chroot>`_ to drop access to the file system.
+    This is quite tricky to get right and there a number of issues `to take into
+    account <http://unixwiz.net/techtips/chroot-practices.html>`_.
+
+    For starters, the ``chroot()`` call needs root privileges. So we need to
+    make the call, drop capability privileges and then switch to an unused
+    real/effective/saved UID and GID. This is a lot more complicated than it
+    sounds. See the setuid sandbox below for more info.
+
+    The `Writing Secure Privileged Programs
+    <https://www.lca2010.org.nz/slides/50125.pdf>`_, `Setuid Demystified
+    <http://www.cs.berkeley.edu/~daw/papers/setuid-usenix02.pdf>`_ and `Security
+    In-Depth for Linux Software <http://www.cr0.org/paper/jt-ce-sid_linux.pdf>`_
+    documents have a lot of good pointers worth following.
+
+.. tag:: #dev, #security
+
+  ✗ Implement a setuid sandbox wrapper for Linux.
+
+    The Chromium guys have implemented a pretty decent `Setuid Sandbox
+    <http://code.google.com/p/chromium/wiki/LinuxSUIDSandbox>`_. It provides a
+    wrapper for chrooting, root privileges dropping and uid/gid switching. A
+    co-operative process which wants to be sandboxed, will have to communicate
+    with it so that it can ``clone()`` with ``CLONE_FS`` and then ``chroot()``
+    to an empty directory.
+
+    The kernel needs to be compiled with `PID namesapces
+    <http://lwn.net/Articles/259217/>`_ support so that ``CLONE_NEWPID`` can be
+    used to prevent the sandboxed process from ``ptrace()``-ing other processes.
+    The source for the sandbox can be found in the Chromium repository: `here
+    <http://src.chromium.org/viewvc/chrome/trunk/src/sandbox/linux/suid/>`_.
+
+    The code is currently geared for use by just Chromium. We need to extract
+    out the useful bits and make it into a sandbox implementation suited to our
+    specific use for supporting safe execution.
+
+.. tag:: #security, @evangineer
+
+  ✗ Investigate mandatory access control in Linux.
+
+    There a number of `mandatory access control
+    <http://en.wikipedia.org/wiki/Mandatory_access_control>`_ mechanisms on
+    Linux. Most of these make use of the `LSM
+    <http://www.usenix.org/event/sec02/full_papers/wright/wright_html/index.html>`_
+    (Linux Security Module) in the kernel:
+
+    * `SELinux <http://www.nsa.gov/research/selinux/index.shtml>`_ is the big
+      boy. Unfortunately it's so complicated that it's pretty hard to figure out
+      if a policy is actually secure.
+
+    * `Tomoyo <http://tomoyo.sourceforge.jp/>`_ is relatively lightweight and
+      uses pathname-based controls to separate security domains.
+
+    * `AppArmor <https://wiki.ubuntu.com/AppArmor>`_ is a similar alternative
+      but its future is seemingly uncertain since Novell laid off the dev team.
+
+    * `SMACK <http://schaufler-ca.com>`_ offers an even simpler labels-based
+      approach.
+
+    * `PaX/grsecurity <http://www.grsecurity.net/features.php>`_ are a series of
+      kernel patches for general all-round "hardened" protection.
+
+    Most of these are so complex that one wonders whether they offer any real
+    security. This `article
+    <http://www.ibm.com/developerworks/linux/library/l-lxc-security/index.html?S_TACT=105AGX01&S_CMP=LP>`_
+    offers a brief comparison of SELinux and SMACK setups and is a good
+    companion read to the `Linux Kernel Security Overview
+    <http://namei.org/presentations/linux-kernel-security-kca09.pdf>`_
+    presentation.
+
+    Since there is a combined VServer/grsecurity patch available, that seemed
+    a good point to begin investigating. Using VirtualBox, created a 64-bit
+    virtual machine with a minimal Ubuntu Karmic Koala install.
+
+    Following the `Kernel Mainline Builds instructions <https://wiki.ubuntu.com/KernelTeam/MainlineBuilds?action=show&redirect=KernelMainlineBuilds>`_, have obtained
+    `Karmic packages for vanilla 2.6.31.12 kernel and its sources
+    <http://kernel.ubuntu.com/~kernel-ppa/mainline/v2.6.31.12/>`_. Found
+    the `Ubuntu to Mainline kernel mapping <http://kernel.ubuntu.com/~kernel-ppa/info/kernel-version-map.html>`_ to be a useful resource in doing so.
+
+    After installing the packages and rebooting the virtual machine, following the
+    `VServer Installation on Linux 2.6 instructions
+    <http://linux-vserver.org/Installation_on_Linux_2.6>`_, applied the
+    `combined VServer 2.3/grsecurity patch <http://people.linux-vserver.org/~harry/patch-2.6.31.12-vs2.3.0.36.28-grsec2.1.14-20100303.diff>`_ to the sources.
+    Reused .config from Christoph Lukas' 2.6.31-19-vserver kernel
+    obtained from
+    his `Karmic package repo <http://linux-vserver.org/Installation_on_Ubuntu#Karmic_2>`_.  He also has a `ubuntu-karmic-vserver git repo <http://git.pingworks.net/?p=ubuntu-karmic-vserver.git/.git;a=summary>`_.
+
+    Ran ``make oldconfig`` and ``make menuconfig`` to configure grsecurity/PaX
+    options.  Used `this VServer Administration wiki page <http://wiki.yobi.be/wiki/Vserver_administration#Vanilla_with_GrSec.2C_still_the_Debian_way>`_ and `this config file <http://people.linux-vserver.org/~harry/config-2.6.22.19-g-v>`_
+    to inform the `Grsecurity and PaX Configuration Options <http://en.wikibooks.org/wiki/Grsecurity/Appendix/Grsecurity_and_PaX_Configuration_Options>`_ that were chosen.
+    Used the command ``fakeroot make-kpkg --initrd --revision=20100306 kernel_image kernel_headers`` to kick off the custom kernel build.
+
+.. tag:: #security, @tav
+
+  ✓ Investigate the PyPy sandbox.
+
+    PyPy-based interpreters can be translated with a special ``--sandbox``
+    option so that they run under a special `sandboxed mode
+    <http://codespeak.net/pypy/dist/pypy/doc/sandbox.html>`_. The translation
+    ensures that system calls are marshalled to ``stdout`` and waits for them to
+    be executed and returned from a controller process via ``stdin``.
+
+    The controller process can validate the calls and present whatever view it
+    wants, e.g. a virtual filesystem, to the sandboxed process. Since the
+    sandbox needs to make certain system calls itself, e.g. to allocate memory,
+    these are enabled with a ``sandboxsafe=True`` on a case-by-case basis:
+
+    .. syntax:: python
+
+      malloc_fn_ptr = rffi.llexternal(
+          GC_MALLOC,
+          [lltype.Signed],
+          llmemory.GCREF,
+          compilation_info=compilation_info,
+          sandboxsafe=True,
+          _nowrapper=True
+          )
+
+    This is done in such a way that although the garbage collector can allocate
+    memory, other functions trying to call ``malloc()`` will have to be
+    validated and run by the controller process. Of course the controller
+    process only has to implement calls that make sense for it to call.
+
+    It would be really cool to add ``seccomp`` support to the sandboxed process
+    as an additional layer of defence -- any such implementation would have to
+    take into consideration issues like fishing GC roots from the stack of the
+    various threads.
+
+.. tag:: #security, @fijal, wip
+
+  ✗ Implement PyPy sandbox support for the JIT.
+
+    The `JIT support <http://codespeak.net/pypy/dist/pypy/doc/jit/index.html>`_
+    in PyPy is becoming quite impressive and will be extremely well suited for
+    "number crunching" in the cloud. Unfortunately it complicates matters with
+    regards the PyPy sandbox.
+
+    But thankfully ``fijal`` is now on the case -- he is working on making the
+    sandbox work with JIT on the ``jit-sandbox`` branch on the `PyPy subversion
+    <http://codespeak.net/svn/pypy/branch/jit-sandbox/>`_ repository.
+
+Deployment Scenarios
+--------------------
+
+.. tag:: #operations
+
+  ✗ Implement Ampify Server.
+
+    The first deployment scenario for the Ampify Platform will be
+    running the Ampify Engine (backend) natively on high performance
+    dedicated servers in a data centre environment.
+
+    Ideally we'd use a minimal Ubuntu LTS base (`Lucid Lynx?
+    <https://wiki.ubuntu.com/LucidReleaseSchedule>`_) as a foundation for
+    this, something that's more stripped down than the default Ubuntu
+    Server Edition base install.
+
+    In the RHEL/CentOS world, KickStart would be used to construct the
+    desired minimal install.  `Preseed
+    <http://wiki.debian.org/DebianInstaller/Preseed>`_ is the Ubuntu/Debian equivalent.
+
+.. tag:: #operations
+
+  ✗ Implement Ampify Desktop.
+
+    The next scenario has the Ampify Engine running in a virtual
+    environment hosted on the user's regular desktop OS (Windows,
+    Mac OS X, Linux) alongside the Ampify Browser which itself will be
+    a native application.
+
+    An open question is which desktop virtualization environment to
+    use.  It needs to be one that is freely redistributable which
+    probably disqualifies VMware and possibly the non-OSE version of
+    `VirtualBox <http://www.virtualbox.org/>`_.  Another option is
+    `QEMU <http://wiki.qemu.org/Main_Page>`_.
+
+.. tag:: #operations
+
+  ✗ Implement Ampify Mobile.
+
+    Another scenario has the Ampify Browser running as a native
+    application on mobile devices such as smartphones running iPhone
+    OS, Android, `MeeGo <http://meego.com/>`_ and possibly Blackberry.
+
+    It should be possible to port the Ampify Browser to all mobile
+    platforms that have a `WebKit <http://gizmodo.com/5271098/every-mobile-browser-should-give-up-and-just-go-webkit>`_ implementation.
+
+.. tag:: #operations
+
+  ✗ Implement Ampify OS.
+
+    The final scenario has the Ampify Engine and Ampify Browser running
+    natively on mobile devices such as netbooks, tablets (such as the
+    `Notion Ink Adam <http://www.notionink.in/adamoverview.php>`_), smartphones
+    and smartbooks, eventually moving up to running on laptops and
+    desktops.
+
+    The open question is whether to build this up from the same
+    base used for the Ampify Server or possibly use `Chromium OS
+    <http://www.chromium.org/chromium-os>`_ or MeeGo for a base.
+
+Request Handling
+----------------
+
+.. tag:: #sysadmin, @tav
+
+  ✓ Investigate managed DNS providers.
+
+    Any effort to provide high availability is buggered if a user's first action
+    -- doing a DNS lookup for ``ampify.it`` -- is unresponsive/faulty. We're
+    currently using Linode's super nice DNS service that comes with our VPS, but
+    should find another provider as we outgrow it.
+
+    `UltraDNS <http://www.ultradns.com>`_ is the big boy in the managed DNS
+    world and are priced so high that only other big boys could afford it. `DNS
+    Made Easy <https://www.dnsmadeeasy.com>`_, in comparison, costs over 100x
+    less! They have an impressive offering at very affordable prices:
+
+    * DNS servers running on a globally distributed `anycast network
+      <http://en.wikipedia.org/wiki/Anycast>`_ -- so users should get their
+      queries answered faster.
+
+    * Automated updating of A records to failover IPs if their monitoring system
+      (which runs every 2-4 minutes) detects our servers to be unresponsive.
+
+    One major feature they lack is geo-location based serving of records. For
+    example sending requests from Italy to our European data center and requests
+    from Brazil to our North American data center. They do suggest on their
+    `Facebook page <http://www.facebook.com/dnsmadeeasy>`_ that support for this
+    might get added later this year.
+
+    The more expensive `Dynect <http://dyn.com/dynect>`_ service -- who provide
+    everything offered by DNS Made Easy and even seem to be marginally faster --
+    has geo-location based serving as part of their `Global Server Load Balancer
+    <http://dyn.com/dynect-traffic-management>`_ solution.
+
+    Their combined monitoring, load balancing and geo-routing sounds so good
+    that it's tempting to forego any kind of LVS based load balancing at our
+    data centers. However this has a few drawbacks:
+
+    * It will not be possible to enable people to point a root/apex domain at
+      our servers as it will not have a relatively stable IP address.
+
+    * The monitoring by Dynect is not going to be as responsive as an LVS
+      director running on the local network.
+
+.. tag:: #sysadmin, @evangineer, wip
+
+  ✗ Investigate load balancing solutions.
+
+    In public deployments, requests should be load balanced across Ampify
+    frontend servers. Hardware load balancers simply don't offer enough value to
+    justify their cost, so we need to find a decent software-based solution.
+
+    There are a number of `LVS <http://www.linuxvirtualserver.org>`_ (Linux
+    Virtual Server) components that are worth exploring: `ldirectord
+    <http://www.vergenet.net/linux/ldirectord/>`_, `heartbeat
+    <http://www.linux-ha.org>`_, `keepalived <http://www.keepalived.org>`_, &c.
+    Hosting companies like Hostway also offer managed LVS which might be
+    worthwhile.
+
+    Whatever option is decided upon, it should be based on open source software,
+    have redundancy for the load balancer itself and deal with health checks for
+    HTTP, HTTPS and SMTP backend servers.
+
+.. tag:: #sysadmin
+
+  ✗ Setup network monitoring infrastructure.
+
+    Monitoring of resource usage is essential for detecting attacks and
+    identifying potential bottlenecks to optimise -- not to mention capacity
+    planning. Thankfully there's increased support for protocols like `SNMP
+    <http://en.wikipedia.org/wiki/Simple_Network_Management_Protocol>`_
+    nowadays.
+
+    There a number of tools that can help with the monitoring, e.g. `rrdtool
+    <http://oss.oetiker.ch/rrdtool/>`_, `munin
+    <http://munin.projects.linpro.no>`_, `shinken
+    <http://www.shinken-monitoring.org>`_, `cacti <http://www.cacti.net>`_,
+    `mrtg <http://oss.oetiker.ch/mrtg/>`_, &c. The appropriate tools should be
+    setup on our frontend servers and an overview should be accessible at
+    centralised location(s).
+
+.. tag:: #sysadmin
+
+  ✗ Define the server firewall infrastructure.
+
+    There should be a set of `iptables <http://www.netfilter.org>`_
+    configurations:
+
+    * Frontend servers should only allow for external TCP traffic to ports 8025,
+      8080 and 8443.
+
+    * Internal traffic should be able to connect on all non-privileged ports.
+
+    We should have a decent default configuration which protects against common
+    `denial of service <http://en.wikipedia.org/wiki/Denial-of-service_attack>`_
+    attack patterns. It should also be possible to do live updates of denied
+    hosts on our servers in addition to working with our hosting companies to
+    block hosts at the network switches.
+
+.. tag:: #operations, #security
+
+  ✗ Buy an SSL certificate for ampify.it.
+
+    We should only serve Ampify requests over SSL. While this means a lot of
+    additional cost to us due to the extra resources used by secure connections,
+    the security benefit to end users will make this worthwhile, e.g. protection
+    against `man in the middle attacks
+    <http://en.wikipedia.org/wiki/Man-in-the-middle_attack>`_.
+
+    There are only a few root Certificate Authorities recognised by most
+    browsers. Most of the companies like `GeoTrust
+    <http://www.geotrust.com/ssl/compare-ssl-certificates.html>`_ (Equifax) and
+    `Thawte <http://www.thawte.com/>`_ are owned by Verisign. They take
+    advantage of their monopoly by charging through the roof for something that
+    costs very little.
+
+    There are a number of cheaper SSL certificate providers like `Comodo
+    <http://www.instantssl.com>`_ and `GoDaddy
+    <https://www.godaddy.com/ssl/ssl-certificates.aspx>`_. `RapidSSL
+    <http://www.rapidssl.com/ssl-certificate-products/ssl-certificate.htm>`_, a
+    GeoTrust subsidiary, also offer fairly cheap certs. As of this writing they
+    are offering a wildcard cert for $199/year.
+
+    As for `EV certificates
+    <http://en.wikipedia.org/wiki/Extended_Validation_Certificate>`_, there's no
+    conclusive evidence that the green bar provides any real additional value,
+    so we'll skip that for now.
+
+.. tag:: #sysadmin, @tav
+
+  ✓ Investigate frontend web servers.
+
+    In an ideal world the Ampify proxy node would be a production level
+    ``HTTP/1.1`` compliant web server. But unfortunately that's a while off and
+    until then we need to have a decent web server in front of it.
+
+    There are a number of decent options available nowadays. Of these, `nginx
+    <http://nginx.org/en/>`_ offers good performance, stability and even support
+    for `upgrading the nginx binary
+    <http://wiki.nginx.org/NginxCommandLine#Upgrading_To_a_New_Binary_On_The_Fly>`_
+    without downtime. `Cherokee <http://www.cherokee-project.com>`_ and
+    `lighttpd <http://www.lighttpd.net>`_ are decent alternatives but do not
+    inspire as much confidence as nginx.
+
+.. tag:: #sysadmin
+
+  ✗ Put together an nginx package for redpill.
+
+    Nginx has two different branches: 0.7.x (stable) and 0.8.x (development).
+    The development branch should be tested for stability, otherwise the package
+    should be based on the stable branch.
+
+    The package build file should ensure that the ``http_ssl``, ``http_gzip``,
+    ``http_proxy`` and any other `relevant modules
+    <http://wiki.nginx.org/NginxModules>`_ are built -- minimising needless
+    bloat and dependencies (i.e. security holes) as much as possible.
+
+.. tag:: #sysadmin, #security
+
+  ✗ Define a configuration file for the nginx servers.
+
+    There needs to be a default nginx config file we can use across all of our
+    frontend servers. This should cover everything from ensuring that requests
+    are served over SSL (redirecting non-secured connections) to passing on the
+    request to the Ampify proxy nodes.
+
+    We'll be using ``proxy_pass`` since `FastCGI
+    <http://en.wikipedia.org/wiki/FastCGI>`_ doesn't seem to offer enough of a
+    performance benefit. Special care should be taken to handle the request IP
+    address and gzip encoding -- the `tornado config
+    <http://www.tornadoweb.org/documentation#running-tornado-in-production>`_ is
+    a good starting point.
+
+    The configuration should be optimised based on benchmarking using ``ab`` or
+    ``httperf``. It's unfortunate that nginx doesn't have HAProxy's really
+    useful `stats page <http://demo.1wt.eu>`_, but perhaps something could be
+    approximated using `nginx-rrd <http://www.nginx.eu/nginx-rrd.html>`_ to help
+    with identifying bottlenecks.
+
+.. tag:: #sysadmin, #dev
+
+  ✗ Implement ping responses on the frontend.
+
+    A number of different services from the monitoring systems of our DNS
+    providers to the LVS director will be doing health checks on our frontend
+    web servers. These should support the following responses:
+
+    * ``/a/ping.frontend`` -- a response page on the frontend nginx servers
+      which should simply return the plain text ``pong``.
+
+    * ``/a/ping.proxy`` -- a response service on the proxy node behind the
+      frontend servers. This should respond with appropriate values for the
+      following JSON structure:
+
+      .. syntax:: javascript
+
+        {"zone": "eu-1", "timestamp": 1266978987.705}
+
+.. tag:: #sysadmin, #security, @evangineer
+
+  ✗ Conduct pentesting of the frontend infrastructure.
+
+    Unfortunately the Internet isn't as friendly a place as we might like it to
+    be. There are folks who would like to break into our servers just for fun.
+    As the saying goes, "If you can't beat them, join them". Pre-launch, we need
+    to conduct thorough `penetration testing
+    <http://en.wikipedia.org/wiki/Penetration_test>`_ of our servers to ensure
+    that they can keep out the script kiddies and more `capable adversaries
+    <http://googleblog.blogspot.com/2010/01/new-approach-to-china.html>`_.
+
+
+Status Monitoring
+-----------------
+
+.. tag:: #sysadmin, @tav, @evangineer
+
+  ✓ Investigate off-site uptime and latency monitoring services.
+
+    It's important to have off-site monitoring so that we can quickly know about
+    issues that end users might be experiencing. We could run something like
+    `Nagios <http://www.nagios.org>`_ on a bunch of off-site VPS nodes, but it's
+    bloated and ugly.
+
+    The same goes for `monitis <http://monitis.com>`_ which is a pretty decent
+    third-party monitoring and notification service. Its competitor `Pingdom
+    <http://www.pingdom.com>`_ looks a lot prettier but charges too much without
+    offering enough flexibility. Conclusion: code our own monitoring service.
+
+.. tag:: #sysadmin, #dev
+
+  ✗ Implement data gatherers for remonit -- a remote monitoring tool.
+
+    The remonit tool should support configurable monitoring of a number of
+    different factors by wrapping around mature Unix tools:
+
+    * Network latency using ``ping -c 1``.
+
+    * Network routing using ``traceroute``.
+
+    * DNS lookup speed and results using ``host -v``.
+
+    * HTTP/HTTPS latency and responses -- with string, headers and status code
+      check.
+
+    * SSL certificate verification.
+
+.. tag:: #sysadmin, #dev
+
+  ✗ Implement the configuration system for remonit.
+
+    The config system should be painless to manage and support monitoring of
+    various worst-case scenarios for the local ``remonit id``. The remonit app
+    should also support live reloading of the config when sent a `SIGHUP
+    <http://en.wikipedia.org/wiki/SIGHUP>`_.
+
+.. tag:: #sysadmin, #dev
+
+  ✗ Implement a data persistence layer for remonit.
+
+    The data gathered by remonit should be persisted to a local `Redis
+    <http://code.google.com/p/redis/>`_ instance according to the configuration.
+    The redis data should be pruned every so often and saved to S3 so that we
+    have historic data for the future.
+
+.. tag:: #sysadmin, #dev
+
+  ✗ Implement a notification system for remonit.
+
+    Certain events from remonit's data gatherers should trigger configurable
+    notifications. Notifications should support "dampeners" so as to avoid
+    notification floods.
+
+    There should be notifiers for email (via SendGrid_), SMS (via `BulkSMS
+    <http://www.bulksms.co.uk/>`_), `Growl <http://growl.info/>`_ (OS X Desktop)
+    and `Prowl <http://prowl.weks.net/>`_ (iPhone). Perhaps take a look at
+    `aeservmon <http://github.com/mrsteveman1/aeservmon>`_ for any relevant
+    code.
+
+.. tag:: #sysadmin, #dev
+
+  ✗ Export the remonit data over a web interface.
+
+    A basic web application should be implemented which exports the local
+    remonit data as `JSONP <http://en.wikipedia.org/wiki/JSON#JSONP>`_ over HTTP
+    with the following API:
+
+    * ``/get/<id>`` -- return the full data associated with the given event ID.
+
+    * ``/info/<profile>/<year>/<month>/<day>`` -- return a mapping of
+      configuration IDs to a list of [timestamp, event ID, latency value, error
+      state, optional throughput value] for the given date and profile.
+
+    * ``/list/<profile>`` -- return a list of configurations (name, id and
+      description) associated with the given profile.
+
+    * ``/status/<year>/<month>/<day>`` -- return a mapping of profiles to a list
+      of summary state (okay/disrupted) for the 8 days leading up to the
+      specified date (including the current state).
+
+.. tag:: #sysadmin, #dev, #operations
+
+  ✗ Setup off-site servers for running remonit.
+
+    `Linode <http://www.linode.com>`_ provide a really nice VPS hosting service.
+    We can setup one linode in the U.S. and another in the U.K. -- enabling us
+    to have off-site monitoring of the North American and European Ampify data
+    centers:
+
+    * eu.status.ampify.it
+    * us.status.ampify.it
+
+    We'd need to find a decent Asian VPS host for monitoring our Asian data
+    center when it goes live.
+
+.. tag:: #sysadmin, #dev, #operations
+
+  ✗ Implement the status.ampify.it app.
+
+    The app should should be implemented as a `Sinatra
+    <http://www.sinatrarb.com/>`_ app on `Heroku <http://heroku.com>`_ as this
+    would mean that the site would be on EC2 -- away from the rest of our
+    deployment. The site should be pretty to look at as well as useful.
+
+    It should take the JSON data from the various remonit web instances and
+    display it as sexy `Google Charts
+    <http://code.google.com/apis/charttools/>`_ like on the `App Engine Status
+    <http://code.google.com/status/appengine/>`_ page. It should also support
+    broadcast messages like on the `GitHub Status <http://status.github.com>`_
+    site -- as well as scheduled maintenance announcements and calendar.
+
+
+Hosting
+-------
+
+.. tag:: #operations, @evangineer, @tav
+
+  ✓ Investigate cloud service providers.
+
+    Choosing good hosting provider(s) for the Commons deployment is going to be
+    important for the long-term success of Ampify. Unfortunately the current set
+    of cloud services do not seem to be spectacularly attractive choices.
+
+    Services like `Amazon EC2 <http://aws.amazon.com/ec2/>`_ are impressive from
+    a technical perspective. For example, Amazon's Elastic Load Balancer makes
+    what would otherwise be a pretty painful experience quite effortless.
+
+    However, on the flip side, the abstractions also introduce a lot of
+    additional complexities to manage. This is most notable with the case of
+    Amazon's `Elastic Block Store <http://aws.amazon.com/ebs/>`_. Writing a file
+    to disk involves half a dozen support structures!
+
+    Cloud offerings also make very little sense from a financial perspective.
+    Not only do comparable "raw metal" servers cost substantially less, but you
+    also get a noticeable increase in raw performance.
+
+    And, finally, multi-tenancy introduces a host of `novel security
+    considerations <http://people.csail.mit.edu/tromer/papers/cloudsec.pdf>`_.
+    Server management is complicated enough without having to worry about these
+    and other gaming issues.
+
+.. tag:: #operations, @evangineer, @tav
+
+  ✓ Investigate dedicated server providers.
+
+    `Hostway <http://www.hostway.com/dedicated-servers/>`_ seem to have quite a
+    competitive offering with offers of good support and "100% uptime". The
+    global distribution (North America, Europe, East Asia) of their data centers
+    is also quite attractive with regards future expansion.
+
+    Of the other providers, `Terremark <http://www.terremark.com>`_ looks quite
+    impressive, but do not seem to be affordable at a small scale. `Codero
+    <http://www.codero.com>`_ (USA) and `Hetzner <http://www.hetzner.de>`_
+    (Germany) are very attractive price-wise, but may not have the most reliable
+    network connectivity.
+
+.. tag:: #operations, @tav, @evangineer, wip
+
+  ✗ Investigate/negotiate deal with Hostway.
+
+    There are a number of issues to verify:
+
+    * What's their process for scheduled maintenance? Do they have an IRC
+      channel for live support?
+
+      * They don't have an IRC channel, but do offer 24x7 support and ticketing
+        system.
+
+    * What are their limitations with regards to provisioning new servers? At
+      what rate can they handle orders for new servers?
+
+      * They can deploy new servers (from any of their default configs) within
+        24 hours, which could potentially be rushed. Custom configurations would
+        take longer though.
+
+    * What are our options about deploying across their `various data centers
+      <http://www.hostway.com/infrastructure/>`_? What is the latency between
+      these locations?
+
+      * We can choose which data centers to deploy to.
+
+    * Do they offer ECC RAM on their servers? What kind specifically?
+
+      * Yes, the RAM on the servers we've been looking at is DDR3 ECC.
+
+    * Do they offer servers with Gigabit NIC? This will be quite important for
+      the frontend servers.
+
+      * All servers are fitted with Gigabit NICs and it's quite easy to have the
+        connection switched from 100Mb/s to 1Gb/s.
+
+    * What happens when servers exceed their allocated 2TB bandwidth? Is
+      "internal" bandwidth charged for? What about across their data centers?
+
+      * Excess bandwidth is charged for at $0.35/GB. We can prebuy bandwidth
+        (as long as it's over 2TB) at a rate of $0.09/GB.
+
+      * We can arrange for our servers to be setup on a private switch in which
+        case we wouldn't be charged for internal traffic.
+
+    * Do they offer static IP addresses? What's their process for allocation of
+      new address blocks?
+
+    Tav and Mamading are currently engaged in a dialogue with Jamie Fryer from
+    Hostway.
+
+
+Launch
+------
+
+.. tag:: #outreach, #ui, @tav
+
+  ✓ Design an Ampify logo.
+
+    There is now an Ampify logo:
+
+    .. raw:: html
+
+      <div class="center"><img
+        src="http://static.ampify.it/logo.ampify.small.png" alt="Ampify"
+        /></div>
+
+    It is derived from the Tamil `Aayutha Ezhuthu
+    <http://en.wikipedia.org/wiki/ஃ>`_ and Roerich's `Banner of Peace
+    <http://commons.wikimedia.org/wiki/File:Banner_of_Peace_from_the_Roerich_Pact.svg>`_
+    inspired Espian logo by Nadine Gahr with touches from Matt Morse. The
+    typeface used is `Cholla Unicase
+    <http://www.emigre.com/fontpage.php?PChoU.html>`_ from Emigre.
+
+.. tag:: #outreach, @tav, @thruflo, @evangineer, @olasofia, wip
+
+  ✗ Figure out the launch strategy.
+
+    The whole Espian vision is pretty broad. We need to present Ampify in a way
+    that is both accessible and attractive to the initial target audience.
+    Current thoughts are to make an invitation to people to become one of 6,000
+    founding members to change the course of history:
+
+    * Create Weapons of Mass Construction!
+
+.. tag:: #outreach
+
+  ✗ Create the storyboard for the launch video.
+
+    We need to convey the entire vision in an easily understandable, fast paced
+    narrative within 10 minutes.
+
+.. tag:: #outreach
+
+  ✗ Create the content for the launch video.
+
+    A combination of Apple's `Keynote <http://www.apple.com/iwork/keynote/>`_
+    and `Motion <http://www.apple.com/finalcutstudio/motion/>`_ should be used
+    to create evocative content for the video. It is justifiable to pack in a
+    lot of information, e.g.
+
+    .. raw:: html
+
+      <div class="center"><img
+        src="http://static.ampify.it/img.presentation-sample-screen.png" alt=""
+        width="512px" height="384px" class="boxed"
+        /></div>
+
+    However the layout of the content should both be pleasant and allow for
+    readers/viewers to easily ignore detail that they're not interested in.
+
+.. tag:: #outreach, @cre8radix
+
+  ✗ Compose the sound track for the launch video.
+
+    The effectiveness of the launch video can be dramatically increased by
+    complementing it with a good sound track. The emotional palette should
+    correspond to the message we're trying to convey.
+
+.. tag:: #outreach
+
+  ✗ Record the voice-over for the launch video.
+
+    The voice-over should be in plain English so as to be accessible to as wide
+    an audience as possible. Detail should be left to the visual content.
+
+.. tag:: #outreach
+
+  ✗ Encode the launch video for publishing.
+
+    There a number of different encodings we could use. ``H.264`` will probably
+    yield the most effective distribution.
+
+.. tag:: #outreach
+
+  ✗ Upload the launch video to YouTube/Vimeo.
+
+    The video needs to be uploaded to the `YouTube account
+    <http://www.youtube.com/asktav>`_. We also have the `1,000,000th
+    <http://vimeo.com/1000000>`_ video spot on Vimeo which might be worth using.
+
+.. tag:: #outreach
+
+  ✗ Paypal subscription docs
+  ✗ Paypal subscription implementation
+  ✗ Paypal subscription test
+  ✗ Supporters site template
+  ✗ Supporters site handler
+  ✗ Supporters site auth
+  ✗ Supporters site signup
+  ✗ Supporters site model
+  ✗ Supporters site post signup + initial mail
+  ✗ Supporters site graphics
+  ✗ Supporters site management
+
+.. tag:: #outreach
+
+  ✗ Update the articles on espians.com.
+
+    Some people will inevitably check out the `espians.com
+    <http://www.espians.com>`_ site, so updating some of the articles on it
+    could avoid possible confusions that may otherwise arise.
+
+.. tag:: #outreach, #dev
+
+  ✗ Implement an Ampify app to help DM followers on Twitter.
+
+    Whilst not a great collaboration platform, `Twitter <http://twitter.com>`_
+    is a very effective broadcast mechanism. We should leverage this to help
+    spread the word. It is quite likely that those who're following us will be
+    interested in Ampify, so on launch day we should DM them all asking for
+    their help in retweeting.
+
+    By doing so, we can also personally inform them about Ampify in a way that's
+    relevant to them. However, since many followers would be common to various
+    Espians, we need to have a small utility app on Ampify which would:
+
+    1. Figure out who our followers are and show which of us they are following.
+
+    2. Allow us to mark them as having been contacted so that they don't get
+       spammed by many of us contacting them at once.
+
+    3. Open a new window for each follower which shows their current timeline in
+       one frame (in case they've already found out about Ampify from elsewhere)
+       and the form for sending them a DM in another.
+
+.. tag:: #outreach
+
+  ✗ Launch!
+
+    We need to get everyone together for an organised launch over a 48 hour
+    period:
+
+    * Aggregator sites (Hacker News, Reddit, Digg, Slashdot, Techmeme, &c.)
+    * Major blogs (ReadWriteWeb, TechCrunch, Boing Boing, &c.)
+    * Facebook (including various Groups/Pages)
+    * Twitter
+    * Selected mailing lists
+    * Selected individuals
+    * Selected communities (TED, GitHub, EDGE, nettime, &c.)
+
+    Care should be taken so as to spread the initial outreach to as diverse a
+    community as possible.
+
+
+Admin
+-----
+
+.. tag:: #operations, @tav, @olasofia
+
+  ✓ Register Metanational Commons Limited.
+
+    The entity "Metanational Commons Limited" has been officially registered
+    with `Companies House <http://www.companieshouse.gov.uk/>`_ as Company No.
+    ``06834341`` in England & Wales . The following individuals are the current
+    officials for the company:
+
+    * Tav (Vageesan Sivapathasundaram)
+    * Sofia Bustamante
+
+    The official address is at our accountant's place to make handling of admin
+    forms easier.
+
+.. tag:: #operations, @tav
+
+  ✗ Have a pre-launch meeting with the accountant.
+
+    Need to have a meeting with the accountant to go over a number of details,
+    including:
+
+    * VAT registration
+    * Annual returns (due 31st March)
+
+    It might also be worth spending some time looking into incorporating a US
+    subsidiary -- as an `LLC
+    <http://en.wikipedia.org/wiki/Limited_liability_company>`_ or a C-Corp.
+
+.. tag:: #operations, @olasofia, @tav
+
+  ✓ Setup a bank account for Metanational Commons.
+
+    A bank account has been setup with `HSBC <http://www.hsbc.co.uk/>`_ for
+    Metanational Commons with Sofia having primary access to the account.
+
+.. tag:: #operations, @tav
+
+  ✓ Setup a Paypal account for Metanational Commons.
+
+    A Paypal account has been setup, verified and linked to the HSBC account.
+
+.. tag:: #operations, @tav
+
+  ✓ Investigate payment processors for handling membership subscriptions.
+
+    `Braintree <http://www.braintreepaymentsolutions.com/>`_ sound like a pretty
+    awesome payment processor. They offer a combined merchant account and
+    payment gateway. And their API is such that our servers `never have to
+    <http://www.braintreepaymentsolutions.com/services/pci-compliance>`_ even
+    touch user's credit card details!
+
+.. tag:: #operations, @tav
+
+  ✓ Contact Braintree.
+
+    Tav emailed Braintree asking about their pricing, sign up process and
+    whether they already have a Python library for their API. Unfortunately they
+    only provide merchant accounts for US companies -- we'd need a `Federal Tax
+    ID <http://www.irs.gov/businesses/small/article/0,,id=102767,00.html>`_
+    (EIN) and a US bank account.
+
+.. tag:: #legal
+
+  ✗ Define the Terms of Service and Privacy Policy.
+
+    We need to have a decent `terms of service
+    <http://en.wikipedia.org/wiki/Terms_of_service>`_ and `privacy policy
+    <http://en.wikipedia.org/wiki/Privacy_policy>`_ for the Ampify service. They
+    should be easily readable and focus on giving users as much control as
+    possible while minimising our exposure to litigation.
+
+.. tag:: #operations, @tav
+
+    ✓ Setup a source repository for Ampify.
+
+      A repository has been setup on GitHub for the reasons outlined in our
+      "`getting started with git
+      <http://www.espians.com/getting-started-with-git.html#why-git>`_" article.
+      It can be found at `github.com/tav/ampify
+      <http://github.com/tav/ampify>`_.
+
+      To clone the repo:
+
+      .. syntax:: bash
+
+        $ git clone git://github.com/tav/ampify.git
+
+      Those who've got write access should instead:
+
+      .. syntax:: bash
+
+        $ git clone git@github.com:tav/ampify.git
+
+      Ask Tav if you'd like write access.
+
+.. tag:: #legal, @tav, needsreview
+
+  ✓ Define a Public Domain License.
+
+    It is insane that we cannot simply declare our work to be in the Public
+    Domain. The folk at CERN and Tim Berners-Lee were able to place the first
+    implementation of the Web into the Public Domain with this simple document:
+
+    .. raw:: html
+
+      <div class="center"><a
+        href="http://tenyears-www.web.cern.ch/tenyears%2Dwww/Declaration/Page2.html"><img
+        src="http://static.ampify.it/img.cern-public-domain-page-2.png"
+        width="447px" height="552px" alt="Public Domain Document" /></a>
+      </div>
+
+    Unfortunately we live in more complex times, where we have to take into
+    account issues like `moral rights
+    <http://en.wikipedia.org/wiki/Moral_rights_(copyright_law)>`_ and their
+    implications. Therefore we need a Public Domain declaration that also
+    doubles up as a license approximating it for the jurisdictions where one can
+    no longer place works into the Public Domain.
+
+    A document based heavily on `Creative Commons Zero
+    <http://creativecommons.org/publicdomain/zero/1.0/>`_ with additional
+    clauses for grant of patent rights has now been put together as our `Public
+    Domain License <license.html>`_. The license is seen as a mere transitional
+    requirement until international law adapts to the post intellectual property
+    reality.
+
+.. tag:: #operations, @tav
+
+  ✓ Buy ampify.it and related domains.
+
+    The following domains have been bought:
+
+    * ``ampify.it`` -- the host for the root deployment.
+    * ``ampnode.com`` -- a well known host for seed nodes.
+    * ``ampnest.com`` -- a host for static assets on the root deployment.
+    * ``ampify.net`` -- backend hosts for the root deployment.
+    * ``ampifyit.com``, ``ampify.org``, ``ampify.me`` -- alternate redirects.
+
+    The domain ``ampify.com`` seems to be owned by someone called Bri Holt
+    according to the `WHOIS records <http://whois.domaintools.com/ampify.com>`_.
+    Tav has emailed him about buying the domain but hasn't heard anything back.
+    Since people tend to search it's not really a problem, but would be very
+    nice to have.
+
+
+Contextualisation
+-----------------
+
+.. tag:: #dev
+
+  ✗ Implement basic language guessing.
+
+    Being able to guess languages will mean that we won't have to waste
+    resources trying to have it translated into itself needlessly. Google
+    provide a `Language Detection API
+    <http://code.google.com/apis/ajaxlanguage/documentation/#Detect>`_ but this
+    requires additional requests to be made.
+
+    Thankfully, it isn't too complicated to do it ourselves. As a first pass, we
+    can leverage the `Unicode Character Database <http://unicode.org/ucd/>`_ to
+    detect the use of foreign language scripts, e.g. Japanese.
+
+    .. syntax:: pycon
+
+      >>> import unicodedata
+
+      >>> unicodedata.name('ホ')
+      'KATAKANA LETTER HO'
+
+    Secondly, we can do an `n-grams <http://en.wikipedia.org/wiki/N-gram>`_
+    based statistical analysis of the content against pre-generated models for
+    various languages. As a starting point we can use existing models from
+    `various <http://pypi.python.org/pypi/guess-language>`_ `open
+    <http://ngramj.sourceforge.net/>`_ `source
+    <http://odur.let.rug.nl/~vannoord/TextCat/>`_ initiatives.
+
+    The language guessing should be exposed as a function of the ``language``
+    service:
+
+    .. syntax:: python
+
+      def guess(text:string) -> list:
+          return list_of_guesses
+
+    For example, calling it with the following snippet of `Madras Tamil
+    <http://en.wikipedia.org/wiki/Madras_Tamil>`_ written in English, it should
+    return something like:
+
+    .. syntax:: pycon
+
+      >>> guess("Enna da oru leave letter kooda kudukama poitta?")
+      [(</lang/madras-tamil/latin>, 0.9714), (</lang/en>, 0.0672)]
+
+    That is, it should return a list of ``(language-identifier, likelihood)``
+    tuples -- in descending order of likelihood.
+
+
+Ignore This
+-----------
+
+Redis 32-bit
+
+For example, the following message written by ``@tav`` and sent to ``#espians``::
+
+    /balance ~/account
+
+Would like the following in Ruby after being parsed:
+
+.. syntax:: ruby
+
+  {
+    :from => "tav",
+    :aspect => "/balance",
+    :to => "#espians",
+    :value_number => 9203180132
+  }
+
+.. syntax:: pycon
+
+  >>> nodule.init()
+  [0, 'START']
+
+  >>> status == 12
+  True
+
+  >>> def foo():
+  ...     if N_set: return True
+  [0, 'START']
+
+invisible mode
+
+calendar/locatrion merge
+
+
+✗ Trust metrics calculation
+
+✗ Weather Theme as ambient system status indicator
+
+✗ Nodules
+
+✓ Weblite base framework
+✓ Weblite service loader
+✓ Tamper-proof cookies
+✓ HTTP only cookies
+
+✓ Appengine manager script
+✓ Remote API handler script
+✓ Python third party dependencies
+
+✓ Minification script
+✓ Lint checker script
+✗ Javascript third party dependencies
+
+✗ Build script for jsutil
+
+✗ nodebrowser.js builder
+✗ nodebrowser.js port of env.js
+✗ nodebrowser.js runner
+✗ nodebrowser.js testing
+
+http://www.cyberciti.biz/tips/setting-processor-affinity-certain-task-or-process.html
+taskset (part of schedutils) for cpu affinity on linux
+
+✗ Go build script
+
+✗ Python client setup.py/build script
+✗ Python client testing framework
+✗ Python client testing runner
+
+✓ Appengine base yaml files
+✓ Site configuration file
+✓ Site secret file
+
+✗ Main site template
+✗ Main site css
+✗ Border-based controls
+
+✗ User identity framework
+✗ User identity core model
+✗ Invitation
+✗ Membership
+✗ Membership payment (via PayPal)
+✗ Terms of service acceptance with updates
+
+http://orestis.gr/blog/2008/02/09/moving-to-numpy/
+6.8 billion people according to the UN
+http://en.wikipedia.org/wiki/World_population
+
+http://orestis.gr/blog/2008/03/25/django-localdates-ping/
+
+✗ Login
+✗ Email
+✗ OpenID
+✗ Google
+✗ Facebook
+✗ Twitter
+✗ Flickr
+✗ Domains
+
+✗ Profile (incl. Skype)
+✗ Profile picture
+✗ User settings/configuration
+
+✗ App/service keys
+✗ App revocation
+✗ OAuth
+✗ CSRF
+✗ User quotas
+✗ Scheduled/unscheduled maintenance support
+
+✗ Item framework
+✗ Item core model
+✗ Item log model (trends, etc.)
+
+✗ Item creation
+✗ Sensor notification on create
+✗ Aspect/value parsing
+✗ Builtin types
+✗ Item indexing
+✗ Item attachment
+✗ File uploading
+
+✗ Private spaces (capabilities)
+✗ Private space creation
+✗ Private space invitation
+
+✗ Reaction definition
+✗ Builtin incr/decr reactions
+✗ Calling of before/after reactions
+✗ Private messaging
+✗ Espra credits allocation
+✗ Espra credits usage
+
+✗ Item editing
+✗ Item versioning
+✗ Item positioning
+✗ Item deleting
+
+✗ Amp-ing
+✗ Re-spacing
+✗ Pecu-allocating
+✗ Commenting
+✗ Symlinking
+✗ Original chain traversal
+
+✗ Trustmap definition
+✗ Trustmap query
+✗ Trustmap editor
+✗ Recursive trustmap
+
+✗ Item search
+✗ Search syntax
+✗ Client-side search results merge
+✗ Parallel query
+✗ Merged aspect/value query
+
+✗ Real-time update
+✗ Live node
+✗ Sensor network
+✗ Sensor node
+✗ Sensor pattern match finder
+
+✗ Redis server
+✗ Redis client
+
+✗ Worker node
+✗ Resync checker
+✗ Web hooks POSTer
+
+✗ HTTP server
+✗ Server connection stats
+✗ Web Sockets support
+✗ Web Sockets client-side support
+✗ Iframe client-side support
+
+✗ HTTP cache: etags, last-modified, if-modified-since
+✗ Client-side caches
+✗ Item caches
+✗ Dolumn-cached loading
+
+✗ Session management
+✗ Dolumns
+✗ Scrolling
+
+✗ Item views
+✗ Listing view
+✗ Calendar view
+✗ Streak calendar view
+✗ Map view
+✗ Arbitrary view
+
+✗ Autocompletion
+✗ Autogrowing editor
+✗ Inline editor
+✗ Auto-preview
+✗ Position editor
+✗ Uploader
+✗ Map location selector
+✗ Date/time selector
+
+✗ Widgets
+✗ Error handling
+✗ Error reporting
+✗ Resync notification
+✗ General notifications
+
+✗ Userscripts definition
+✗ Userstyles definition
+✗ Background uploading
+✗ Userscript hooks/ordering
+✗ Safe login
+
+✗ OEmbed
+✗ OEmbed (Skitch)
+✗ Longurls
+
+✗ Links
+✗ Includes
+✗ XSS sanitation
+
+✗ Lambdascript
+✗ Lambdascript parser
+✗ Lambdascript exec
+✗ Builtins
+✗ Unicode support
+✗ Formatters
+✗ I18n support
+✗ I18n data
+✗ Timezone support
+✗ Timezone data
+✗ Decimal support
+✗ Queries
+✗ Function definition
+✗ Views
+✗ Text type (rst, markdown, etc.)
+✗ Paste type
+✗ Syntax highlighting
+✗ Pattern definition
+✗ Pattern extraction
+
+✗ Media player
+✗ YouTube
+✗ MP3s
+✗ FlowPlayer
+
+✗ Pecu app
+✗ Pecu allocation
+✗ Auto-allocation
+✗ Top rated
+✗ Top rated in period
+✗ Pecu payouts
+✗ Pecu integration with PayPal
+
+✗ Shaila app
+✗ Shaila creation mode
+✗ Shaila grab: Flickr, Twitter, etc.
+✗ Shaila browsing
+
+✗ Packaged views
+✗ Packaged views creator
+✗ Packaged views verifier/installer
+
+✗ GitHub integration
+✗ Google calendar integration: in
+✗ Google calendar integration: out
+
+✗ RSS integration: in
+✗ RSS integration: out
+✗ Twitter integration: out
+
+✗ Domain validation
+✗ Domain view definition
+✗ Domain view rendering
+
+✗ Node logging support
+✗ Node logging redis server
+✗ Node log monitor app
+
+✗ Visualisation framework
+✗ Graph (trustmap-like) viewer
+✗ Temporal viewer
+
+✗ Email integration
+✗ SMS integration
+✗ XMPP integration
+✗ Google Wave bot
+
+✗ DNS setup
+✗ AMI setup
+✗ Redis configuration
+✗ Runner scripts
+✗ Git repository app sync
+
+IANA-reserved IPs
+
+✗ Code activity on GitHub
+
+✗ FAQs on Tender
+✗ <meta name="verify-v1" content="aLcMPDDmDYvgufTDcJiiCOgPt/FOooMmGHiPj64BMbU=" />
+
+✗ optimise page load with different asset subdomains
+✗ fallback for when 2000 supporters reached
+✗ redis-based stat.ampify.it
+✗ Update HSBC IBAN/BIC details
+
+✗ Main template
+✗ Main css
+✗ Main javascript
+✗ Main index
+
+hmz
+
+✗ Blog template
+✗ Blog index
+✗ Blog rss
+✗ Blog first entry
+
+✗ Disqus on Blog
+✗ Feedburner for Blog
+
+✗ TypeKit
+
+* Devboard (incl. contributor agreement)
+
+✗ Devboard template
+✗ Devboard handler
+✗ Devboard auth
+✗ Devboard GitHub post receive
+✗ Devboard breakpad
+✗ Devboard tree status
+✗ Devboard build status
+
+✗ Devsite template
+✗ Devsite index
+✗ Devsite article: git review
+
+See the video of an `attractive city generator
+<http://www.youtube.com/watch?v=ei812Ze8y-w>`_ by the folks at ETH's `CAAD
+<http://www.mas.caad.arch.ethz.ch/>`_ department. It's an interesting case study
+of using
+
+http://www.mas.caad.arch.ethz.ch/Exhibition/Helvepolis
+
+✗ Git review
+✗ Git review config
+✗ Git review style validator
+✗ Git review gofmt
+✗ Git review revhooks
+✗ Git review watchlist
+✗ Breakpad
+
+✗ Build slave config
+✗ Build slave runner
+✗ Python test framework
+✗ Python tests
+✗ Go test framework
+✗ Go tests
+✗ Javascript test framework
+✗ Javascript tests
+✗ Test runner
+
+✗ ./configure
+✗ Makefile
+✗ git update
+
+✗ Sendgrid subscription
+✗ Supporters site sendgrid support
+✗ Supporters site mail outs
+
+✗ Trustmaps: update to the .com site
+✗ Trustmaps: quick fixes
+✗ Trustmaps: docs clean up
+✗ Trustmaps: stream
+✗ Trustmaps: article for blog
+✗ Trustmaps: video
+
+✗ App engine rate limit increase: trustmaps
+✗ App engine rate limit increase: supporters
+✗ Twitter rate limit increase
+✗ Change passwords (twitter, facebook, gmail, etc.)
+
+✗ DNS settings
+✗ Apache setup
+✗ Possibly get a linode backup + DNS changes
+✗ Blog article on ampify
+✗ Email espians
+
+http://docs.jquery.com/QUnit
+http://ejohn.org/blog/test-swarm-alpha-open/
+http://github.com/jelmer/dulwich/blob/master/dulwich/server.py
+http://github.com/jeresig/testswarm/
+http://testswarm.com/
+http://testswarm.com/job/2/
+http://www.austintek.com/LVS/LVS-HOWTO/HOWTO/LVS-HOWTO.rewrite_ports.html
+http://github.com/lg/murder
+http://66.102.9.132/search?q=cache:eWcESlDEifAJ:open-content.net/specs/draft-jchapweske-thex-02.html+thex+content&cd=3&hl=en&ct=clnk&client=safari
+
+http://code.google.com/p/google-caja/wiki/CajaCajole
+http://www.codebasehq.com/features
+
+http://howtonode.org/do-it-fast
+http://howtonode.org/control-flow-part-ii
+http://github.com/creationix/do#readme
+http://ejohn.org/blog/ecmascript-5-objects-and-properties/
+http://code.google.com/p/google-caja/wiki/JsHtmlSanitizer
+
+http://standardinterface.org/
+http://github.com/280north/aristo
+
+http://allmydata.org/source/tahoe-lafs/trunk/docs/about.html
+
+https://calomel.org/nginx.html
+
+http://api.pyamf.org/
+http://fmspy.org/docs/en/userguide.html#features
+http://sziebert.net/posts/server-side-stream-recording-updated/
+http://rtmpy.org/wiki/IrcChannel
+
+http://linux.softpedia.com/get/Programming/Libraries/redis-queue-54702.shtml
+
+http://a.thymer.com/accounts/register/
+http://news.ycombinator.com/item?id=180311
+
+http://code.google.com/p/pycopia/
+
+Map this
+calendar schedule
+
+Planfile IE
+
+magic
+geoip
+
+
+.. |contents| raw:: html
+
+  [ <a href="#table-of-contents" class="table-of-contents-handler">Table of Contents</a> ]
+
+.. _App Engine: http://code.google.com/appengine/
+.. _Caja: http://code.google.com/p/google-caja/
+.. _CoffeeScript: http://jashkenas.github.com/coffee-script/
+.. _jQuery: http://jquery.com
+.. _Keyspace: http://scalien.com/keyspace/
+.. _Native Client: http://code.google.com/p/nativeclient/
+.. _Node.js: http://nodejs.org
+.. _PyPy: http://codespeak.net/pypy/dist/pypy/doc/
+.. _Python: http://www.python.org
+.. _Redis: http://code.google.com/p/redis/
+.. _S3: http://aws.amazon.com/s3/
+.. _SendGrid: http://sendgrid.com

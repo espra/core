@@ -24,8 +24,8 @@ ${Markup(content)}
 	<div>A brief overview of how to get involved with Ampify development.</div>
   </li>
   <li>
-	<a href="planfile.html">Planfile</a>
-	<div>The planfile for Ampify.</div>
+	<a href="zero-planfile.html">Zero Planfile</a>
+	<div>The planfile for Ampify Zero.</div>
   </li>
   <li>
 	<a href="license.html">Public Domain License</a>
