@@ -376,26 +376,6 @@ Development Process
    ✗ Javascript testing runner
    ✗ Python testing framework
    ✗ Python testing runner
-   ✗ Go testing framework
-   ✗ Go testing runner
-
-.. tag::
-
-  ✗ Create a Makefile for the Go packages.
-
-    There's an `experimental goinstall
-    <http://groups.google.com/group/golang-nuts/browse_thread/thread/f091704771128e32/303bed8870daf055>`_
-    which allows for one to install packages with a command like ``goinstall
-    github.com/hoisie/web.go.git``. The package can then be imported in code
-    using:
-
-    .. syntax:: go
-
-      import "github.com/hoisie/web.go.git"
-
-    The command will also recursively download all remote packages defined in
-    the import statements of the packages it's installing -- making it super
-    nice to use.
 
 
 Safe Execution
@@ -717,65 +697,6 @@ Safe Execution
     sandbox work with JIT on the ``jit-sandbox`` branch on the `PyPy subversion
     <http://codespeak.net/svn/pypy/branch/jit-sandbox/>`_ repository.
 
-Deployment Scenarios
---------------------
-
-.. tag:: #operations
-
-  ✗ Implement Ampify Server.
-
-    The first deployment scenario for the Ampify Platform will be
-    running the Ampify Engine (backend) natively on high performance
-    dedicated servers in a data centre environment.
-
-    Ideally we'd use a minimal Ubuntu LTS base (`Lucid Lynx?
-    <https://wiki.ubuntu.com/LucidReleaseSchedule>`_) as a foundation for
-    this, something that's more stripped down than the default Ubuntu
-    Server Edition base install.
-
-    In the RHEL/CentOS world, KickStart would be used to construct the
-    desired minimal install.  `Preseed
-    <http://wiki.debian.org/DebianInstaller/Preseed>`_ is the Ubuntu/Debian equivalent.
-
-.. tag:: #operations
-
-  ✗ Implement Ampify Desktop.
-
-    The next scenario has the Ampify Engine running in a virtual
-    environment hosted on the user's regular desktop OS (Windows,
-    Mac OS X, Linux) alongside the Ampify Browser which itself will be
-    a native application.
-
-    An open question is which desktop virtualization environment to
-    use.  It needs to be one that is freely redistributable which
-    probably disqualifies VMware and possibly the non-OSE version of
-    `VirtualBox <http://www.virtualbox.org/>`_.  Another option is
-    `QEMU <http://wiki.qemu.org/Main_Page>`_.
-
-.. tag:: #operations
-
-  ✗ Implement Ampify Mobile.
-
-    Another scenario has the Ampify Browser running as a native
-    application on mobile devices such as smartphones running iPhone
-    OS, Android, `MeeGo <http://meego.com/>`_ and possibly Blackberry.
-
-    It should be possible to port the Ampify Browser to all mobile
-    platforms that have a `WebKit <http://gizmodo.com/5271098/every-mobile-browser-should-give-up-and-just-go-webkit>`_ implementation.
-
-.. tag:: #operations
-
-  ✗ Implement Ampify OS.
-
-    The final scenario has the Ampify Engine and Ampify Browser running
-    natively on mobile devices such as netbooks, tablets (such as the
-    `Notion Ink Adam <http://www.notionink.in/adamoverview.php>`_), smartphones
-    and smartbooks, eventually moving up to running on laptops and
-    desktops.
-
-    The open question is whether to build this up from the same
-    base used for the Ampify Server or possibly use `Chromium OS
-    <http://www.chromium.org/chromium-os>`_ or MeeGo for a base.
 
 Request Handling
 ----------------
