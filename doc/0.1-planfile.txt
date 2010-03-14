@@ -1,11 +1,11 @@
 ---
 license: Public Domain
 layout: page
-title: Ampify Planfile
+title: 0.1 Planfile
 ---
 
-Ampify Planfile
-===============
+0.1 Planfile
+============
 
 Ampify is a vision of an open and decentralised application platform. This
 planfile documents the various steps towards the ``0.1`` release in late 2010.

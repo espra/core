@@ -28,6 +28,10 @@ ${Markup(content)}
 	<div>The planfile for Ampify Zero.</div>
   </li>
   <li>
+	<a href="0.1-planfile.html">0.1 Planfile</a>
+	<div>The planfile for Ampify 0.1.</div>
+  </li>
+  <li>
 	<a href="license.html">Public Domain License</a>
 	<div>The super permissive open source license for Ampify.</div>
   </li>
