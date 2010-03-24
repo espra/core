@@ -1,6 +1,9 @@
+.latest
 engine/updated.py
 live/zerolive.js
 www/ampzero.js
 www/index.html
 www/zerosite.css
 www/zerosite.js
+www/zerosite.min.css
+www/zerosite.min.js
