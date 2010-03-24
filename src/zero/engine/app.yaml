@@ -31,5 +31,5 @@ handlers:
   secure: always
 
 - url: .*
-  script: ampzero.py
-  secure: optional
+  script: zeroengine.py
+  secure: always
