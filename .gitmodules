@@ -19,3 +19,6 @@
 [submodule "third_party/rubylibs"]
 	path = third_party/rubylibs
 	url = git://github.com/tav/rubylibs.git
+[submodule "third_party/keyspace"]
+	path = third_party/keyspace
+	url = git://github.com/tav/keyspace.git
