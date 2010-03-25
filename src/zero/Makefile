@@ -7,6 +7,7 @@
 
 CLOSURE := ../../environ/local/bin/closure-2010-03-24.jar
 YUI := ../../environ/local/bin/yuicompressor-2.4.2.jar
+ZEROSITE := ./site/zerosite
 
 # ------------------------------------------------------------------------------
 # we declare our phonies so they stop telling us that targets are up-to-date
@@ -18,27 +19,26 @@ YUI := ../../environ/local/bin/yuicompressor-2.4.2.jar
 # our rules, starting with the default
 # ------------------------------------------------------------------------------
 
-all: live/zerolive.js www/index.html www/zerosite.css www/zerosite.js www/zerosite.min.css www/zerosite.min.js
+all: live/zerolive.js www/index.html www/zerosite.css www/zerosite.js \
+     www/zerosite.min.css www/zerosite.min.js
 	@touch .latest
 
 clean:
-	@rm -f live/zerolive.js
-	@rm -f www/index.html
-	@rm -f www/zerosite.css
-	@rm -f www/zerosite.js
-	@rm -f www/zerosite.min.css
-	@rm -f www/zerosite.min.js
+	rm -f live/zerolive.js
+	rm -f www/debug.html
+	rm -f www/index.html
+	rm -f www/zerosite.css
+	rm -f www/zerosite.js
+	rm -f www/zerosite.min.css
+	rm -f www/zerosite.min.js
 
 live/zerolive.js: live/zerolive.coffee
 	@echo "Generating: zerolive.js"
 	@coffee --no-wrap --compile live/zerolive.coffee
 
-www/debug.html: site/index.genshi
-	@echo "Generating: debug.html"
-
 www/index.html: site/index.genshi
 	@echo "Generating: index.html"
-	@touch www/index.html
+	@$(ZEROSITE) -i site/index.genshi -o www/index.html -d www/debug.html
 
 www/zerosite.css: site/zerosite.sass
 	@echo "Generating: zerosite.css"

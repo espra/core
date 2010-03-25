@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html xmlns:py="http://genshi.edgewall.org/">
+<?python
+
+  if not defined('DEBUG'):
+    DEBUG = False
+
+?>
+<head>
+  <title>Ampify Zero<py:if test="DEBUG"> :: DEBUG</py:if></title>
+</head>
+<body>
+  <div>Hello!</div>
+</body>
+</html>
