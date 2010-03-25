@@ -6,6 +6,7 @@
 # ------------------------------------------------------------------------------
 
 CLOSURE := ../../environ/local/bin/closure-2010-03-24.jar
+WAF := ../../environ/startup/waf --jobs=1
 YUI := ../../environ/local/bin/yuicompressor-2.4.2.jar
 ZEROSITE := ./site/zerosite
 
@@ -13,7 +14,7 @@ ZEROSITE := ./site/zerosite
 # we declare our phonies so they stop telling us that targets are up-to-date
 # ------------------------------------------------------------------------------
 
-.PHONY: all
+.PHONY: all benchmark clean debug deps distclean install test
 
 # ------------------------------------------------------------------------------
 # our rules, starting with the default
@@ -31,10 +32,29 @@ clean:
 	rm -f www/zerosite.js
 	rm -f www/zerosite.min.css
 	rm -f www/zerosite.min.js
+	@$(WAF) clean
+
+benchmark:
+	@$(WAF) benchmark
+
+debug:
+	@$(WAF) build --debug
+
+deps:
+	@$(WAF) deps
+
+distclean:
+	@$(WAF) distclean
+
+install:
+	@$(WAF) build
 
 live/zerolive.js: live/zerolive.coffee
 	@echo "Generating: zerolive.js"
 	@coffee --no-wrap --compile live/zerolive.coffee
+
+test:
+	@$(WAF) test
 
 www/index.html: site/index.genshi
 	@echo "Generating: index.html"

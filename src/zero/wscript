@@ -14,7 +14,7 @@ srcdir = '.'
 blddir = 'build'
 
 APPNAME = 'ampify'
-VERSION = '0.0.1'
+VERSION = 'zero'
 
 # ------------------------------------------------------------------------------
 # the core functions
@@ -54,7 +54,6 @@ def configure(ctx):
     ctx.check_tool('python')
 
     ctx.find_program('git', var='GIT')
-    ctx.find_program('jekyll', var='JEKYLL')
     ctx.find_program('touch', var='TOUCH', mandatory=True)
 
     prefix = Options.options.prefix
