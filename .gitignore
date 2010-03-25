@@ -5,17 +5,30 @@
 
 client_libs/appengine/secret.py
 client_libs/appengine/updated.py
+
 doc/website/*.html
+
 environ/local
+
 misc/devboard/siteconfig.py
 misc/devboard/updated.py
 misc/blog/website/*.html
 misc/blog/website/*.rss
 misc/www/website/*.html
-src/build/
-src/jsutil/ampsite.js
-src/zerodata/secret.py
-src/zerodata/updated.py
+
+src/amp/build
+
+src/zero/.latest
+src/zero/build
+src/zero/engine/updated.py
+src/zero/live/zerolive.js
+src/zero/www/ampzero.js
+src/zero/www/debug.html
+src/zero/www/index.html
+src/zero/www/zerosite.css
+src/zero/www/zerosite.js
+src/zero/www/zerosite.min.css
+src/zero/www/zerosite.min.js
 
 # minified css/js files
 
