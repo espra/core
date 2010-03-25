@@ -22,3 +22,6 @@
 [submodule "third_party/keyspace"]
 	path = third_party/keyspace
 	url = git://github.com/tav/keyspace.git
+[submodule "third_party/coffee-script"]
+	path = third_party/coffee-script
+	url = git://github.com/jashkenas/coffee-script.git
