@@ -20,24 +20,22 @@ from tokenize import generate_tokens, COMMENT, STRING, INDENT, NEWLINE, NL
 
 from genshi.template import MarkupTemplate
 from pygments import highlight
-from pygments.formatters import HtmlFormatter
-from pygments.lexers import PythonLexer
+from pygments.lexers import get_lexer_by_name
 from yaml import safe_load as load_yaml
 
 from pyutil.env import run_command
-from pyutil.rst import render_rst
+from pyutil.rst import render_rst, SYNTAX_FORMATTER
 from pyutil.scm import SCMConfig
 
 # ------------------------------------------------------------------------------
-# some konstants
+# Some Constants
 # ------------------------------------------------------------------------------
 
 LINE = '-' * 78
 MORE_LINE = '\n.. more\n'
-SYNTAX_FORMATTER = HtmlFormatter(cssclass='syntax', lineseparator='<br/>')
 
 # ------------------------------------------------------------------------------
-# utility funktion
+# Utility Functions
 # ------------------------------------------------------------------------------
 
 docstring_regex = compile(r'[ru]?"""[^"\\]*(?:(?:\\.|"(?!""))[^"\\]*)*"""')
@@ -84,7 +82,7 @@ def replace_python_docstrings(source, non_code=(COMMENT, NEWLINE, NL)):
 
     for token in generate_tokens(StringIO(source).readline):
         type = token[0]
-        handle = 0
+        handle = None
         if type == STRING:
             if code:
                 if prev and prev[0] == INDENT:
@@ -133,6 +131,7 @@ def replace_python_docstrings(source, non_code=(COMMENT, NEWLINE, NL)):
     return ''.join(result)
 
 def get_git_info(filename):
+    """Extract info from the Git repository."""
 
     environ['TZ'] = 'UTC'
     git_info = run_command(['git', 'log', '--pretty=raw', '--', filename])
@@ -206,6 +205,7 @@ def load_layout(name, path, layouts, deps=None):
         '__template__': template,
         }
 
+# Define the mappings for the supported programming languages.
 PROGLANGS = {
     '.coffee': ['coffeescript', '#', None],
     '.go': ['go', '//', None],
@@ -216,15 +216,17 @@ PROGLANGS = {
 for lang_settings in PROGLANGS.values():
     comment_symbol = lang_settings[1]
     lang_settings.extend([
-        compile(r'^\s*' + comment_symbol + r'\s?'),
-        '\n' + comment_symbol + 'DIVIDER\n',
-        compile('\n*<span class="c1">'+comment_symbol+r'DIVIDER<\/span>\n*')
+        compile(r'^\s*' + comment_symbol + r' '),
+        '\n' + comment_symbol + ' YATIBLOG-DIVIDER\n',
+        compile('<span class="c">'+comment_symbol+r' YATIBLOG-DIVIDER<\/span>'),
+        '\n\n.. break:: YATIBLOG-DIVIDER\n\n',
+        compile('<hr class="YATIBLOG-DIVIDER" />')
         ])
 
 del comment_symbol, lang_settings
 
 # ------------------------------------------------------------------------------
-# our main skript funktion
+# Our Main Script Function
 # ------------------------------------------------------------------------------
 
 def main(argv=None):
@@ -257,8 +259,7 @@ def main(argv=None):
     except SystemExit:
         return
 
-    # normalise various options and load from the config file
-
+    # Normalise various options and load from the config file.
     if args:
         source_directory = args[0]
     else:
@@ -334,8 +335,7 @@ def main(argv=None):
 
     verbose = not options.quiet
 
-    # see if there's a persistent data file to read from
-
+    # See if there's a persistent data file to read from.
     data_file = join_path(source_directory, options.data_file)
     if isfile(data_file):
         data_file_obj = open(data_file, 'rb')
@@ -344,8 +344,7 @@ def main(argv=None):
     else:
         data_dict = {}
 
-    # figure out what the generated files would be
-
+    # Figure out what the generated files would be.
     source_files = [
         file for file in listfiles(source_directory) if file.endswith('.txt')
         ]
@@ -357,8 +356,7 @@ def main(argv=None):
 
     index_files = [join_path(output_directory, index) for index in index_pages]
 
-    # handle --clean
-
+    # Handle --clean support.
     if options.clean:
         for file in generated_files + index_files + [data_file]:
             if isfile(file):
@@ -367,8 +365,7 @@ def main(argv=None):
                 rm(file)
         sys.exit()
 
-    # figure out layout dependencies for the source .txt files
-
+    # Figure out layout dependencies for the source .txt files.
     layouts = {}
     sources = {}
 
@@ -417,14 +414,14 @@ def main(argv=None):
             '__outdir__': output_directory,
             '__path__': source_path,
             '__rst__': True,
-            '__type__': filetype
+            '__type__': 'text',
+            '__filetype__': filetype
             }
 
     for source_file in source_files:
         init_rst_source(source_file)
 
-    # and likewise for any source code files
-
+    # And likewise for any source code files.
     def init_rst_source_code(source_path, destname):
 
         source_file_obj = open(source_path, 'rb')
@@ -434,51 +431,10 @@ def main(argv=None):
         filebase, filetype = splitext(basename(source_path))
         filebase = filebase.lower()
 
-        conf = PROGLANGS[filetype]
-        if conf[2]:
-            content = conf[2](content)
-        comment_matcher = conf[3]
-
-        print filebase, filetype
-
-        lines = content.split('\n')
-        sections = []
-        space_seen = has_code = docs_text = code_text = ''
-
-        for line in lines:
-            if comment_matcher.match(line):
-                if space_seen:
-                    docs_text = space_seen = ''
-                if has_code:
-                    sections.append(
-                        {'docs_text': docs_text, 'code_text': code_text}
-                        )
-                    space_seen = has_code = docs_text = code_text = ''
-                docs_text += comment_matcher.sub('', line) + '\n'
-            else:
-                if not line.strip():
-                    space_seen = True
-                elif line == '<yatiblog.comment.section>':
-                    has_code = 1
-                    continue
-                has_code = 1
-                code_text += line + '\n'
-        sections.append(
-            {'docs_text': docs_text, 'code_text': code_text}
-            )
-
-        # from pprint import pprint
-        # pprint(sections)
-
-        # print u''.join(part['code_text'] for part in sections).replace('\n\n\n', '\n\n')
-        # print u''.join(part['docs_text'] for part in sections)
-
-        return
-
         sources[source_file] = {
             '__content__': content,
             '__deps__': [],
-            '__env__': {},
+            '__env__': {'title': filebase},
             '__genfile__': destname,
             '__id__': source_path,
             '__layout__': code_layout,
@@ -488,7 +444,8 @@ def main(argv=None):
             '__outdir__': output_directory,
             '__path__': source_path,
             '__rst__': True,
-            '__type__': filetype
+            '__type__': 'code',
+            '__filetype__': filetype
             }
 
     if code_layout and code_layout not in layouts:
@@ -497,8 +454,7 @@ def main(argv=None):
     for destname, source_path in code_files.items():
         init_rst_source_code(source_path, destname)
 
-    # and likewise for the index_pages
-
+    # And likewise for the index_pages.
     render_last = set()
 
     for index_page, index_source in index_pages.items():
@@ -520,14 +476,14 @@ def main(argv=None):
                 '__outdir__': output_directory,
                 '__path__': source_path,
                 '__rst__': False,
-                '__type__': 'index'
+                '__type__': 'index',
+                '__filetype__': 'genshi'
                 }
         else:
             init_rst_source(index_source, index_page)
         render_last.add(index_source)
 
-    # update the envs for all the source files
-
+    # Update the envs for all the source files.
     for source in sources:
         info = sources[source]
         layout = info['__layout__']
@@ -539,8 +495,7 @@ def main(argv=None):
         info.update(get_git_info(info['__path__']))
         info.update(info.pop('__env__'))
 
-    # figure out which files to regenerate
-
+    # Figure out which files to regenerate.
     if not options.force:
 
         no_regen = set()
@@ -587,8 +542,7 @@ def main(argv=None):
             for source in remaining.intersection(no_regen):
                 del sources[source]
 
-    # regenerate!
-
+    # Regenerate!
     for source, source_info in sorted(sources.items(), key=lambda x: x[1]['__rst__'] == False):
 
         info = config.copy()
@@ -601,7 +555,79 @@ def main(argv=None):
             print LINE
             print
 
-        if info['__rst__']:
+        if info['__type__'] == 'code':
+
+            content = info['__content__']
+            conf = PROGLANGS[info['__filetype__']]
+            if conf[2]:
+                content = conf[2](content)
+            comment_matcher = conf[3]
+
+            lines = content.split('\n')
+            include_section = None
+
+            sections = []; new_section = sections.append
+            docs_text = []; docs_out = docs_text.append
+            code_text = []; code_out = code_text.append
+
+            for line in lines:
+                if comment_matcher.match(line):
+                    line = comment_matcher.sub('', line)
+                    if line == '<yatiblog.comment.section>':
+                        include_section = 1
+                    else:
+                        docs_out(line)
+                else:
+                    if not line.strip():
+                        if docs_text and not include_section:
+                            last_line = docs_text[-1].strip()
+                            if last_line:
+                                last_line_char = last_line[0]
+                                for char in last_line:
+                                    if char != last_line_char:
+                                        break
+                                else:
+                                    include_section = 1
+                    else:
+                        if docs_text:
+                            include_section = 1
+                    if docs_text:
+                        if include_section:
+                            new_section({
+                                'docs_text': '\n'.join(docs_text),
+                                'code_text': '\n'.join(code_text)
+                                })
+                            docs_text[:] = []
+                            code_text[:] = []
+                            include_section = None
+                        else:
+                            docs_text[:] = []
+                    else:
+                        code_out(line)
+
+            new_section({'docs_text': '', 'code_text': ''.join(code_text)})
+
+            docs = conf[6].join(part['docs_text'] for part in sections)
+            code = conf[4].join(part['code_text'] for part in sections)
+
+            docs_html, props = render_rst(docs, with_props=1)
+            info.update(props)
+
+            code_html = highlight(code, get_lexer_by_name(conf[0]), SYNTAX_FORMATTER)
+
+            docs_split = conf[7].split(docs_html)
+            code_split = conf[5].split(code_html)
+
+            for i in range(len(docs_split) - 1):
+                print code_split[i+1]
+                print
+                print docs_split[i]
+                print '---------------------------------------------------------'
+                print
+
+            sys.exit()
+
+        elif info['__rst__']:
             output = info['__output__'] = render_rst(info['__content__'])
             if info['__lead__'] == info['__content__']:
                 info['__lead_output__'] = info['__output__']
@@ -638,8 +664,7 @@ def main(argv=None):
         if verbose:
             print 'Done!'
 
-    # persist the data file to disk
-
+    # Persist the data file to disk.
     if data_file:
         data_file_obj = open(data_file, 'wb')
         dump_pickle(data_dict, data_file_obj)
@@ -647,98 +672,25 @@ def main(argv=None):
 
     sys.exit()
 
-    # @/@ site config
+    # @/@ Fix up the old index.js/json generator.
 
-    # @/@ need to fix up this old segment of the code to the latest approach
+#     index_js_template = join_path(output_directory, 'index.js.template')
 
-    if options.package:
+#     if isfile(index_js_template):
 
-        package_root = options.package
-        files = []
-        add_file = files.append
-        package = None
-        for part in reversed(package_root.split(SEP)):
-            if part:
-                package = part
-                break
-        if package is None:
-            raise ValueError("Couldn't find the package name from %r" % package_root)
+#         index_json = json.dumps([
+#             [_art['__name__'], _art['title'].encode('utf-8')]
+#             for _art in sorted(
+#                 [item for item in items if item.get('x-created') and
+#                  item.get('x-type', 'blog') == 'blog'],
+#                 key=lambda i: i['x-created']
+#                 )
+#             ])
 
-        for dirpath, dirnames, filenames in walk(package_root):
-            for filename in filenames:
-
-                if not filename.endswith('.py'):
-                    continue
-
-                filename = join_path(dirpath, filename)
-                module = package + filename[len(package_root):]
-                if module.endswith('__init__.py'):
-                    module = module[:-12]
-                else:
-                    module = module[:-3]
-
-                module = '.'.join(module.split(SEP))
-                module_file = open(filename, 'rb')
-                module_source = module_file.read()
-                module_file.close()
-
-                docstring = docstring_regex.search(module_source)
-
-                if docstring:
-                    docstring = docstring.group(0)
-                    if docstring.startswith('r'):
-                        docstring = docstring[4:-3]
-                    else:
-                        docstring = docstring[3:-3]
-
-                if docstring and docstring.strip().startswith('=='):
-                    docstring = strip_leading_indent(docstring)
-                    module_source = docstring_regex.sub('', module_source, 1)
-                else:
-                    docstring = ''
-
-                info = {}
-
-                if root_path and isabs(filename) and filename.startswith(root_path):
-                    info['__path__'] = filename[len(root_path)+1:]
-                else:
-                    info['__path__'] = filename
-
-                info['__updated__'] = datetime.utcfromtimestamp(
-                    stat(filename).st_mtime
-                    )
-
-                info['__outdir__'] = output_directory
-                info['__name__'] = 'package.' + module
-                info['__type__'] = 'py'
-                info['__title__'] = module
-                info['__source__'] = highlight(module_source, PythonLexer(), SYNTAX_FORMATTER)
-                add_file((docstring, '', info))
-
-    # @/@ fix up the old index.js/json generator
-
-    try:
-        import json
-    except ImportError:
-        import simplejson as json
-
-    index_js_template = join_path(output_directory, 'index.js.template')
-
-    if isfile(index_js_template):
-
-        index_json = json.dumps([
-            [_art['__name__'], _art['title'].encode('utf-8')]
-            for _art in sorted(
-                [item for item in items if item.get('x-created') and
-                 item.get('x-type', 'blog') == 'blog'],
-                key=lambda i: i['x-created']
-                )
-            ])
-
-        index_js_template = open(index_js_template, 'rb').read()
-        index_js = open(join_path(output_directory, 'index.js'), 'wb')
-        index_js.write(index_js_template % index_json)
-        index_js.close()
+#         index_js_template = open(index_js_template, 'rb').read()
+#         index_js = open(join_path(output_directory, 'index.js'), 'wb')
+#         index_js.write(index_js_template % index_json)
+#         index_js.close()
 
 # PDF_COMMAND = ['prince', '--input=html', '--output=pdf'] # --no-compress
 # PDF_CSS = join_path(WEBSITE_ROOT, 'static', 'css', 'print.css')
@@ -747,7 +699,7 @@ def main(argv=None):
 # 	    $(prince) $$n --style=$(pdf_css) --output=$@; \
 
 # ------------------------------------------------------------------------------
-# run farmer!
+# Run Farmer!
 # ------------------------------------------------------------------------------
 
 if __name__ == '__main__':
