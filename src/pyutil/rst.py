@@ -18,18 +18,14 @@ helper utility function called ``render_rst``.
   ...
   ... '''
 
-By default the output format of 'xhtml' is assumed:
+By default the output format of ``xhtml`` is assumed:
 
   >>> render_rst(text)
   u'<p>This is a <strong>test</strong> document.</p>'
 
-You can also pass in the alternative format of 'tex':
-
-  >>> render_rst(text, format='tex')
-  u'\n\\setlength{\\locallinewidth}{\\linewidth}\n\nThis is a \\textbf{test} document.\n'
-
-This produces TeX output which should be run through an application like
-``latex`` or ``pdflatex`` to get a typeset document.
+You can also pass in the alternative ``format='tex'``. This produces TeX output
+which should be run through an application like ``latex`` or ``pdflatex`` to get
+a typeset document.
 
 By default the input is assumed to be either a unicode object or a str object
 encoded as 'utf-8'. You can specify an alternative input encoding if needed:
@@ -39,7 +35,7 @@ encoded as 'utf-8'. You can specify an alternative input encoding if needed:
   ... Price in Caf\xe9s are often in \x80
   ...
   ... '''
-
+  ...
   >>> render_rst(text, encoding='windows-1252')
   u'<p>Price in Caf\xe9s are often in \u20ac</p>'
 
@@ -68,7 +64,7 @@ You can set the optional ``as_whole`` parameter to True and a complete HTML or
 LaTeX output will be generated with default headers and footers:
 
   >>> render_rst(text, as_whole=True)
-  u'<?xml...<html...<p>Hello <em>world</em>!</p>\n</div>\n</body>\n</html>'
+  u'...<html...<p>Hello <em>world</em>!</p>...'
 
 As opposed to just the rendered version of the text itself:
 
@@ -380,7 +376,8 @@ class TagDirective(Directive):
                 tag_name = tag_text
 
             tag_span = (
-                u'<span class="tag tag-type-%s tag-val-%s" tagname="%s" tagnorm="%s">%s</span> ' %
+                u'<span class="tag tag-type-%s tag-val-%s" tagname="%s" '
+                 'tagnorm="%s">%s</span> ' %
                 (tag_type, tag_class, tag_name, tag.lower(), tag_text)
                 )
 
@@ -443,7 +440,9 @@ class TagDirective(Directive):
             self.content, self.content_offset, tag_content_container
             )
 
-        prefix = nodes.raw('', u'<div id="%s" class="tag-content">' % tag_id, format='html')
+        prefix = nodes.raw(
+            '', u'<div id="%s" class="tag-content">' % tag_id, format='html'
+            )
         suffix = nodes.raw('', u'</div>', format='html')
 
         return [prefix, tag_content_container, tag_info, suffix]
@@ -882,7 +881,9 @@ def render_rst(
 
         # TOC href ID and div adder.
         output = replace_toc_attributes(
-            '<p class="topic-title\\1"><a name="\\2"></a><span id="document-toc">\\3</span></p>\n<div id="document-toc-listing">\\4</div></div>',
+            '<p class="topic-title\\1"><a name="\\2"></a><span '
+            'id="document-toc">\\3</span></p>\n<div id="documen'
+            't-toc-listing">\\4</div></div>',
             output)
 
         # Inserting an "#abstract" ID.
@@ -898,7 +899,8 @@ def render_rst(
 
         # Drop shadow wrappers for figures.
         output = replace_drop_shadows(
-            r'<div class="figure\1<div class="wrap1"><div class="wrap2"><div class="wrap3"><img\2/></div></div></div>\3</div>',
+            '<div class="figure\\1<div class="wrap1"><div class="wrap2">'
+            '<div class="wrap3"><img\\2/></div></div></div>\\3</div>',
             output)
 
         # @/@ reinstate this? -- name="" no no
@@ -939,7 +941,9 @@ def render_rst(
     if with_props:
         if format == 'html':
             props.setdefault('title', visitor.title and visitor.title[0] or u'')
-            props.setdefault('subtitle', visitor.subtitle and visitor.subtitle[0] or u'')
+            props.setdefault(
+                'subtitle', visitor.subtitle and visitor.subtitle[0] or u''
+                )
         return output, props
 
     return output
@@ -999,6 +1003,3 @@ def render_rst(
     #
     # "Look love -- I'm not messing with someone who can drink 12 pints of
     # Guinness..."
-    #
-    # --------------------------------------------------------------------------
-

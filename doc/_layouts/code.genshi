@@ -8,6 +8,7 @@ license: Public Domain
 #body-inner {
 	width: 1200px;
 }
+#header { display: none; }
 </style>
 <?python
   new_content = []; out = new_content.append

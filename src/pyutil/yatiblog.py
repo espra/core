@@ -210,6 +210,7 @@ def load_layout(name, path, layouts, deps=None):
 PROGLANGS = {
     '.coffee': ['coffeescript', '#', None],
     '.go': ['go', '//', None],
+    '.js': ['javascript', '//', None],
     '.py': ['python', '#', replace_python_docstrings],
     '.rb': ['ruby', '#', None]
     }

@@ -24,6 +24,10 @@ ${Markup(content)}
 	<div>A brief overview of how to get involved with Ampify development.</div>
   </li>
   <li>
+	<a href="code.html">Code Documentation</a>
+	<div>Documentation for various source files.</div>
+  </li>
+  <li>
 	<a href="zero-planfile.html">Zero Planfile</a>
 	<div>The planfile for Ampify Zero.</div>
   </li>
