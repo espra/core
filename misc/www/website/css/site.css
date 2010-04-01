@@ -1440,7 +1440,7 @@ td.code-docs .permalink {
 	color: #efc4c5;
 	color: #c32528;
 	position: absolute;
-	top: 11px; left: -12px;
+	top: 11px; left: -10px;
 	padding-top: 3px;
 	opacity: 0;
 	-webkit-transition: opacity 0.2s linear;
@@ -1465,30 +1465,41 @@ td.code-docs, td.code-source {
 }
 
 td.code-docs {
-	max-width: 540px;
-	min-width: 540px;
+	max-width: 550px;
+	min-width: 550px;
 	font-family: 'Palatino Linotype', 'Book Antiqua', Palatino, FreeSerif, serif;
 	font-size: 16px;
 	line-height: 24px;
 	color: #252519;
 	padding-right: 10px;
+	padding-left: 10px;
 }
 
 td.code-docs h1, td.code-docs h2 {
 	padding-top: 10px !important;
 	padding-bottom: 10px !important;
 }
+
+td.code-docs h1.title {
+	font-size: 1.5em !important;
+}
+
+td.code-docs h1 {
+	font-size: 1.25em !important;
+}
 	
 td.code-docs pre {
 	font-size: 12px !important;
 	font-family: Monaco, Consolas, "Lucida Console", monospace !important;
+	margin: 10px 5px 10px 0px;
 }
 
 td.code-source {
-	max-width: 630px;
-	min-width: 630px;
+	max-width: 620px;
+	min-width: 620px;
 	background-color: #f8f8ff;
 	border-left: 1px solid #dedede;
+	border-left: 1px solid #aeaeae;
 }
 
 td.code-source pre {
@@ -1509,4 +1520,9 @@ td.code-source pre {
 
 #code-logo {
 	float: right;
+	padding-top: 5px;
+}
+
+#code-docs-listing blockquote {
+	padding: 10px 20px;
 }
