@@ -1441,7 +1441,7 @@ td.code-docs .permalink {
 	color: #c32528;
 	position: absolute;
 	top: 11px; left: -12px;
-	padding-top: 4px;
+	padding-top: 3px;
 	opacity: 0;
 	-webkit-transition: opacity 0.2s linear;
 }
@@ -1471,6 +1471,7 @@ td.code-docs {
 	font-size: 16px;
 	line-height: 24px;
 	color: #252519;
+	padding-right: 10px;
 }
 
 td.code-docs h1, td.code-docs h2 {
@@ -1493,7 +1494,7 @@ td.code-source {
 td.code-source pre {
 	font-size: 12px !important;
 	font-family: Monaco, Consolas, "Lucida Console", monospace !important;
-	margin: 10px 10px 0 10px;
+	margin: 10px 0 0 10px;
 	background-color: transparent;
 	border: 0;
 	color: #101010;
@@ -1504,4 +1505,8 @@ td.code-source pre {
 	-webkit-border-radius: 0px;
 	border-radius: 0px;
 	-webkit-box-shadow: 0px 0px 0px transparent;
+}
+
+#code-logo {
+	float: right;
 }

@@ -1,7 +1,15 @@
 # No Copyright (-) 2004-2010 The Ampify Authors. This file is under the
 # Public Domain license that can be found in the root LICENSE file.
 
-"""Utility tools to generate HTML articles/blogs/sites from source files."""
+"""
+========
+Yatiblog
+========
+
+Yatiblog provides a set of utility tools to generate HTML articles/blogs/sites
+from source files.
+
+"""
 
 import atexit
 import sys
@@ -555,7 +563,9 @@ def main(argv=None):
                 del sources[source]
 
     # Regenerate!
-    for source, source_info in sorted(sources.items(), key=lambda x: x[1]['__rst__'] == False):
+    items = sorted(sources.items(), key=lambda x: x[1]['__rst__'] == False)
+
+    for source, source_info in items:
 
         info = config.copy()
         info.update(source_info)

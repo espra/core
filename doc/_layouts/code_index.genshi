@@ -1,6 +1,7 @@
 ---
 layout: page
 license: Public Domain
+title: Code Documentation
 ---
 
 <div xmlns:py="http://genshi.edgewall.org/">
