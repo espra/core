@@ -181,7 +181,7 @@ except ImportError:
 from io import IteratorParser
 
 # ------------------------------------------------------------------------------
-# some konstants
+# Some Constants
 # ------------------------------------------------------------------------------
 
 HTML_VISITOR_ATTRIBUTES = (
@@ -236,7 +236,7 @@ LATEX_SETUP = ('tex', LaTeXTranslator, DEFAULT_TRANSFORMS, LATEX_OPTION_PARSER)
 RAW_SETUP = (None, None, DEFAULT_TRANSFORMS, OPTION_PARSER)
 
 # ------------------------------------------------------------------------------
-# some pre-kompiled regular expressions
+# Some Pre-compiled Regular Expressions
 # ------------------------------------------------------------------------------
 
 replace_toc_attributes = re.compile(
@@ -258,7 +258,7 @@ replace_whitespace = re.compile('[\v\f]').sub
 split_html_tags = re.compile('(?sm)<(.*?)>').split
 
 # ------------------------------------------------------------------------------
-# rst direktives
+# RST Directives
 # ------------------------------------------------------------------------------
 
 def break_directive(name, arguments, options, content, lineno,
@@ -273,6 +273,7 @@ def break_directive(name, arguments, options, content, lineno,
     raw_node = nodes.raw('', '<hr class="%s" />' % break_class, format='html')
 
     # return [nodes.transition()]
+
     return [raw_node]
 
 break_directive.arguments = (0, 1, True)
@@ -284,7 +285,7 @@ break_directive.content = False
 directives.register_directive('break', break_directive)
 
 # ------------------------------------------------------------------------------
-# a tag direktive!!
+# A Tag Directive!!
 # ------------------------------------------------------------------------------
 
 SEEN_TAGS_CACHE = None
@@ -415,7 +416,6 @@ class TagDirective(Directive):
             TAG_COUNTER = TAG_COUNTER + 1
             tag_id = 'temp-%s' % TAG_COUNTER
 
-        # tag_id = '%s-planitem-%s' % (tag_list_id, tag_id)
         tag_id = 'planitem-%s' % tag_id
 
         if tag_id in SEEN_TAGS_CACHE:
@@ -451,7 +451,7 @@ class TagDirective(Directive):
 directives.register_directive('tag', TagDirective)
 
 # ------------------------------------------------------------------------------
-# plan direktive!
+# Plan Directive!
 # ------------------------------------------------------------------------------
 
 CURRENT_PLAN_ID = None
@@ -492,7 +492,7 @@ plan_directive.content = True
 directives.register_directive('plan', plan_directive)
 
 # ------------------------------------------------------------------------------
-# konvert plain kode snippets to funky html
+# Convert plain code snippets to funky HTML
 # ------------------------------------------------------------------------------
 
 SYNTAX_FORMATTER = HtmlFormatter(cssclass='syntax', lineseparator='<br/>')
@@ -541,19 +541,15 @@ def doctest2html(content):
     return '\n'.join(out)
 
 # ------------------------------------------------------------------------------
-# pretty typographical syntax converter
+# Pretty Typographical Syntax Converter
 # ------------------------------------------------------------------------------
 
 def convert(content):
     """Convert certain characters to prettier typographical syntax."""
 
-    # remember: the order of the replacements matter...
-
+    # Remember: the order of the replacements matter...
     content = content.replace(
-        # '&lt;', '<').replace(
-        # '&gt;', '>').replace(
         '&quot;', '"').replace(
-        # '&amp;', '&').replace(
         ' -->', 'HTML-COMMENT-ELEMENT-CLOSE').replace(
         '-&gt;', '&rarr;').replace(
         '<-', '&larr;').replace(
@@ -638,21 +634,19 @@ def convert(content):
     return content
 
 # ------------------------------------------------------------------------------
-# the meta prettifier funktion which kalls the above ones
+# The Meta Prettifier Function Which Calls The Above Ones
 # ------------------------------------------------------------------------------
 
 def escape_and_prettify(content):
     """Escape angle brackets appropriately and prettify certain blocks."""
 
-    # our markers and our output gatherer
-
+    # Our markers and our output gatherer.
     _literal_block = _element = _content = False
     output = []
 
     for i, block in enumerate(split_html_tags(content.strip())):
 
-        # we setup the state
-
+        # We setup the state
         if i % 2:
 
             _content = False
@@ -684,8 +678,7 @@ def escape_and_prettify(content):
             _content = True
             _element = False
 
-        # we do different things based on the state
-
+        # We do different things based on the state.
         if _element:
             output.append('<' + block + '>')
         elif _content:
@@ -699,16 +692,16 @@ def escape_and_prettify(content):
 
     output = ''.join(output)
 
-    # gah!
+    # Gah!
     output = output.replace('<<', '&lt;<')
 
-    # praise be to them negative lookahead regex thingies
+    # Praise be to them negative lookahead regex thingies.
     output = replace_ampersands('&amp;', output)
 
     return output
 
 # ------------------------------------------------------------------------------
-# some utility funktions
+# Some Utility Functions
 # ------------------------------------------------------------------------------
 
 def render_drop_cap(content):
@@ -736,7 +729,7 @@ def render_plexlink(content):
     return u'<a href="%s.html">%s</a>' % (u'-'.join(name.split()), linkname)
 
 # ------------------------------------------------------------------------------
-# parse the :properties: included in a document
+# Parse The :properties: Included In A Document
 # ------------------------------------------------------------------------------
 
 def parse_headers(source_lines, props, toplevel=False):
@@ -792,10 +785,11 @@ def parse_headers(source_lines, props, toplevel=False):
             out(line)
 
     # re.sub('(?sm)\[\[# (.*?)\]\]', render_includes, content)
+
     return new_data, props
 
 # ------------------------------------------------------------------------------
-# our kore renderer
+# Our Core Renderer
 # ------------------------------------------------------------------------------
 
 def render_rst(
@@ -822,7 +816,6 @@ def render_rst(
     settings._update_loose({
         'footnote_references': 'superscript', # 'mixed', 'brackets'
         'halt_level': 6,
-        # 'report_level': 2,
         'trim_footnote_reference_space': 1,
         })
 
@@ -869,8 +862,7 @@ def render_rst(
         else:
             output = u''.join(visitor.body)
 
-    # post rst-konversion prosessing
-
+    # Post RST-Conversion Prosessing
     if format == 'html':
 
         # [[plexlinks]]
@@ -885,15 +877,15 @@ def render_rst(
         #     code2html,
         #     output)
 
-        # support for embedding html into rst dokuments and prettifikation
+        # Support for embedding html into RST documents and prettification.
         output = escape_and_prettify(output)
 
-        # toc href id and div adder
+        # TOC href ID and div adder.
         output = replace_toc_attributes(
             '<p class="topic-title\\1"><a name="\\2"></a><span id="document-toc">\\3</span></p>\n<div id="document-toc-listing">\\4</div></div>',
             output)
 
-        # inserting an "#abstract" id
+        # Inserting an "#abstract" ID.
         output = replace_abstract_attributes(
             r'<div id="abstract" class="abstract topic">',
             output)
@@ -904,7 +896,7 @@ def render_rst(
         #     r'<a class="footnote-reference" \1>\2</a>',
         #     output)
 
-        # drop shadow wrappers for figures
+        # Drop shadow wrappers for figures.
         output = replace_drop_shadows(
             r'<div class="figure\1<div class="wrap1"><div class="wrap2"><div class="wrap3"><img\2/></div></div></div>\3</div>',
             output)
@@ -931,32 +923,32 @@ def render_rst(
         #     render_drop_cap,
         #     output, count=1)
 
-        # strip out comments
+        # Strip out comments.
         output = replace_comments('', output)
 
-        # strip out title headings
+        # Strip out title headings.
         output = replace_title_headings('', output)
 
-        # strip out border="1"
+        # Strip out border="1".
         output = replace_table_borders(r'<table class="docutils">', output)
 
-        # pad out tick/cross marks
+        # Pad out tick/cross marks.
         output = output.replace(u'<p>✓ ', u'<p>✓ &nbsp; ')
         output = output.replace(u'<p>✗ ', u'<p>✗ &nbsp; ')
 
     if with_props:
         if format == 'html':
-            props.setdefault(u'title', visitor.title and visitor.title[0] or u'')
-            props.setdefault(u'subtitle', visitor.subtitle and visitor.subtitle[0] or u'')
+            props.setdefault('title', visitor.title and visitor.title[0] or u'')
+            props.setdefault('subtitle', visitor.subtitle and visitor.subtitle[0] or u'')
         return output, props
 
     return output
 
-    # you kan do the above by using ``docutils.core`` pub = Publisher() ...
-    # but it's a pretty ineffisient way of going about converting to HTML/LaTeX
-
-    # anyways, speaking of pubs...
-
+    # You can do the above by using ``docutils.core`` -- pub = Publisher() --
+    # but it's a pretty inefficient way of going about converting to HTML/LaTeX.
+    #
+    # Anyways, speaking of pubs...
+    #
     # --------------------------------------------------------------------------
     #
     # A man goes into a pub, and the barmaid asks what he wants.

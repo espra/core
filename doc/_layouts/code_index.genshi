@@ -1,0 +1,20 @@
+---
+layout: page
+license: Public Domain
+---
+
+<div xmlns:py="http://genshi.edgewall.org/">
+<?python
+
+  from os.path import basename
+
+  items = [item for item in yatidb.values() if item['__type__'] == 'code']
+
+?>
+<ul>
+<li py:for="item in sorted(items, key=lambda x: x['__id__'])">
+  <a href="${basename(item['__name__'])}">${' / '.join(item['__id__'].split('src/', 1)[1].split('/'))}</a><br />
+  ${Markup(item['title'])}.<br />
+</li>
+</ul>
+</div>

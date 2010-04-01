@@ -3,6 +3,7 @@
 
 """Utility tools to generate HTML articles/blogs/sites from source files."""
 
+import atexit
 import sys
 
 from cStringIO import StringIO
@@ -216,9 +217,9 @@ PROGLANGS = {
 for lang_settings in PROGLANGS.values():
     comment_symbol = lang_settings[1]
     lang_settings.extend([
-        compile(r'^\s*' + comment_symbol + r' '),
+        compile(r'^\s*' + comment_symbol + r'\s*'),
         '\n' + comment_symbol + ' YATIBLOG-DIVIDER\n',
-        compile('<span class="c">'+comment_symbol+r' YATIBLOG-DIVIDER<\/span>'),
+        compile('<span class="c1?">'+comment_symbol+r' YATIBLOG-DIVIDER<\/span>'),
         '\n\n.. break:: YATIBLOG-DIVIDER\n\n',
         compile('<hr class="YATIBLOG-DIVIDER" />')
         ])
@@ -271,7 +272,7 @@ def main(argv=None):
     if not isdir(source_directory):
         raise IOError("%r is not a directory!" % source_directory)
 
-    config_file = join_path(source_directory, '_config.yml')
+    config_file = join_path(source_directory, 'yatiblog.conf')
     if not isfile(config_file):
         raise IOError("Couldn't find: %s" % config_file)
 
@@ -344,6 +345,15 @@ def main(argv=None):
     else:
         data_dict = {}
 
+    # Persist the data file to disk.
+    def persist_data_file():
+        if data_file:
+            data_file_obj = open(data_file, 'wb')
+            dump_pickle(data_dict, data_file_obj)
+            data_file_obj.close()
+
+    atexit.register(persist_data_file)
+
     # Figure out what the generated files would be.
     source_files = [
         file for file in listfiles(source_directory) if file.endswith('.txt')
@@ -363,6 +373,7 @@ def main(argv=None):
                 if verbose:
                     print "Removing: %s" % file
                 rm(file)
+        data_dict.clear()
         sys.exit()
 
     # Figure out layout dependencies for the source .txt files.
@@ -431,7 +442,7 @@ def main(argv=None):
         filebase, filetype = splitext(basename(source_path))
         filebase = filebase.lower()
 
-        sources[source_file] = {
+        sources[source_path] = {
             '__content__': content,
             '__deps__': [],
             '__env__': {'title': filebase},
@@ -440,7 +451,7 @@ def main(argv=None):
             '__layout__': code_layout,
             '__lead__': '',
             '__mtime__': stat(source_path).st_mtime,
-            '__name__': filebase,
+            '__name__': destname,
             '__outdir__': output_directory,
             '__path__': source_path,
             '__rst__': True,
@@ -454,7 +465,7 @@ def main(argv=None):
     for destname, source_path in code_files.items():
         init_rst_source_code(source_path, destname)
 
-    # And likewise for the index_pages.
+    # And likewise for the ``index_pages``.
     render_last = set()
 
     for index_page, index_source in index_pages.items():
@@ -602,30 +613,40 @@ def main(argv=None):
                             include_section = None
                         else:
                             docs_text[:] = []
+                        code_out(line)
                     else:
                         code_out(line)
 
-            new_section({'docs_text': '', 'code_text': ''.join(code_text)})
+            new_section({'docs_text': '', 'code_text': '\n'.join(code_text)})
 
             docs = conf[6].join(part['docs_text'] for part in sections)
             code = conf[4].join(part['code_text'] for part in sections)
 
             docs_html, props = render_rst(docs, with_props=1)
-            info.update(props)
+            if ('title' in props) and props['title']:
+                info['title'] = props['title']
 
             code_html = highlight(code, get_lexer_by_name(conf[0]), SYNTAX_FORMATTER)
 
             docs_split = conf[7].split(docs_html)
             code_split = conf[5].split(code_html)
+            output = info['__output__'] = []
+            out = output.append
 
-            for i in range(len(docs_split) - 1):
-                print code_split[i+1]
-                print
-                print docs_split[i]
-                print '---------------------------------------------------------'
-                print
-
-            sys.exit()
+            last = len(docs_split) - 2
+            for i in range(last + 1):
+                code = code_split[i+1].split(u'<br/>')
+                while (code and code[0] == ''):
+                    code.pop(0)
+                while (code and code[-1] == ''):
+                    code.pop()
+                code = u'<br />'.join(code)
+                if code:
+                    if i == last:
+                        code = u'<div class="syntax"><pre>' + code
+                    else:
+                        code = u'<div class="syntax"><pre>' + code + "</pre></div>"
+                out((docs_split[i], code))
 
         elif info['__rst__']:
             output = info['__output__'] = render_rst(info['__content__'])
@@ -663,12 +684,6 @@ def main(argv=None):
 
         if verbose:
             print 'Done!'
-
-    # Persist the data file to disk.
-    if data_file:
-        data_file_obj = open(data_file, 'wb')
-        dump_pickle(data_dict, data_file_obj)
-        data_file_obj.close()
 
     sys.exit()
 

@@ -1408,3 +1408,67 @@ a.buttondown span {
 #ignore-this {
 	display: none !important;
 }
+
+/* doctest */
+
+.doctest-output {
+	color: #a5504d;
+	color: #c32528;
+}
+
+.doctest-input {
+	color: #0d5d04;
+	color: #00a33f;
+	color: #6a6a6a;
+	color: #5d90cd;
+}
+
+/* permalinks */
+
+td.code-docs .permawrap {
+	position: relative;
+}
+
+td.code-docs .permalink {
+	text-decoration: none;
+	color: #454545;
+	position: absolute;
+	top: 11px; right: 0;
+	padding: 1px 2px;
+	opacity: 0;
+	-webkit-transition: opacity 0.2s linear;
+}
+
+td.code-docs .permalink:hover {
+	text-decoration: underline;
+	color: #454545;
+}
+
+td.code-docs:hover .permalink {
+	opacity: 1;
+}
+
+/* source code generator */
+
+td.code-docs, td.code-source {
+	min-height: 5px;
+	padding: 0;
+	vertical-align: top;
+	text-align: left;
+}
+
+td.code-docs {
+	max-width: 540px;
+	min-width: 540px;
+}
+
+td.code-source {
+	max-width: 650px;
+	min-width: 650px;
+	background-color: #f8f8ff;
+	border: 1px solid #dedede;
+}
+
+td.code-source pre {
+	margin: 10px 10px 0 10px;
+}
