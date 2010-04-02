@@ -289,12 +289,15 @@ var country_selected = false,
     ESPIAN_BLOGS = {
         'cre8radix': 'http://cre8radix.net',
         'happyseaurchin': 'http://2020worldwalk.blogspot.com',
-        'jeffarch': 'http://adkblueline.blogspot.com/',
+        'jeffarch': 'http://adkblueline.blogspot.com',
         'olasofia': 'http://sofiabustamante.com',
         'sbp': 'http://inamidst.com',
         'tav': 'http://tav.espians.com',
         'thruflo': 'http://thruflo.com',
         'yncyrydybyl': 'http://www.c-base.org'
+    },
+    ESPIANS_NO_TWITTER = {
+        'oierw': true
     },
     ESPIANS_COUNT = ESPIANS.length,
     IPINFO_KEYS = [
@@ -445,6 +448,9 @@ $(function () {
         selected,
         notfound,
         extra,
+        tweet_prefix,
+        tweet_suffix_img,
+        tweet_suffix_lnk,
         container,
         content_handlers=$('.table-of-contents-handler');
     if (content_handlers.length) {
@@ -473,7 +479,15 @@ $(function () {
         if (ESPIAN_BLOGS[selected]) {
             extra = ', <a href="'+ESPIAN_BLOGS[selected]+'">blog</a>';
         }
-        $('<td class="footer-follow"><a href="http://twitter.com/'+selected+'" title="Follow @'+selected+'"><img src="http://static.ampify.it/profile.'+selected+'.jpg" alt="@'+selected+'" width="69px" height="86px" /></a><div><a href="http://twitter.com/'+selected+'" title="Follow @'+selected+'">@'+selected+'</a>'+extra+'</div></td>').appendTo(container);
+        if (ESPIANS_NO_TWITTER[selected]) {
+            tweet_prefix = tweet_suffix_img = "";
+            tweet_suffix_lnk = '<a href="#">@'+selected+'</a>';
+        } else {
+            tweet_prefix = '<a href="http://twitter.com/'+selected+'" title="Follow @'+selected+'">';
+            tweet_suffix_img = "</a>";
+            tweet_suffix_lnk = '@'+selected+'</a>';
+        }
+        $('<td class="footer-follow">'+tweet_prefix+'<img src="http://static.ampify.it/profile.'+selected+'.jpg" alt="@'+selected+'" width="69px" height="86px" />'+tweet_suffix_img+'<div>'+tweet_prefix+tweet_suffix_lnk+extra+'</div></td>').appendTo(container);
     }
     $('.sharethislink').each(function () {
         SHARETHIS.addEntry({url: 'http://ampify.it'}, {button: false}).attachButton(this);
