@@ -69,7 +69,7 @@ export AMPIFY_STARTUP_DIRECTORY=`pwd -P 2> /dev/null` || return $?
 
 cd $OLDPWD || return $?
 
-export AMPIFY_ROOT=$(dirname $(dirname $AMPIFY_STARTUP_DIRECTORY))
+export AMPIFY_ROOT=$(dirname $AMPIFY_STARTUP_DIRECTORY)
 
 # ------------------------------------------------------------------------------
 # exit if $AMPIFY_ROOT is not set
@@ -96,25 +96,25 @@ function _have () {
 export AMPIFY_LOCAL=$AMPIFY_ROOT/environ/local
 
 if [ "$PATH" ]; then
-	export PATH=$AMPIFY_ROOT/environ/startup:$AMPIFY_LOCAL/bin:$AMPIFY_ROOT/misc/codereview:$PATH
+	export PATH=$AMPIFY_ROOT/environ:$AMPIFY_LOCAL/bin:$AMPIFY_ROOT/src/codereview:$PATH
 else
-	export PATH=$AMPIFY_ROOT/environ/startup:$AMPIFY_LOCAL/bin:$AMPIFY_ROOT/misc/codereview
+	export PATH=$AMPIFY_ROOT/environ:$AMPIFY_LOCAL/bin:$AMPIFY_ROOT/src/codereview
 fi
 
 case $_OS_NAME in
 	darwin)
-		export PATH=$AMPIFY_ROOT/environ/client/osx:$PATH;
+		export PATH=$AMPIFY_ROOT/environ/osx:$PATH;
 		export DYLD_FALLBACK_LIBRARY_PATH=$AMPIFY_LOCAL/lib:$AMPIFY_LOCAL/freeswitch/lib:$DYLD_LIBRARY_PATH:$HOME/lib:/usr/local/lib:/lib:/usr/lib;;
 	linux)
-		export PATH=$AMPIFY_ROOT/environ/client/linux:$PATH;
+		export PATH=$AMPIFY_ROOT/environ/linux:$PATH;
 		export LD_LIBRARY_PATH=$AMPIFY_LOCAL/lib:$LD_LIBRARY_PATH;;
 	*) echo "ERROR: Unknown system operating system: ${_OS_NAME}"
 esac
 	
 if [ "$PYTHONPATH" ]; then
-	export PYTHONPATH=$AMPIFY_ROOT/src:$AMPIFY_ROOT/third_party/pylibs:$PYTHONPATH
+	export PYTHONPATH=$AMPIFY_ROOT/src/pyutil:$AMPIFY_ROOT/third_party/pylibs:$PYTHONPATH
 else
-	export PYTHONPATH=$AMPIFY_ROOT/src:$AMPIFY_ROOT/third_party/pylibs
+	export PYTHONPATH=$AMPIFY_ROOT/src/pyutil:$AMPIFY_ROOT/third_party/pylibs
 fi
 
 if [ "$MANPATH" ]; then

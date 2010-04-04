@@ -12,7 +12,7 @@ import sys
 from base64 import urlsafe_b64encode
 from os.path import dirname, isfile, join as join_path, realpath
 
-MAIN_ROOT = dirname(dirname(dirname(realpath(__file__))))
+MAIN_ROOT = dirname(dirname(realpath(__file__)))
 OUR_SDK_PATH = join_path(MAIN_ROOT, '.appengine_python_sdk')
 
 sys.path.insert(0, OUR_SDK_PATH)

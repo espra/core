@@ -3,7 +3,7 @@
 
 require 'pathname'
 
-MAIN_ROOT = Pathname.new(__FILE__).realpath.dirname.dirname.dirname
+MAIN_ROOT = Pathname.new(__FILE__).realpath.dirname.dirname
 RUBYLIBS_ROOT = MAIN_ROOT.join('third_party', 'rubylibs')
 
 Dir.glob(RUBYLIBS_ROOT.join('*', 'lib')).each do |lib_path|

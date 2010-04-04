@@ -11,7 +11,7 @@ from os.path import dirname, join as join_path, realpath
 version = "1.5.11"
 
 wafadmin_directory = join_path(
-    dirname(dirname(dirname(realpath(__file__)))),
+    dirname(dirname(realpath(__file__))),
     'third_party', 'pylibs', 'wafadmin'
     )
 
