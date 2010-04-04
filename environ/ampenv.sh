@@ -112,9 +112,9 @@ case $_OS_NAME in
 esac
 	
 if [ "$PYTHONPATH" ]; then
-	export PYTHONPATH=$AMPIFY_ROOT/src/pyutil:$AMPIFY_ROOT/third_party/pylibs:$PYTHONPATH
+	export PYTHONPATH=$AMPIFY_ROOT/src:$AMPIFY_ROOT/third_party/pylibs:$PYTHONPATH
 else
-	export PYTHONPATH=$AMPIFY_ROOT/src/pyutil:$AMPIFY_ROOT/third_party/pylibs
+	export PYTHONPATH=$AMPIFY_ROOT/src:$AMPIFY_ROOT/third_party/pylibs
 fi
 
 if [ "$MANPATH" ]; then

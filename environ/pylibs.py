@@ -6,7 +6,7 @@ import sys
 from os.path import dirname, join as join_path, realpath
 
 AMPIFY_ROOT = dirname(dirname(realpath(__file__)))
-PYUTIL_PATH = join_path(AMPIFY_ROOT, 'src', 'pyutil')
+PYUTIL_PATH = join_path(AMPIFY_ROOT, 'src')
 THIRD_PARTY_LIBS_PATH = join_path(AMPIFY_ROOT, 'third_party', 'pylibs')
 
 if PYUTIL_PATH not in sys.path:
