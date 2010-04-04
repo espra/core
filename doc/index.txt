@@ -30,7 +30,7 @@ etc.) installed.
   # the ampenv.sh bash script. you might also want
   # to add the line to your ~/.profile
   # or ~/.bashrc files.
-  $ source ampify/environ/startup/ampenv.sh
+  $ source ampify/environ/ampenv.sh
 
   # use the new git update command which will now be
   # on your $PATH to keep the repository updated from
