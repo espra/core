@@ -6,7 +6,7 @@ You can also view the documentation online at:
 
 The documentation site is automatically generated from the `*.txt` source
 [reStructuredText](http://docutils.sourceforge.net/rst.html) files using
-Yatiblog, a static site generator that can be found in `environ/startup`.
+`yatiblog`, a static site generator that can be found in `environ/`.
 
 If you want the documentation as HTML files for offline use, you can generate
 the `website` HTML files by just running `yatiblog` in this directory.

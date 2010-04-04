@@ -1868,6 +1868,16 @@ http://www.mas.caad.arch.ethz.ch/Exhibition/Helvepolis
 ✗ Blog article on ampify
 ✗ Email espians
 
+bookmarklet
+assets library
+game
+xp points
+
+conflict resolution
+perspectives
+
+http://marijn.haverbeke.nl/codemirror/
+
 http://docs.jquery.com/QUnit
 http://ejohn.org/blog/test-swarm-alpha-open/
 http://github.com/jelmer/dulwich/blob/master/dulwich/server.py
