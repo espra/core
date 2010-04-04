@@ -1,13 +1,15 @@
-
-# No Copyright (-) 2008-2010 The Ampify Authors. This file is under the
+# No Copyright (-) 2010 The Ampify Authors. This file is under the
 # Public Domain license that can be found in the root LICENSE file.
 
-"""Ampify ZeroDataStore test client."""
+"""Ampify Zerodata Client."""
 
-from urllib2 import HTTPHandler, HTTPSHandler, ProxyHandler, UnknownHandler, \
-        HTTPDefaultErrorHandler, HTTPRedirectHandler, HTTPErrorProcessor, \
-        URLError, build_opener, install_opener, urlopen
 from os.path import dirname, join as join_path, realpath
+
+from urllib2 import (
+    HTTPHandler, HTTPSHandler, ProxyHandler, UnknownHandler,
+    HTTPDefaultErrorHandler, HTTPRedirectHandler, HTTPErrorProcessor,
+    URLError, build_opener, install_opener, urlopen
+    )
 
 from simplejson import dumps as json_encode, loads as json_decode
 
@@ -18,18 +20,18 @@ from simplejson import dumps as json_encode, loads as json_decode
 ZERODATA_ROOT = dirname(realpath(__file__))
 AMPIFY_ROOT = dirname(dirname(ZERODATA_ROOT))
 
-sys.path.insert(0, join_path(AMPIFY_ROOT, 'environ', 'startup'))
+sys.path.insert(0, join_path(AMPIFY_ROOT, 'environ'))
 
 import rconsole
 
 # ------------------------------------------------------------------------------
 # some konstants
 # ------------------------------------------------------------------------------
-API_OPERATIONS = ['get', 'delete', 'invalidate', 'put', 'query']
-PRODUCTION_ENDPOINT = "http://ampify.appspot.com"
-TEST_ENDPOINT = "http://localhost"
-ENDPOINT_MESSAGE = "This is the API endpoint of the Ampify ZeroDataStore."
 
+API_OPERATIONS = ['get', 'delete', 'invalidate', 'put', 'query']
+PRODUCTION_ENDPOINT = "http://ampifyit.appspot.com/"
+TEST_ENDPOINT = "http://localhost:8080/"
+ENDPOINT_MESSAGE = "This is the API endpoint of the Ampify ZeroDataStore."
 
 class ZeroDataClient(object)
     """Provides a client for ZeroDataStore"""

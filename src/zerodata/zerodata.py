@@ -1,7 +1,14 @@
 # No Copyright (-) 2008-2010 The Ampify Authors. This file is under the
 # Public Domain license that can be found in the root LICENSE file.
 
-"""Ampify ZeroDataStore."""
+"""
+===============
+Ampify Zerodata
+===============
+
+And this is
+
+"""
 
 import logging
 import os
@@ -194,6 +201,15 @@ def run_app(
     finally:
         sys.stdout = sys._boot_stdout
 
+def normalise(id, valid_chars=frozenset('abcdefghijklmnopqrstuvwxyz0123456789.-/')):
+    r"normalise the id"
+    id = '-'.join(id.replace('_', ' ').lower().split())
+
+def foo():
+    words = text.split()
+    if len(words) > 5000:
+        raise ValueError("The text is longer than 5,000 words!")
+
 # ------------------------------------------------------------------------------
 # the zerodatastore api
 # ------------------------------------------------------------------------------
@@ -205,6 +221,14 @@ def put(ctx):
     return ctx * 2
 
 def delete(ctx=None):
+    """
+    Delete the Item.
+
+        >>> foo = delete()
+
+    And blah.
+    """
+
     a = 1/0
     return {
         "ok": time()
@@ -212,6 +236,10 @@ def delete(ctx=None):
 
 class Ant(db.Model):
     legs = db.StringProperty()
+
+    a = """
+    Foo
+    """
 
 def query(ctx):
     key = db.Key.from_path('Ant', 1)
@@ -298,3 +326,4 @@ else:
 
 if __name__ == '__main__':
     main()
+# foo

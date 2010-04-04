@@ -1,7 +1,7 @@
 # No Copyright (-) 2010 The Ampify Authors. This file is under the
 # Public Domain license that can be found in the root LICENSE file.
 
-"""App configuration for zerodata."""
+"""App configuration for Ampify Zerodata."""
 
 import os
 
@@ -13,9 +13,9 @@ __all__ = [
 # the settings
 # ------------------------------------------------------------------------------
 
-DEBUG = True
+DEBUG = False
 
-REMOTE_KEY = 'fooa'
+REMOTE_KEY = ''
 
 API_KEY = 'bar'
 

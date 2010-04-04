@@ -20,7 +20,6 @@ src/amp/build
 
 src/zero/.latest
 src/zero/build
-src/zero/engine/updated.py
 src/zero/live/zerolive.js
 src/zero/www/ampzero.js
 src/zero/www/debug.html
@@ -29,6 +28,9 @@ src/zero/www/zerosite.css
 src/zero/www/zerosite.js
 src/zero/www/zerosite.min.css
 src/zero/www/zerosite.min.js
+
+src/zerodata/secret.py
+src/zerodata/updated.py
 
 # minified css/js files
 

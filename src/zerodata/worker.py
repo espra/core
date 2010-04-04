@@ -3,7 +3,7 @@
 # No Copyright (-) 2010 The Ampify Authors. This file is under the
 # Public Domain license that can be found in the root LICENSE file.
 
-"""Worker script for zerodata."""
+"""Worker script for Ampify Zerodata."""
 
 import sys
 
@@ -16,7 +16,7 @@ from os.path import dirname, join as join_path, realpath
 ZERODATA_ROOT = dirname(realpath(__file__))
 AMPIFY_ROOT = dirname(dirname(ZERODATA_ROOT))
 
-sys.path.insert(0, join_path(AMPIFY_ROOT, 'environ', 'startup'))
+sys.path.insert(0, join_path(AMPIFY_ROOT, 'environ'))
 
 import rconsole
 
