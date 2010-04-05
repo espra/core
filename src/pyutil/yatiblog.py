@@ -217,10 +217,13 @@ def load_layout(name, path, layouts, deps=None):
 # Define the mappings for the supported programming languages.
 PROGLANGS = {
     '.coffee': ['coffeescript', '#', None],
+    '.el': ['scheme', ';;', None],
     '.go': ['go', '//', None],
     '.js': ['javascript', '//', None],
     '.py': ['python', '#', replace_python_docstrings],
-    '.rb': ['ruby', '#', None]
+    '.pyx': ['cython', '#', None],
+    '.rb': ['ruby', '#', None],
+    '.sh': ['sh', '#', None]
     }
 
 for lang_settings in PROGLANGS.values():
@@ -587,6 +590,9 @@ def main(argv=None):
 
             lines = content.split('\n')
             include_section = None
+
+            if lines and lines[0].startswith('#!'):
+                lines.pop(0)
 
             sections = []; new_section = sections.append
             docs_text = []; docs_out = docs_text.append
