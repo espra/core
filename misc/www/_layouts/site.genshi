@@ -72,7 +72,7 @@
 		<div><a href="http://github.com/tav/ampify" title="Fork Ampify on GitHub"><img src="http://static.ampify.it/icon.github.png" alt="Fork Ampify on GitHub" width="15px" height="15px" /></a></div>
 		<div><a href="http://feeds.feedburner.com/ampify" title="Subscribe to the RSS Feed"><img src="http://static.ampify.it/icon.rss.png" alt="Subscribe to the RSS Feed" width="14px" height="14px" /></a></div>
 	</div>
-	<div id="logo"><a href="http://ampify.it"><img src="http://static1.ampify.it/logo.ampify.smallest.png" alt="Ampify" width="250px" height="56px" /></a></div>
+	<div id="logo"><a href="http://ampify.it"><img src="http://static1.ampify.it/logo.ampify.smallerstill.png" alt="Ampify" width="250px" height="56px" /></a></div>
 	<div id="menu-lang">
 		<a href="" title="Select Language" onclick="return reveal_language_options();"><img src="http://static.ampify.it/gfx.flag-uk.jpg" alt="Select Language" width="22px" height="15px" /></a>
 		<br />
