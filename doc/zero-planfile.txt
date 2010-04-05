@@ -36,10 +36,10 @@ If you'd like to help make it a reality, do join fellow collaborators on the
 Overview of the Architecture
 ----------------------------
 
-The Ampify Zero application frontend is primarily written in Naaga -- a language
-that compiles down to static JavaScript files for execution on a user's web
-browser. The application makes either traditional or Argonought-encoded requests
-to the backend nodule processes over HTTP.
+The Ampify Zero application frontend is primarily written in Naaga_ -- a
+language that compiles down to static JavaScript files for execution on a user's
+web browser. The application makes either traditional or Argonought_-encoded
+requests to the backend nodule processes over HTTP.
 
 The nodules provide a number of services -- from interfacing with an App Engine
 powered datastore to event routing to trust metric calculations -- and are
@@ -448,9 +448,9 @@ Development Process
     layout so one can have default values for variables which can be over-ridden
     on a per page/layout basis.
 
-    Yatiblog requires that there be a special ``_config.yml`` file in the source
-    directory which defines default variables. This MUST include a list of
-    mappings for the ``index_pages``, e.g.
+    Yatiblog requires that there be a special ``yatiblog.conf`` file in the
+    source directory which defines default variables. This MUST include a list
+    of mappings for the ``index_pages``, e.g.
 
     .. syntax:: yaml
 
@@ -463,6 +463,60 @@ Development Process
     created. Yatiblog also compares the modified time of the various files and
     does a comprehensive dependency analysis so that only necessary files are
     regenerated whenever ``yatiblog`` is run.
+
+.. tag:: #dev, @tav
+
+  ✓ Implement a source code documentation generator.
+
+    The source documentation extractor and generator support in ``yatiblog``
+    has been updated with ideas from `godoc <http://golang.org/cmd/godoc/>`_ and
+    `docco <http://jashkenas.github.com/docco/>`_. It currently supports
+    generating sexy documentation for code written in:
+
+    * CoffeeScript
+    * Emacs Lisp
+    * Go
+    * JavaScript
+    * Python
+    * Ruby
+
+    It extracts all comments which are immediately followed by code, i.e. with
+    no empty lines in between, as well as any comments which look like
+    reStructuredText headings and generates an rST document interwoven with the
+    (syntax highlighted) source code.
+
+    .. syntax:: go
+
+      // This comment will not be extracted. This is useful to
+      // ignore copyright headers, non-public comments, &c.
+
+      package yatiblog
+
+      // But this comment will be extracted, since there's no
+      // empty line after it.
+      const shebang = "#!"
+
+    Running ``yatiblog`` will automatically generate documentation for all
+    ``paths`` specified as part of the ``code_pages`` setting in
+    ``yatiblog.conf`` -- with the generated content being passed to the
+    specified ``layout``:
+
+    .. syntax:: yaml
+
+      code_pages:
+        layout: code
+        paths:
+          amp.%(dir)s.%(filename)s: src/amp/*.go
+          zerodata: src/zerodata/zerodaa.py
+
+    The ``paths`` setting should be a mapping of ``filename => source_files``:
+
+    * ``filename`` specifies either a single filename or a filename pattern for
+      the generated documentation, with ``%(dir)s`` and ``%(filename)s`` being
+      substituted by the directory and filename of the source file.
+
+    * ``source_files`` are shell patterns for files in the Git index and need to
+      be specified relative to the repository root.
 
 .. http://unicode.org/reports/tr36/tr36-8.html
 
