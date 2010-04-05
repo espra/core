@@ -55,27 +55,27 @@ daemon.
                                     | Naaga-based UI |
                                     |                |
                                     .----------------,
-       +---------------+             \                \
-       | Load Balancer |  <----->     \      User      \    <---o
+       +---------------+    (1)      \                \
+       | Load Balancer |  <----->     \     Client     \    <---o
        +---------------+               `----------------'       |
-         |        |                                             |
-         |        |                                             |
+         |        |                                             | (9)
+         |        | (2)                                         |
          |   +--------------------+                             |
-         |   | Naaga Static Files |                   +-------------+
-         |   +--------------------+              o----| Live Stream |
-         |                                       |    +-------------+
+         |   | Naaga Static Files |                   +--------------+
+         |   +--------------------+              o----| Event Stream |
+         |                                       |    +--------------+
          |                  +--------------+     |
          |               o--| Config Nodes |     |    +------------+
-         |               |  +--------------+     o----| App Engine |
+         | (3)           |  +--------------+     o----| App Engine |
          |               |           |           |    +------------+
-        +------------+   |           |           |
-        | Dispatcher |---o lookup    |           |    +-----------+
+        +------------+   | (4)       |           |
+        | Dispatcher |---o           |       (8) |    +-----------+
         +------------+               |           o----| Amazon S3 |
              \                       |           |    +-----------+
               \                      |-----------|
                \                     |           |    +-------------+
-                \                    |           o----| Other Nodes |
-                 \                   |                +-------------+
+                \ (5)                |           o----| Other Nodes |
+                 \                   | (7)            +-------------+
                   \                  |
        +===========\=================|=================================+
        |            \                |                                 |
@@ -83,7 +83,7 @@ daemon.
        |          | Node: Redpill Daemon |                             |
        |          +----------------------+                             |
        |                   |                                           |
-       |                   |                                           |
+       |                   |                           (6)             |
        |    +-------------------------+-----------------------+        |
        |    |                         |                       |        |
        |  +----------------+          |            +----------------+  |
@@ -92,6 +92,38 @@ daemon.
        |                      +----------------+                       |
        |                                                               |
        +===============================================================+
+
+**Legend**
+
+::
+
+      (1) Client initiates a request.
+                                                                          .
+      (2) If the request was for a Naaga static file, it is served.
+                                                                          .
+      (3) All other requests (service requests) are handled by a special
+          Dispatcher.
+                                                                          .
+      (4) The Dispatcher queries Config Nodes to find out which Nodes
+          can handle the service request.
+                                                                          .
+      (5) The Dispatcher converts the request to an Argonought-encoded
+          service call and forwards it to the appropriate Node.
+                                                                          .
+      (6) A Nodule process within the Node handles the service call and
+          depending on the nature of the request, responds immediately
+          or once it has finished.
+                                                                          .
+      (7) The Nodule may also make further service calls. These would
+          be mediated by it's local Redpill daemon which may make
+          queries to Config Nodes to figure out where to send the call.
+                                                                          .
+      (8) Some calls will be traditional HTTP requests to external
+          services and as such will not be mediated.
+                                                                          .
+      (9) The Client will also on startup make a connection to an Event
+          Stream which some service calls may update in order to send
+          messages to Clients asynchronously.
 
 
 Naaga
@@ -1986,6 +2018,9 @@ Planfile IE
 magic
 geoip
 
+http://help.simplegeo.com/faqs/api-documentation/endpoints
+
+bash completion
 
 .. |contents| raw:: html
 
