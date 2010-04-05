@@ -36,10 +36,10 @@ If you'd like to help make it a reality, do join fellow collaborators on the
 Overview of the Architecture
 ----------------------------
 
-The Ampify Zero frontend is primarily written in Naaga -- a language that
-compiles down to static JavaScript files for execution on a user's web browser.
-The application makes either traditional or Argonought-encoded requests to the
-backend nodule processes over HTTP.
+The Ampify Zero application frontend is primarily written in Naaga -- a language
+that compiles down to static JavaScript files for execution on a user's web
+browser. The application makes either traditional or Argonought-encoded requests
+to the backend nodule processes over HTTP.
 
 The nodules provide a number of services -- from interfacing with an App Engine
 powered datastore to event routing to trust metric calculations -- and are
@@ -94,7 +94,49 @@ daemon.
        +===============================================================+
 
 
-ZeroData
+Naaga
+-----
+
+.. tag:: #dev
+
+  ✗ Implement an Emacs major mode for Naaga.
+
+    Editing Naaga files should be a pleasure in Emacs and the mode should
+    require nothing more than the following in the user's ``.emacs`` file to
+    work:
+
+    .. syntax:: scheme
+
+       (add-to-list 'load-path "path/to/naaga-mode")
+       (require 'naaga-mode)
+       (add-to-list 'auto-mode-alist '("\\.naaga$" . naaga-mode))
+
+    The mode should support syntax highlighting, automatic indentation, electric
+    backspace and at least the following commands which should be boundable to
+    custom keys:
+
+    * ``naaga-compile-buffer``
+    * ``naaga-execute-buffer``
+    * ``naaga-shift-region-left``
+    * ``naaga-shift-region-right``
+
+    And, finally, the mode should integrate well with `js2-mode
+    <http://code.google.com/p/js2-mode/>`_ and support basic hooks for
+    extensibility:
+
+    .. syntax:: scheme
+
+        (defun naaga-custom ()
+          "naaga-mode-hook"
+          (set (make-local-variable 'tab-width) 2))
+
+       (add-hook naaga-mode-hook
+         '(lambda() (naaga-custom)))
+
+    For bonus points, the mode should integrate well with ``naaga.test``.
+
+
+Zerodata
 --------
 
 .. tag:: #dev, @tav, wip
