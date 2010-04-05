@@ -10,8 +10,8 @@ Zero Planfile
 This is the planfile for ``Ampify Zero``, an initial step towards the
 decentralised vision of Ampify 1.0. It is intended as a working prototype and is
 implemented as a traditional web application using existing technologies like
-`App Engine`_, CoffeeScript_, jQuery_, Keyspace_, `Node.js`_, PyPy_, Redis_, S3_
-and SendGrid_.
+`App Engine`_, Go_, Keyspace_, `Node.js`_, PyPy_, Redis_, S3_, SendGrid_ and
+Sizzle_.
 
 If you'd like to help make it a reality, do join fellow collaborators on the
 ``#esp`` channel on ``irc.freenode.net``. |contents|
@@ -36,31 +36,51 @@ If you'd like to help make it a reality, do join fellow collaborators on the
 Overview of the Architecture
 ----------------------------
 
-A Node is started up using the ``ampnode`` executable. On startup all nodes
-establish a live connection to the Seed node.
+The Ampify Zero frontend is primarily written in Naaga -- a language that
+compiles down to static JavaScript files for execution on a user's web browser.
+The application makes either traditional or Argonought-encoded requests to the
+backend nodule processes over HTTP.
+
+The nodules provide a number of services -- from interfacing with an App Engine
+powered datastore to event routing to trust metric calculations -- and are
+automatically built and deployed across servers by a supervisor ``redpill``
+daemon.
 
 .. class:: ascii-art
 
 ::
 
-       +----------------+
-       | Internet Horde |
-       +----------------+
-             |                                  +-------------+
-             |             +-----------+        | Other Nodes |
-             ±             | Seed Node |        +-------------+
-             |             +-----------+              |
-             |              |     \                   |
-         +-------------+    |      \                  |
-         | Public Port |    |     +----------------------------------+
-         +-------------+    |     | Meta Port (Internal Access Only) |
-                \           |     +----------------------------------+
-                 \          |       /
-                  \         |      /
-       +===========\========|=====/====================================+
-       |            \       |    /                                     |
+                                    .----------------,
+                                    |                |
+                                    | Naaga-based UI |
+                                    |                |
+                                    .----------------,
+       +---------------+             \                \
+       | Load Balancer |  <----->     \      User      \    <---o
+       +---------------+               `----------------'       |
+         |        |                                             |
+         |        |                                             |
+         |   +--------------------+                             |
+         |   | Naaga Static Files |                   +-------------+
+         |   +--------------------+              o----| Live Stream |
+         |                                       |    +-------------+
+         |                  +--------------+     |
+         |               o--| Config Nodes |     |    +------------+
+         |               |  +--------------+     o----| App Engine |
+         |               |           |           |    +------------+
+        +------------+   |           |           |
+        | Dispatcher |---o lookup    |           |    +-----------+
+        +------------+               |           o----| Amazon S3 |
+             \                       |           |    +-----------+
+              \                      |-----------|
+               \                     |           |    +-------------+
+                \                    |           o----| Other Nodes |
+                 \                   |                +-------------+
+                  \                  |
+       +===========\=================|=================================+
+       |            \                |                                 |
        |          +----------------------+                             |
-       |          | Node: Parent Process |                             |
+       |          | Node: Redpill Daemon |                             |
        |          +----------------------+                             |
        |                   |                                           |
        |                   |                                           |
@@ -661,7 +681,7 @@ Safe Execution
     The controller process can validate the calls and present whatever view it
     wants, e.g. a virtual filesystem, to the sandboxed process. Since the
     sandbox needs to make certain system calls itself, e.g. to allocate memory,
-    these are enabled with a ``sandboxsafe=True`` on a case-by-case basis:
+    these are enabled with a ``sandboxsafe=True`` on a case-by-case basis, e.g.
 
     .. syntax:: python
 
@@ -684,17 +704,17 @@ Safe Execution
     take into consideration issues like fishing GC roots from the stack of the
     various threads.
 
-.. tag:: #security, @fijal, wip
+.. tag:: #security, @fijal, needsreview
 
-  ✗ Implement PyPy sandbox support for the JIT.
+  ✓ Implement PyPy sandbox support for the JIT.
 
     The `JIT support <http://codespeak.net/pypy/dist/pypy/doc/jit/index.html>`_
     in PyPy is becoming quite impressive and will be extremely well suited for
     "number crunching" in the cloud. Unfortunately it complicates matters with
     regards the PyPy sandbox.
 
-    But thankfully ``fijal`` is now on the case -- he is working on making the
-    sandbox work with JIT on the ``jit-sandbox`` branch on the `PyPy subversion
+    But thankfully ``fijal`` has now made the sandbox work with JIT on the
+    ``jit-sandbox`` branch on the `PyPy subversion
     <http://codespeak.net/svn/pypy/branch/jit-sandbox/>`_ repository.
 
 
@@ -1932,6 +1952,7 @@ geoip
 .. _App Engine: http://code.google.com/appengine/
 .. _Caja: http://code.google.com/p/google-caja/
 .. _CoffeeScript: http://jashkenas.github.com/coffee-script/
+.. _Go: http://golang.org
 .. _jQuery: http://jquery.com
 .. _Keyspace: http://scalien.com/keyspace/
 .. _Native Client: http://code.google.com/p/nativeclient/
@@ -1941,3 +1962,4 @@ geoip
 .. _Redis: http://code.google.com/p/redis/
 .. _S3: http://aws.amazon.com/s3/
 .. _SendGrid: http://sendgrid.com
+.. _Sizzle: http://sizzlejs.com
