@@ -39,9 +39,9 @@ Overview of the Architecture
 The Ampify Zero application frontend is primarily written in Naaga_ -- a
 language that compiles down to static JavaScript files for execution on a user's
 web browser. The application makes either traditional or Argonought_-encoded
-requests to the backend nodule processes over HTTP.
+requests to the backend "Nodule processes" over HTTP.
 
-The nodules provide a number of services -- from interfacing with an App Engine
+The Nodules provide a number of services -- from interfacing with an App Engine
 powered datastore to event routing to trust metric calculations -- and are
 automatically built and deployed across servers by a supervisor ``redpill``
 daemon.

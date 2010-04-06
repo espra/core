@@ -424,7 +424,7 @@ class TagDirective(Directive):
             pass
             # add(u'<span class="tag tag-untagged"></span>')
 
-        add(u'<a class="tag-link" href="#%s">&middot;</a>' % tag_id)
+        add(u'<a class="tag-link" href="#%s">#</a>' % tag_id)
         output.insert(
             0, (u'<div class="tag-segment" id="%s-tags">' % tag_id)
             )
