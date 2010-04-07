@@ -27,7 +27,7 @@ from pickle import load as load_pickle, dump as dump_pickle
 from re import compile
 from tokenize import generate_tokens, COMMENT, STRING, INDENT, NEWLINE, NL
 
-from genshi.template import MarkupTemplate
+from genshi.template import MarkupTemplate, NewTextTemplate as TextTemplate
 from pygments import highlight
 from pygments.lexers import get_lexer_by_name
 from yaml import safe_load as load_yaml
@@ -199,11 +199,18 @@ def load_layout(name, path, layouts, deps=None):
                 deps = [layout]
         content = replace_yaml_frontmatter('', content)
 
-    try:
-        template = MarkupTemplate(content, encoding='utf-8')
-    except Exception:
-        print "Error parsing template:", name
-        raise
+    if env.get('text_template'):
+        try:
+            template = TextTemplate(content, encoding='utf-8')
+        except Exception:
+            print "Error parsing template:", name
+            raise
+    else:
+        try:
+            template = MarkupTemplate(content, encoding='utf-8')
+        except Exception:
+            print "Error parsing template:", name
+            raise
 
     layouts[name] = {
         '__deps__': deps,
@@ -380,7 +387,7 @@ def main(argv=None):
 
     # Handle --clean support.
     if options.clean:
-        for file in generated_files + index_files + [data_file]:
+        for file in generated_files + index_files + [data_file] + code_files.keys():
             if isfile(file):
                 if verbose:
                     print "Removing: %s" % file
@@ -433,7 +440,7 @@ def main(argv=None):
             '__layout__': layout,
             '__lead__': lead,
             '__mtime__': stat(source_path).st_mtime,
-            '__name__': filebase,
+            '__name__': basename(destname), # filebase,
             '__outdir__': output_directory,
             '__path__': source_path,
             '__rst__': True,
@@ -463,7 +470,7 @@ def main(argv=None):
             '__layout__': code_layout,
             '__lead__': '',
             '__mtime__': stat(source_path).st_mtime,
-            '__name__': destname,
+            '__name__': basename(destname), # filebase,
             '__outdir__': output_directory,
             '__path__': source_path,
             '__rst__': True,
@@ -495,7 +502,7 @@ def main(argv=None):
                 '__layout__': layout,
                 '__lead__': '',
                 '__mtime__': stat(source_path).st_mtime,
-                '__name__': index_page,
+                '__name__': basename(index_page),
                 '__outdir__': output_directory,
                 '__path__': source_path,
                 '__rst__': False,
@@ -666,7 +673,15 @@ def main(argv=None):
                 out((docs_split[i], code))
 
         elif info['__rst__']:
-            output = info['__output__'] = render_rst(info['__content__'])
+            with_props = info.get('with_props', False)
+            if with_props:
+                output, props = render_rst(info['__content__'], with_props=1)
+                if ('title' in props) and props['title']:
+                    info['title'] = props['title']
+                info['__output__'] = output
+            else:
+                output = info['__output__'] = render_rst(info['__content__'])
+
             if info['__lead__'] == info['__content__']:
                 info['__lead_output__'] = info['__output__']
             else:
@@ -703,26 +718,6 @@ def main(argv=None):
             print 'Done!'
 
     sys.exit()
-
-    # @/@ Fix up the old index.js/json generator.
-
-#     index_js_template = join_path(output_directory, 'index.js.template')
-
-#     if isfile(index_js_template):
-
-#         index_json = json.dumps([
-#             [_art['__name__'], _art['title'].encode('utf-8')]
-#             for _art in sorted(
-#                 [item for item in items if item.get('x-created') and
-#                  item.get('x-type', 'blog') == 'blog'],
-#                 key=lambda i: i['x-created']
-#                 )
-#             ])
-
-#         index_js_template = open(index_js_template, 'rb').read()
-#         index_js = open(join_path(output_directory, 'index.js'), 'wb')
-#         index_js.write(index_js_template % index_json)
-#         index_js.close()
 
 # PDF_COMMAND = ['prince', '--input=html', '--output=pdf'] # --no-compress
 # PDF_CSS = join_path(WEBSITE_ROOT, 'static', 'css', 'print.css')

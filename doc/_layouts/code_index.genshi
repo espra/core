@@ -14,7 +14,7 @@ title: Code Documentation
 ?>
 <ul id="code-docs-listing">
 <li py:for="item in sorted(items, key=lambda x: x['__id__'])" py:with="item_id = item['__id__'].split('src/', 1)[1].split('/')">
-  <strong>${' / '.join(item_id[:-1])} /</strong> <a href="${basename(item['__name__'])}">${item_id[-1]}</a>
+  <strong>${' / '.join(item_id[:-1])} /</strong> <a href="${item['__name__']}">${item_id[-1]}</a>
   <blockquote><span py:if="item['title'] != splitext(basename(item['__path__']))[0]">${Markup(item['title'])}.</span></blockquote>
 </li>
 </ul>
