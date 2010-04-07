@@ -1309,8 +1309,10 @@ a.buttondown span {
 }
 
 .tag-link, .tag-link:active, .tag-link:hover, .tag-link:visited {
-  text-decoration: none;
-  color: #000;
+	text-decoration: none;
+	color: #000;
+	font-family: Verdana, Arial, Helvetica, sans-serif;
+	font-size: 0.8em;
 }
 
 .tag {
