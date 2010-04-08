@@ -53,10 +53,11 @@ TEMPLATE_FOOTER = """</body></html>"""
 # Datastore Models
 # ------------------------------------------------------------------------------
 
-# The app is built on top of 4 simple models:
+# The app is built on top of 5 simple models:
 #
 # * Account
 # * Contact
+# * Group
 # * List
 # * Subscription
 # <yatiblog.comment>
@@ -81,12 +82,12 @@ class C(db.Model):
     id = db.StringProperty(name='i')
     refs = db.StringListProperty(default=None, name='r')
 
-# An Entity Kind representing a (Profile) Picture.
-class P(db.Model):
+# An Entity Kind representing a Group.
+class G(db.Model):
 
     account = db.StringProperty(name='a')
-    contact = db.StringProperty(name='c')
-    data = db.BlobProperty(name='d')
+    id = db.StringProperty(name='i')
+    name = db.StringProperty(name='n')
 
 # An Entity Kind representing a (Mailing) List.
 class L(db.Model):
@@ -96,6 +97,13 @@ class L(db.Model):
     modified = db.DateTimeProperty(auto_now=True, name='m')
     query = db.TextProperty(name='q')
     refs = db.StringListProperty(default=None, name='r')
+
+# An Entity Kind representing a (Profile) Picture.
+class P(db.Model):
+
+    account = db.StringProperty(name='a')
+    contact = db.StringProperty(name='c')
+    data = db.BlobProperty(name='d')
 
 # An Entity Kind representing a Subscription.
 class S(db.Model):
@@ -107,6 +115,7 @@ class S(db.Model):
 # datastore and then alias them to more descriptive classes for general use.
 Account = A
 Contact = C
+Group = G
 Picture = P
 List = L
 Subscription = S
@@ -263,16 +272,20 @@ def display(feed, o):
         o ('<h2>%s</h2>' % escape(contact.title.text))
 
 # ------------------------------------------------------------------------------
-# Route Decorator
+# Service Decorator
 # ------------------------------------------------------------------------------
 
-def route(path, kwargs=False, template=True, login=True):
+# A service name -> function mapping.
+SERVICES = {}
 
-    id = self.request.path.split('/')[2:]
-    
+# This service decorator provides a super minimal web application framework on
+# top of webapp. It works in conjunction with the ``MainHandler`` which does
+# the actual dispatching.
+def service(name, method='GET', kwargs=True, template=True, login=True):
 
     def __decorating_function(func):
-        def __decorator(handler, *args, **kwargs):
+
+        def __decorator(handler, o, *__args, **__kwargs):
 
             # We ensure that the user is authenticated if ``login=True``.
             if login:
@@ -283,22 +296,58 @@ def route(path, kwargs=False, template=True, login=True):
                         )
                     return
 
-            o = kwargs['o'] = handler.response.out.write
+            # We map the parameters to keyword arguments if ``kwargs=True``.
+            if kwargs and not __kwargs:
+                get = handler.request.get
+                __kwargs = dict(
+                    (str(arg), get(arg))
+                    for arg in handler.request.arguments()
+                    )
 
             # We wrap the response in a header and footer template if
             # ``template=True``.
-            if template:
+            if template and not handler.templated:
+                handler.templated = True
                 o (TEMPLATE_HEADER)
-                func(handler, *args, **kwargs)
+                func(handler, o, *__args, **__kwargs)
                 o (TEMPLATE_FOOTER)
                 return
 
-            func(handler, *args, **kwargs)
+            func(handler, o, *__args, **__kwargs)
 
+        # Match up the decorator's function name to make debugging easier.
         __decorator.__name__ = func.__name__
+
+        SERVICES[(name, method)] = __decorator
+
         return __decorator
 
     return __decorating_function
+
+# ------------------------------------------------------------------------------
+# The Main Handler
+# ------------------------------------------------------------------------------
+
+# The MainHandler dispatches to the appropriate service functions.
+class MainHandler(webapp.RequestHandler):
+
+    def get(self):
+
+        args = filter(None, self.request.path.split('/'))
+        if args:
+            service_name = args[0]
+            args = args[1:]
+        else:
+            service_name = 'root'
+            args = []
+
+        self.templated = False
+
+        service = SERVICES[(service_name, 'GET')]
+        service(self, self.response.out.write, *args)
+
+    def post(self):
+        pass
 
 # ------------------------------------------------------------------------------
 # The Logout Handler
@@ -306,11 +355,9 @@ def route(path, kwargs=False, template=True, login=True):
 
 # This simple request handler will logout the current user and redirect to
 # either a specified ``return_to`` url parameter or the site root.
-class LogoutHandler(webapp.RequestHandler):
-    def get(self):
-        self.redirect(
-            users.create_logout_url(self.request.get('return_to', '/'))
-            )
+@service('logout', login=False, kwargs=True)
+def logout(handler, o, return_to='/'):
+    handler.redirect(users.create_logout_url(return_to))
 
 # ------------------------------------------------------------------------------
 # The Accounts Handler
@@ -318,8 +365,6 @@ class LogoutHandler(webapp.RequestHandler):
 
 class AccountsHandler(webapp.RequestHandler):
 
-    @login
-    @template
     def get(self, o):
         owner = str(users.get_current_user())
         method = None
@@ -358,26 +403,32 @@ class ImportHandler(webapp.RequestHandler):
     def get(self):
         Account.all().filter('imported =', False).fetch(100)
 
-# ------------------------------------------------------------------------------
-# The Display Handler
-# ------------------------------------------------------------------------------
+@service('root')
+def home(handler, o, *args, **kwargs):
 
-class MainHandler(webapp.RequestHandler):
+    o('<h3>%r</h3>' % repr(args))
+    o('<h3>%r</h3>' % kwargs)
 
-    def get(self):
+    query = ContactsQuery(client.GetFeedUri())
+    query.orderby = 'lastmodified'
+    query['sortorder'] = 'descending'
 
-        query = ContactsQuery(client.GetFeedUri())
-        query.orderby = 'lastmodified'
-        query['sortorder'] = 'descending'
+    feed = client.GetContactsFeed(query.ToUri())
 
-        feed = client.GetContactsFeed(query.ToUri())
+    display(feed, o)
 
-        o = self.response.out.write
-        o ('<html><body>')
+@service('bar', kwargs=True)
+def bar(handler, o, *args, **kwargs):
+    o('<h3>%s</h3>' % repr(args))
+    o('<h3>%r</h3>' % kwargs)
 
-        display(feed, o)
+@service('foo', kwargs=True)
+def home(handler, o, *args, **kwargs):
 
-        o ('</body></html>')
+    o('<h3>%s</h3>' % repr(args))
+    o('<h3>%r</h3>' % kwargs)
+
+    bar(handler, o, 'foo', **kwargs)
 
 # ------------------------------------------------------------------------------
 # The Main Function
@@ -385,9 +436,7 @@ class MainHandler(webapp.RequestHandler):
 
 def main():
     application = webapp.WSGIApplication([
-        ('/accounts.*', AccountsHandler),
-        ('/logout', LogoutHandler),
-        ('/', MainHandler),
+        ('.*', MainHandler),
         ], debug=True)
     run_wsgi_app(application)
 
@@ -413,3 +462,6 @@ if __name__ == '__main__':
 #l.query = "#family OR #supporters"
 #l.refs = ['#family', '#supporters']
 
+# twitter
+# facebook
+# editing
