@@ -114,7 +114,7 @@ def replace_python_docstrings(source, non_code=(COMMENT, NEWLINE, NL)):
                 token[2], token[3], (''.join(
                 '\n# ' + line
                 for line in strip_leading_indent(docstring).strip().splitlines()
-                ) + '\n# <yatiblog.comment.section>\n').strip()))
+                ) + '\n# <yatiblog.comment>\n').strip()))
         prev = token
 
     source_lines = source.splitlines()
@@ -608,7 +608,7 @@ def main(argv=None):
             for line in lines:
                 if comment_matcher.match(line):
                     line = comment_matcher.sub('', line)
-                    if line == '<yatiblog.comment.section>':
+                    if line == '<yatiblog.comment>':
                         include_section = 1
                     else:
                         docs_out(line)
