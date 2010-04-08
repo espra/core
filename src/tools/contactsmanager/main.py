@@ -53,8 +53,17 @@ TEMPLATE_FOOTER = """</body></html>"""
 # Datastore Models
 # ------------------------------------------------------------------------------
 
+# The app is built on top of 4 simple models:
+#
+# * Account
+# * Contact
+# * List
+# * Subscription
+# <yatiblog.comment>
+
 # An Entity Kind representing an Account.
 class A(db.Model):
+
     access = db.StringListProperty(default=None, name='a')
     email = db.StringProperty(name='e')
     hosted = db.BooleanProperty(default=False, name='h')
@@ -66,6 +75,7 @@ class A(db.Model):
 
 # An Entity Kind representing a Contact.
 class C(db.Model):
+
     account = db.StringProperty(name='a')
     data = db.BlobProperty(name='d')
     id = db.StringProperty(name='i')
@@ -73,12 +83,14 @@ class C(db.Model):
 
 # An Entity Kind representing a (Profile) Picture.
 class P(db.Model):
+
     account = db.StringProperty(name='a')
     contact = db.StringProperty(name='c')
     data = db.BlobProperty(name='d')
 
 # An Entity Kind representing a (Mailing) List.
 class L(db.Model):
+
     account = db.StringProperty(name='a')
     id = db.StringProperty(name='i')
     modified = db.DateTimeProperty(auto_now=True, name='m')
@@ -87,6 +99,7 @@ class L(db.Model):
 
 # An Entity Kind representing a Subscription.
 class S(db.Model):
+
     contact = db.StringProperty(name='c')
     lists = db.StringListProperty(default=None, name='l')
 
@@ -114,8 +127,8 @@ class MadMimi(object):
 
       >>> mimi.lists()
       <lists>
-        <list subscriber_count="712" name="@espians" id="24245"/>
-        <list subscriber_count="16" name="@family" id="76743"/>
+        <list subscriber_count="712" name="espians" id="24245"/>
+        <list subscriber_count="16" name="family" id="76743"/>
         <list subscriber_count="0" name="test" id="22103"/>
       </lists>
 
@@ -125,7 +138,7 @@ class MadMimi(object):
 
     Create new ones:
 
-      >>> mimi.add_list('@ampify')
+      >>> mimi.add_list('ampify')
 
     Add new contacts:
 
@@ -133,18 +146,18 @@ class MadMimi(object):
 
     Subscribe contacts to a list:
 
-      >>> mimi.subscribe('tav@espians.com', '@ampify')
+      >>> mimi.subscribe('tav@espians.com', 'ampify')
 
     See what lists a contact is subscribed to:
 
       >>> mimi.subscriptions('tav@espians.com')
       <lists>
-        <list subscriber_count="1" name="@ampify" id="77461"/>
+        <list subscriber_count="1" name="ampify" id="77461"/>
       </lists>
 
     And, of course, unsubscribe a contact from a list:
 
-      >>> mimi.unsubscribe('tav@espians.com', '@ampify')
+      >>> mimi.unsubscribe('tav@espians.com', 'ampify')
 
       >>> mimi.subscriptions('tav@espians.com')
       <lists>
@@ -162,7 +175,6 @@ class MadMimi(object):
         params['username'] = self.username
         params['api_key'] = self.api_key
         url = self.base_url + method + '?' + urlencode(params)
-        print url
         return urlopen(url).read()
 
     def post(self, method, **params):
@@ -383,4 +395,21 @@ def main():
 if __name__ == '__main__':
     main()
 
+
+# r -> it looks for everything in the Name field starting with r
+# #joblabs -> looks for every contact with #jobslabs in the notes
+# "something" -> looks for every contact with something in the notes
+# foo@blah.com -> looks for the contact with that in the Email field
+# @joblabs -> looks for every contact matching the @joblabs audience
+
+# @joblabs = #joblabs
+# @some-event = #joblabs OR #socbizmod
+# @lcl = #joblabs OR #socbizmod OR (#supporters #family)
+
+# the @lists will get synced to madmimi audiences
+
+
+#l = List()
+#l.query = "#family OR #supporters"
+#l.refs = ['#family', '#supporters']
 
