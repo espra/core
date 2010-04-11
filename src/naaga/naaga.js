@@ -1,3 +1,5 @@
+#! /usr/bin/env node
+
 // No Copyright (-) 2010 The Ampify Authors. This file is under the
 // Public Domain license that can be found in the root LICENSE file.
 
@@ -82,7 +84,7 @@ function tokenise(source) {
         ascii = false;
 
         // Deal with surrogate pairs.
-        if (high_surrogate) {
+        if (high_surrogate != 0) {
             if ((codepoint >= LOW_SURROGATE_START) &&
                 (codepoint <= LOW_SURROGATE_END)) {
                 codepoint = (high_surrogate - HIGH_SURROGATE_START) *
@@ -101,7 +103,7 @@ function tokenise(source) {
 
         // Handle the common case of ASCII before doing a check for the worst
         // case.
-        } else if (codepoint <= ASCII) {
+        } else if (codepoint < ASCII) {
             ascii = true;
 
         // Do a sanity check to ensure that the codepoint isn't outside the
