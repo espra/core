@@ -3,6 +3,8 @@
 
 /*jslint plusplus: false */
 
+// Naaga
+// =====
 var fs = require('fs'),
     sys = require('sys'),
     HIGH_SURROGATE_START = 0xD800,
