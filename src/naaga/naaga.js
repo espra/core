@@ -7,6 +7,8 @@
 // =====
 var fs = require('fs'),
     sys = require('sys'),
+//    unicodedata = require('./unicodedata'),
+    ASCII = 0x80,
     HIGH_SURROGATE_START = 0xD800,
     HIGH_SURROGATE_END = 0xD8FF,
     LOW_SURROGATE_START = 0xDC00,
@@ -16,7 +18,8 @@ var fs = require('fs'),
 
 function tokenise(source) {
 
-    var code,
+    var ascii,
+        code,
         codepoint,
         high_surrogate = 0,
         i,
@@ -25,44 +28,44 @@ function tokenise(source) {
 
     for (i = 0; i < length; i++) {
 
-        // Get the UTF-16 character.
-        code = source.charCodeAt(i);
+        // Get the UTF-16 character and convert it to a Unicode Codepoint.
+        codepoint = source.charCodeAt(i);
+        ascii = false;
 
-        // Convert it to a Unicode Codepoint.
+        // Deal with surrogate pairs.
         if (high_surrogate) {
-            if (code >= LOW_SURROGATE_START && code <= LOW_SURROGATE_END) {
+            if (codepoint >= LOW_SURROGATE_START && codepoint <= LOW_SURROGATE_END) {
                 codepoint = (high_surrogate - HIGH_SURROGATE_START) *
                             1024 + 65536 +
-                            (code - LOW_SURROGATE_START);
+                            (codepoint - LOW_SURROGATE_START);
             } else {
                 // Replace a malformed surrogate pair with the Unicode
                 // Replacement Character.
                 codepoint = REPLACEMENT_CHAR;
             }
             high_surrogate = 0;
-        } else if (code >= HIGH_SURROGATE_START && code <= HIGH_SURROGATE_END) {
-            high_surrogate = code;
+        } else if (codepoint >= HIGH_SURROGATE_START && codepoint <= HIGH_SURROGATE_END) {
+            high_surrogate = codepoint;
             continue;
-        } else {
-            codepoint = code;
-        }
 
-        runes.push(codepoint);
-
-        // non-ascii-seen
+        // Handle the common case of ASCII before doing a check for the worst
+        // case.
+        } else if (codepoint <= ASCII) {
+            ascii = true;
 
         // Do a sanity check to ensure that the codepoint isn't outside the
         // Unicode Character Set. If so, replace it with the Unicode Replacement
         // Character.
-        // if (codepoint >= MAX_CODEPOINT) {
-        //     codepoint = REPLACEMENT_CHAR;
-        // }
+        } else if (codepoint >= MAX_CODEPOINT) {
+            codepoint = REPLACEMENT_CHAR;
+        }
+
+        runes.push(codepoint);
 
     }
 
     return runes;
 }
-
 
 function timeit(n, func) {
     var args,
@@ -72,11 +75,46 @@ function timeit(n, func) {
     args = Array.prototype.slice.call(arguments, 2, arguments.length);
     start = new Date().getTime();
     for (i = 0; i < n; i++) {
-        func.apply(tokenise, args);
+        func.apply(func, args);
     }
     stop = new Date().getTime() - start;
     sys.puts(stop);
     return stop;
+}
+
+function bench(duration) {
+    var args,
+        func,
+        i = 0,
+        name = "unknown function",
+        start,
+        stop,
+        total = 0;
+    args = Array.prototype.slice.call(arguments, 1, arguments.length);
+    if (typeof duration === 'string') {
+        name = duration;
+        duration = args[0];
+        args = args.slice(1, args.length);
+    }
+    if (typeof duration === 'number') {
+        func = args.shift();
+    } else {
+        func = duration;
+        duration = 1;
+    }
+    sys.puts("benching <" + name + "> for " + duration + "s:\n");
+    duration *= 1000;
+    while (true) {
+        start = new Date().getTime();
+        func.apply(func, args);
+        total = total + (new Date().getTime() - start);
+        if (total > duration) {
+            break;
+        }
+        i++;
+    }
+    sys.puts("    " + (total / 1000) + "\t" + i + " runs\n");
+    return total;
 }
 
 var text = fs.readFileSync('/Users/tav/silo/ampify/src/naaga/src/foo.js');
@@ -84,4 +122,5 @@ var text = fs.readFileSync('/Users/tav/silo/ampify/src/naaga/src/foo.js');
 sys.puts(tokenise("hello"));
 
 timeit(1000, tokenise, text);
-// timeit(1000, tokenise, text);
+
+bench("tokeniser", 2.0, tokenise, text);
