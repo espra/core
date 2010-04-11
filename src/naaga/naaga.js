@@ -7,7 +7,49 @@
 // =====
 var fs = require('fs'),
     sys = require('sys'),
-//    unicodedata = require('./unicodedata'),
+    ucd = require('./ucd'),
+    cat = ucd.cat,
+    catranges = ucd.catranges,
+    catrange_length = catranges.length,
+    catnames = ucd.catnames,
+    Cc = ucd.Cc,
+    Cf = ucd.Cf,
+    Co = ucd.Co,
+    Cs = ucd.Cs,
+    Ll = ucd.Ll,
+    Lm = ucd.Lm,
+    Lo = ucd.Lo,
+    Lt = ucd.Lt,
+    Lu = ucd.Lu,
+    Mc = ucd.Mc,
+    Me = ucd.Me,
+    Mn = ucd.Mn,
+    Nd = ucd.Nd,
+    Nl = ucd.Nl,
+    No = ucd.No,
+    Pc = ucd.Pc,
+    Pd = ucd.Pd,
+    Pe = ucd.Pe,
+    Pf = ucd.Pf,
+    Pi = ucd.Pi,
+    Po = ucd.Po,
+    Ps = ucd.Ps,
+    Sc = ucd.Sc,
+    Sk = ucd.Sk,
+    Sm = ucd.Sm,
+    So = ucd.So,
+    Zl = ucd.Zl,
+    Zp = ucd.Zp,
+    Zs = ucd.Zs,
+    CasedLetter = ucd.CasedLetter,
+    Letter = ucd.Letter,
+    Mark = ucd.Mark,
+    Number_ = ucd.Number,
+    Other = ucd.Other,
+    Punctuation = ucd.Punctuation,
+    Separator = ucd.Separator,
+    Symbol = ucd.Symbol,
+    Unknown = ucd.Unknown,
     ASCII = 0x80,
     HIGH_SURROGATE_START = 0xD800,
     HIGH_SURROGATE_END = 0xD8FF,
@@ -19,11 +61,17 @@ var fs = require('fs'),
 function tokenise(source) {
 
     var ascii,
-        code,
+        category,
+        catrange,
         codepoint,
         high_surrogate = 0,
+        idx_ascii = true,
+        idx_cat = -1,
+        idx_lst = [],
         i,
+        j,
         length = source.length,
+        pushed = false,
         runes = [];
 
     for (i = 0; i < length; i++) {
@@ -34,7 +82,8 @@ function tokenise(source) {
 
         // Deal with surrogate pairs.
         if (high_surrogate) {
-            if (codepoint >= LOW_SURROGATE_START && codepoint <= LOW_SURROGATE_END) {
+            if ((codepoint >= LOW_SURROGATE_START) &&
+                (codepoint <= LOW_SURROGATE_END)) {
                 codepoint = (high_surrogate - HIGH_SURROGATE_START) *
                             1024 + 65536 +
                             (codepoint - LOW_SURROGATE_START);
@@ -44,7 +93,8 @@ function tokenise(source) {
                 codepoint = REPLACEMENT_CHAR;
             }
             high_surrogate = 0;
-        } else if (codepoint >= HIGH_SURROGATE_START && codepoint <= HIGH_SURROGATE_END) {
+        } else if ((codepoint >= HIGH_SURROGATE_START) &&
+                   (codepoint <= HIGH_SURROGATE_END)) {
             high_surrogate = codepoint;
             continue;
 
@@ -60,11 +110,42 @@ function tokenise(source) {
             codepoint = REPLACEMENT_CHAR;
         }
 
-        runes.push(codepoint);
+        category = cat[codepoint];
+
+        if (typeof category === "undefined") {
+            for (j = 0; j < catrange_length; j++) {
+                catrange = catranges[j];
+                if ((codepoint >= catrange[0]) &&
+                    (codepoint <= catrange[1])) {
+                    category = catrange[2];
+                    break;
+                }
+            }
+            if (typeof category === "undefined") {
+                category = Unknown;
+            }
+        }
+
+        if (category === idx_cat) {
+            idx_ascii = idx_ascii && ascii;
+            idx_lst.push(codepoint);
+            pushed = false;
+        } else {
+            runes.push([idx_cat, idx_ascii, idx_lst]);
+            idx_ascii = ascii;
+            idx_cat = category;
+            idx_lst = [codepoint];
+            pushed = true;
+        }
 
     }
 
+    if (!pushed) {
+        runes.push([idx_cat, idx_ascii, idx_lst]);
+    }
+
     return runes;
+
 }
 
 function timeit(n, func) {
@@ -119,8 +200,8 @@ function bench(duration) {
 
 var text = fs.readFileSync('/Users/tav/silo/ampify/src/naaga/src/foo.js');
 
-sys.puts(tokenise("hello"));
+sys.puts(tokenise("hello, wo—rld"));
 
-timeit(1000, tokenise, text);
+// timeit(1000, tokenise, text);
 
 bench("tokeniser", 2.0, tokenise, text);
