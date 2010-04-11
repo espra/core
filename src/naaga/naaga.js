@@ -68,6 +68,7 @@ function tokenise(source) {
         idx_ascii = true,
         idx_cat = -1,
         idx_lst = [],
+        idx_start = 0,
         i,
         j,
         length = source.length,
@@ -131,17 +132,22 @@ function tokenise(source) {
             idx_lst.push(codepoint);
             pushed = false;
         } else {
-            runes.push([idx_cat, idx_ascii, idx_lst]);
+            runes.push(
+                [idx_cat, idx_ascii, idx_lst, source.slice(idx_start, i)]
+            );
             idx_ascii = ascii;
             idx_cat = category;
             idx_lst = [codepoint];
+            idx_start = i;
             pushed = true;
         }
 
     }
 
     if (!pushed) {
-        runes.push([idx_cat, idx_ascii, idx_lst]);
+        runes.push(
+            [idx_cat, idx_ascii, idx_lst, source.slice(idx_start, i)]
+        );
     }
 
     return runes;
