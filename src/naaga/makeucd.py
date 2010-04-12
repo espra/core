@@ -110,7 +110,7 @@ if ((typeof process !== "undefined") && (process !== null)) {
     exports.cat = cat;
     exports.catranges = catranges;
     exports.catnames = catnames;
-    exports.Unknown = Unknown
+    exports.Unknown = Unknown;
 """)
 
 for category in categories:
