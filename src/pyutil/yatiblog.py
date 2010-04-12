@@ -236,7 +236,7 @@ PROGLANGS = {
 for lang_settings in PROGLANGS.values():
     comment_symbol = lang_settings[1]
     lang_settings.extend([
-        compile(r'^\s*' + comment_symbol + r'\s*'),
+        compile(r'^\s*' + comment_symbol + r'\s?'),
         '\n' + comment_symbol + ' YATIBLOG-DIVIDER\n',
         compile('<span class="c1?">'+comment_symbol+r' YATIBLOG-DIVIDER<\/span>'),
         '\n\n.. break:: YATIBLOG-DIVIDER\n\n',
@@ -629,7 +629,7 @@ def main(argv=None):
                     if docs_text:
                         if include_section:
                             new_section({
-                                'docs_text': '\n'.join(docs_text),
+                                'docs_text': '\n'.join(docs_text) + '\n',
                                 'code_text': '\n'.join(code_text)
                                 })
                             docs_text[:] = []
@@ -657,9 +657,15 @@ def main(argv=None):
             output = info['__output__'] = []
             out = output.append
 
+            if docs_split and docs_split[0]:
+                diff = 0
+                docs_split.insert(0, u'')
+            else:
+                diff = 1
+
             last = len(docs_split) - 2
             for i in range(last + 1):
-                code = code_split[i+1].split(u'<br/>')
+                code = code_split[i+diff].split(u'<br/>')
                 while (code and code[0] == ''):
                     code.pop(0)
                 while (code and code[-1] == ''):
