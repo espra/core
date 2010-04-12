@@ -60,6 +60,22 @@ var fs = require('fs'),
     MAX_CODEPOINT = 0x10FFFF,
     REPLACEMENT_CHAR = 0xFFFD;
 
+// The ``tokenise`` function uses a novel approach put forward by sbp (Sean B.
+// Palmer). It splits the given ``source`` into tokens of distinct
+// categories as specified in Unicode 5.2.
+//
+// It returns a sequence of ``[category, ascii_flag, codepoints, string]``
+// tokens:
+//
+// * The ``category`` points to a constant representing the unicode category.
+//
+// * The ``ascii_flag`` indicates whether the segment is comprised of only ASCII
+//   characters.
+//
+// * The ``codepoints`` are the unicode codepoints for use by any normalisation
+//   function.
+//
+// * The ``string`` is the segment of the source for the current token.
 function tokenise(source) {
 
     var ascii,
@@ -79,7 +95,7 @@ function tokenise(source) {
 
     for (i = 0; i < length; i++) {
 
-        // Get the UTF-16 character and convert it to a Unicode Codepoint.
+        // Get the UTF-16 unit and convert it to a Unicode Codepoint.
         codepoint = source.charCodeAt(i);
         ascii = false;
 
@@ -160,6 +176,15 @@ function print_tokens(tokens) {
         token = tokens[i];
         sys.puts(JSON.stringify([catnames[token[0]], token[1], token[3]]));
     }
+}
+
+function parse() {
+}
+
+function evaluate() {
+}
+
+function compile() {
 }
 
 function timeit(n, func) {
