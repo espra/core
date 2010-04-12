@@ -60,6 +60,9 @@ var fs = require('fs'),
     MAX_CODEPOINT = 0x10FFFF,
     REPLACEMENT_CHAR = 0xFFFD;
 
+// Tokenisation
+// ------------
+//
 // The ``tokenise`` function uses a novel approach put forward by sbp (Sean B.
 // Palmer). It splits the given ``source`` into tokens of distinct
 // categories as specified in Unicode 5.2.
@@ -168,6 +171,15 @@ function tokenise(source) {
 
 }
 
+function parse() {
+}
+
+function evaluate() {
+}
+
+function compile() {
+}
+
 function print_tokens(tokens) {
     var i,
         token,
@@ -178,15 +190,9 @@ function print_tokens(tokens) {
     }
 }
 
-function parse() {
-}
-
-function evaluate() {
-}
-
-function compile() {
-}
-
+// Utility Functions
+// -----------------
+//
 function timeit(n, func) {
     var args,
         start,
@@ -243,3 +249,4 @@ print_tokens(tokenise("hello, wo—rld__.{(foo-bar\\"));
 
 // timeit(1000, tokenise, text);
 // bench("tokeniser", 2.0, tokenise, text);
+
