@@ -75,7 +75,7 @@ function tokenise(source) {
         j,
         length = source.length,
         pushed = false,
-        runes = [];
+        tokens = [];
 
     for (i = 0; i < length; i++) {
 
@@ -84,7 +84,7 @@ function tokenise(source) {
         ascii = false;
 
         // Deal with surrogate pairs.
-        if (high_surrogate != 0) {
+        if (high_surrogate !== 0) {
             if ((codepoint >= LOW_SURROGATE_START) &&
                 (codepoint <= LOW_SURROGATE_END)) {
                 codepoint = (high_surrogate - HIGH_SURROGATE_START) *
@@ -134,7 +134,7 @@ function tokenise(source) {
             idx_lst.push(codepoint);
             pushed = false;
         } else {
-            runes.push(
+            tokens.push(
                 [idx_cat, idx_ascii, idx_lst, source.slice(idx_start, i)]
             );
             idx_ascii = ascii;
@@ -147,13 +147,23 @@ function tokenise(source) {
     }
 
     if (!pushed) {
-        runes.push(
+        tokens.push(
             [idx_cat, idx_ascii, idx_lst, source.slice(idx_start, i)]
         );
     }
 
-    return runes;
+    return tokens;
 
+}
+
+function print_tokens(tokens) {
+    var i,
+        token,
+        number_of_tokens = tokens.length;
+    for (i = 1; i < number_of_tokens; i++) {
+        token = tokens[i];
+        sys.puts(JSON.stringify([catnames[token[0]], token[1], token[3]]));
+    }
 }
 
 function timeit(n, func) {
@@ -208,7 +218,7 @@ function bench(duration) {
 
 var text = fs.readFileSync('/Users/tav/silo/ampify/src/naaga/src/foo.js');
 
-sys.puts(tokenise("hello, wo—rld"));
+print_tokens(tokenise("hello, wo—rld"));
 
 // timeit(1000, tokenise, text);
 
