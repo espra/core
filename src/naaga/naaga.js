@@ -132,7 +132,6 @@ function tokenise(source) {
         if (category === idx_cat) {
             idx_ascii = idx_ascii && ascii;
             idx_lst.push(codepoint);
-            pushed = false;
         } else {
             tokens.push(
                 [idx_cat, idx_ascii, idx_lst, source.slice(idx_start, i)]
@@ -141,16 +140,13 @@ function tokenise(source) {
             idx_cat = category;
             idx_lst = [codepoint];
             idx_start = i;
-            pushed = true;
         }
 
     }
 
-    if (!pushed) {
-        tokens.push(
-            [idx_cat, idx_ascii, idx_lst, source.slice(idx_start, i)]
-        );
-    }
+    tokens.push(
+        [idx_cat, idx_ascii, idx_lst, source.slice(idx_start, i)]
+    );
 
     return tokens;
 
@@ -218,8 +214,7 @@ function bench(duration) {
 
 var text = fs.readFileSync('/Users/tav/silo/ampify/src/naaga/src/foo.js');
 
-print_tokens(tokenise("hello, wo—rld"));
+print_tokens(tokenise("hello, wo—rld__.{(foo-bar\\"));
 
 // timeit(1000, tokenise, text);
-
-bench("tokeniser", 2.0, tokenise, text);
+// bench("tokeniser", 2.0, tokenise, text);
