@@ -41,9 +41,9 @@ language that compiles down to static JavaScript files for execution on a user's
 web browser. The application makes either traditional or Argonought_-encoded
 requests to the backend "Nodule processes" over HTTP.
 
-The Nodules provide a number of services -- from interfacing with an App Engine
-powered datastore to event routing to trust metric calculations -- and are
-automatically built and deployed across servers by a supervisor ``redpill``
+These Nodules provide a number of services -- from interfacing with an App
+Engine powered datastore to event routing to trust metric calculations -- and
+are automatically built and deployed across servers by a supervisor ``redpill``
 daemon.
 
 .. class:: ascii-art
@@ -199,19 +199,96 @@ Argonought
 
 .. tag:: #dev, @tav, wip
 
-  ✗ Define a serialisation format.
+  ✗ Define a serialisation/exchange format.
 
-    Argonought is a JSON-inspired serialisation format that should offer us
-    features not collectively available in other formats:
+    There are literally hundreds of serialisation/exchange formats/protocols
+    available to us: `ASN.1`_, Avro_, BERT_, BSON_, Etch_, Gob_, Hessian_,
+    JSON_, MessagePack_, Pickle_, `Protocol Buffers`_, SOAP_, Thrift_, XDR_,
+    XML-RPC_, YAML_, &c.
+
+    .. _ASN.1: http://en.wikipedia.org/wiki/Abstract_Syntax_Notation_One
+    .. _Avro: http://hadoop.apache.org/avro/docs/current/
+    .. _BERT: http://bert-rpc.org/
+    .. _BSON: http://www.mongodb.org/display/DOCS/BSON
+    .. _Etch: https://cwiki.apache.org/ETCH/
+    .. _Gob: http://golang.org/pkg/gob/
+    .. _Hessian: http://hessian.caucho.com/doc/hessian-overview.xtp
+    .. _JSON: http://www.json.org/
+    .. _MessagePack: http://msgpack.sourceforge.net/
+    .. _Pickle: http://docs.python.org/library/pickle.html
+    .. _Protocol Buffers: http://code.google.com/p/protobuf/
+    .. _SOAP: http://www.w3.org/TR/soap/
+    .. _Thrift: http://incubator.apache.org/thrift/
+    .. _XDR: http://www.rfc-editor.org/rfc/rfc4506.txt
+    .. _XML-RPC: http://www.xmlrpc.com/
+    .. _YAML: http://www.yaml.org/
+
+    They are all brilliant in their own way. But, unfortunately, none of them
+    offer the full set of features that would be ideal:
 
     * JSON-like simplicty.
     * Efficient binary encoding.
+    * Rich set of builtin types -- currencies, location, sets, &c.
+    * Optional streaming support.
+    * Support for synchronous/async calls.
+    * Ability to define arbitrary environment/headers.
+    * Architecture independent representation.
+    * No need to escape binary data.
     * Lexicographically sortable encoding.
+    * Dynamic (No IDLs or code generation).
 
-    Both `Protocol Buffers <http://code.google.com/p/protobuf/>`_ and `Thrift
-    <http://incubator.apache.org/thrift/>`_ are technically
-    inadequate. They haven't learnt from the mistakes of `CORBA
-    <http://en.wikipedia.org/wiki/Common_Object_Request_Broker_Architecture>`_.
+    BERT_ and BERT-RPC from GitHub are the closest existing format to the above
+    ideal. Unfortunately it doesn't support the much needed `lexicographically
+    sortable encoding
+    <#planitem-implement-support-for-lexicographically-sortable-representation-of-numbers>`_
+    or the full set of desired builtin types.
+
+    It may also be worth pointing out the downsides to the `CORBA
+    <http://en.wikipedia.org/wiki/Common_Object_Request_Broker_Architecture>`_-esque
+    formats like Protocol Buffers and Thrift. These depend on specifications
+    being defined using an `IDL
+    <http://en.wikipedia.org/wiki/Interface_description_language>`_ and code
+    being generated to support the specification in target languages.
+
+    This can definitely be attractive in certain contexts, but it can also prove
+    to be a right pain as developers have to take on the burden of constantly
+    keeping both the IDL generated code *and* the app code up-to-date at
+    multiple locations.
+
+    For example, with Protocol Buffers, you'd have to first create a
+    specification:
+
+    .. syntax:: pb
+
+      message Person {
+        required string name = 1;
+        required int32 id = 2;
+        optional string email = 3;
+      }
+
+    Then you'd have to generate the code for your target languages before you
+    can start doing anything! e.g.
+
+    .. syntax:: python
+
+      person = Person()
+      person.set_name("John Doe")
+      person.set_id(1234)
+      person.set_email("jdoe@example.com")
+
+    In contrast, consider the simplicity of JSON:
+
+    .. syntax:: javascript
+
+      { "type": "Person",
+        "name": "John Doe",
+        "id": 1234,
+        "email": "jdoe@example.com" }
+
+    It allows for dynamic development as there's no intermediate step. And
+    should the developer wish to add a new field, there'd be no need to update
+    the spec and the generated code in all target languages before making
+    changes to the actual application code!
 
 .. tag:: #dev, @tav, needsreview
 
