@@ -10,8 +10,7 @@ Zero Planfile
 This is the planfile for ``Ampify Zero``, an initial step towards the
 decentralised vision of Ampify 1.0. It is intended as a working prototype and is
 implemented as a traditional web application using existing technologies like
-`App Engine`_, Go_, Keyspace_, `Node.js`_, PyPy_, Redis_, S3_, SendGrid_ and
-Sizzle_.
+`App Engine`_, Keyspace_, Redis_, S3_, SendGrid_ and Sizzle_.
 
 If you'd like to help make it a reality, do join fellow collaborators on the
 ``#esp`` channel on ``irc.freenode.net``. |contents|
