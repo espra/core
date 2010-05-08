@@ -1,19 +1,16 @@
 ---
 license: Public Domain
 layout: page
-title: Zero Planfile
+title: Planfile
 ---
 
-Zero Planfile
-=============
+Planfile
+========
 
-This is the planfile for ``Ampify Zero``, an initial step towards the
-decentralised vision of Ampify 1.0. It is intended as a working prototype and is
-implemented as a traditional web application using existing technologies like
-`App Engine`_, Keyspace_, Redis_, S3_, SendGrid_ and Sizzle_.
-
-If you'd like to help make it a reality, do join fellow collaborators on the
-``#esp`` channel on ``irc.freenode.net``. |contents|
+Ampify is a vision of an open and decentralised application platform. This
+planfile documents the various steps towards the ``Zero`` release in late 2010.
+If you'd like to help make it a reality, do join us on the ``#esp`` channel on
+``irc.freenode.net``. |contents|
 
 .. contents::   Table of Contents
                 :depth: 2
@@ -30,6 +27,69 @@ If you'd like to help make it a reality, do join fellow collaborators on the
 .. plan:: ampify
 
   {"todo": ["wip", "todo"], "done": ["inreview", "needsreview", "done"]}
+
+
+Rationale
+---------
+
+  Ampify is an open source competitor to the various proprietary platforms that
+  currently threaten to fragment the Open Web [Neuberg-2008]_ -- a bastion of
+  freedom against the companies that want to own everyone's identities and those
+  that want to control what developers can do.
+
+  Technological complexity is fast becoming unmanageable:
+
+  .. class:: math center
+
+    `Platforms`  ✕  `APIs`  ✕  `Devices`  ＝  `Brittle.Complexity`
+
+  Innovation slows down as developers try to assess, learn, code, test and
+  deploy for the various platforms -- again and again and again. Our collective
+  efforts are wasted on working around technical incompatabilities and
+  shortcomings instead of creating value.
+
+  .. raw:: html
+
+      <div class="center"><img
+        src="http://static.ampify.it/img.dev-platform-options-2009.png" alt=""
+        width="512px" height="384px" class="boxed"
+        /></div>
+
+  We desperately need a period of convergence at a much higher level than what
+  we currently get from web browsers. Incompatibility on issues like structured
+  data, video delivery, convenient access, richer interfaces and authentication
+  keep giving opportunities for closed platforms to gain adoption.
+
+  The fact is, the Web is over 20 years old [Berners-Lee-1989]_ and was never
+  developed with today's applications in mind. As a result, countless developers
+  have had to independently solve the same problems over and over, e.g.
+  identity, scalability, security, messaging, &c.
+
+  .. class:: sidebox
+
+    "Ease developer pain and take innovation to the next curve"
+
+  We need solutions that will take innovation to the next curve
+  [Kawasaki-2006]_. Ampify is one such solution. It builds on top of the Open
+  Web principles and will hopefully be a worthy successor to the Web someday.
+
+  The design and development of Ampify will be driven by a few key principles:
+
+  * Decentralisation and openness.
+  * Ease of use.
+  * Speed, security and scalability.
+  * Simplicity beyond complexity.
+
+  Wherever appropriate, Ampify will make use of existing open source
+  technologies as much as possible, e.g. Caja_, Chromium_, CoffeeScript_,
+  Dirac_, FFmpeg_, FreeSWITCH_, Git_, Go_, jQuery_, Keyspace_, Mapnik_, `Native
+  Client`_, Node.js_, PyPy_, Python_, QuantLib_, Redis_, Ruby_, Sizzle_,
+  Theora_, V8_, &c.
+
+  Ampify is without doubt a very ambitious undertaking. And, despite having had
+  over 10 years of research, it is going to be quite a challenge to pull off.
+  But if you'd like to help make it a reality, do join us on the ``#esp``
+  channel on ``irc.freenode.net``. All are welcome!
 
 
 Overview of the Architecture
@@ -1702,8 +1762,484 @@ Contextualisation
     tuples -- in descending order of likelihood.
 
 
+Misc Plan Items
+---------------
+
+..   ✗ Go testing framework
+     ✗ Go testing runner
+
+.. tag:: #operations
+
+  ✗ Implement Ampify Server.
+
+    The first deployment scenario for the Ampify Platform will be
+    running the Ampify Engine (backend) natively on high performance
+    dedicated servers in a data centre environment.
+
+    Ideally we'd use a minimal Ubuntu LTS base (`Lucid Lynx?
+    <https://wiki.ubuntu.com/LucidReleaseSchedule>`_) as a foundation for
+    this, something that's more stripped down than the default Ubuntu
+    Server Edition base install.
+
+    In the RHEL/CentOS world, KickStart would be used to construct the
+    desired minimal install.  `Preseed
+    <http://wiki.debian.org/DebianInstaller/Preseed>`_ is the Ubuntu/Debian equivalent.
+
+.. tag:: #operations
+
+  ✗ Implement Ampify Desktop.
+
+    The next scenario has the Ampify Engine running in a virtual
+    environment hosted on the user's regular desktop OS (Windows,
+    Mac OS X, Linux) alongside the Ampify Browser which itself will be
+    a native application.
+
+    An open question is which desktop virtualization environment to
+    use.  It needs to be one that is freely redistributable which
+    probably disqualifies VMware and possibly the non-OSE version of
+    `VirtualBox <http://www.virtualbox.org/>`_.  Another option is
+    `QEMU <http://wiki.qemu.org/Main_Page>`_.
+
+.. tag:: #operations
+
+  ✗ Implement Ampify Mobile.
+
+    Another scenario has the Ampify Browser running as a native
+    application on mobile devices such as smartphones running iPhone
+    OS, Android, `MeeGo <http://meego.com/>`_ and possibly Blackberry.
+
+    It should be possible to port the Ampify Browser to all mobile platforms
+    that have a `WebKit
+    <http://gizmodo.com/5271098/every-mobile-browser-should-give-up-and-just-go-webkit>`_
+    implementation.
+
+.. tag:: #operations
+
+  ✗ Implement Ampify OS.
+
+    The final scenario has the Ampify Engine and Ampify Browser running
+    natively on mobile devices such as netbooks, tablets (such as the
+    `Notion Ink Adam <http://www.notionink.in/adamoverview.php>`_), smartphones
+    and smartbooks, eventually moving up to running on laptops and
+    desktops.
+
+    The open question is whether to build this up from the same
+    base used for the Ampify Server or possibly use `Chromium OS
+    <http://www.chromium.org/chromium-os>`_ or MeeGo for a base.
+
+.. tag::
+
+  ✗ Create a Makefile for the Go packages.
+
+    There's an `experimental goinstall
+    <http://groups.google.com/group/golang-nuts/browse_thread/thread/f091704771128e32/303bed8870daf055>`_
+    which allows for one to install packages with a command like ``goinstall
+    github.com/hoisie/web.go.git``. The package can then be imported in code
+    using:
+
+    .. syntax:: go
+
+      import "github.com/hoisie/web.go.git"
+
+    The command will also recursively download all remote packages defined in
+    the import statements of the packages it's installing -- making it super
+    nice to use.
+
+.. tag:: #dev
+
+  ✗ Implement location to timezone mapping.
+
+    Knowing the local time in different parts of the world is very useful --
+    whether one is travelling or simply wanting to know if it's a reasonable
+    time to call a fellow collaborator on the other side of the planet.
+
+    To help facilitate this, there will be a single utility function as part of
+    the ``timezone`` service:
+
+    .. syntax:: python
+
+      def get_timezone_at(latitude:number, longitude:number) -> string:
+          return timezone
+
+    The ``/tzlocations`` namespace will be reserved for the data needed by the
+    service.
+
+.. tag:: #dev
+
+  ✗ Generate language models from Wikipedia.
+
+    `Wikipedia <http://www.wikipedia.org/>`_ acts as a reasonably sized corpus
+    for various languages. A mix of `various
+    <http://evanjones.ca/software/wikipedia2text.html>`__ `techniques
+    <http://blog.afterthedeadline.com/2009/12/04/generating-a-plain-text-corpus-from-wikipedia/>`_
+    could be used to extract markup-free plain text from it to derive better
+    language models.
+
+    The same opportunity should also be used to generate word-based n-grams as
+    well as character-based ones -- giving us a chance to develop other
+    interesting applications besides just plain old language guessing.
+
+
+Conventions
+-----------
+
+  Whilst this document is not meant to be `normative
+  <http://en.wikipedia.org/wiki/Normative>`_, it hopefully provides a basis for
+  Ampify specifications to eventually emerge. These will be reviewed and
+  accepted as part of the Open Culture Standards Index (OCSI) in a process
+  similar to the Python Enhancement Proposals [PEP-1]_, i.e. an open process
+  with the `BDFL <http://en.wikipedia.org/wiki/Benevolent_Dictator_For_Life>`_
+  (Tav) giving final approval.
+
+  In the meantime, the key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL
+  NOT", "SHOULD", "SHOULD NOT", "RECOMMENDED", "MAY", and "OPTIONAL" should be
+  interpreted as described in RFC 2199 [RFC-2119]_.
+
+  The use of Go, Javascript, Python and Ruby syntax in code snippets is only for
+  the purposes of clarity in expression. It seemed to make better sense than
+  inventing arbitrary syntax for pseudo-code [Norvig-2000]_.
+
+
+References
+----------
+
+.. [Ardia-2008]
+
+    `Court Orders Wikileaks.org Shutdown
+    <http://www.citmedialaw.org/blog/2008/court-orders-wikileaksorg-shutdown-then-grants-limited-reprieve>`_
+
+    David Ardia, Citizen Media Law Project, February 2008.
+
+.. [Beck-2002]
+
+    `Test Driven Development: By Example
+    <http://www.amazon.com/Test-Driven-Development-Addison-Wesley-Signature/dp/0321146530>`_
+
+    Kent Beck, Addison-Wesley Professional, 2002.
+
+.. [Berners-Lee-1989]
+
+    `Information Management: A Proposal
+    <http://www.w3.org/History/1989/proposal.html>`_
+
+    Tim Berners-Lee, CERN, 1989.
+
+.. [Berners-Lee-1998]
+
+    `Cool URIs Don't Change <http://www.w3.org/Provider/Style/URI>`_
+
+    Tim Berners-Lee, W3C, 1998.
+
+.. [Bush-2007]
+
+    `IPv6 Transition & Operational Reality
+    <http://www.nanog.org/mtg-0710/presentations/Bush-v6-op-reality.pdf>`_
+
+    Randy Bush, NANOG, 2007.
+
+.. [Candea-2003]
+
+    `Crash-Only Software
+    <http://web.archive.org/web/20060110174009/http://swig.stanford.edu/~candea/papers/crashonly/>`_
+
+    George Candea and Armando Fox, Proceedings of the 9th Workshop on Hot Topics
+    in Operating Systems (HotOS-IX), Lihue, Hawaii, May 2003.
+
+.. [Cavnar-1994]
+
+    `N-Gram-Based Text Categorization
+    <http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.53.9367>`_
+
+    William B. Cavnar and John M. Trenkle, Proceedings of the 3rd Annual
+    Symposium on Document Analysis and Information Retrieval (SDAIR-94), Las
+    Vegas, April 1994.
+
+.. [Cawley-2008]
+
+    `Code is Data, and It Always Has Been
+    <http://www.bofh.org.uk/articles/2008/04/07/code-is-data-and-it-always-has-been>`_
+
+    Piers Cawley, April 2008.
+
+.. [Cerf-2006]
+
+    `Prepared Statement of Vinton G. Cerf
+    <http://commerce.senate.gov/pdf/cerf-020706.pdf>`_
+
+    Vinton G. Cerf, U.S. Senate Committee on Commerce, Science, and
+    Transportation Hearing on “Network Neutrality”, February 2006.
+
+.. [Cheng-2008]
+
+    `Keeping Network Solutions from Cashing in on Your Subdomains
+    <http://arstechnica.com/news.ars/post/20080410-keeping-network-solutions-from-cashing-in-on-your-subdomains.html>`_
+
+    Jacqui Cheng, Ars Technica, April 2008.
+
+.. [Edwards-2004]
+
+    `Manifesto of the Programmer Liberation Front
+    <http://alarmingdevelopment.org/index.php?p=5>`_
+
+    Jonathan Edwards, June 2004.
+
+.. [Edwards-2006]
+
+    `First Class Copy & Paste <http://hdl.handle.net/1721.1/32980>`_
+
+    Jonathan Edwards, MIT CSAIL, May 2006.
+
+.. [Edwards-2007]
+
+    `No Ifs, Ands, or Buts <http://subtextual.org/OOPSLA07.pdf>`_
+
+    Jonathan Edwards, OOPSLA, October 2007.
+
+.. [Eich-2007]
+
+    `What Does "Open" Mean?
+    <http://developer.mozilla.org/presentations/sxsw2007/the_open_web/>`_
+
+    Brendan Eich, Mozilla Corporation, 2007.
+
+.. [Egnor-2001]
+
+    `Airhook -- Reliable, efficient transmission control for networks that suck
+    <http://airhook.ofb.net/>`_
+
+    Dan Egnor, 2001.
+
+.. [FIPS-180-1]
+
+    `Secure Hash Standard <http://www.itl.nist.gov/fipspubs/fip180-1.htm>`_
+
+    National Institute of Standards and Technology, U.S. Department Of Commerce,
+    April 1995.
+
+.. [Fitzpatrick-2007]
+
+    `Thoughts on the Social Graph <http://bradfitz.com/social-graph-problem/>`_
+
+    Brad Fitzpatrick, August 2007.
+
+.. [Frankston-2001]
+
+    `DNS: A Safe Haven for URLs and Internet Identifiers
+    <http://www.frankston.com/?name=DNSSafeHaven>`_
+
+    Bob Frankston, August 2001.
+
+.. [Gabriel-2007]
+
+    `Design Beyond Human Abilities
+    <http://dreamsongs.com/Files/DesignBeyondHumanAbilitiesSimp.pdf>`_
+
+    Richard P. Gabriel, November 2007.
+
+.. [Iskold-2008]
+
+    `Top 10 Traits of a Rockstar Software Engineer
+    <http://www.readwriteweb.com/archives/top_10_software_engineer_traits.php>`_
+
+    Alex Iskold, ReadWriteWeb, 2008.
+
+.. [Kawasaki-2006]
+
+    `The Art of Innovation
+    <http://blog.guykawasaki.com/2006/01/the_art_of_inno.html>`_
+
+    Guy Kawasaki, 2006
+
+.. [Kegel-2001]
+
+    `The C10K Problem <http://www.kegel.com/c10k.html>`_
+
+    Dan Kegel, 2001.
+
+.. [Leggett-2008]
+
+    `Let's Get Crackin'!
+    <http://web.archive.org/web/20080414042913/http://www.fightfortheopenweb.com/>`_
+
+    Russell Leggett, April 2008.
+
+.. [Levien-2000]
+
+    `Advogato's Trust Metric <http://advogato.org/trust-metric.html>`_
+
+    Raph Levien, February 2000.
+
+.. [Levien-2004]
+
+    `Attack Resistant Trust Metrics <http://www.levien.com/thesis/compact.pdf>`_
+
+    Raph Levien, Draft Thesis, 2004.
+
+.. [Miller-1988]
+
+    `Markets and Computation: Agoric Open Systems
+    <http://www.agorics.com/Library/agoricpapers/aos/aos.0.html>`_
+
+    Mark S. Miller and K. Eric Drexler, The Ecology of Computation, Bernardo
+    Huberman (ed.) Elsevier Science Publishers/North-Holland, 1988.
+
+.. [Neuberg-2003]
+
+    `Introduction to the Peer-to-Peer Sockets Project
+    <http://www.onjava.com/pub/a/onjava/2003/12/03/p2psockets.html>`_
+
+    Brad Neuberg, March 2003.
+
+.. [Neuberg-2008]
+
+    `What Is the Open Web and Why Is It Important?
+    <http://codinginparadise.org/weblog/2008/04/whats-open-web-and-why-is-it-important.html>`_
+
+    Brad Neuberg, April 2008.
+
+.. [Norvig-2000]
+
+    `Python for Lisp Programmers <http://norvig.com/python-lisp.html>`_
+
+    Peter Norvig, 2000.
+
+.. [PEP-1]
+
+    `PEP Purpose and Guidelines <http://www.python.org/dev/peps/pep-0001/>`_
+
+    Barry Warsaw, Jeremy Hylton, David Goodger, June 2000.
+
+.. [RFC-768]
+
+    `User Datagram Protocol <http://www.rfc-editor.org/rfc/rfc768.txt>`_
+
+    Jon Postel, August 1980.
+
+.. [RFC-793]
+
+    `Transmission Control Protocol <http://www.rfc-editor.org/rfc/rfc793.txt>`_
+
+    IST, DARPA, September 1981.
+
+.. [RFC-1034]
+
+    `Domain names - Concepts and Facilities
+    <http://www.rfc-editor.org/rfc/rfc1034.txt>`_
+
+    Paul Mockapetris, November 1987.
+
+.. [RFC-2119]
+
+    `Key words for use in RFCs to Indicate Requirement Levels
+    <http://www.rfc-editor.org/rfc/rfc2119.txt>`_
+
+    Scott Bradner, March 1997.
+
+.. [RFC-2460]
+
+    `Internet Protocol, Version 6 (IPv6) Specification
+    <http://www.rfc-editor.org/rfc/rfc2460.txt>`_
+
+    Stephen E. Deering and Robert M. Hinden, December 1998.
+
+.. [RFC-2616]
+
+    `Hypertext Transfer Protocol -- HTTP/1.1
+    <http://www.rfc-editor.org/rfc/rfc2616.txt>`_
+
+    Roy Fielding, et al., June 1999.
+
+.. [RFC-3056]
+
+    `Connection of IPv6 Domains via IPv4 Clouds
+    <http://www.rfc-editor.org/rfc/rfc3056.txt>`_
+
+    Brian E. Carpenter and Keith Moore, February 2001.
+
+.. [RFC-3280]
+
+    `Internet X.509 Public Key Infrastructure Certificate and Certificate
+    Revocation List (CRL) Profile <http://www.rfc-editor.org/rfc/rfc3280.txt>`_
+
+    Russell Housley, et al., April 2002.
+
+.. [RFC-3330]
+
+    `Special-Use IPv4 Addresses <http://www.rfc-editor.org/rfc/rfc3330.txt>`_
+
+    IANA, September 2002.
+
+.. [RFC-3489]
+
+    `STUN - Simple Traversal of User Datagram Protocol (UDP) Through Network
+    Address Translators (NATs) <http://www.rfc-editor.org/rfc/rfc3489.txt>`_
+
+    Jonathan Rosenberg, et al., March 2003.
+
+.. [RFC-3513]
+
+    `Internet Protocol Version 6 (IPv6) Addressing Architecture
+    <http://www.rfc-editor.org/rfc/rfc3513.txt>`_
+
+    Robert M. Hinden and Stephen E. Deering, April 2003.
+
+.. [RFC-4122]
+
+    `A Universally Unique IDentifier (UUID) URN Namespace
+    <http://www.rfc-editor.org/rfc/rfc4122.txt>`_
+
+    Paul J. Leach, et al., July 2005.
+
+.. [RFC-4346]
+
+    `The Transport Layer Security (TLS) Protocol Version 1.1
+    <http://www.rfc-editor.org/rfc/rfc4346.txt>`_
+
+    Tim Dierks and Eric Rescorla, April 2006.
+
+.. [RFC-4380]
+
+    `Teredo: Tunneling IPv6 over UDP through Network Address Translations (NATs)
+    <http://www.rfc-editor.org/rfc/rfc4380.txt>`_
+
+    Christian Huitema, February 2006.
+
+.. [Ristenpart-2009]
+
+    `Hey, You, Get Off of My Cloud: Exploring Information Leakage in Third-Party
+    Compute Clouds <http://people.csail.mit.edu/tromer/papers/cloudsec.pdf>`_
+
+    Thomas Ristenpart, Eran Tromer, Hovav Shacham and Stefan Savage, CCS’09,
+    Chicago, November 2009.
+
+.. [Saffer-2007]
+
+    `A Call to Arms for Interaction Designers
+    <http://www.adaptivepath.com/blog/2007/08/28/a-call-to-arms-for-interaction-designers/>`_
+
+    Dan Saffer, Adaptive Path, 2007.
+
+.. [Slee-2007]
+
+    `Thrift: Scalable Cross-Language Services Implementation
+    <http://developers.facebook.com/thrift/thrift-20070401.pdf>`_
+
+    Mark Slee, Aditya Agarwal and Marc Kwiatkowski, Facebook, 2007.
+
+.. |contents| raw:: html
+
+  [ <a href="#table-of-contents" class="table-of-contents-handler">Table of Contents</a> ]
+
+
 Ignore This
 -----------
+
+  .. class:: sidebox
+
+  "We need to learn new designs, design frameworks, and design approaches from
+  naturally occurring, ultra large scale systems (e.g. biology, ecology)"
+  [Gabriel-2007]_
+
 
 Redis 32-bit
 
@@ -2152,21 +2688,29 @@ http://help.simplegeo.com/faqs/api-documentation/endpoints
 
 bash completion
 
-.. |contents| raw:: html
-
-  [ <a href="#table-of-contents" class="table-of-contents-handler">Table of Contents</a> ]
-
 .. _App Engine: http://code.google.com/appengine/
+.. _S3: http://aws.amazon.com/s3/
+.. _SendGrid: http://sendgrid.com
+
 .. _Caja: http://code.google.com/p/google-caja/
+.. _Chromium: http://www.chromium.org
 .. _CoffeeScript: http://jashkenas.github.com/coffee-script/
+.. _Dirac: http://diracvideo.org
+.. _FFmpeg: http://ffmpeg.org
+.. _FreeSWITCH: http://www.freeswitch.org
+.. _Git: http://git-scm.com
 .. _Go: http://golang.org
 .. _jQuery: http://jquery.com
 .. _Keyspace: http://scalien.com/keyspace/
+.. _Mapnik: http://mapnik.org
 .. _Native Client: http://code.google.com/p/nativeclient/
 .. _Node.js: http://nodejs.org
 .. _PyPy: http://codespeak.net/pypy/dist/pypy/doc/
 .. _Python: http://www.python.org
+.. _QuantLib: http://quantlib.org
 .. _Redis: http://code.google.com/p/redis/
-.. _S3: http://aws.amazon.com/s3/
-.. _SendGrid: http://sendgrid.com
+.. _Ruby: http://www.ruby-lang.org
 .. _Sizzle: http://sizzlejs.com
+.. _Theora: http://www.theora.org
+.. _V8: http://code.google.com/p/v8/
+
