@@ -28,19 +28,15 @@ ${Markup(content)}
 	<div>Documentation for various source files.</div>
   </li>
   <li>
-	<a href="zero-planfile.html">Zero Planfile</a>
+	<a href="planfile.html">Planfile</a>
 	<div>The planfile for Ampify Zero.</div>
-  </li>
-  <li>
-	<a href="0.1-planfile.html">0.1 Planfile</a>
-	<div>The planfile for Ampify 0.1.</div>
   </li>
   <li>
 	<a href="license.html">Public Domain License</a>
 	<div>The super permissive open source license for Ampify.</div>
   </li>
   <li>
-	<a href="authors.html">Ampify Authors</a>
+	<a href="authors.html">Authors</a>
 	<div>Those who have authored Ampify thus far.</div>
   </li>
   <li>
@@ -48,7 +44,7 @@ ${Markup(content)}
 	<div>Those who have helped out in various ways.</div>
   </li>
   <li>
-	<a href="history.html">Ampify History</a>
+	<a href="history.html">History</a>
 	<div>A brief history of Ampify.</div>
   </li>
 </ul>
