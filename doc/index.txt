@@ -5,10 +5,9 @@ layout: page
 Ampify
 ======
 
-
-The Ampify Platform aims to make micro-data powered application development and
-decentralised collaboration super easy. For comparison, perhaps imagine a
-bastardised mix between Unix, IRC, App Engine, Xanadu and Wikis.
+Ampify is a vision of an open and decentralised application platform. For
+comparison, perhaps imagine a bastardised mix between Unix, Facebook, IRC, App
+Engine, Xanadu and Wikis.
 
 The goal for the 1.0 release is to have a fully decentralised "internet
 operating system" style platform, but right now we're working on creating a
@@ -18,13 +17,13 @@ basic, working proof of concept: version ``Zero``.
 Get Started
 -----------
 
-You need to have Git, a recent Python 2.x and general dev tools (gcc, make,
-etc.) installed.
+You need to have Git 1.7.x, a recent Python 2.x and general dev tools (gcc,
+make, etc.) installed.
 
 .. syntax:: bash
 
   # clone the source repository.
-  $ git clone git://github.com/tav/ampify.git
+  $ git clone http://github.com/tav/ampify.git
 
   # setup ampify related environment variables using
   # the ampenv.sh bash script. you might also want
@@ -52,7 +51,7 @@ Get Involved
 ------------
 
 * Come by and say hello and introduce yourself on `IRC
-  <irc://irc.freenode.net/esp>`_:
+  <irc://irc.freenode.net/esp>`_ -- we're a friendly bunch!
 
 .. raw:: html
 
@@ -62,8 +61,7 @@ Get Involved
   chatlogs: <a href="http://irclogs.ampify.it">irclogs.ampify.it</a>
   </pre>
 
-* Get on the `ampify-dev <http://groups.google.com/group/ampify-dev>`_ mailing
-  list.
+* Get on the `ampify <http://groups.google.com/group/ampify>`_ mailing list.
 
 * Sign up to GitHub if you don't have an `account
   <https://github.com/signup/free>`_ — it takes just a minute! You can then
@@ -74,7 +72,7 @@ Get Involved
 .. syntax:: bash
 
   $ git clone git@github.com:yourUsername/ampify.git
-  $ git remote add upstream git://github.com/tav/ampify.git
+  $ git remote add upstream http://github.com/tav/ampify.git
 
 * Read the `getting started with git
   <http://www.espians.com/getting-started-with-git.html>`_ guide for Ampify
