@@ -1,7 +1,7 @@
 ![Ampify](http://cloud.github.com/downloads/tav/ampify/logo.ampify.smallest.png)
 
-This is the repo for Ampify — an open and decentralised application platform. 
-For comparison, perhaps imagine a bastardised mix between Unix, Facebook, IRC, 
+This is the repo for Ampify — an open and decentralised application platform.  
+For comparison, perhaps imagine a bastardised mix between Unix, Facebook, IRC,  
 App Engine, [Xanadu] and Wikis.
 
 The goal for the 1.0 release is to have a fully decentralised "internet  
