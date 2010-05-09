@@ -2,7 +2,7 @@ This directory contains the documentation for the Ampify platform.
 
 You can also view the documentation online at:
 
-* [http://dev.ampify.it](http://dev.ampify.it)
+* [http://ampify.it](http://ampify.it)
 
 The documentation site is automatically generated from the `*.txt` source
 [reStructuredText](http://docutils.sourceforge.net/rst.html) files using

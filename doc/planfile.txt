@@ -529,7 +529,7 @@ Development Process
       .. plan:: project-id
 
     It does, however, expect certain CSS classes to be defined and for the
-    `plan.js <http://dev.ampify.it/js/plan.js>`_ file to be accessible at
+    `plan.js <http://ampify.it/js/plan.js>`_ file to be accessible at
     ``/js/plan.js``.
 
     Individual plan items are easy to define. Just nest them inside the ``tag``

@@ -11,7 +11,7 @@
       ('Source Code', 'http://github.com/tav/ampify'),
       ('Wiki', 'http://wiki.github.com/tav/ampify/'),
       ('Bug Tracker', 'http://github.com/tav/ampify/issues'),
-      ('Mailing List', 'http://groups.google.com/group/ampify-dev'),
+      ('Mailing List', 'http://groups.google.com/group/ampify'),
       ('IRC Logs', 'http://irclogs.ampify.it'),
       ],
     'community': [
@@ -136,7 +136,7 @@
 		<li><a href="http://blog.ampify.it" py:attrs="menu_class['blog']">Blog</a></li>
 		<li><a href="http://ampify.it/community.html" py:attrs="menu_class['community']">Community</a></li>
 		</py:if>
-		<li><a href="http://dev.ampify.it" py:attrs="menu_class['code']">Code</a></li>
+		<li><a href="http://ampify.it" py:attrs="menu_class['code']">Code</a></li>
 		<py:if test="section_id != 'code'">
 		<li><a href="http://supporters.ampify.it" py:attrs="menu_class['supporters']">Supporters</a></li>
 		<li><a href="http://ampify.it" py:attrs="menu_class['about']">About</a></li>
@@ -163,7 +163,7 @@ ${Markup(content)}
 		<py:if test="section_id != 'code'">
     <a href="http://ampify.it">ABOUT</a>
     &middot; <a href="http://supporters.ampify.it">SUPPORTERS</a>
-    &middot; </py:if><a href="http://dev.ampify.it">CODE</a>
+    &middot; </py:if><a href="http://ampify.it">CODE</a>
 	<py:if test="section_id != 'code'">
     &middot; <a href="http://ampify.it/community.html">COMMUNITY</a>
     &middot; <a href="http://blog.ampify.it">BLOG</a>
