@@ -5,10 +5,10 @@
   section_data = [
       ('Home', 'http://ampify.it', True, True),
       ('Source Code', 'http://github.com/tav/ampify', True, True),
-      ('Bug Tracker', 'http://github.com/tav/ampify/issues', True, True),
+      ('Bug Tracker', 'http://githubissues.heroku.com/#tav/ampify', True, True),
       ('Mailing List', 'http://groups.google.com/group/ampify', True, True),
       ('IRC Logs', 'http://irclogs.ampify.it', True, True),
-      ('Tent Stream', 'http://www.tentapp.com/#ampify', True, True),
+      ('Espra Stream', 'http://espra.com/zero/#ampify', True, True),
       # ('Wiki', 'http://wiki.github.com/tav/ampify/', False, False),
       # ('Download', 'http://ampify.it/download.html', False, False),
       # ('Changelog', 'http://ampify.it/changelog.html', False, False),
