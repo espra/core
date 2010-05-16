@@ -7,6 +7,7 @@ doc/website/*.html
 environ/local
 
 src/amp/build
+src/build
 src/tools/makeucd/UnicodeData.txt
 
 src/zero/.latest

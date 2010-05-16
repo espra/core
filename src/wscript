@@ -31,7 +31,7 @@ def check_ampenv_setup(ctx):
             "You haven't sourced ampenv.sh! To fix, run the following in a "
             "bash shell: \n\n"
             "    $ source %s" %
-            os.path.join(ctx.curdir, 'environ', 'startup', 'ampenv.sh')
+            os.path.join(ctx.curdir, 'environ', 'ampenv.sh')
             )
 
 def configure(ctx):
