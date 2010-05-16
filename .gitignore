@@ -3,24 +3,19 @@
 .appengine_python_sdk
 .articlestore
 
-client_libs/appengine/secret.py
-client_libs/appengine/updated.py
-
 doc/website/*.html
-
 environ/local
-
-misc/devboard/siteconfig.py
-misc/devboard/updated.py
-misc/blog/website/*.html
-misc/blog/website/*.rss
-misc/www/website/*.html
 
 src/amp/build
 
 src/zero/.latest
 src/zero/build
-src/zero/live/zerolive.js
+src/zero/client_libs/appengine/secret.py
+src/zero/client_libs/appengine/updated.py
+src/zero/espra/secret.py
+src/zero/espra/updated.py
+src/zero/sensor/sensor.js
+
 src/zero/www/ampzero.js
 src/zero/www/debug.html
 src/zero/www/index.html
@@ -28,9 +23,6 @@ src/zero/www/zerosite.css
 src/zero/www/zerosite.js
 src/zero/www/zerosite.min.css
 src/zero/www/zerosite.min.js
-
-src/zerodata/secret.py
-src/zerodata/updated.py
 
 # minified css/js files
 
