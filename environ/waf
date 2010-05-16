@@ -8,7 +8,7 @@ import sys
 from os import getcwd
 from os.path import dirname, join as join_path, realpath
 
-version = "1.5.11"
+version = "1.5.16"
 
 wafadmin_directory = join_path(
     dirname(dirname(realpath(__file__))),
