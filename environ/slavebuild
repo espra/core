@@ -11,8 +11,8 @@ from os.path import expanduser, exists
 # some konstants
 # ------------------------------------------------------------------------------
 
-CONFIG_FILE = expanduser("~/.ampbuildconfig")
+CONFIG_FILE = expanduser("~/.slavebuildconfig")
 
 if not exists(CONFIG_FILE):
-    print("Couldn't find the build slave config file: %s" % CONFIG_FILE)
+    print("Couldn't find the slave build config file: %s" % CONFIG_FILE)
     sys.exit(1)
