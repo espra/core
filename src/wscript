@@ -22,7 +22,7 @@ VERSION = 'zero'
 
 def set_options(ctx):
     ctx.add_option(
-        '--all', action='store', default=False, help='Run the full test suite'
+        '--all', action='store', default=False, help='run the full test suite'
         )
 
 def check_ampenv_setup(ctx):
@@ -31,7 +31,10 @@ def check_ampenv_setup(ctx):
             "You haven't sourced ampenv.sh! To fix, run the following in a "
             "bash shell: \n\n"
             "    $ source %s" %
-            os.path.join(ctx.curdir, 'environ', 'ampenv.sh')
+            os.path.join(
+                os.path.dirname(os.path.dirname(ctx.curdir)),
+                'environ', 'ampenv.sh'
+                )
             )
 
 def configure(ctx):
