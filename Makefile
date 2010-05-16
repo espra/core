@@ -5,13 +5,13 @@
 # some konstants
 # ------------------------------------------------------------------------------
 
-WAF := ../environ/waf --jobs=1
+WAF := environ/waf --jobs=1
 
 # ------------------------------------------------------------------------------
 # we declare our phonies so they stop telling us that targets are up-to-date
 # ------------------------------------------------------------------------------
 
-.PHONY: all benchmark build clean debug deps distclean install test
+.PHONY: all benchmark build clean debug deps distclean docs install test
 
 # ------------------------------------------------------------------------------
 # our rules, starting with the default
@@ -40,6 +40,9 @@ dist:
 
 distclean:
 	@$(WAF) distclean
+
+docs:
+	@cd doc && ../environ/yatiblog
 
 install:
 	@$(WAF) install
