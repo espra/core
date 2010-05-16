@@ -96,9 +96,9 @@ function _have () {
 export AMPIFY_LOCAL=$AMPIFY_ROOT/environ/local
 
 if [ "$PATH" ]; then
-	export PATH=$AMPIFY_ROOT/environ:$AMPIFY_LOCAL/bin:$AMPIFY_ROOT/src/codereview:$PATH
+	export PATH=$AMPIFY_ROOT/environ:$AMPIFY_LOCAL/bin:$AMPIFY_ROOT/src/tools/codereview:$PATH
 else
-	export PATH=$AMPIFY_ROOT/environ:$AMPIFY_LOCAL/bin:$AMPIFY_ROOT/src/codereview
+	export PATH=$AMPIFY_ROOT/environ:$AMPIFY_LOCAL/bin:$AMPIFY_ROOT/src/tools/codereview
 fi
 
 case $_OS_NAME in
