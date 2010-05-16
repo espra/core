@@ -1,5 +1,3 @@
-#! /usr/bin/env node
-
 // No Copyright (-) 2010 The Ampify Authors. This file is under the
 // Public Domain license that can be found in the root LICENSE file.
 
@@ -98,7 +96,7 @@ function tokenise(source) {
 
     for (i = 0; i < length; i++) {
 
-        // Get the UTF-16 unit and convert it to a Unicode Codepoint.
+        // Get the UTF-16 code unit and convert it to a Unicode Codepoint.
         codepoint = source.charCodeAt(i);
         ascii = false;
 
@@ -172,6 +170,7 @@ function tokenise(source) {
 }
 
 function parse() {
+    var hasProp = Object.hasOwnProperty;
 }
 
 function evaluate() {
@@ -243,10 +242,10 @@ function bench(duration) {
     return total;
 }
 
-var text = fs.readFileSync('/Users/tav/silo/ampify/src/naaga/src/foo.js');
+// var text = fs.readFileSync('/Users/tav/silo/ampify/src/naaga/src/foo.js');
 
-print_tokens(tokenise("hello, wo—rld__.{(foo-bar\\"));
+// print_tokens(tokenise("hello, wo—rld__.{(foo-bar\\"));
 
 // timeit(1000, tokenise, text);
-// bench("tokeniser", 2.0, tokenise, text);
+bench("tokeniser", 5.05, tokenise, text);
 

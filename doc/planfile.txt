@@ -262,8 +262,8 @@ Argonought
 
     There are literally hundreds of serialisation/exchange formats/protocols
     available to us: `ASN.1`_, Avro_, BERT_, BSON_, Etch_, Gob_, Hessian_,
-    JSON_, MessagePack_, Pickle_, `Protocol Buffers`_, SOAP_, Thrift_, XDR_,
-    XML-RPC_, YAML_, &c.
+    JSON_, MessagePack_, Pickle_, `Protocol Buffers`_, `S-Expressions`_, SOAP_,
+    Thrift_, XDR_, XML-RPC_, YAML_, &c.
 
     .. _ASN.1: http://en.wikipedia.org/wiki/Abstract_Syntax_Notation_One
     .. _Avro: http://hadoop.apache.org/avro/docs/current/
@@ -276,6 +276,7 @@ Argonought
     .. _MessagePack: http://msgpack.sourceforge.net/
     .. _Pickle: http://docs.python.org/library/pickle.html
     .. _Protocol Buffers: http://code.google.com/p/protobuf/
+    .. _S-Expressions: http://en.wikipedia.org/wiki/S-expression
     .. _SOAP: http://www.w3.org/TR/soap/
     .. _Thrift: http://incubator.apache.org/thrift/
     .. _XDR: http://www.rfc-editor.org/rfc/rfc4506.txt
@@ -326,7 +327,7 @@ Argonought
       }
 
     Then you'd have to generate the code for your target languages before you
-    can start doing anything! e.g.
+    can start doing anything, e.g.
 
     .. syntax:: python
 
@@ -1954,6 +1955,14 @@ References
     Symposium on Document Analysis and Information Retrieval (SDAIR-94), Las
     Vegas, April 1994.
 
+.. [Chatham-2010]
+
+    `Beyond the Dollar: Rethinking the International Monetary System
+    <http://www.chathamhouse.org.uk/publications/papers/view/-/id/844/>`_
+
+    Chatham House Report, Edited by Paola Subacchi and John Driffill, March
+    2010.
+
 .. [Cawley-2008]
 
     `Code is Data, and It Always Has Been
@@ -2687,6 +2696,20 @@ geoip
 http://help.simplegeo.com/faqs/api-documentation/endpoints
 
 bash completion
+
+AmpOS base OS/distro requirements:
+
+* Minimal
+* Secure
+* Performant
+* Auto-updatable system image
+* OpenVZ / VServer support
+* Optimised to run on either raw metal or inside a VM
+* Current, security patched kernel
+* Support for both user and dev instances
+* Possibly be the base for AmpOS ?
+* 32-bit / 64-bit
+* ARM port?
 
 .. _App Engine: http://code.google.com/appengine/
 .. _S3: http://aws.amazon.com/s3/

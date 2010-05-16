@@ -2,9 +2,9 @@
 # Public Domain license that can be found in the root LICENSE file.
 
 """
-===============
-Ampify Zerodata
-===============
+==========
+Espra Zero
+==========
 
 And this is
 
@@ -21,6 +21,9 @@ from urllib import unquote as urlunquote
 
 from google.appengine.api.capabilities import CapabilitySet
 from google.appengine.ext import db
+
+# Extend the sys.path to include the ``lib`` subdirectory.
+sys.path.insert(0, 'lib')
 
 from simplejson import dumps as json_encode, loads as json_decode
 from pyutil.crypto import validate_tamper_proof_string
@@ -113,6 +116,11 @@ def run_app(
 
         http_method = env['REQUEST_METHOD']
         content_type = env.get('CONTENT-TYPE', '')
+        api_method = env['PATH_INFO'][1:]
+
+        if not 
+        write()
+        return
 
         args = [arg for arg in env['PATH_INFO'].split('/') if arg]
         if args:
@@ -253,6 +261,73 @@ def query(ctx):
 # you can thank evangineer for this craziness ;p
 # ------------------------------------------------------------------------------
 
+# class Lease(db.Model):
+
+#     id = db.StringProperty(name='i')
+#     expires = db.DateTimeProperty(default=timedelta(seconds=45), name='e')
+
+# /pecu @evangineer 500
+# /pecu-allocated-total: + 500
+
+# allocate_ids(Item, count)
+
+# already exists:
+# id1 = {'aspect': '/pecu-allocated-total', 'value': 1000}
+
+# new allocation:
+# msg = {'aspect': '/pecu', 'value': 500, 'ref': '@evangineer'}
+
+#! source, new_id, target_id = get_lease('/pecu-allocated-total')
+
+# source looks like:
+# {'aspect': '/pecu-allocated-total', 'value': 1000, 'expires': now+45, 'key': 1, 'target': 3, 'other': None}
+
+# new_id: 2
+# target_id: 3
+
+# if source:
+#   source.value += msg.value
+#   msg.key = new_id
+#   msg.target = 
+#!   save_as(new_id, source)
+#!   save_as(target_id, msg)
+
+# read / write / take
+
+
+# <evangineer> hello
+
+# Item:
+#     id = 123
+#     by = 'evangineer' # ? 73947
+#     to = '#foo'
+#     scope/cap = 0
+#     value = 'hello'
+#     aspect = 'default'
+
+# Item:
+#     id = 124
+#     by = 'evangineer' # ? 73947
+#     to = '374092796242946496297492'
+#     value = 'hello'
+#     aspect = 'default'
+
+# class Token(db.Model):
+
+#     ref = db.IntegerProperty()
+#     read = db.BooleanProperty(default=False)
+#     write = db.BooleanProperty(default=False)
+
+# class Reference(db.Model):
+
+#     key = db.ByteStringProperty()
+
+# read
+# write
+# read + write
+
+# "+lcl": 374092796242946496297492
+
 def multiop(
     pre_id=None,
     pre_query=None,
@@ -282,10 +357,8 @@ def multiop(
 # ------------------------------------------------------------------------------
 
 API_HANDLERS.update({
-    '/': (root, False),
     'get': (get, False),
     'delete': (delete, True),
-    'invalidate': (invalidate, False),
     'put': (put, True),
     'query': (query, True)
     })

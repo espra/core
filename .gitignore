@@ -7,6 +7,7 @@ doc/website/*.html
 environ/local
 
 src/amp/build
+src/tools/makeucd/UnicodeData.txt
 
 src/zero/.latest
 src/zero/build
@@ -14,6 +15,9 @@ src/zero/client_libs/appengine/secret.py
 src/zero/client_libs/appengine/updated.py
 src/zero/espra/secret.py
 src/zero/espra/updated.py
+src/zero/espra/static/espra.css
+src/zero/espra/static/espra.js
+src/zero/js/ucd.js
 src/zero/sensor/sensor.js
 
 src/zero/www/ampzero.js
