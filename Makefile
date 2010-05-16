@@ -35,6 +35,9 @@ debug:
 deps:
 	@$(WAF) deps
 
+dist:
+	@$(WAF) dist
+
 distclean:
 	@$(WAF) distclean
 

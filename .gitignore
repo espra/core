@@ -2,17 +2,15 @@
 
 .appengine_python_sdk
 .articlestore
+.latest
+
+build
 
 doc/website/*.html
 environ/local
 
-src/.latest
-src/amp/build
-src/build
 src/tools/makeucd/UnicodeData.txt
 
-src/zero/.latest
-src/zero/build
 src/zero/client_libs/appengine/secret.py
 src/zero/client_libs/appengine/updated.py
 src/zero/espra/secret.py
@@ -21,14 +19,6 @@ src/zero/espra/static/espra.css
 src/zero/espra/static/espra.js
 src/zero/js/ucd.js
 src/zero/sensor/sensor.js
-
-src/zero/www/ampzero.js
-src/zero/www/debug.html
-src/zero/www/index.html
-src/zero/www/zerosite.css
-src/zero/www/zerosite.js
-src/zero/www/zerosite.min.css
-src/zero/www/zerosite.min.js
 
 # minified css/js files
 

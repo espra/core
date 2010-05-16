@@ -6,12 +6,17 @@ import os
 import Scripting
 import Options
 
+from os.path import dirname, exists, join as join_path
+
 # ------------------------------------------------------------------------------
 # some konstants
 # ------------------------------------------------------------------------------
 
-srcdir = '.'
-blddir = 'build'
+top = '.'
+out = 'build'
+
+# srcdir = '.'
+# blddir = 'build'
 
 APPNAME = 'ampify'
 VERSION = 'zero'
@@ -30,12 +35,11 @@ def check_ampenv_setup(ctx):
         ctx.fatal(
             "You haven't sourced ampenv.sh! To fix, run the following in a "
             "bash shell: \n\n"
-            "    $ source %s" %
-            os.path.join(
-                os.path.dirname(os.path.dirname(ctx.curdir)),
-                'environ', 'ampenv.sh'
-                )
+            "    $ source %s" % join_path(ctx.curdir, 'environ', 'ampenv.sh')
             )
+    local = join_path(ctx.curdir, 'environ', 'local')
+    if not exists(local):
+        os.mkdir(local)
 
 def configure(ctx):
     """configure the ampify installation"""
