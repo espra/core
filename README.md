@@ -31,6 +31,11 @@ To contribute any patches, simply fork this repository using GitHub,
 add yourself to the `AUTHORS` file and send a pull request to me —  
 [http://github.com/tav]. Thanks!
 
+**Please Note**
+
+This is very much a work in progress and not much works yet — faster  
+development is dependent on your involvement =)
+
 **Credits**
 
 All work by the [Ampify Authors] in this repository has been placed  
@@ -66,11 +71,6 @@ into the [public domain]. The major contributors so far have been:
 
 See the [authors], [credits] and [pecu allocations] for a full listing  
 of all the awesome people who've helped over the years.
-
-**Please Note**
-
-This is very much a work in progress and not much works yet — faster  
-development is dependent on your involvement =)
 
 —
 Enjoy, tav <<tav@espians.com>>
