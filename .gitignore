@@ -17,8 +17,8 @@ src/zero/css/*.css
 src/zero/js/*.js
 src/zero/espra/secret.py
 src/zero/espra/updated.py
-src/zero/espra/static/espra.css
-src/zero/espra/static/espra.js
+src/zero/espra/static/*.css
+src/zero/espra/static/*.js
 src/zero/js/ucd.js
 src/zero/sensor/sensor.js
 
