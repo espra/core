@@ -25,8 +25,6 @@ For more info, please see the `doc` directory or visit:
 * plan file: [http://ampify.it/planfile.html]
 * irc channel: [irc://irc.freenode.net/esp], [irc logs]  
 
-<form action="http://webchat.freenode.net/"><input type="hidden" name="channels" value="esp" /><blockquote><button>click to join #esp</button></blockquote></form>
-
 **Contribute**
 
 To contribute any patches, simply fork this repository using GitHub and  
