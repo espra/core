@@ -36,7 +36,7 @@ debug:
 dist:
 	@$(WAF) dist
 
-distclean:
+distclean: clean
 	@$(WAF) distclean
 
 docs:
