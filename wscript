@@ -247,7 +247,20 @@ def build_zero(ctx):
 
     ctx.install_files('${ZERO_STATIC}', 'src/zero/espra/static/espra.min.css')
 
-    ctx(rule=lambda task: do([sys.executable, 'setup.py'], cwd=join(ROOT, 'src')),
+    def pyutil_install(task):
+        if not ctx.is_install > 0:
+            return
+        stdout, retval = do(
+            [sys.executable, 'setup.py'],
+            retcode=True,
+            cwd=join(ROOT, 'src'),
+            redirect_stdout=True
+            )
+        if stdout != 'running build_ext\n':
+            pass
+        return retval
+
+    ctx(rule=pyutil_install,
         name='pyutil install',
         always=True)
 
@@ -334,10 +347,16 @@ def distclean(ctx):
     """remove the build and local directories"""
 
     from errno import ENOENT
-    from os.path import join
+    from os.path import exists, join
     from shutil import rmtree
 
-    os.remove(join(ROOT, 'src', 'pyutil', 'pylzf.so'))
+    extension_modules = [
+        join(ROOT, 'src', 'pyutil', 'pylzf.so')
+        ]
+
+    for ext in extension_modules:
+        if exists(ext):
+            os.remove(ext)
 
     Scripting.distclean(ctx)
 
