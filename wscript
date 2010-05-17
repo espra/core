@@ -30,6 +30,14 @@ JAR_FILES = {
 top = '.'
 out = 'build'
 
+JS_WRAP_START = "(function(){\n"
+JS_WRAP_END = "\n})();\n\n"
+
+JS_MIN = (
+    "${JAVA} -jar ${AMPIFY_BIN}/%s --js ${SRC} --js_output_file ${TGT}"
+    % JAR_FILES['closure.jar']
+    )
+
 # ------------------------------------------------------------------------------
 # utility functions
 # ------------------------------------------------------------------------------
@@ -45,6 +53,16 @@ def do(*args, **kwargs):
         kwargs['redirect_stderr'] = False
 
     return run_command(*args, **kwargs)
+
+def get_target(task):
+    return task.outputs[0].bldpath(task.env)
+
+def write_dummy_target(task, target=None):
+    if not target:
+        target = task.outputs[0].bldpath(task.env)
+    target = open(target, 'wb')
+    target.write('1')
+    target.close()
 
 # ------------------------------------------------------------------------------
 # the core functions
@@ -93,14 +111,18 @@ def configure(ctx):
     ctx.check_tool('bison')
     ctx.check_tool('flex')
     ctx.check_tool('libtool')
+    ctx.check_tool('python')
 
     ctx.find_program('coffee', var='COFFEE', mandatory=True)
     ctx.find_program('git', var='GIT', mandatory=True)
+    ctx.find_program('java', var='JAVA', mandatory=True)
     ctx.find_program('ruby', var='RUBY', mandatory=True)
     ctx.find_program('sass', var='SASS', mandatory=True)
     ctx.find_program('touch', var='TOUCH', mandatory=True)
 
+    ctx.env['AMPIFY_ROOT'] = ROOT
     ctx.env['AMPIFY_BIN'] = BIN
+    ctx.env['ZERO_STATIC'] = join(ROOT, 'src', 'zero', 'espra', 'static')
     ctx.env['ZERO_COFFEE_OUTPUT'] = join(ROOT, 'src', 'zero', 'js')
     ctx.env['ZERO_SASS_OUTPUT'] = join(ROOT, 'src', 'zero', 'css')
 
@@ -113,13 +135,13 @@ def build(ctx):
 
 def build_zero(ctx):
 
-    from os.path import join
+    from os.path import exists, join
     from shutil import copy
     from stat import S_ISDIR, ST_MODE, ST_MTIME
     from urllib import urlopen
 
     def check_submodule(task):
-        target = task.outputs[0].bldpath(task.env)
+        target = get_target(task)
         source = os.path.join(ROOT, 'third_party', target.rsplit('.', 1)[1])
         info = os.stat(source)
         if not S_ISDIR(info[ST_MODE]):
@@ -138,21 +160,23 @@ def build_zero(ctx):
 
     def compile_redis(task):
         directory = join(ROOT, 'third_party', 'redis')
-        do(['make'], cwd=directory)
-        copy(join(directory, 'redis-server'), join(BIN, 'redis'))
+        if not exists(join(BIN, 'redis')):
+            do(['make'], cwd=directory)
+            copy(join(directory, 'redis-server'), join(BIN, 'redis'))
+        write_dummy_target(task)
 
     ctx(source='check.redis',
+        target='redis',
         rule=compile_redis,
         after='check.redis',
         name='redis')
 
     def compile_nodejs(task):
-        print "Compiling"
         directory = join(ROOT, 'third_party', 'nodejs')
-        target = task.outputs[0].bldpath(task.env)
-        #do(['./configure', '--prefix', LOCAL], cwd=directory)
-        #do(['make', 'install'], cwd=directory)
-        copy(join(directory, 'build', 'default', 'node'), target)
+        if not exists(join(BIN, 'node')):
+            do(['./configure', '--prefix', LOCAL], cwd=directory)
+            do(['make', 'install'], cwd=directory)
+        write_dummy_target(task)
 
     ctx(source='check.nodejs',
         target='node',
@@ -169,7 +193,11 @@ def build_zero(ctx):
         after='nodejs'
         )
 
-    for path in ctx.path.ant_glob('src/zero/js/*.coffee').split():
+    coffeescript_files = [
+        'third_party/coffee-script/examples/underscore.coffee'
+        ] + ctx.path.ant_glob('src/zero/js/*.coffee').split()
+
+    for path in coffeescript_files:
         dest_path = '%s.js' % path.rsplit('.', 1)[0]
         ctx(source=path)
         ctx.install_files('${ZERO_COFFEE_OUTPUT}', dest_path)
@@ -190,20 +218,112 @@ def build_zero(ctx):
     def download_file(filename):
 
         def download(task):
-            target = task.outputs[0].bldpath(task.env)
-            Logs.warn("Downloading %s" % filename)
-            source = urlopen(DOWNLOAD_ROOT + filename)
-            data = source.read()
-            source.close()
-            target = open(target, 'wb')
-            target.write(data)
-            target.close()
+            dest_path = join(BIN, filename)
+            if not exists(dest_path):
+                Logs.warn("Downloading %s" % filename)
+                source = urlopen(DOWNLOAD_ROOT + filename)
+                data = source.read()
+                source.close()
+                dest = open(dest_path, 'wb')
+                dest.write(data)
+                dest.close()
+            write_dummy_target(task)
 
         return download
 
     for name, target in JAR_FILES.iteritems():
         ctx(target=target, rule=download_file(target), name=name)
-        ctx.install_files('${AMPIFY_BIN}', target)
+
+    css_minify = (
+        "${JAVA} -jar %s --charset utf-8 ${SRC} -o ${TGT}"
+        % join(BIN, JAR_FILES['yuicompressor.jar'])
+        )
+
+    ctx(target='src/zero/espra/static/espra.min.css',
+        source='src/zero/css/espra.css',
+        rule=css_minify,
+        after=['yuicompressor.jar', 'sass'],
+        name="css.minify")
+
+    ctx.install_files('${ZERO_STATIC}', 'src/zero/espra/static/espra.min.css')
+
+    ctx(rule=lambda task: do([sys.executable, 'setup.py'], cwd=join(ROOT, 'src')),
+        name='pyutil install',
+        always=True)
+
+    wrap_start = object()
+    wrap_end = object()
+
+    def concat_js(name, segments, target, dest, wrap=(wrap_start, wrap_end)):
+
+        sources = [
+            segment for segment in segments
+            if segment not in wrap
+            ]
+
+        def concat(task):
+
+            target = get_target(task)
+            output = []; out = output.append
+            wrapped = count = 0
+
+            for segment in segments:
+                if segment == wrap_start:
+                    out(JS_WRAP_START)
+                    wrapped = True
+                elif segment == wrap_end:
+                    out(JS_WRAP_END)
+                    wrapped = False
+                else:
+                    source_path = task.inputs[count].srcpath(task.env)
+                    jsfile = open(source_path, 'rb')
+                    source = jsfile.readlines()
+                    jsfile.close()
+                    if wrapped:
+                        for line in source:
+                            out('  ' + line)
+                    else:
+                        for line in source:
+                            out(line)
+                    count += 1
+
+            dest = open(target, 'wb')
+            dest.write(''.join(output))
+            dest.close()
+
+        ctx(source=sources,
+            rule=concat,
+            target=target,
+            after=['coffeescript'],
+            name=name)
+
+        ctx.install_files(dest, target)
+
+        minified_target = '%s.min.js' % target.rsplit('.', 1)[0]
+
+        ctx(source=target,
+            target=minified_target,
+            after=[name, 'closure.jar'],
+            rule=JS_MIN,
+            name="js.minify"
+            )
+
+        ctx.install_files(dest, minified_target)
+
+    zerojs_segments = [
+        wrap_start,
+        'third_party/coffee-script/examples/underscore.js',
+        wrap_end,
+        wrap_start,
+        'src/zero/js/naaga.js',
+        'src/zero/js/espra.js',
+        wrap_end
+        ]
+
+    concat_js(
+        'zero.js', zerojs_segments, 'src/zero/espra/static/zero.js',
+        '${ZERO_STATIC}'
+        )
 
 def docs(ctx):
     """generate ampify docs"""
@@ -217,15 +337,21 @@ def distclean(ctx):
     from os.path import join
     from shutil import rmtree
 
+    os.remove(join(ROOT, 'src', 'pyutil', 'pylzf.so'))
+
     Scripting.distclean(ctx)
 
-    try:
-        rmtree(LOCAL)
-    except IOError:
-        pass
-    except OSError, e:
-        if e.errno != ENOENT:
-            Logs.warn("Couldn't remove the environ/local directory.")
+    for name, path in [
+        ('environ/local', LOCAL),
+        ('src/build', join(ROOT, 'src', 'build'))
+        ]:
+        try:
+            rmtree(path)
+        except IOError:
+            pass
+        except OSError, e:
+            if e.errno != ENOENT:
+                Logs.warn("Couldn't remove the %s directory." % name)
 
     redis = join(ROOT, 'third_party', 'redis')
     do(['make', 'clean'], cwd=redis)
