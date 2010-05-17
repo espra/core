@@ -27,15 +27,16 @@ For more info, please see the `doc` directory or visit:
 
 **Contribute**
 
-To contribute any patches, simply fork this repository using GitHub and  
-send a pull request to me <<http://github.com/tav>>. Thanks!
+To contribute any patches, simply fork this repository using GitHub,  
+add yourself to the `AUTHORS` file and send a pull request to me  
+<<http://github.com/tav>>. Thanks!
 
 **Credits**
 
 All work by the [Ampify Authors] in this repository has been placed  
 into the [public domain]. The major contributors so far have been:
 
-* [tav] — created Ampify and BDFL.
+* [tav] — creator of Ampify and BDFL.
 
 * [Mamading Ceesay], evangineer — co-architect.
 
