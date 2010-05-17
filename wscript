@@ -18,6 +18,14 @@ VERSION = 'zero'
 
 ROOT = os.path.realpath(os.getcwd())
 LOCAL = os.path.join(ROOT, 'environ', 'local')
+BIN = os.path.join(LOCAL, 'bin')
+
+DOWNLOAD_ROOT = "http://cloud.github.com/downloads/tav/ampify/"
+
+JAR_FILES = {
+    'closure.jar': 'closure-2010-03-24.jar',
+    'yuicompressor.jar': 'yuicompressor-2.4.2.jar'
+    }
 
 top = '.'
 out = 'build'
@@ -70,7 +78,7 @@ def configure(ctx):
 
         if not exists(LOCAL):
             os.mkdir(LOCAL)
-            os.mkdir(join(LOCAL, 'bin'))
+            os.mkdir(BIN)
 
     _check_ampenv_setup(ctx)
 
@@ -85,14 +93,16 @@ def configure(ctx):
     ctx.check_tool('bison')
     ctx.check_tool('flex')
     ctx.check_tool('libtool')
-    ctx.check_tool('perl')
-    ctx.check_tool('ruby')
 
-    ctx.find_program('coffee', var='COFFEE')
-    ctx.find_program('git', var='GIT')
+    ctx.find_program('coffee', var='COFFEE', mandatory=True)
+    ctx.find_program('git', var='GIT', mandatory=True)
+    ctx.find_program('ruby', var='RUBY', mandatory=True)
+    ctx.find_program('sass', var='SASS', mandatory=True)
     ctx.find_program('touch', var='TOUCH', mandatory=True)
 
+    ctx.env['AMPIFY_BIN'] = BIN
     ctx.env['ZERO_COFFEE_OUTPUT'] = join(ROOT, 'src', 'zero', 'js')
+    ctx.env['ZERO_SASS_OUTPUT'] = join(ROOT, 'src', 'zero', 'css')
 
 def build(ctx):
     """build ampify"""
@@ -104,7 +114,9 @@ def build(ctx):
 def build_zero(ctx):
 
     from os.path import join
+    from shutil import copy
     from stat import S_ISDIR, ST_MODE, ST_MTIME
+    from urllib import urlopen
 
     def check_submodule(task):
         target = task.outputs[0].bldpath(task.env)
@@ -127,6 +139,7 @@ def build_zero(ctx):
     def compile_redis(task):
         directory = join(ROOT, 'third_party', 'redis')
         do(['make'], cwd=directory)
+        copy(join(directory, 'redis-server'), join(BIN, 'redis'))
 
     ctx(source='check.redis',
         rule=compile_redis,
@@ -134,17 +147,18 @@ def build_zero(ctx):
         name='redis')
 
     def compile_nodejs(task):
+        print "Compiling"
         directory = join(ROOT, 'third_party', 'nodejs')
-        do(['./configure', '--prefix', LOCAL], cwd=directory)
-        do(['make', 'install'], cwd=directory)
+        target = task.outputs[0].bldpath(task.env)
+        #do(['./configure', '--prefix', LOCAL], cwd=directory)
+        #do(['make', 'install'], cwd=directory)
+        copy(join(directory, 'build', 'default', 'node'), target)
 
-#     ctx(source='check.nodejs',
-#         rule=compile_nodejs,
-#         after='check.nodejs',
-#         name='node.js')
-
-    def compile_coffeescript(task):
-        pass
+    ctx(source='check.nodejs',
+        target='node',
+        rule=compile_nodejs,
+        after='check.nodejs',
+        name='nodejs')
 
     TaskGen.declare_chain(
         name='coffeescript',
@@ -152,17 +166,44 @@ def build_zero(ctx):
         ext_in='.coffee',
         ext_out='.js',
         reentrant=False,
-        # install='${ZERO_COFFEE_OUTPUT}',
+        after='nodejs'
         )
 
-    for cs in ctx.path.ant_glob('src/zero/js/*.coffee').split():
-        ctx(source=cs)
-        ctx.install_files('${ZERO_COFFEE_OUTPUT}', cs)
+    for path in ctx.path.ant_glob('src/zero/js/*.coffee').split():
+        dest_path = '%s.js' % path.rsplit('.', 1)[0]
+        ctx(source=path)
+        ctx.install_files('${ZERO_COFFEE_OUTPUT}', dest_path)
 
-    ctx(source=str(ctx.path.ant_glob('src/zero/js/*.coffee')).split())
+    TaskGen.declare_chain(
+        name='sass',
+        rule='${SASS} ${SRC} > ${TGT}',
+        ext_in='.sass',
+        ext_out='.css',
+        reentrant=False
+        )
 
-    #print ctx.path.ant_glob('src/zero/js/*.coffee')
-    #ctx(source=ctx.path.ant_glob('src/zero/js/*.coffee'), rule="echo Hello ${SRC}")
+    for path in ctx.path.ant_glob('src/zero/css/*.sass').split():
+        dest_path = '%s.css' % path.rsplit('.', 1)[0]
+        ctx(source=path)
+        ctx.install_files('${ZERO_SASS_OUTPUT}', dest_path)
+
+    def download_file(filename):
+
+        def download(task):
+            target = task.outputs[0].bldpath(task.env)
+            Logs.warn("Downloading %s" % filename)
+            source = urlopen(DOWNLOAD_ROOT + filename)
+            data = source.read()
+            source.close()
+            target = open(target, 'wb')
+            target.write(data)
+            target.close()
+
+        return download
+
+    for name, target in JAR_FILES.iteritems():
+        ctx(target=target, rule=download_file(target), name=name)
+        ctx.install_files('${AMPIFY_BIN}', target)
 
 def docs(ctx):
     """generate ampify docs"""
@@ -173,6 +214,7 @@ def distclean(ctx):
     """remove the build and local directories"""
 
     from errno import ENOENT
+    from os.path import join
     from shutil import rmtree
 
     Scripting.distclean(ctx)
@@ -185,19 +227,20 @@ def distclean(ctx):
         if e.errno != ENOENT:
             Logs.warn("Couldn't remove the environ/local directory.")
 
+    redis = join(ROOT, 'third_party', 'redis')
+    do(['make', 'clean'], cwd=redis)
+
     nodejs = join(ROOT, 'third_party', 'nodejs')
     do(['make', 'distclean'], cwd=nodejs, redirect_stderr=True)
 
-def clean(ctx, as_cmd=True):
-    """remove the build files"""
+def clean(ctx):
+    """remove the generated files"""
 
-    from os.path import join
+    Scripting.clean(ctx)
 
-    if as_cmd:
-        Scripting.clean(ctx)
+def uninstall(ctx):
 
-    redis = join(ROOT, 'third_party', 'redis')
-    do(['make', 'clean'], cwd=redis)
+    Scripting.uninstall(ctx)
 
 # ------------------------------------------------------------------------------
 # suppress some of the default waf commands
@@ -207,9 +250,6 @@ def dist(ctx):
     pass
 
 def distcheck(ctx):
-    pass
-
-def uninstall(ctx):
     pass
 
 # ------------------------------------------------------------------------------
