@@ -11,20 +11,20 @@ WAF := environ/waf --jobs=1
 # we declare our phonies so they stop telling us that targets are up-to-date
 # ------------------------------------------------------------------------------
 
-.PHONY: all benchmark build clean debug dist distclean docs install test
+.PHONY: all benchmark build clean debug dist distclean docs install test zero
 
 # ------------------------------------------------------------------------------
 # our rules, starting with the default
 # ------------------------------------------------------------------------------
 
-all: install
+all: zero
 	@touch .latest
 
 benchmark:
 	@$(WAF) benchmark
 
 build:
-	@$(WAF) build --zero
+	@$(WAF) build
 
 clean:
 	@$(WAF) uninstall --zero
@@ -43,7 +43,10 @@ docs:
 	@$(WAF) docs
 
 install:
-	@$(WAF) install --zero
+	@$(WAF) install
 
 test:
 	@$(WAF) test
+
+zero:
+	@$(WAF) install --zero
