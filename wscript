@@ -30,12 +30,20 @@ JAR_FILES = {
 top = '.'
 out = 'build'
 
-JS_WRAP_START = "(function(){\n"
+JS_WRAP_START = "\n(function(){\n"
 JS_WRAP_END = "\n})();\n\n"
 
 JS_MIN = (
     "${JAVA} -jar ${AMPIFY_BIN}/%s --js ${SRC} --js_output_file ${TGT}"
     % JAR_FILES['closure.jar']
+    )
+
+AMPENV_ERROR_MESSAGE = (
+    "You haven't sourced ampenv.sh! To fix, run the following in a "
+    "bash shell: \n\n"
+    "    $ source %s\n\n"
+    "You may want to add it to your ~/.bash_profile and ~/.bashrc files.\n"
+     % os.path.join(ROOT, 'environ', 'ampenv.sh')
     )
 
 # ------------------------------------------------------------------------------
@@ -85,20 +93,12 @@ def configure(ctx):
             "You need to have Python version %s+" % '.'.join(map(str, py_min))
             )
 
-    def _check_ampenv_setup(ctx):
+    if not os.environ.get('AMPIFY_ROOT'):
+        ctx.fatal(AMPENV_ERROR_MESSAGE)
 
-        if not os.environ.get('AMPIFY_ROOT'):
-            ctx.fatal(
-                "You haven't sourced ampenv.sh! To fix, run the following in a "
-                "bash shell: \n\n"
-                "    $ source %s" % join(ROOT, 'environ', 'ampenv.sh')
-                )
-
-        if not exists(LOCAL):
-            os.mkdir(LOCAL)
-            os.mkdir(BIN)
-
-    _check_ampenv_setup(ctx)
+    if not exists(LOCAL):
+        os.mkdir(LOCAL)
+        os.mkdir(BIN)
 
     ctx.check_tool('gcc')
     if not ctx.env.CC:
@@ -116,6 +116,7 @@ def configure(ctx):
     ctx.find_program('coffee', var='COFFEE', mandatory=True)
     ctx.find_program('git', var='GIT', mandatory=True)
     ctx.find_program('java', var='JAVA', mandatory=True)
+    ctx.find_program('make', var='MAKE', mandatory=True)
     ctx.find_program('ruby', var='RUBY', mandatory=True)
     ctx.find_program('sass', var='SASS', mandatory=True)
     ctx.find_program('touch', var='TOUCH', mandatory=True)
@@ -139,6 +140,10 @@ def build_zero(ctx):
     from shutil import copy
     from stat import S_ISDIR, ST_MODE, ST_MTIME
     from urllib import urlopen
+
+    if not os.environ.get('AMPIFY_ROOT'):
+        Logs.error(AMPENV_ERROR_MESSAGE)
+        sys.exit(1)
 
     def check_submodule(task):
         target = get_target(task)
