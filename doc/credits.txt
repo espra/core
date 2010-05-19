@@ -220,7 +220,7 @@ their involvement:
 
 * `Benjamin Peterson <http://pybites.blogspot.com>`_, ``gutworth``
 
-  * Provide patches to improve ``yatiblog``.
+  * Provided patches to improve ``yatiblog``.
 
 A number of others haven't been so directly involved, but have done invaluable
 foundational work:
