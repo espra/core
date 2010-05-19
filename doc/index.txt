@@ -32,7 +32,7 @@ dev tools (gcc, make, etc.) installed.
 
 
 1. Clone the repository. If you have Git 1.7+, you should use the more efficient
-   Smart HTTP Protocol:
+   smart HTTP protocol:
 
    .. syntax:: bash
 
@@ -81,7 +81,7 @@ Get Involved
   chatlogs: <a href="http://irclogs.ampify.it">irclogs.ampify.it</a>
   </pre>
 
-* Get on the `ampify <http://groups.google.com/group/ampify>`_ mailing list.
+* Get on the `ampify mailing list <http://groups.google.com/group/ampify>`_.
 
 * Sign up to GitHub if you don't have an `account
   <https://github.com/signup/free>`_ — it takes just a minute! You can then
@@ -92,7 +92,7 @@ Get Involved
 .. syntax:: bash
 
   $ git clone git@github.com:yourUsername/ampify.git
-  $ git remote add upstream http://github.com/tav/ampify.git
+  $ git remote add upstream git://github.com/tav/ampify.git
 
 * Read the `getting started with git
   <http://www.espians.com/getting-started-with-git.html>`_ guide for Ampify
