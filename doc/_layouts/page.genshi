@@ -27,10 +27,12 @@ ${Markup(content)}
 	<a href="planfile.html">Planfile</a>
 	<div>The planfile for Ampify.</div>
   </li>
+  <!--
   <li>
 	<a href="code.html">Code Documentation</a>
 	<div>Documentation for various source files.</div>
   </li>
+  -->
   <li>
 	<a href="license.html">Public Domain License</a>
 	<div>The super permissive open source license for Ampify.</div>
