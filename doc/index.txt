@@ -9,42 +9,55 @@ Ampify is a vision of an open and decentralised application platform. For
 comparison, perhaps imagine a bastardised mix between Unix, Facebook, IRC, App
 Engine, Xanadu and Wikis.
 
-The goal for the 1.0 release is to have a fully decentralised "internet
-operating system" style platform, but right now we're working on creating a
-basic, working proof of concept: version ``Zero``.
+The goal for the final 1.0 release is to have a fully decentralised "internet
+operating system" style platform. We're currently working towards an initial
+release for the end of this year -- `see the planfile <planfile.html>`_ for more
+info.
 
 
 Get Started
 -----------
 
-You need to have Git 1.7.x, a recent Python 2.x and general dev tools (gcc,
-make, etc.) installed.
+You need to have `Git <http://git-scm.com/>`_, a recent Python 2.x and general
+dev tools (gcc, make, etc.) installed.
 
 .. syntax:: bash
 
-  # clone the source repository.
-  $ git clone http://github.com/tav/ampify.git
-
-  # setup ampify related environment variables using
-  # the ampenv.sh bash script. you might also want
-  # to add the line to your ~/.profile
-  # or ~/.bashrc files.
-  $ source ampify/environ/ampenv.sh
-
-  # use the new git update command which will now be
-  # on your $PATH to keep the repository updated from
-  # now on — it also inits and updates git submodules.
+  $ git clone git://github.com/tav/ampify.git   # (1)
   $ cd ampify
-  $ git update
+  $ source environ/ampenv.sh                    # (2)
+  $ git update                                  # (3)
+  $ ./configure                                 # (4)
+  $ make                                        # (5)
 
-  # configure your build and verify you have the
-  # necessary dependencies.
-  $ cd src
-  $ ./configure
 
-  # build various aspects of the ampify platform and
-  # verify everything works by running the tests.
-  $ make test
+1. Clone the repository. If you have Git 1.7+, you should use the more efficient
+   Smart HTTP Protocol:
+
+   .. syntax:: bash
+
+     $ git clone http://github.com/tav/ampify.git
+
+2. The ``ampenv.sh`` script currently only works on bash shells where it sets up
+   Ampify related environment variables like ``$AMPIFY_ROOT``, ``$PATH``, &c.
+
+3. The new ``git update`` command will now be accessible and you should use it
+   to keep the repository updated from now on. It takes care of keeping git
+   submodules updated.
+
+4. The ``configure`` step verifies that you have the necessary base
+   dependencies. You can give it a ``--prefix`` parameter, but that's currently
+   meaningless as all "installations" are self-contained within the
+   ``environ/local`` sub-directory.
+
+5. Running ``make`` is currently equivalent to ``make zero`` which builds
+   various dependencies like Node.js, compiles CoffeeScript/Sass files and
+   minifies the resulting JavaScript/CSS files.
+
+   You can run ``make clean`` to remove everything except the built
+   dependencies, which you can also remove using the full ``make distclean``. Be
+   sure to re-run ``make`` after you do a git pull or update -- this will keep
+   the generated files up-to-date.
 
 
 Get Involved
@@ -54,6 +67,13 @@ Get Involved
   <irc://irc.freenode.net/esp>`_ -- we're a friendly bunch!
 
 .. raw:: html
+
+  <div style="text-align: center; margin-top: 5px; margin-bottom: 15px">
+      <form action="http://webchat.freenode.net/" method="get">
+        <button style="padding: 2px 6px 3px;">Click to join #esp</button>
+        <input type="hidden" name="channels" value="esp" />
+     </form>
+  </div>
 
   <pre>
   server: irc.freenode.net
