@@ -40,6 +40,10 @@ their involvement:
 
 * Tiziano Cirillo, ``HokutoTC``
 
+* Karin and Olof Kylander
+
+* Adam Perfect, ``Barak``
+
 * ``sirlurxalot``
 
 * `Cris Pearson <http://twitter.com/atariboy>`_, ``atariboy``
@@ -84,7 +88,11 @@ their involvement:
 
 * `Itamar Turner-Trauring <http://itamarst.org>`_, ``itamarst``
 
+* Phil Harris, ``philh``
+
 * Nolan Darilek, ``Nolan``
+
+* `Ian Clarke <http://twitter.com/sanity>`_, ``sanity``
 
 * `Allen Short <http://washort.twistedmatrix.com>`_, ``dash``
 
@@ -96,9 +104,17 @@ their involvement:
 
 * `Jim Carrico <http://potlatch.net>`_, ``dinsdale``
 
+* `Steve Jenson <http://twitter.com/stevej>`_, ``stevej``
+
 * Jill Lundquist, ``jillzilla``
 
 * `Erik Möller <http://www.humanist.de/erik/>`_, ``Xirzon``
+
+* ``look``
+
+* ``coderman``
+
+* Tom Longson, ``nym``
 
 * Fenton Whelan, ``fentonius``
 
@@ -110,8 +126,6 @@ their involvement:
   * Championed the development of the first Plex in 2001-02.
 
 * `Charles Goodier <http://doid.com>`_, ``mediovia``
-
-  * Identified a number of key uses in both publishing and business contexts.
 
 * `Sean B. Palmer <http://inamidst.com>`_, ``sbp``
 
@@ -143,6 +157,18 @@ their involvement:
 
   * Made improvements to various documents.
 
+* `Kevin Hemenway <http://www.disobey.com>`_, ``Morbus``
+
+* `Gabe Wachob <http://twitter.com/gabew>`_, ``GabeW``
+
+* `Salim Virani <http://twitter.com/SaintSal>`_, ``SaintSal``
+
+* `Jim Ley <http://www.jibbering.com/>`_, ``JibberJim``
+
+* `Lion Kimbro <http://www.speakeasy.org/~lion/>`_, ``lion``
+
+* `Mattis Manzel <http://twitter.com/mattis>`_, ``mattis``
+
 * `Paul Böhm <http://twitter.com/enkido>`_, ``enkido``
 
 * `Stephan Karpischek <http://www.im.ethz.ch/people/karpischek>`_, ``kpi``
@@ -161,6 +187,8 @@ their involvement:
 
 * `Joerg Baach <http://baach.de>`_, ``jhb``
 
+* David-Benjamin Kierdorf, ``kristallpirat``
+
 * `Gary Alexander <http://www.earthconnected.net/earthconnected/Home.html>`_,
   ``garyalex``
 
@@ -174,11 +202,17 @@ their involvement:
 
 * Andreas Dietrich, ``igor``
 
-* ``Curus``
-
 * `Jo Walsh <http://frot.org>`_, ``zool``
 
   * Helped define aspects of the "first contact" protocol.
+
+* `Saul Albert <http://twitter.com/saul>`_, ``saul``
+
+* `Joe Geldart <http://twitter.com/arnia>`_, ``Arnia``
+
+* Lauri Love, ``nsh``
+
+* ``Curus``
 
 * ``mo``
 
@@ -210,6 +244,12 @@ their involvement:
 
 * `Noah Slater <http://tumbolia.org/nslater>`_, ``nslater``
 
+* `Matt Morse <http://twitter.com/Mut1ey>`_, ``Mut1ey``
+
+* `Marc Lehmann <http://oldhome.schmorp.de/marc/>`_, ``schmorp``
+
+* `Sam Rose <http://twitter.com/samrose>`_, ``samrose`` 
+
 * `Felix Geisendörfer <http://debuggable.com>`_, ``felixge``
 
   * Detailed Node's internal variables for exclusion by nodelint.
@@ -222,7 +262,7 @@ their involvement:
 
   * Provided patches to improve ``yatiblog``.
 
-A number of others haven't been so directly involved, but have done invaluable
+A number of others haven't been so directly involved, but have done awesome
 foundational work:
 
 * `Douglas Crockford <http://www.crockford.com>`_
@@ -246,6 +286,6 @@ And for having created the Open Web in the first place:
 
 
 
-[Please let me <tav@espians.com> know if I've missed anyone out -- it would be
-due to an accidental oversight on my part and nothing more. Please let me know
-so that I can correct it. Thanks!]
+[Please let me <tav@espians.com> know if I've missed anyone out or got the
+timeline wrong -- it would be due to an accidental oversight on my part and
+nothing more. Please let me know so that I can correct it. Thanks!]
