@@ -41,7 +41,7 @@ ${Markup(content)}
   </li>
   <li>
 	<a href="credits.html">Credits</a>
-	<div>Those who have helped out in various ways.</div>
+	<div>Those who have contributed towards the Ampify design and development.</div>
   </li>
 </ul>
 <py:if test="defined('__by__')">
