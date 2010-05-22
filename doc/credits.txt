@@ -185,6 +185,8 @@ their involvement:
 
 * `Stefan Plantikow <http://www.zib.de/plantikow/Contact.html>`_, ``b0ggle``
 
+.. ``prom`` -- need to confirm that he was the guy who explained dylan-related...
+
 * `Joerg Baach <http://baach.de>`_, ``jhb``
 
 * David-Benjamin Kierdorf, ``kristallpirat``
@@ -236,6 +238,11 @@ their involvement:
 
 * `Jan Ludewig <http://silenius.soup.io>`_, ``silenius``
 
+* Aaron Gallagher, ``habnabit``
+
+  * Helped identify the cause of crashes caused by the initial C implementation
+    of ``capbase.Namespace``.
+
 * `Maciej Fijalkowski <http://morepypy.blogspot.com>`_, ``fijal``
 
   * Implemented the bridge between WebKit and PyPy-based interpreters.
@@ -247,6 +254,8 @@ their involvement:
 * `Matt Morse <http://twitter.com/Mut1ey>`_, ``Mut1ey``
 
 * `Marc Lehmann <http://oldhome.schmorp.de/marc/>`_, ``schmorp``
+
+* Charles, ``archels``
 
 * `Sam Rose <http://twitter.com/samrose>`_, ``samrose`` 
 
