@@ -1,0 +1,797 @@
+HTTP/1.1 200 OK
+Date: Fri, 07 May 2004 03:45:26 GMT
+Server: Apache/1.3.27 (Unix) mod_jk ApacheJServ/1.1.2 PHP/4.3.4 mod_ssl/2.8.14 OpenSSL/0.9.6e
+Last-Modified: Tue, 11 Sep 2001 07:50:17 GMT
+ETag: "78088-ac6a-3b9dc239"
+Accept-Ranges: bytes
+Content-Length: 44138
+Content-Type: text/plain
+X-Cache: MISS from www.ilrt.bris.ac.uk
+Keep-Alive: timeout=15, max=100
+Connection: Keep-Alive
+
+00:31:37 <Morbus> Morbus has quit
+00:57:33 <MikeM> MikeM has joined #rdfig
+01:03:02 <sbp> sbp has joined #rdfig
+01:06:27 <xena> xena has quit
+01:06:56 <xena> xena has joined #rdfig
+01:23:30 <Morbus> Morbus has joined #rdfig
+01:24:21 <Morbus> Morbus has left #rdfig
+01:27:56 <MikeM> MikeM has quit
+01:31:38 <xena> xena has quit
+01:33:37 <Morbus> Morbus has joined #rdfig
+01:34:05 <Morbus> Morbus has left #rdfig
+01:35:10 <xena> xena has joined #rdfig
+01:41:12 <[filsa]> [filsa] has joined #rdfig
+02:11:59 <SethR> * SethR waves to sean
+02:12:20 <sbp> * sbp waves to Seth
+02:12:54 <SethR> and great changes in rdfwiki?
+02:14:18 <sbp> none that have been released :-) I've been hacking URI schemes/URN namespaces
+02:16:34 <SethR> what you think of http://www.ietf.org/internet-drafts/draft-mealling-uri-ig-00.txt ?
+02:18:21 <sbp> woah! Where did you get that from?
+02:18:32 <SethR> it was chumped earlier today
+02:18:41 <sbp> I thought it was O.K., but it doesn't answer many questions
+02:19:03 <sbp> it just says "most URI materials are badly out of date". Pffff, tell us something we don't know
+02:20:34 <SethR> how come tdb is not on the list at http://uri.net/urn-nid-status.html ?
+02:20:38 <sbp> lol! "Request For A Formal URN Namespace: "geo" by the Great Sean B. Palmer"
+02:20:52 <sbp> Isn't tdb a URI scheme? That's just for URNs
+02:21:27 <AaronSw> F:|GepGratis
+02:21:27 <dc_rdfig> titled item F
+02:21:30 <AaronSw> F:|GeoGratis
+02:21:31 <dc_rdfig> titled item F
+02:21:47 <sbp> F:
+02:21:47 <dc_rdfig> http://geogratis.cgdi.gc.ca/frames.html
+02:21:48 <dc_rdfig> GeoGratis
+02:21:50 <dc_rdfig> (sandro) Canada's "site that distributes
+02:21:51 <dc_rdfig> (sandro) geospatial data of Canada."
+02:22:10 <sbp> neat
+02:22:33 <sbp> Hmm... tdb is a URN
+02:22:53 <AaronSw> J:|URN NID Assignment Status
+02:22:53 <dc_rdfig> titled item J
+02:22:58 <SethR> sean, i gues i just assumed if it not a url ist a urn .. but i guess not
+02:23:28 <sbp> :-)
+02:23:40 <sbp> It's a URN if it starts with "urn:"
+02:24:05 <SethR> yep, keep forgettijng that
+02:24:45 <sbp> see, why have long URIs like http://ca.maps.yahoo.com/py/pmap.py?Pyt=Tmap&addr=615+Booth+St.&city=Ottawa&state=ON&slt=45.399400&sln=-75.704200&zip=&country=ca&mag=9&cs=9&name=&desc= when you could have a "geo" URN? :-)
+02:26:57 <gerald> * gerald is 2.1km from there :)
+02:27:30 <sbp> Hmm... there really are a lot of potential applications, aren't there?
+02:27:49 <sbp> cool!
+02:27:49 <xena> xena has quit
+02:28:04 <AaronSw> What's at that address?
+02:31:00 <sbp> the center that creates the maps
+02:31:23 <SethR> sean, is urn:urn-n primarially a formal method of coding gen id's ?
+02:32:31 <sbp> it's an informal namespace space
+02:32:50 <sbp> oh, sorry... you're referring to the urn-anon informal proposal thing, I guess
+02:33:07 <sbp> er, yes, it's for representing anonymous nodes
+02:33:22 <sbp> "existentially quantified variables"
+02:33:34 <AaronSw> Sean, what's at 615 Booth St.?
+02:33:47 <sbp> I dunno!
+02:33:53 <sbp> Booth St., where?
+02:34:12 <gerald> aaron, that map uri is linked from http://geogratis.cgdi.gc.ca/frames.html
+02:34:18 <sbp> [ :at [ :name "615 Booth St." ] ] .
+02:34:26 <AaronSw> i see
+02:35:21 <SethR> sean, i though gen id's were used to identify annon nodes
+02:35:58 <sbp> yeah, they are. But they're not URIs. People seem to be using any old pile of crap at the moment, and it may confuse people into thinking that they're URIs, when really they're not
+02:36:49 <sbp> SiRPAC used genid:9725238
+02:37:34 <SethR> so your proposal just formalizes how to put identifiers on annon nodes ?
+02:37:51 <SethR> formalizes=standardizes ... that is if it catches on
+02:39:06 <sbp> yep
+02:39:33 <sbp> but, I'm not going to register it, because they're so much confusion at the moment when it comes to anonymous nodes
+02:41:58 <SethR> yeah
+02:44:19 <sbp> Have you seen the new esl URI scheme?
+02:44:31 <sbp> try: http://purl.org/net/esl
+02:47:17 <SethR> signed uri .. how kewl !
+02:47:32 <sbp> thanks :-)
+02:47:45 <AaronSw> Hmm, should the labels themselves be URIs?
+02:48:18 <sbp> no, because that would be very confusing
+02:49:14 <sbp> if I digitally sign http://www.mycompany.com/, I own that signed URI, but myCompany (whimsical example) aren't going to be happy
+02:54:29 <gerald> sbp, I'm not sure I understand the role of the label, or at least not why it's mandatory. I'd like to have some kind of URI scheme to refer to a particular pile of bits, e.g. an MP3 file; why does it need a label in addition to an sha1 hash?
+02:56:04 <gerald> oh, I think I'm confused about what this URI scheme is for.
+02:56:29 <SethR> these uri are very persistant .. they can never go away  ... and can only get reallocated by the person who signed them ... unlike a http://host type uri
+02:56:45 <SethR> is that right?
+02:58:28 <gerald> ok, I think I get it. It doesn't seem directly related to e.g. an md5: uri scheme that could identify a specific file.
+03:00:20 <sbp> correct
+03:00:20 <AaronSw> So what good are these signed URIs?
+03:00:33 <sbp> they're like tags, except that they're "secure"
+03:01:15 <SethR> if you see one, you know proof positive that identity was created by a specific person
+03:01:16 <sbp> you can sign a document describing the tags using the same key...
+03:01:20 <AaronSw> secure meaning what?
+03:01:22 <sbp> exactly
+03:01:27 <sbp> what Seth said
+03:01:33 <AaronSw> No you don't!
+03:01:46 <SethR> well by a person that knows the key
+03:01:49 <gerald> created by a specific person, or someone with access to their computer and key :)
+03:01:56 <AaronSw> No... not even that.
+03:02:01 <SethR> access to the key
+03:02:04 <AaronSw> Nope.
+03:02:11 <SethR> aaron, why not
+03:02:12 <AaronSw> If you sign something and give it one label.
+03:02:20 <AaronSw> I can take the signature and give it another label
+03:02:26 <AaronSw> and create a new URI
+03:02:31 <AaronSw> without knowing your key
+03:02:52 <SethR> i though the label was signed along with the authority
+03:03:17 <AaronSw> Oh?
+03:03:26 <SethR> sean is that right?
+03:03:47 <sbp> you can't sign using someone else's key
+03:04:01 <AaronSw> We're not talking about that.
+03:04:11 <sbp> what are you taking about, then?
+03:04:24 <AaronSw> You sign an email, and send it to me.
+03:04:29 <AaronSw> I take the signature and make a URI out of it.
+03:04:40 <sbp> yes...
+03:04:54 <AaronSw> So that URI is not secure.
+03:05:18 <SethR> you cant sign your mail with my sig cause you dont know my key
+03:05:51 <sbp> how can it not be "secure"??? I still own the URI. You can verify that I created it
+03:05:58 <sbp> that's what digital signatures are for
+03:06:01 <AaronSw> You didn't create it though!
+03:06:05 <AaronSw> I did!
+03:06:31 <sbp> Huh? If I digitally sign a document, then that is my digitally signed document, no matter how other people use it
+03:06:40 <AaronSw> Umm, yes... but the URI...
+03:06:54 <sbp> the URI is a digest of a digitally signed string
+03:07:12 <AaronSw> Like if you make urn:esl:kdfkdjfkdjfklsdf:iloverdf I can turn around and make urn:esl:kdfkdjfkdjfklsdf:rdfreally sucks
+03:07:40 <AaronSw> err, minus the space
+03:07:49 <SethR> and your uri will not pass sig test
+03:07:57 <sbp> exactly
+03:08:42 <SethR> woops, sean, dont you need the public key in the uri
+03:08:54 <SethR> otherwise you cant check it
+03:09:15 <AaronSw> you include the label in the URI?
+03:09:15 <AaronSw> err, the signature
+03:09:24 <AaronSw> Ahh, never mind.
+03:09:29 <sbp> that's true, but I expect that people will use these in such a context that the signing public key will be known
+03:09:37 <AaronSw> I misread the draft.
+03:09:48 <sbp> <esl:oi8904ehfse489tp98ehg:blargh> :keyLocation <http://mykey.org/> .
+03:10:45 <SethR> but if you dont know the public keyLocation, the uri is just a string of giggerish
+03:10:57 <SethR> cept of course for the label in the clear
+03:11:24 <sbp> I guess so... but how do people use digital signatures? they don't tend to send over their public key every time that they sign a document
+03:11:39 <SethR> i see
+03:12:16 <AaronSw> Hmm, for long documents these URIs will get pretty long.
+03:12:24 <sbp> long documents???
+03:12:37 <SethR> you may need to provide a use case where this kind of thingy is needed
+03:12:54 <AaronSw> "the "esl" URI scheme is really just a method of putting a digitally signed message unambiguously and fairly tersely into URI space."
+03:13:17 <AaronSw> If my digitally signed message is long, this is going to be a really long URI.
+03:13:23 <sbp> For a start, a digital signature has a set length based upon a hash. secondly, this is for identifiers, not documents... yuo could theoretically use a document
+03:13:43 <SethR> aaron, if that all you want just sign the message
+03:13:48 <sbp> well, a message in this case is just a short string. I'm not going to define short, just like the URI specification doesn't
+03:14:09 <AaronSw> URIs need not be short...
+03:14:38 <sbp> esl doesn't constrain the length
+03:14:53 <sbp> er, well, the ABNF defines the shortest syntactic length
+03:16:07 <AaronSw> So, what's the usecase for this?
+03:16:33 <sbp> Web of trust, that sort of stuff
+03:16:44 <AaronSw> Can you explain? Like a real usecase?
+03:17:00 <tav> plexnames people plexnames
+03:17:07 <tav> plexnames are the future!
+03:17:14 <deltab> uh oh
+03:17:17 <AaronSw> Not until you put in some add infrastructure! :-)
+03:17:29 <AaronSw> plexnames only map to URIs, anyway
+03:17:40 <AaronSw> .e plexname
+03:17:43 <sbp> well, it protects against people contesting your decentalized URI. Even TAG (basing itself on DNS) can't guarantee that
+03:18:02 <xena> xena has joined #rdfig
+03:18:06 <sbp> * sbp wonders what channel he's in
+03:18:08 <AaronSw> .e plexname
+03:18:20 <AaronSw> .e plexnames
+03:18:26 <AaronSw> Hmmph. 
+03:18:32 <AaronSw> Plexnames - http://plexnames.com/
+03:18:40 <SethR> whats a plexname ?
+03:19:22 <AaronSw> Tav's DNSy system
+03:19:36 <tav> well, the current implementation of plexnames is very simple
+03:20:06 <SethR> whats a plexname ? 20 words or less
+03:20:55 <sbp> * sbp wonders how long before he finds people using plexname:esp
+03:21:09 <gerald> plexnames remind me of dtrt, http://impressive.net/services/dtrt/
+03:21:19 <AaronSw> dtrt is cool
+03:22:06 <tav> a system of decentralised indexes of persistent resource identifiers
+03:22:47 <tav> you'd be able to say, use my personal index, my families index, my companies index, the rdfig's index, and the global esp index
+03:22:48 <gerald> hmm... decentralized, but all requests go via plexnames.com?
+03:23:02 <AaronSw> tav's a dreamer, what can i say. ;-)
+03:23:11 <AaronSw> Not all plans are finished.
+03:23:55 <tav> gerald: no
+03:24:06 <tav> they go through the indexes you subscribe to
+03:24:45 <sbp> what can we do right now to help make the dream become a reality?
+03:25:00 <tav> code?
+03:25:05 <sbp> anything
+03:25:31 <AaronSw> hmm, that means plexnames are context-sensitive
+03:25:40 <sbp> download, install, rant, propose, code, whatever
+03:25:49 <tav> sbp: yup
+03:26:18 <AaronSw> How are plexnames both persistent and context-sensitive?
+03:26:29 <tav> AaronSw?
+03:26:38 <AaronSw> That's my name.
+03:26:47 <tav> elaborate
+03:26:56 <gerald> I wouldn't want to use identifiers that aren't available to most people, or that give different results to different people
+03:27:17 <AaronSw> yeah, that's it
+03:27:37 <AaronSw> plexnames resolve differently for different people -- they aren't globally consistent.
+03:27:39 <sbp> universality...
+03:27:45 <AaronSw> What makes them persistent?
+03:27:45 <tav> gerald, well you might want to use one of the indexes that allocate a plexname to you on a first come firt serve basis....
+03:27:51 <gerald> * gerald is also reminded of protozilla, http://protozilla.mozdev.org/
+03:28:04 <sbp> ah, Protozilla
+03:28:21 <tav> you won't get a pleasant plexname, but it'd be yours...
+03:28:49 <SethR> i need a bloody password to make a plexname
+03:28:56 <tav> hmz, lemme change that
+03:28:58 <sbp> O.K., I want plexname:sbp to refer to my homepage, right now. How?
+03:30:00 <sbp> * sbp found the form on plexname.com...
+03:30:34 <sbp> * sbp filled it in
+03:30:46 <AaronSw> wait while tav fixes things
+03:30:49 <sbp> * sbp found that the site asked for authentication
+03:30:55 <sbp> * sbp tried it again
+03:31:07 <sbp> .me found that "sbp" had already been taken
+03:31:13 <sbp> * sbp oops
+03:31:56 <gerald> * gerald notes that dozens of companies have tried similar things in the last decade or so, but most of them didn't have decentralization as a goal
+03:32:46 <AaronSw> tav, the add function is really screwed up
+03:33:03 <AaronSw> if I add a name but don't define it, it still goes in the database
+03:33:41 <sbp> that's the problem that I had
+03:34:47 <gerald> here's one from 1998: (wow, the uri still works! cnet++) http://news.cnet.com/news/0,10000,0-1005-200-330700,00.html
+03:36:11 <AaronSw> Yeah, but those aren't decentralized/contextualized... what's the point? they're just new uris
+03:37:02 <sbp> New URIs are not good...
+03:37:16 <sbp> er... new URI schemes
+03:37:55 <AaronSw> But new URNs are just fine, right?
+03:38:07 <sbp> Sometimes
+03:38:25 <sbp> informal ones are fine, register as many of them as you want
+03:38:32 <sbp> formal ones are a different matter
+03:39:35 <AaronSw> I wonder whether MikeM/TimBL would agree with your comments on informal ones.
+03:40:32 <sbp> I'm sure that they would
+03:41:05 <sbp> that's what informal URN NIDs are for. OF course, they still need to be unique/persistent, etc., and they are reviewed by URN NID
+03:41:07 <SethR> are pelxinames like netword (s) see http://www.netword.com/ ?
+03:41:12 <AaronSw> Why is an informal URN OK when a new URI isn't?
+03:41:12 <sbp> s/URN NID/urn-nid
+03:41:40 <sbp> because informal URNs are informal
+03:41:50 <sbp> but they are centrally registered
+03:42:13 <sbp> really, the problem is not with new schemes, but new schemes that are not registered, or tacky ones that are
+03:42:35 <AaronSw> I'm not so sure...
+03:43:43 <sbp> well, usually, when someone comes up with a new URI scheme, you can guarantee that it will be a crud idea. Because people don't understand the relative merits of URIs
+03:44:38 <sbp> e.g. the host of URI schemes that I've come up with...
+03:44:43 <tav> wooo!
+03:44:49 <sbp> :-)
+03:44:50 <tav> ok, fixed
+03:45:04 <sbp> * sbp gets his plexname
+03:45:13 <SethR> tav, are pelxinames like netword (s) see http://www.netword.com/ ?
+03:45:15 <AaronSw> It's been taken!
+03:45:27 <AaronSw> tav. mine's been taken =(
+03:45:30 <AaronSw> what do I do?
+03:45:48 <gerald> you need to buy it off the current owner ;)
+03:46:00 <tav> http://plexnames.com/index/edit?plexname=AaronSw
+03:46:01 <dc_rdfig> N: http://plexnames.com/index/edit?plexname=AaronSw from tav
+03:46:04 <tav> eeek
+03:46:07 <tav> damned blogger
+03:46:28 <AaronSw> heh
+03:46:33 <sbp> * sbp senses plexname teething problems...
+03:46:37 <AaronSw> N:|ignore!
+03:46:37 <dc_rdfig> titled item N
+03:47:04 <AaronSw> .e plexnames aaronsw
+03:47:04 <xena> http://plexnames.com/uri?plexname=aaronsw
+03:47:05 <dc_rdfig> O: http://plexnames.com/uri?plexname=aaronsw from xena
+03:47:08 <sbp> at least it works :-)
+03:47:11 <AaronSw> heh
+03:47:17 <AaronSw> O:|Ignore this too!
+03:47:17 <dc_rdfig> titled item O
+03:47:46 <tav> aaronsw plexname doesnt exist
+03:47:48 <AaronSw> Plexnames and the chump don't get along too well
+03:48:02 <SethR> ok now i got a plexiname=SethsConjecture at plexiname.com ... so what is it supposed to mean ?
+03:48:27 <AaronSw> Hey! I made that plexname... it better exist
+03:48:45 <sbp> Net, mine works
+03:49:07 <sbp> s/Net/Neat
+03:49:17 <tav> .e ta
+03:49:18 <tav> .e tav
+03:49:18 <xena> error: Site Error occurred: AttributeError
+03:49:19 <AaronSw> I wonder why mine doesn't
+03:49:20 <gerald> sethr, now you either convince the whole world to use the same plexname resolvers you do, and start publicizing the SethsConjecture: URI scheme, or you don't, and don't ;)
+03:49:52 <tav> .e tav
+03:49:52 <xena> tav: http://espians.com/tav
+03:49:56 <tav> there
+03:50:00 <tav> chump friendly
+03:50:07 <AaronSw> thank you, tav!
+03:50:08 <tav> .e edit AaronSw
+03:50:25 <sbp> .e sbp
+03:50:26 <xena> sbp: http://purl.org/net/sbp/
+03:50:43 <tav> AaronSw: capitalisation...
+03:50:56 <AaronSw> They're case-sensitive? ick
+03:50:59 <AaronSw> .e AaronSw
+03:50:59 <xena> error: Site Error occurred: UnboundLocalError
+03:51:01 <sbp> I don't think that the plexnames are meant to be URI schemes...
+03:51:14 <tav> sbp: this is just a simple implementatino
+03:51:18 <AaronSw> UnboundLocalError -- I have all the luck...
+03:51:18 <sbp> "plexname" itself would be the URI scheme :-)
+03:51:28 <sbp> How would it work on a larger scale?
+03:51:37 <SethR> what would a uri in the alleged SethsConjecrure URI scheme look like ?
+03:51:43 <AaronSw> I assume you'd have an ordered list of plexname resolvers...
+03:51:47 <AaronSw> and it'd query them in order to find the answer
+03:51:51 <tav> *nod*
+03:51:57 <tav> in order of preference
+03:52:00 <sbp> plexname:SethsConjecture (ugh)
+03:52:07 <AaronSw> * AaronSw came up with this idea a few years back ;-)
+03:52:16 <sbp> I could set it up in Protozilla right now. In fact, I will
+03:52:20 <AaronSw> nah, sbp: http://plexnames.com/uri?plexname=SethsConjecture
+03:52:26 <AaronSw> is seth's new uri
+03:52:33 <AaronSw> they're just PURLs...
+03:52:37 <tav> sbp: just type 'sbp'
+03:52:50 <tav> AaronSw: well, they could be pure ips...
+03:53:05 <gerald> that's how I think mid: resolvers oughta work (ordered list, in order of preference)
+03:53:05 <AaronSw> what could be?
+03:53:09 <tav> your plexname, then acts as a primary index
+03:53:26 <AaronSw> how does my plexname act as an index?
+03:53:29 <tav> within which you could have entire namespaces
+03:53:41 <AaronSw> gerald, does that mean the W3C will start  providing mid: resolvers for its mail messages?
+03:53:51 <gerald> sure, RSN ;)
+03:54:02 <SethR> what's the difference between this an a purl ?
+03:54:24 <AaronSw> .e hmz
+03:54:28 <sbp> * sbp tries out plexname:sbp in Netscape6...
+03:54:37 <sbp> It works!
+03:54:39 <tav> sbp: got protozilla setup ?
+03:54:46 <sbp> of course
+03:54:58 <tav> nice
+03:55:22 <AaronSw> .e google foo
+03:55:22 <xena> google foo: http://www.google.com/search?q=foo
+03:55:28 <AaronSw> .e google foo bar
+03:55:28 <xena> google foo bar: http://www.google.com/search?q=foo bar
+03:55:33 <sbp> I simply created a file called plexname.url in the PRotozilla directory, with the string http://plexnames.com/uri?plexname= in it
+03:55:39 <sbp> really easy
+03:55:53 <tav> sbp: yup, i do that on every machine i use ;p
+03:55:54 <AaronSw> hmm, functional args could stand to be encoded
+03:55:57 <tav> that or the IE....
+03:55:58 <sbp> :-)
+03:56:11 <sbp> how does one do it in IE?
+03:56:18 <tav> the reg file on the frontpage
+03:56:28 <sbp> I installed it, what URI do I use?
+03:56:34 <tav> you then type 'e sbp' in the address bar
+03:56:42 <AaronSw> why e?
+03:56:53 <tav> i dunno
+03:57:01 <sbp> neat, it works
+03:57:12 <tav> e for esp ;p
+03:57:13 <tav> heh
+03:57:23 <sbp> can't you get it to use a proper URI scheme?
+03:57:32 <AaronSw> Hmm, you should change the name to plexnamesp ;-)
+03:57:39 <SethR> tav, so this is like http://www.netword.com/ ... huh ????
+03:57:43 <AaronSw> plexnamESP ;-)
+03:57:47 <tav> SethR: to an extent
+03:57:50 <deltab> I've just realised that that can be combined with bookmarklets
+03:57:53 <tav> a better example would be realnames.com
+03:57:59 <AaronSw> no, sethr, nimroy doesn't plug plexnames
+03:58:03 <AaronSw> :-)
+03:58:12 <tav> deltab: who chose the initial 'e' ?
+03:58:20 <deltab> you did
+03:58:26 <tav> did i say why?
+03:58:30 <deltab> and we didn't know why then either
+03:58:35 <tav> ah good
+03:58:42 <AaronSw> bookmarklet with similar idea: javascript:void(str=prompt('Do%20the%20Right%20Thing:',''));if(str){location.href='http://impressive.net/services/dtrt/dtrt?text='+escape(str).split('%20').join('+');}
+03:58:44 <SethR> (nimroy doesn't plug plexnames) means ?x 
+03:58:58 <AaronSw> It was just a joke... nevermind
+03:59:00 <tav> SethR: those are all centralised for one
+03:59:13 <sbp> how will plexnames be decentralized?
+03:59:18 <tav> netword is just a free version of realnames
+03:59:24 <SethR> meaning anyone can make a plexiname server ?
+03:59:28 <tav> sbp: anyone can run an index
+03:59:46 <sbp> any code available yet? How would one address those servers: using IP? DNS?
+03:59:59 <sbp> Freenet?
+04:00:10 <AaronSw> Hmm, tav, you should be able to make chains of plexnames... and then my preferred plexname chain could be a plexname itself?
+04:00:12 <tav> well, i was trying to come up with a system that provided it with anonymity
+04:00:21 <AaronSw> sbp, using plexnames, duh!
+04:00:26 <deltab> reminds me of http://www.cfp2000.org/workshop/materials/projects-dns.html
+04:00:34 <sbp> oh blimey...
+04:00:56 <AaronSw> i.e. http://plexnames.com/uri?backup=http://plexnames.aaronsw.com/uri?backup=...
+04:01:13 <sbp> lol! that's just a very very long HTTP URI
+04:01:27 <sbp> it depends upon DNS, so why not just use DNS?
+04:01:30 <tav> the idea is, an object is at location A... now, i know where locatin A is because i know the route to location A
+04:01:40 <sbp> O.K.
+04:01:54 <tav> now, if i were to take a different route to location A i still know where location A is...
+04:02:06 <tav> now, if location A were to have multiple addresses... 
+04:02:11 <sbp> oh, so you're giving the *routes* a name?
+04:02:15 <tav> e.g. PO BOX 3285902
+04:02:23 <tav> e.g. 9 mrin gardens
+04:02:27 <tav> and....
+04:02:37 <tav> if my route to them were preset
+04:02:58 <tav> albeit altered on a fairly regular basis
+04:03:11 <tav> by me throwing in signed packages into the "mesh"
+04:03:21 <tav> me = site owner
+04:03:21 <AaronSw> mesh?
+04:03:40 <tav> mesh is a place which picks up all this random data you throw about ;p
+04:03:46 <sbp> have you written all this down somewhere?
+04:04:15 <tav> do irc logs count? ;p
+04:04:28 <sbp> On paper this doesn't make any sense at all, but none of the coolest plans ever do
+04:04:38 <AaronSw> * AaronSw is getting very excited. ;-)
+04:04:40 <sbp> no, IRC logs don't... well, this one might
+04:05:02 <tav> well, lemme continue, and hope it makes sense
+04:05:09 <SethR> tav, if i add that download on the front page to my registry, am i deactivating thigs like netword ?
+04:05:16 <deltab> no
+04:05:18 <tav> SethR: no
+04:05:31 <tav> you just have an extra key in your registry fo 'e'
+04:05:33 <tav> for 
+04:05:42 <deltab> REGEDIT4
+04:05:42 <deltab> [HKEY_CURRENT_USER\Software\Microsoft\Internet Explorer\SearchUrl\e]
+04:05:42 <deltab> @="http://plexnames.com/uri?plexname=%s"
+04:05:42 <deltab> " "="+"
+04:05:48 <deltab> etc.
+04:06:02 <tav> so, the mesh picks up the packets
+04:06:03 <deltab> (a few character encodings)
+04:06:12 <tav> equivalent to you updating the ns records
+04:06:20 <tav> and the global network picking up on it
+04:06:56 <tav> now, servers, harvest the data going into the mesh
+04:07:19 <tav> i presume everyone here is familiar with a  dictionary? ;p
+04:07:26 <sbp> a what?
+04:07:36 <deltab> sbp: a less detailed ontology
+04:07:37 <sbp> * sbp looks up that word in his dictionary
+04:07:52 <deltab> er, less rigorous
+04:07:59 <SethR> plexiword:SethsConjecture still doenst go nowhere
+04:08:19 <tav> if you want to find a word, you can do so in less than 9 turns, by halving the namespace boundaries every time...
+04:08:26 <sbp> try e SethsConjecture
+04:08:36 <tav> .e SethsConjecture
+04:08:36 <xena> error: [Errno socket error] host not found
+04:08:45 <sbp> e-space-SethsConjecture
+04:08:55 <tav> a .http://robustai.net/ai/conjecture.htm
+04:09:01 <tav> it worked ;p
+04:09:15 <sbp> plexname:SethsConjecture only works in Protozilla
+04:09:20 <tav> i'll add non-caps code
+04:09:23 <sbp> [once set up]
+04:09:29 <tav> after i finish explaining this model
+04:09:31 <tav> ehm
+04:09:34 <tav> use e ;p
+04:09:42 <tav> plexname is too long to type
+04:09:45 <sbp> e:SethsConjecture
+04:09:51 <sbp> oh dear...
+04:09:54 <tav> heh
+04:10:00 <SethR> plexnames:SethsConjecture should work, no?
+04:10:04 <tav> yes
+04:10:07 <SethR> i updated my registry
+04:10:10 <tav> ah
+04:10:18 <tav> i think registry might need a space
+04:10:23 <sbp> It'll work in Protozilla, which is a Mozilla/Netscape6 add-on
+04:10:23 <tav> not sure of that
+04:10:32 <tav> deltab here came up with the registry code
+04:10:40 <sbp> But I'll bet you have IE? So it won't work
+04:10:53 <tav> sbp: i use mozilla now...
+04:11:02 <tav> and, protozilla is there all the time ;p
+04:11:10 <sbp> I think I like "e SethsConjecture" better... no new URI schemes!
+04:11:22 <sbp> yeah, Protozilla kicks-ass... but I use Netscape6
+04:11:33 <tav> move to moz...
+04:11:38 <tav> ns6 is based on old old code ;p
+04:11:41 <sbp> I should do, I know...
+04:11:47 <tav> anyways...
+04:11:53 <sbp> heh, not *that* old :-)
+04:12:21 <tav> so, the harvest servers can basically specialise in specific namespace boundaries
+04:13:09 <SethR> tav, well when it works your supposed to type the resolver:keyWord ... or just keyWord into the address bar of your browser?
+04:13:11 <AaronSw> hmm, xena's blowing chunks:
+04:13:11 <AaronSw> <xena> error: [Errno socket error] (24, 'Too many open files')
+04:13:11 <AaronSw> <xena> error: [Errno 17] File exists: '/home/staff/killarny/irc/logs/opn/#freenet'
+04:13:22 <tav> SethR: just keyword
+04:13:26 <xena> xena has quit
+04:13:45 <tav> well, not just keyword...
+04:13:49 <SethR> and i can have multiple resolvers in my registry
+04:14:10 <SethR> well which is it?
+04:14:36 <xena> xena has joined #rdfig
+04:14:54 <tav> SethR: you'd have multiple resolvers set somewhere
+04:15:12 <sbp> * sbp reckons that this should all be documented properly somewhere
+04:15:21 <tav> they basically say, so and so is the authority for this plexname...
+04:15:22 <SethR> so then i can just type the keywrod alone ??
+04:15:27 <tav> yes
+04:15:52 <tav> you can also use it as a replacement to the domain naming system...
+04:16:13 <tav> AaronSw/me.jpg
+04:16:27 <AaronSw> .e aaronsw doorknob.jpg
+04:16:34 <tav> let's say you type that into your explorer address bar
+04:16:36 <AaronSw> Listen to me xena!
+04:16:51 <deltab> AaronSw: logged in?
+04:16:52 <tav> does aaronsw exist?
+04:16:55 <sbp> e://AaronSw/me
+04:17:00 <AaronSw> I'm logged in...
+04:17:00 <tav> deltab: doesn't have to be
+04:17:11 <AaronSw> .e AaronSw
+04:17:12 <xena> error: Site Error occurred: UnboundLocalError
+04:17:17 <AaronSw> ugh
+04:17:19 <sbp> .e AaronSw doorknob.jpg
+04:17:19 <xena> AaronSw doorknob.jpg: http://www.aaronsw.com/
+04:17:29 <AaronSw> Hmm...
+04:17:29 <AaronSw> .e AaronSw doorknob.jpg
+04:17:29 <xena> AaronSw doorknob.jpg: http://www.aaronsw.com/
+04:17:55 <tav> let's say you type in "AaronSw/doorknob.jpg"
+04:17:57 <AaronSw> .e AaronSw doorknob.jpg
+04:17:57 <xena> AaronSw doorknob.jpg: http://www.aaronsw.com/doorknob.jpg
+04:18:01 <AaronSw> that's better
+04:18:17 <tav> your resolvers are queried for 'aaronsw'
+04:18:25 <tav> all the way up to the global index
+04:18:39 <AaronSw> What's the resolver query protocol? Can you make it RDF?
+04:19:07 <tav> we could do ;p
+04:19:24 <tav> it'd be whatever the reputation server ends up adopting
+04:19:47 <AaronSw> Can you make the reputation server use RDF? ;-)
+04:19:54 <tav> so, let's say it hits the '#rdfig index server'
+04:20:13 <tav> AaronSw: rdf is one of the leading contendors for it atm, so most likely
+04:20:21 <AaronSw> :-)
+04:20:29 <AaronSw> * AaronSw beams
+04:20:46 <tav> so, let's say it hits the '#rdfig index server'
+04:20:53 <AaronSw> yes
+04:21:32 <tav> this then says, the authority for this plexname has the unique id 'unique_id' and key 'insert_key_here'
+04:22:09 <tav> we then query the mesh harvesting servers for the unique_id
+04:22:59 <tav> which then tells us the latest routing path that AaronSw has inserted
+04:23:19 <AaronSw> cool... and the mesh is decentralized too?
+04:23:21 <tav> the routing path is checked against AaronSw's key
+04:23:24 <tav> AaronSw: yes
+04:23:39 <tav> anyone can setup a harvest node
+04:24:01 <tav> now, knowing the routing path, i then follow the breadcrumbs to AaronSw's server
+04:24:13 <tav> and i say to it, gimme doorknob.jpg
+04:24:35 <AaronSw> and what's the protocol fot the mesh harvesters?
+04:24:42 <AaronSw> freenet-like?
+04:24:47 <tav> if he was totally paranoid, he could have the data routed to an intemediary node, which could then act as a relay
+04:24:58 <tav> AaronSw: to an extent, yes
+04:25:04 <SethBot> SethBot has joined #rdfig
+04:25:13 <tav> the idea is that, this system would be _fast_
+04:25:22 <AaronSw> So sorta like Uprizer?
+04:25:22 <tav> and yet preserve anonymity
+04:25:28 <AaronSw> hmm, maybe not then
+04:25:35 <AaronSw> how do you plan to do that?
+04:25:37 <tav> no, uprizer are just an akamai clone
+04:25:57 <AaronSw> OK, well then the hypothetical web caching solution, then
+04:26:04 <tav> well, do you agree this system is fast?
+04:26:04 <AaronSw> where caching is free and public
+04:26:12 <AaronSw> How do you make it fast and anonymous?
+04:26:19 <AaronSw> Crowds?
+04:27:02 <sbp> so... it's just DNS, but with Freenet-esque decentralization
+04:27:19 <sbp> the IDs are going to be huge... but I guess that the Plexnames will cover for that
+04:27:27 <tav> *nod*
+04:27:46 <tav> plexnames provide an easy to use interface for a complex mechanism
+04:28:27 <sbp> cool
+04:28:37 <tav> people can also have their plexname act as an index...
+04:28:41 <tav> so, we can have:
+04:28:41 <sbp> but you'll still have to set the servers automatically, I guess
+04:28:56 <tav> so, if 'rdfig' were a plexname
+04:28:58 <tav> we could have:
+04:29:05 <tav> rdfig/aaronsw
+04:29:11 <tav> rdfig/sbp
+04:29:17 <tav> rdfig/sethr
+04:29:19 <tav> rdfig/tav
+04:29:20 <tav> etc
+04:30:02 <AaronSw> I still don't see how you make it so fast?
+04:30:29 <tav> it's only slightly slower than normal DNS...
+04:30:56 <sbp> have you measured it??? :-)
+04:31:23 <tav> compare that to a request in freenet or an email sent through onion routing methods
+04:31:45 <AaronSw> I'll have to see the protocol, I guess.
+04:31:55 <tav> sbp: not yet ;p
+04:32:36 <tav> the fact that plexnames can be indexes upon themselves has consequences in the global index
+04:33:08 <tav> we could basically set aside certain primary indexes on a first come first serve basis
+04:33:21 <tav> home/tav
+04:33:31 <tav> home/melinda_22
+04:34:06 <tav> the nature of the mesh
+04:34:25 <tav> means that you could have multiple identities / nyms working off the same physical server
+04:34:59 <tav> but still be able to use them as separate entities
+04:36:01 <AaronSw> This really needs to be written down somewhere...
+04:36:04 <tav> so, thoughts, comments, criticisms?
+04:36:18 <AaronSw> I'm having trouble taking it all in...
+04:36:23 <AaronSw> What's the protocol for querying the mesh?
+04:37:05 <SethR> hmmm .. so i just subscribe to various groups ... then i can just use the vocabulary of all of those groups combined ?
+04:37:08 <tav> if i had everything figured out, i'd be showing you the implementation already
+04:37:15 <tav> SethR: yup
+04:37:33 <tav> this also links into the reputation server aspect
+04:37:35 <AaronSw> tav, well what haven't you figured out? i'd love to see the implementation
+04:37:51 <tav> in that one is a member of a peer cluster
+04:37:59 <SethR> so we can do waway the the colon in n3, cause everyone has their local language based upon the groups they subscribe to ??
+04:38:00 <tav> s/a/several
+04:38:38 <tav> yes, localisation is a key aspect of it
+04:38:54 <tav> it varies between your peer cluster to cluster
+04:39:11 <SethR> huh?
+04:39:35 <tav> we're talking about totally different things
+04:39:41 <tav> ignore my last comment ;p
+04:40:18 <tav> well, my comment still stands, but not in relation to your question
+04:41:03 <SethR> how are name collisions resolved, and where are they resolved?
+04:41:24 <tav> SethR: you define an order to your "resolvers" (peer clusters)
+04:42:06 <SethR> or must they be no synomyms relative to any particular user\peer clusters
+04:42:25 <tav> elaborate
+04:43:33 <SethR> will any name i type in locally will be translated locally according to the heirachy of my resolvers to a namespace:name pair ?
+04:44:09 <SethR> locally may=local peer neighborhood
+04:44:36 <SethR> or am i off on a tangent here?
+04:44:48 <tav> hmz, slight tangent
+04:45:11 <tav> the name you type in, is translated _by_ your resolver
+04:45:15 <tav> e.g.
+04:45:23 <tav> AaronSw/doorknog.jpg
+04:45:25 <AaronSw> so tav, what can I to help get an implementation rolling? is there a mailing list/irc room for this?
+04:45:51 <sbp> and documentation... more documentation, please!
+04:46:00 <tav> and AaronSw is looked up in my revolvers one by one
+04:46:05 <tav> resolvers
+04:46:06 <tav> gah
+04:46:07 <tav> .time bst
+04:46:08 <xena> Sep. 11, 2001 5:46 am GMT+1
+04:46:09 <deltab> haha
+04:46:21 <AaronSw> I'd rather get an implementation than documentation at this point, sbp ;-)
+04:46:37 <AaronSw> just change your sleep cycle, tav
+04:47:02 <sbp> man, we should go to bed soon
+04:47:14 <deltab> tav doesn't have a sleep cycle :-)
+04:47:17 <AaronSw> you too, sbp... no one needs you during the day ;-)
+04:47:25 <sbp> :-)
+04:47:28 <tav> AaronSw: the theory isn't complete yet
+04:47:39 <AaronSw> well, how do i complete the theory?
+04:47:45 <sbp> I'd rather get both (implementation and documentation)
+04:47:55 <AaronSw> can we write up some docs and fill in the gaps?
+04:48:02 <tav> that'd be a good start
+04:48:30 <AaronSw> are there docs written? mailing list? chat room?
+04:48:39 <tav> the key point is, this is one aspect of a rather complex system that i'm building in my head
+04:48:45 <tav> #esp
+04:49:00 <AaronSw> yeah, no kidding
+04:49:08 <AaronSw> Can we get it out of your head, though?
+04:49:21 <tav> anything is possible
+04:49:51 <SethR> well i've been looking for a system of getting rid of namespaces withing a well defined group of interacting peers .. and this might be useful for that ... huh tav .. or am i misreading it?
+04:51:05 <tav> SethR: this is exactly it
+04:52:19 <AaronSw> But when would you query for the URIs? at parsetime?
+04:52:25 <SethR> http://www.cruzio.com/~autospec/
+04:52:26 <dc_rdfig> P: http://www.cruzio.com/~autospec/ from SethR
+04:53:02 <AaronSw> Well, any more parts to this crazy scheme, tav?
+04:53:12 <tav> ehm
+04:53:24 <tav> how many days of free time do you have?
+04:53:34 <AaronSw> I have a life of free time, tav ;-)
+04:53:44 <AaronSw> It costs me nothing.
+04:53:56 <SethR> P:|Communities, Virtual Markets, and Virtual SIGs on the Web
+04:53:56 <dc_rdfig> titled item P
+04:53:58 <tav> time is everything
+04:54:08 <AaronSw> But at least it's free.
+04:55:18 <AaronSw> Thanks for the ride at least... I haven't had this much fun for a while.
+04:55:29 <SethR> P: the theory of creating Special Interest Group vocabularies which Rice calls PIGINS
+04:55:29 <dc_rdfig> commented item P
+04:55:39 <tav> what and what have we covered so far?
+04:55:58 <AaronSw> well, we've got gift economy, the mesh and plexnames
+04:56:08 <sbp> yeah, pretty cool
+04:56:18 <sbp> like witnessing the birth of a new wonderous invention
+04:56:37 <AaronSw> Heh... I don't think my brain has been this active since I heard of the SemWeb.
+04:56:48 <AaronSw> It's slowing down, I need more ideas to feed it!
+04:56:51 <tav> ok, reputation servers
+04:57:02 <AaronSw> Whee, here we go!
+04:57:13 <sbp> lol
+04:57:25 <tav> in real life, we operate on trust all the time
+04:57:40 <AaronSw> Yeah, I know the schtick
+04:57:50 <SethR> seth goes to sleep, but SethBot is listening
+04:57:55 <SethR> SethR has quit
+04:57:56 <tav> nite SethR
+04:58:18 <tav> now, everyone should be running a reputation server
+04:58:42 <AaronSw> hmm, really?
+04:58:46 <AaronSw> or just contribute to one?
+04:58:47 <tav> yes ;p
+04:58:53 <tav> no, each run their own
+04:59:04 <tav> peer clusters would run centralised ones too...
+04:59:17 <tav> e.g. there could be an rdfig reputation server
+04:59:22 <tav> which i subscribe to
+04:59:39 <tav> and, it could, in return subscribe to me
+05:00:03 <AaronSw> How is subscription defined?
+05:00:12 <sbp> a reputation server would be like a freenet client, I am presuming, but running the plexname tables rather than the files etc.
+05:00:23 <tav> i trust you this much on a scale of 0 to 255
+05:01:19 <tav> one of the key problems (technically) is potential DoS
+05:01:33 <AaronSw> subscription is distributed trust?
+05:01:33 <tav> you know that i am running my reputation server
+05:01:40 <tav> and so, try to take me down
+05:02:06 <tav> sbp: think of freenet as merely the content layer in all this
+05:02:14 <sbp> Yep
+05:02:23 <tav> initially, there are three layers, content / communication / commerce
+05:02:34 <tav> this layer sits on top of the physical layer
+05:02:43 <tav> which itself sits on the social layer
+05:02:56 <tav> on top of the content / communication / commerce layer is the mesh
+05:03:07 <sbp> Well, I'm gonna go now...
+05:03:11 <tav> on top of which there is the services layer
+05:03:24 <tav> well, pleasure speaking to ya
+05:03:26 <sbp> If you develop this further, please keep me up-to-date
+05:03:47 <sbp> you too :-)
+05:03:51 <sbp> c'ya
+05:04:19 <AaronSw> * AaronSw fiercely scribbles to try and capture this
+05:04:53 <tav> heh
+05:05:09 <AaronSw> OK, i've got my diagram layed out, please continue.
+05:06:16 <tav> pick a layer
+05:06:48 <AaronSw> So the reputation servers in essence organize my social network?
+05:06:52 <sbp> sbp has quit
+05:06:56 <tav> yes
+05:07:13 <AaronSw> And my view of the mesh (and associate apps) is viewed thru this filter?
+05:07:23 <tav> yup
+05:07:25 <AaronSw> So things like plexname queries would ripple out thru the net?
+05:08:00 <tav> hmz
+05:08:03 <AaronSw> So apps sit atop the mesh in the layer cake?
+05:08:09 <tav> i forgot to mention the application layer...
+05:08:22 <tav> which is at the same level of the content / commerce / communication layers
+05:08:32 <tav> it's basically the collective name for that layer
+05:08:35 <AaronSw> Hmm, I'd think the app layer was above the mesh, not below it
+05:08:55 <AaronSw> your layers seem screwed up to me, but we can worry about that later
+05:08:59 <tav> the app layer links the two
+05:09:04 <tav> think in three dimensions
+05:09:05 <tav> not two
+05:09:34 <AaronSw> Layers aren't 3d....
+05:09:35 <tav> envision a vortex of sorts linking the three C layers with the mesh
+05:09:56 <AaronSw> umm, ok
+05:10:05 <tav> that's the application layer
+05:10:49 <AaronSw> That doesn't really make sense to me, but go on.
+05:11:41 <tav> woo! clientStorage connected to the ZSS!
+05:11:43 <tav> ehm
+05:11:50 <AaronSw> clientStorage?
+05:12:08 <tav> zope client
+05:12:40 <tav> anyways
+05:12:59 <tav>                                                 services
+05:13:04 <tav>  
+05:13:10 <tav>                                                 mesh
+05:13:40 <tav>                        \                                                      /
+05:13:48 <tav>                        /                                                      \
+05:13:54 <tav>                                               application
+05:13:58 <tav>                        \                                                      /
+05:14:00 <tav>                        /                                                      \
+05:14:22 <tav>                 content                 communication            commerce
+05:14:25 <tav>  
+05:14:35 <tav>                                               physical
+05:14:38 <tav>  
+05:14:45 <tav>                                                 social
+05:14:53 <tav> --
+05:14:55 <AaronSw> That didn't exactly help things... Let's forget the layers for now.
+05:14:59 <tav> heh
+05:15:41 <AaronSw> 3d doesn't go over IRC well ;-)
+05:15:58 <tav> you don't have a 3D module in your irc client?
+05:16:01 <tav> damned macs
+05:16:12 <AaronSw> lol
+05:16:33 <tav> well, pick a layer
+05:16:47 <AaronSw> physical
+05:17:53 <AaronSw> the physical layer
+05:18:07 <tav> one of the key aspects is to get a substantially fast physical backbone established
+05:18:22 <tav> what we call waveband
+05:18:33 <tav> cf seattle wireless, consume, etc
+05:18:54 <AaronSw> waveband? i.e. freely shared wireless networking?
+05:19:15 <tav> where you put together the collective resources of your geographically local peer cluster to create data clouds
+05:19:17 <AaronSw> so your physical layer is like the network layer?
+05:19:32 <tav> physical layer also consists of other aspects
+05:19:33 <AaronSw> hmm, why do we have geographically centered data clouds?
+05:19:39 <tav> such as distribution
+05:20:07 <tav> how else should data clouds exist?
+05:20:16 <AaronSw> umm... as a cloud... a mesh
+05:20:21 <AaronSw> across all of the net
+05:20:32 <AaronSw> you're doing them locally as an optimization?
+05:20:42 <tav> yes
+05:20:43 <AaronSw> well, what is this data cloud?
+05:20:58 <tav> it's basically a physical region you can walk in and out of
+05:21:10 <AaronSw> .py QuestionsForTav = ['what is the distribution part of the physical layer']
+05:21:11 <xena> error: [Errno socket error] host not found
+05:21:20 <AaronSw> .py QuestionsForTav = ['what is the distribution part of the physical layer']
+05:21:21 <xena> error: [Errno socket error] host not found
+05:21:23 <AaronSw> pfft
+05:21:28 <xena> xena has quit
+05:21:40 <AaronSw> ahh, data cloud is are with wireless networking avialable?
+05:21:46 <xena> xena has joined #rdfig
+05:21:50 <AaronSw> s/are/area/
+05:21:51 <AaronSw> .py QuestionsForTav = ['what is the distribution part of the physical layer']
+05:22:00 <AaronSw> .py QuestionsForTav = ['what is the distribution part of the physical layer']
+05:22:07 <tav> yes
+05:22:11 <tav> distribtion..
+05:22:20 <AaronSw> .py QuestionsForTav.pop()
+05:22:20 <xena> 'what is the distribution part of the physical layer'
+05:22:37 <tav> physical distribution of material objects
+05:22:51 <AaronSw> and this works similarly, i take it?
+05:23:06 <tav> the way i envision it, your "orders" would go through various peer clusters and efficient transport models
+05:23:16 <tav> and arrive at your local distribution centre
+05:23:36 <tav> where your local distriibutor of choice would be able to drive / bike down and deliver it for you
+05:24:19 <AaronSw> ok, cool.
+05:24:25 <AaronSw> so what's the name for this whole grand scheme?
+05:24:31 <tav> the espian vision
+05:24:52 <AaronSw> hmz
+05:25:13 <AaronSw> I guess that makes me an espian, huh?
+05:25:16 <AaronSw> :)
+05:25:57 <tav> the job doesn't pay atm, and the team is demotivated
+05:26:13 <AaronSw> Man, that's no fun.
+05:26:21 <AaronSw> Well consider me a motivated unpaid recruit. ;-)
+05:26:44 <tav> heh, welcome aboard ;p
+05:27:02 <AaronSw> Now does ESP plan to commercially control the whole thing so that they can make piles of money?
+05:27:20 <tav> no
+05:27:28 <AaronSw> Good answer. ;-)
+05:27:28 <tav> the idea is to create an infrastructure
+05:27:33 <tav> the lego blocks
+05:27:52 <AaronSw> The lego blocks motif strikes again! 3 points for em
+05:27:58 <tav> others can then go and build whatever they want
+05:28:23 <AaronSw> So esp is building this on open standards and level playing ground, right?
+05:28:28 <tav> yes
+05:28:35 <AaronSw> v. cool
+05:28:43 <tav> most of our guys wouldn't work for anything else
+05:28:51 <AaronSw> Heh, me neither. ;-)
+05:28:57 <tav> http://tav.espians.com/espian_model_chat
+05:28:57 <dc_rdfig> Q: http://tav.espians.com/espian_model_chat from tav
+05:29:00 <tav> read that
+05:29:30 <tav> Q:|a chat log of the espian model
+05:29:30 <dc_rdfig> titled item Q
+05:29:35 <AaronSw> I think I saw this.... I remember being part of the salt mine ;-)
+05:29:50 <tav> aj
+05:29:51 <tav> ah
+05:29:52 <tav> yes
+05:30:17 <AaronSw> So how do apps fit atop the mesh?
+05:32:02 <tav> technically?
+05:32:12 <tav> just plug into whatever modules you want
+05:33:14 <AaronSw> Yes, technically... I mean, do they just use the mesh as a datastore?
+05:34:51 <tav> the mesh is an infrastructure
+05:35:02 <tav> certain aspects provide reputation
+05:35:13 <tav> certain aspects provide metadata
+05:35:18 <tav> etc
+05:37:00 <AaronSw> i see
+05:45:32 <AaronSw> OK, well I'm going to sleep on this. Thanks for the fun, tav.
+05:51:18 <danbri> danbri has quit
+06:45:29 <deltab> deltab has quit
+06:52:39 <deltab> deltab has joined #rdfig
+07:21:37 <danbri> danbri has joined #rdfig
+07:49:08 <dc_rdfig> dc_rdfig has quit
+07:50:17 <dc_rdfig> dc_rdfig has joined #rdfig

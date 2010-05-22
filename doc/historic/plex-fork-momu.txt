@@ -1,0 +1,36 @@
+Memorandum of Mutual Understanding (MoMU):
+ - Plexnow.com will show the agreed page[1] until Sept. 11 2002, when it will 
+   be transferred to the espians. 
+ - We intend to fairly mention and link to the other project according to our 
+   judgement. 
+ - Project code as of this date is owned by the respective authors and licensed
+   under the LGPL. 
+ - Developers of either project (including all espians) are free to work on the
+   other project.
+ - In general, both projects and their developers intend to work peacefully 
+   together and treat each other with respect.
+ - This decision is final.
+
+[1]  The HTML document below (minor modifications are allowed):
+---BEGIN---
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head><title>Project has split</title></head><body>
+<h1>Project has split</h1>
+<p>The Plex project has split:</p>
+<ul>
+  <li><a href="http://semplesh.com/">Semplesh</a>, 
+      led by <a href="http://www.aaronsw.com/">Aaron</a></li>
+  <li><a href="http://plexdev.org/">Plex Project</a>, 
+      led by the <a href="http://espians.com">espians</a></li>
+</ul>
+<p>Each project is exploring the same ideas, but with different processes.</p>
+<address>
+<a href="momu">Agreed 2002-03-07 by Aaron and tav</a>
+</address></body></html>
+---END---
+
+Signed 2002-03-07 UTC,
+
+tav            2C8C 6088 F3CB 201F 2ED9  857E 0E8D 252C 9B76 6424
+Aaron Swartz   4FAC 4838 B7D8 D13F A6D9  2EDB 4145 521E 79F0 DF4B
+Jill Lundquist AB15 9B53 9067 EDDC 11BF  EBDA 660D 9D8A BA7B 6609
