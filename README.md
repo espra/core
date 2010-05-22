@@ -1,12 +1,12 @@
 ![Ampify](http://cloud.github.com/downloads/tav/ampify/logo.ampify.smallest.png)
 
 This is the repo for Ampify — an open and decentralised application platform.  
-For comparison, perhaps imagine a bastardised mix between Unix, Facebook, IRC,  
-App Engine, [Xanadu] and Wikis.
+For comparison, perhaps imagine a bastardised mix between Git, Facebook, Unix,  
+IRC, App Engine, [Xanadu] and Wikis.
 
-The goal for the 1.0 release is to have a fully decentralised "internet  
-operating system" style platform, but right now we're working on creating a  
-working proof of concept: version `Zero` — [see the planfile].
+The goal for the final 1.0 release is to have a fully decentralised "internet  
+operating system" style platform. We're currently working towards an initial  
+release for the end of this year — [see the planfile].
 
 **Getting Started**
 
@@ -14,7 +14,6 @@ working proof of concept: version `Zero` — [see the planfile].
     $ git update
     $ ./configure
     $ make
-    $ less src/zero/README.md
 
 **Resources**
 
@@ -23,7 +22,7 @@ For more info, please see the `doc` directory or visit:
 * online docs: [http://ampify.it]
 * mailing list: [http://groups.google.com/group/ampify]
 * plan file: [http://ampify.it/planfile.html]
-* irc channel: [irc://irc.freenode.net/esp], [irc logs]  
+* irc channel: [irc://irc.freenode.net/esp], [irc logs]
 
 **Contribute**
 

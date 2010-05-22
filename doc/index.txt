@@ -6,8 +6,8 @@ Ampify
 ======
 
 Ampify is a vision of an open and decentralised application platform. For
-comparison, perhaps imagine a bastardised mix between Unix, Facebook, IRC, App
-Engine, Xanadu and Wikis.
+comparison, perhaps imagine a bastardised mix between Git, Facebook, Unix, IRC,
+App Engine, Xanadu and Wikis.
 
 The goal for the final 1.0 release is to have a fully decentralised "internet
 operating system" style platform. We're currently working towards an initial
