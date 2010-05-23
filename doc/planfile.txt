@@ -8,7 +8,7 @@ Planfile
 ========
 
 Ampify is a vision of an open and decentralised application platform. This
-planfile documents the various steps towards the ``Zero`` release in late 2010.
+planfile documents the various steps towards the initial release in late 2010.
 If you'd like to help make it a reality, do join us on the ``#esp`` channel on
 ``irc.freenode.net``. |contents|
 
@@ -33,11 +33,8 @@ Rationale
 ---------
 
   Ampify is an open source competitor to the various proprietary platforms that
-  currently threaten to fragment the Open Web [Neuberg-2008]_ -- a bastion of
-  freedom against the companies that want to own everyone's identities and those
-  that want to control what developers can do.
-
-  Technological complexity is fast becoming unmanageable:
+  currently threaten to fragment the Open Web [Neuberg-2008]_. It also addresses
+  the fact that technological complexity is fast becoming unmanageable:
 
   .. class:: math center
 
@@ -258,7 +255,7 @@ Argonought
 
 .. tag:: #dev, @tav, wip
 
-  ✗ Define a serialisation/exchange format.
+  ✗ Define the Argonought serialisation and exchange format.
 
     There are literally hundreds of serialisation/exchange formats/protocols
     available to us: `ASN.1`_, Avro_, BERT_, BSON_, Etch_, Gob_, Hessian_,
@@ -284,7 +281,8 @@ Argonought
     .. _YAML: http://www.yaml.org/
 
     They are all brilliant in their own way. But, unfortunately, none of them
-    offer the full set of features that would be ideal:
+    offer the full set of features that would be ideal and provided by
+    Argonought:
 
     * JSON-like simplicty.
     * Efficient binary encoding.
@@ -2711,6 +2709,23 @@ AmpOS base OS/distro requirements:
 * 32-bit / 64-bit
 * ARM port?
 
+standard interfaces
+
+young
+partially blind
+regular
+power user
+
+support infrastructure for exodus day
+
+write-to and write-about permissions
+
+
+captive portals
+
+live connection -- relay
+social routing
+
 .. _App Engine: http://code.google.com/appengine/
 .. _S3: http://aws.amazon.com/s3/
 .. _SendGrid: http://sendgrid.com
@@ -2737,3 +2752,14 @@ AmpOS base OS/distro requirements:
 .. _Theora: http://www.theora.org
 .. _V8: http://code.google.com/p/v8/
 
+.names for providers
+
+machine learning algorithms -- including bayesian classifiers
+
+pecu ranking
+datastore
+host/provider + social routing
+
+annotations
+
+rtl
