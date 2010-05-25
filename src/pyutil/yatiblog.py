@@ -282,8 +282,10 @@ def main(argv=None):
     # Normalise various options and load from the config file.
     if args:
         source_directory = args[0]
+        source_directory_specified = True
     else:
         source_directory = getcwd()
+        source_directory_specified = False
 
     source_directory = abspath(source_directory)
     chdir(source_directory)
@@ -292,15 +294,18 @@ def main(argv=None):
         raise IOError("%r is not a directory!" % source_directory)
 
     config_file = join_path(source_directory, 'yatiblog.conf')
-    if not isfile(config_file):
+
+    if isfile(config_file):
+        config_file_obj = open(config_file, 'rb')
+        config_data = config_file_obj.read()
+        config_file_obj.close()
+        config = load_yaml(config_data)
+    elif not source_directory_specified:
         raise IOError("Couldn't find: %s" % config_file)
+    else:
+        config = {}
 
-    config_file_obj = open(config_file, 'rb')
-    config_data = config_file_obj.read()
-    config_file_obj.close()
-    config = load_yaml(config_data)
-
-    index_pages = config.pop('index_pages')
+    index_pages = config.pop('index_pages', [])
     if not isinstance(index_pages, list):
         raise ValueError("The 'index_pages' config value is not a list!")
 
