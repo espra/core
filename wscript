@@ -349,7 +349,10 @@ def build_zero(ctx):
             return
         do([sys.executable, 'setup.py'], cwd=join(ROOT, 'third_party', 'pylibs'))
 
-    ctx(rule=pylibs_install, after='check.pylibs', name='pylibs install')
+    ctx(source='check.pylibs',
+        rule=pylibs_install,
+        after='check.pylibs',
+        name='pylibs install')
 
     def pyutil_install(task):
         if not ctx.is_install > 0:
