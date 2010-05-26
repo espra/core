@@ -24,6 +24,8 @@ if [ "$0" == "$BASH_SOURCE" ]; then
 			__FILE=$(echo $LSOF | sed -E s/'^([^\/]+)\/'/'\/'/1 2>/dev/null);;
 		linux)
 			__FILE=$(echo $LSOF | sed -r s/'^([^\/]+)\/'/'\/'/1 2>/dev/null);;
+		freebsd)
+			__FILE=$(echo $LSOF | sed -E s/'^([^\/]+)\/'/'\/'/1 2>/dev/null);;
 		*)
 			echo "ERROR: You need to source this script and not run it directly!";
 			exit
@@ -107,6 +109,9 @@ case $_OS_NAME in
 		export DYLD_FALLBACK_LIBRARY_PATH=$AMPIFY_LOCAL/lib:$AMPIFY_LOCAL/freeswitch/lib:$DYLD_LIBRARY_PATH:$HOME/lib:/usr/local/lib:/lib:/usr/lib;;
 	linux)
 		export PATH=$AMPIFY_ROOT/environ/linux:$PATH;
+		export LD_LIBRARY_PATH=$AMPIFY_LOCAL/lib:$LD_LIBRARY_PATH;;
+	freebsd)
+		export PATH=$AMPIFY_ROOT/environ/freebsd:$PATH;
 		export LD_LIBRARY_PATH=$AMPIFY_LOCAL/lib:$LD_LIBRARY_PATH;;
 	*) echo "ERROR: Unknown system operating system: ${_OS_NAME}"
 esac
