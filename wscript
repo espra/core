@@ -347,7 +347,11 @@ def build_zero(ctx):
     def pylibs_install(task):
         if not ctx.is_install > 0:
             return
-        do([sys.executable, 'setup.py'], cwd=join(ROOT, 'third_party', 'pylibs'))
+        stdout, retval = do([sys.executable, 'setup.py'],
+                            retcode=True,
+                            cwd=join(ROOT, 'third_party', 'pylibs'))
+        if retval:
+            raise ValueError("The pylibs setup.py install failed.")
 
     ctx(source='check.pylibs',
         rule=pylibs_install,
