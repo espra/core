@@ -71,7 +71,8 @@ def run_command(
             universal_newlines=universal_newlines
             )
         out, err = process.communicate()
-    except OSError, error:
+    except OSError:
+        error = sys.exc_info()[1]
         if error.errno == 2:
             if exit_on_error:
                 exit("Couldn't find the %r command!" % args[0])

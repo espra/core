@@ -85,9 +85,9 @@ for submodule in needs_update:
         )
     if retcode:
         print
-        print "$ git submodule update -- %s" % submodule
+        print("$ git submodule update -- %s" % submodule)
         print
-        print err
+        print(err)
         if err.startswith("fatal: reference is not a tree:"):
             print(
                 "Error:\n\n    Someone hasn't checked in their commits to the "
@@ -117,5 +117,8 @@ for submodule in needs_update:
 if needs_attention:
     for submodule in needs_attention:
         print
-        print "Skipped:", submodule, "  <--  [May need attention... out of sync!]"
+        print(
+            "Skipped: %s   <--  [May need attention... out of sync!]"
+            % submodule
+            )
     sys.exit(1)
