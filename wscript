@@ -201,7 +201,7 @@ def build_zero(ctx):
     def compile_keyspace(task):
         directory = join(ROOT, 'third_party', 'keyspace')
         if not exists(join(BIN, 'keyspaced')):
-            env = environ.copy()
+            env = os.environ.copy()
             env['PREFIX'] = LOCAL
             do([make], cwd=directory, env=env)
             do([make, 'install'], cwd=directory, env=env)
