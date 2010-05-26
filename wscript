@@ -201,9 +201,11 @@ def build_zero(ctx):
     def compile_keyspace(task):
         directory = join(ROOT, 'third_party', 'keyspace')
         if not exists(join(BIN, 'keyspaced')):
-            do([make], cwd=directory, env={'PREFIX': LOCAL})
-            do([make, 'install'], cwd=directory, env={'PREFIX': LOCAL})
-            do([make, 'pythonlib'], cwd=directory, env={'PREFIX': LOCAL})
+            env = environ.copy()
+            env['PREFIX'] = LOCAL
+            do([make], cwd=directory, env=env)
+            do([make, 'install'], cwd=directory, env=env)
+            do([make, 'pythonlib'], cwd=directory, env=env)
             python = join(directory, 'bin', 'python')
             pylibs = join(ROOT, 'third_party', 'pylibs')
             for file in os.listdir(python):
