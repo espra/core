@@ -91,7 +91,7 @@ def bdb_install():
             )
         raise NotImplementedError
     os.chdir('build_unix')
-    do(['../dist/configure', '--prefix', LOCAL])
+    do(['../dist/configure', '--enable-cxx', '--prefix', LOCAL])
     do(['make'])
     do(['make', 'install'])
 
@@ -192,6 +192,25 @@ def build_zero(ctx):
             always=True,
             name='check.%s' % submodule,
             on_results=True)
+
+    def compile_keyspace(task):
+        directory = join(ROOT, 'third_party', 'keyspace')
+        if not exists(join(BIN, 'keyspaced')):
+            do(['make'], cwd=directory, env={'PREFIX': LOCAL})
+            do(['make', 'install'], cwd=directory, env={'PREFIX': LOCAL})
+            do(['make', 'pythonlib'], cwd=directory, env={'PREFIX': LOCAL})
+            python = join(directory, 'bin', 'python')
+            pylibs = join(ROOT, 'third_party', 'pylibs')
+            for file in os.listdir(python):
+                if file.endswith('.so') or file.endswith('.py'):
+                    copy(join(python, file), join(pylibs, file))
+        write_dummy_target(task)
+
+    ctx(source='check.keyspace',
+        target='keyspace',
+        rule=compile_keyspace,
+        after=['check.keyspace', 'db.installed'],
+        name='keyspace')
 
     def compile_redis(task):
         directory = join(ROOT, 'third_party', 'redis')
@@ -437,7 +456,9 @@ def distclean(ctx):
 
     for name, path in [
         ('environ/local', LOCAL),
-        ('src/build', join(ROOT, 'src', 'build'))
+        ('src/build', join(ROOT, 'src', 'build')),
+        ('third_party/pylibs/build',
+         join(ROOT, 'third_party', 'pylibs', 'build'))
         ]:
         try:
             rmtree(path)
@@ -452,6 +473,14 @@ def distclean(ctx):
 
     nodejs = join(ROOT, 'third_party', 'nodejs')
     do(['make', 'distclean'], cwd=nodejs, redirect_stderr=True)
+
+    keyspace = join(ROOT, 'third_party', 'keyspace')
+    do(['make', 'clean'], cwd=keyspace)
+
+    pylibs = join(ROOT, 'third_party', 'pylibs')
+    for file in os.listdir(pylibs):
+        if file.startswith('keyspace') or file.endswith('.so'):
+            os.remove(join(pylibs, file))
 
 def clean(ctx):
     """remove the generated files"""
