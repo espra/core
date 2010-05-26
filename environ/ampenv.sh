@@ -17,7 +17,7 @@ $((echo $_OS_ARCH | grep "i386") > /dev/null) && _OS_ARCH_386=true
 # exit if we're not sourced and echo usage example if possible
 # ------------------------------------------------------------------------------
 
-if [ "$0" == "$BASH_SOURCE" ]; then
+if [ "x$0" == "x$BASH_SOURCE" ]; then
 	LSOF=$(lsof -p $$ 2> /dev/null | grep -E "/"$(basename $0)"$")
 	case $_OS_NAME in
 		darwin)
@@ -97,7 +97,7 @@ function _have () {
 
 export AMPIFY_LOCAL=$AMPIFY_ROOT/environ/local
 
-if [ "$PATH" ]; then
+if [ "x$PATH" != "x" ]; then
 	export PATH=$AMPIFY_ROOT/environ:$AMPIFY_LOCAL/bin:$AMPIFY_ROOT/src/tools/codereview:$PATH
 else
 	export PATH=$AMPIFY_ROOT/environ:$AMPIFY_LOCAL/bin:$AMPIFY_ROOT/src/tools/codereview
@@ -116,13 +116,13 @@ case $_OS_NAME in
 	*) echo "ERROR: Unknown system operating system: ${_OS_NAME}"
 esac
 	
-if [ "$PYTHONPATH" ]; then
+if [ "x$PYTHONPATH" != "x" ]; then
 	export PYTHONPATH=$AMPIFY_ROOT/src:$AMPIFY_ROOT/third_party/pylibs:$PYTHONPATH
 else
 	export PYTHONPATH=$AMPIFY_ROOT/src:$AMPIFY_ROOT/third_party/pylibs
 fi
 
-if [ "$MANPATH" ]; then
+if [ "x$MANPATH" != "x" ]; then
 	export MANPATH=$AMPIFY_ROOT/doc/man:$AMPIFY_LOCAL/man:$MANPATH
 else
 	export MANPATH=$AMPIFY_ROOT/doc/man:$AMPIFY_LOCAL/man
@@ -135,10 +135,10 @@ fi
 export GOROOT=$AMPIFY_ROOT/third_party/go
 export GOBIN=$AMPIFY_LOCAL/bin
 
-if [ "$_OS_ARCH_64" ]; then
+if [ "x$_OS_ARCH_64" != "x" ]; then
 	export GOARCH="amd64"
 else
-	if [ "$_OS_ARCH_386" ]; then
+	if [ "x$_OS_ARCH_386" != "x" ]; then
 		export GOARCH="386"
 	else
 		case _OS_ARCH in
@@ -174,7 +174,7 @@ export NACL_ROOT=$AMPIFY_LOCAL/third_party/nativeclient
 
 _have ampnode &&
 _ampnode_completion() {
-	if [ "$2" ]; then
+	if [ "x$2" != "x" ]; then
 		COMPREPLY=( $( $1 --list-options | grep "^$2" ) )
 	else
 		COMPREPLY=( $( $1 --list-options ) )
@@ -186,7 +186,7 @@ _ampnode_completion() {
 # set us up the bash completion!
 # ------------------------------------------------------------------------------
 
-if [ "$_INTERACTIVE_SHELL" == "true" ]; then
+if [ "x$_INTERACTIVE_SHELL" == "xtrue" ]; then
 
 	# first, turn on the extended globbing and programmable completion
 	shopt -s extglob progcomp
