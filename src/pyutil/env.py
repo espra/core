@@ -78,7 +78,7 @@ def run_command(
                 exit("Couldn't find the %r command!" % args[0])
             raise CommandNotFound(args[0])
         if exit_on_error:
-            exit("Error running: %s\n\n" % (log_message, error_message))
+            exit("Error running: %s\n\n%s" % (log_message, error_message))
         raise
 
     if process.returncode and exit_on_error:
