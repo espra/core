@@ -13,12 +13,17 @@ import TaskGen
 # some konstants
 # ------------------------------------------------------------------------------
 
+top = '.'
+out = 'build'
+
 APPNAME = 'ampify'
 VERSION = 'zero'
 
 ROOT = os.path.realpath(os.getcwd())
 LOCAL = os.path.join(ROOT, 'environ', 'local')
 BIN = os.path.join(LOCAL, 'bin')
+RECEIPTS = os.path.join(LOCAL, 'share', 'installed')
+TMP = os.path.join(LOCAL, 'tmp')
 
 DOWNLOAD_ROOT = "http://cloud.github.com/downloads/tav/ampify/"
 
@@ -27,8 +32,9 @@ JAR_FILES = {
     'yuicompressor.jar': 'yuicompressor-2.4.2.jar'
     }
 
-top = '.'
-out = 'build'
+DISTFILES = {
+    'libevent': '1.4.13'
+    }
 
 JS_WRAP_START = "\n(function(){\n"
 JS_WRAP_END = "\n})();\n\n"
@@ -99,6 +105,10 @@ def configure(ctx):
     if not exists(LOCAL):
         os.mkdir(LOCAL)
         os.mkdir(BIN)
+        os.makedirs(RECEIPTS)
+
+    if not exists(TMP):
+        os.mkdir(TMP)
 
     ctx.check_tool('gcc')
     if not ctx.env.CC:
@@ -220,10 +230,10 @@ def build_zero(ctx):
         ctx(source=path)
         ctx.install_files('${ZERO_SASS_OUTPUT}', dest_path)
 
-    def download_file(filename):
+    def download_file(filename, directory=BIN):
 
         def download(task):
-            dest_path = join(BIN, filename)
+            dest_path = join(directory, filename)
             if not exists(dest_path):
                 Logs.warn("Downloading %s" % filename)
                 source = urlopen(DOWNLOAD_ROOT + filename)
@@ -239,6 +249,44 @@ def build_zero(ctx):
     for name, target in JAR_FILES.iteritems():
         ctx(target=target, rule=download_file(target), name=name)
 
+    def install_distfile(base):
+
+        import tarfile
+
+        def install(task):
+            dest_path = join(RECEIPTS, base)
+            if not exists(dest_path):
+                cwd = os.getcwd()
+                os.chdir(TMP)
+                Logs.warn("Unpacking %s.tar.gz" % base)
+                tar = tarfile.open("%s.tar.gz" % base, 'r:gz')
+                tar.extractall()
+                tar.close()
+                os.chdir(base)
+                do(['./configure', '--prefix', LOCAL])
+                do(['make'])
+                do(['make', 'install'])
+                os.chdir(cwd)
+                dest = open(dest_path, 'wb')
+                dest.write('1')
+                dest.close()
+            write_dummy_target(task)
+
+        return install
+
+    for distfile, version in DISTFILES.iteritems():
+
+        base = "%s-%s" % (distfile, version)
+
+        ctx(target="%s.tar.gz" % base,
+            rule=download_file("%s.tar.gz" % base, TMP),
+            name='%s.tar.gz' % distfile)
+
+        ctx(target="%s.installed" % base,
+            rule=install_distfile(base),
+            name="%s.installed" % distfile,
+            after='%s.tar.gz' % distfile)
+
     css_minify = (
         "${JAVA} -jar %s --charset utf-8 ${SRC} -o ${TGT}"
         % join(BIN, JAR_FILES['yuicompressor.jar'])
@@ -251,6 +299,10 @@ def build_zero(ctx):
         name="css.minify")
 
     ctx.install_files('${ZERO_STATIC}', 'src/zero/espra/static/espra.min.css')
+
+    ctx(target='',
+        source='',
+        name='libevent')
 
     def pyutil_install(task):
         if not ctx.is_install > 0:
