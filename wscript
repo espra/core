@@ -32,10 +32,6 @@ JAR_FILES = {
     'yuicompressor.jar': 'yuicompressor-2.4.2.jar'
     }
 
-DISTFILES = {
-    'libevent': '1.4.13'
-    }
-
 JS_WRAP_START = "\n(function(){\n"
 JS_WRAP_END = "\n})();\n\n"
 
@@ -79,6 +75,32 @@ def write_dummy_target(task, target=None):
     target.close()
 
 # ------------------------------------------------------------------------------
+# distfiles support
+# ------------------------------------------------------------------------------
+
+def default_install():
+    do(['./configure', '--prefix', LOCAL])
+    do(['make'])
+    do(['make', 'install'])
+
+def bdb_install():
+    if os.name != 'posix':
+        Logs.error(
+            "Sorry, building of Berkeley DB is only supported on POSIX "
+            "platforms for now."
+            )
+        raise NotImplementedError
+    os.chdir('build_unix')
+    do(['../dist/configure', '--prefix', LOCAL])
+    do(['make'])
+    do(['make', 'install'])
+
+DISTFILES = {
+    'db': ('4.8.26', bdb_install),
+    'libevent': ('1.4.13', default_install)
+    }
+
+# ------------------------------------------------------------------------------
 # the core functions
 # ------------------------------------------------------------------------------
 
@@ -101,14 +123,6 @@ def configure(ctx):
 
     if not os.environ.get('AMPIFY_ROOT'):
         ctx.fatal(AMPENV_ERROR_MESSAGE)
-
-    if not exists(LOCAL):
-        os.mkdir(LOCAL)
-        os.mkdir(BIN)
-        os.makedirs(RECEIPTS)
-
-    if not exists(TMP):
-        os.mkdir(TMP)
 
     ctx.check_tool('gcc')
     if not ctx.env.CC:
@@ -154,6 +168,12 @@ def build_zero(ctx):
     if not os.environ.get('AMPIFY_ROOT'):
         Logs.error(AMPENV_ERROR_MESSAGE)
         sys.exit(1)
+
+    mkdir = os.makedirs
+
+    for directory in [LOCAL, BIN, RECEIPTS, TMP]:
+        if not exists(directory):
+            mkdir(directory)
 
     def check_submodule(task):
         target = get_target(task)
@@ -249,7 +269,7 @@ def build_zero(ctx):
     for name, target in JAR_FILES.iteritems():
         ctx(target=target, rule=download_file(target), name=name)
 
-    def install_distfile(base):
+    def install_distfile(base, installer):
 
         import tarfile
 
@@ -263,9 +283,7 @@ def build_zero(ctx):
                 tar.extractall()
                 tar.close()
                 os.chdir(base)
-                do(['./configure', '--prefix', LOCAL])
-                do(['make'])
-                do(['make', 'install'])
+                installer()
                 os.chdir(cwd)
                 dest = open(dest_path, 'wb')
                 dest.write('1')
@@ -274,7 +292,7 @@ def build_zero(ctx):
 
         return install
 
-    for distfile, version in DISTFILES.iteritems():
+    for distfile, (version, installer) in DISTFILES.iteritems():
 
         base = "%s-%s" % (distfile, version)
 
@@ -283,7 +301,7 @@ def build_zero(ctx):
             name='%s.tar.gz' % distfile)
 
         ctx(target="%s.installed" % base,
-            rule=install_distfile(base),
+            rule=install_distfile(base, installer),
             name="%s.installed" % distfile,
             after='%s.tar.gz' % distfile)
 
