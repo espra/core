@@ -48,6 +48,11 @@ AMPENV_ERROR_MESSAGE = (
      % os.path.join(ROOT, 'environ', 'ampenv.sh')
     )
 
+if sys.platform.startswith('freebsd'):
+    make = 'gmake'
+else:
+    make = 'make'
+
 # ------------------------------------------------------------------------------
 # utility functions
 # ------------------------------------------------------------------------------
@@ -80,8 +85,8 @@ def write_dummy_target(task, target=None):
 
 def default_install():
     do(['./configure', '--prefix', LOCAL])
-    do(['make'])
-    do(['make', 'install'])
+    do([make])
+    do([make, 'install'])
 
 def bdb_install():
     if os.name != 'posix':
@@ -92,8 +97,8 @@ def bdb_install():
         raise NotImplementedError
     os.chdir('build_unix')
     do(['../dist/configure', '--enable-cxx', '--prefix', LOCAL])
-    do(['make'])
-    do(['make', 'install'])
+    do([make])
+    do([make, 'install'])
 
 DISTFILES = {
     'db': ('4.8.26', bdb_install),
@@ -140,7 +145,7 @@ def configure(ctx):
     ctx.find_program('coffee', var='COFFEE', mandatory=True)
     ctx.find_program('git', var='GIT', mandatory=True)
     ctx.find_program('java', var='JAVA', mandatory=True)
-    ctx.find_program('make', var='MAKE', mandatory=True)
+    ctx.find_program(make, var='MAKE', mandatory=True)
     ctx.find_program('ruby', var='RUBY', mandatory=True)
     ctx.find_program('sass', var='SASS', mandatory=True)
     ctx.find_program('touch', var='TOUCH', mandatory=True)
@@ -196,9 +201,9 @@ def build_zero(ctx):
     def compile_keyspace(task):
         directory = join(ROOT, 'third_party', 'keyspace')
         if not exists(join(BIN, 'keyspaced')):
-            do(['make'], cwd=directory, env={'PREFIX': LOCAL})
-            do(['make', 'install'], cwd=directory, env={'PREFIX': LOCAL})
-            do(['make', 'pythonlib'], cwd=directory, env={'PREFIX': LOCAL})
+            do([make], cwd=directory, env={'PREFIX': LOCAL})
+            do([make, 'install'], cwd=directory, env={'PREFIX': LOCAL})
+            do([make, 'pythonlib'], cwd=directory, env={'PREFIX': LOCAL})
             python = join(directory, 'bin', 'python')
             pylibs = join(ROOT, 'third_party', 'pylibs')
             for file in os.listdir(python):
@@ -215,7 +220,7 @@ def build_zero(ctx):
     def compile_redis(task):
         directory = join(ROOT, 'third_party', 'redis')
         if not exists(join(BIN, 'redis')):
-            do(['make'], cwd=directory)
+            do([make], cwd=directory)
             copy(join(directory, 'redis-server'), join(BIN, 'redis'))
         write_dummy_target(task)
 
@@ -229,7 +234,7 @@ def build_zero(ctx):
         directory = join(ROOT, 'third_party', 'nodejs')
         if not exists(join(BIN, 'node')):
             do(['./configure', '--prefix', LOCAL], cwd=directory)
-            do(['make', 'install'], cwd=directory)
+            do([make, 'install'], cwd=directory)
         write_dummy_target(task)
 
     ctx(source='check.nodejs',
@@ -469,13 +474,13 @@ def distclean(ctx):
                 Logs.warn("Couldn't remove the %s directory." % name)
 
     redis = join(ROOT, 'third_party', 'redis')
-    do(['make', 'clean'], cwd=redis)
+    do([make, 'clean'], cwd=redis)
 
     nodejs = join(ROOT, 'third_party', 'nodejs')
-    do(['make', 'distclean'], cwd=nodejs, redirect_stderr=True)
+    do([make, 'distclean'], cwd=nodejs, redirect_stderr=True)
 
     keyspace = join(ROOT, 'third_party', 'keyspace')
-    do(['make', 'clean'], cwd=keyspace)
+    do([make, 'clean'], cwd=keyspace)
 
     pylibs = join(ROOT, 'third_party', 'pylibs')
     for file in os.listdir(pylibs):
