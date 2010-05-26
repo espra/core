@@ -86,7 +86,7 @@ def run_command(
             exit_extra = error_message or err
         else:
             exit_extra = error_message or out
-        exit("Error running: %s\n\n%s" % (log_message, exit_extra))
+        exit("Error running: %s\n\n%s" % (log_message, exit_extra or ''))
 
     if retcode:
         if reterror:
