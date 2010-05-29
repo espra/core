@@ -3,7 +3,8 @@
 
 // The following is the QUnit Test Suite for friendly.js
 
-/*global test, expect, ok, stop, setTimeout, start, asyncTest, $, equals, console, rfc3339_to_date, get_relative_time*/
+/*global test, expect, ok, stop, setTimeout, start, asyncTest, $, equals,
+ console, search_friendfeed, search_twitter, rfc3339_to_date, get_relative_time*/
 
 
 module('Friendly Tests');
@@ -45,12 +46,14 @@ test("friendfeed test", function () {
 });
 
 
-asyncTest("friendfeed search test", function () {
+test("friendfeed search test", function () {
     // friendfeed: define the search term we want to find entries for
-    var query = 'ipad';
+    var query = 'ipad',
+        ffdata = null;
 
     expect(1);
-
+    stop();
+/*
     // call friendfeed api
     $.getJSON(
         // construct the fetch url
@@ -72,6 +75,24 @@ asyncTest("friendfeed search test", function () {
             ok(data, 'friendfeed search returned results');
         }
     );
+*/
+
+    if ((ffdata = search_friendfeed(query, _num))) {
+        // loop for each friendfeed entry retrieved
+        $.each(ffdata.entries, function (i, entry) {
+
+            // ignore entry if it is marked as 'hidden'
+            if (entry.hidden !== true) {
+                console.log(entry.body);
+
+                if (i === _num - 1) {
+                    _earliest_date = entry.date;
+                }
+            }
+        });
+
+        ok(ffdata, 'friendfeed search returned valid results');
+    }
 
     setTimeout(function () {
         start();
@@ -85,19 +106,22 @@ test("friendfeed date processing", function () {
 
     expect(2);
 
-    console.log(_earliest_date);
-    ffdate = rfc3339_to_date(_earliest_date);
-    ok(ffdate, 'friendfeed returned a valid date: ' + ffdate);
-    reltime = get_relative_time(ffdate);
-    ok(reltime, 'get_relative_time returned the following: ' + reltime);
+    if (_earliest_date) {
+        console.log(_earliest_date);
+        ffdate = rfc3339_to_date(_earliest_date);
+        ok(ffdate, 'friendfeed returned a valid date: ' + ffdate);
+        reltime = get_relative_time(ffdate);
+        ok(reltime, 'get_relative_time returned the following: ' + reltime);
+    }
 });
 
 
-asyncTest("twitter test", function () {
+test("twitter test", function () {
     // twitter: name of user whose feed we want to retrieve
     var usr = 'guykawasaki';
 
     expect(1);
+    stop();
 
     // call twitter api
     $.getJSON(
@@ -123,11 +147,12 @@ asyncTest("twitter test", function () {
 
 test("twitter search test", function () {
     // twitter: define the search term we want to find entries for
-    var query = 'notion ink adam';
+    var query = 'notion ink adam',
+        twdata = null;
 
     expect(1);
     stop();
-
+/*
     // call twitter api
     $.getJSON(
         // construct the fetch url
@@ -143,6 +168,16 @@ test("twitter search test", function () {
             ok(data, 'twitter search returned results');
         }
     );
+*/
+
+    if ((twdata = search_twitter(query, _num))) {
+        // loop for each twitter status retrieved
+        $.each(twdata.results, function (i, result) {
+            console.log(result.text);
+        });
+
+        ok(twdata, 'twitter search returned results');
+    }
 
     setTimeout(function () {
         start();

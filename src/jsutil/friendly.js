@@ -4,6 +4,7 @@
 // friendly.js -- a widget that displays live search results from
 // Friendfeed, Twitter and more
 
+/*global $, console*/
 
 // Dates in JSON and dates in the FriendFeed extension elements in the
 // Atom and RSS feeds are in RFC 3339 format in UTC.
@@ -91,6 +92,42 @@ var get_relative_time = function (from) {
     }
 
     return 'over ' + Math.floor(distance_in_minutes / 525960) + ' years ago';
+};
+
+
+var search_friendfeed = function (query, count) {
+    var results = null;
+
+    results = $.getJSON(
+        // construct the fetch url
+        'http://friendfeed-api.com/v2/search?q=' + query + '&amp;num=' +
+            count + '&amp;callback=?',
+
+        // build content from api results
+        function (data) {
+            return data;
+        }
+    );
+
+    return results;
+};
+
+var search_twitter = function (query, count) {
+    var results = null;
+
+    results = $.getJSON(
+        // construct the fetch url
+        'http://search.twitter.com/search.json?q=' + query + '&rpp=' + count +
+            '&callback=?',
+
+        // build content from api results
+        function (data, status) {
+            console.log('Twitter returned the status: ' + status);
+            return data;
+        }
+    );
+
+    return results;
 };
 
 // http://friendfeed-api.com/v2/search?q=ampify+OR+espians+OR+group%3Aampify+OR+group%3Aespians#
