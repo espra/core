@@ -145,6 +145,18 @@ def configure(ctx):
     ctx.find_program('coffee', var='COFFEE', mandatory=True)
     ctx.find_program('git', var='GIT', mandatory=True)
     ctx.find_program('java', var='JAVA', mandatory=True)
+
+    try:
+        java_ver = do(
+            [ctx.env.JAVA, '-version'], redirect_stdout=True,
+            redirect_stderr=True, reterror=True
+            )
+        java_ver = java_ver[1].splitlines()[0].split()[-1][1:-1]
+        if not java_ver.startswith('1.6'):
+            raise RuntimeError("Invalid Java version")
+    except:
+        ctx.fatal('Java 6 Runtime not found!')
+
     ctx.find_program(make, var='MAKE', mandatory=True)
     ctx.find_program('ruby', var='RUBY', mandatory=True)
     ctx.find_program('sass', var='SASS', mandatory=True)
@@ -182,7 +194,8 @@ def build_zero(ctx):
 
     def check_submodule(task):
         target = get_target(task)
-        source = os.path.join(ROOT, 'third_party', target.rsplit('.', 1)[1])
+        directory = target.rsplit('.', 1)[0].split('/')[1] # @/@ unix only?
+        source = os.path.join(ROOT, 'third_party', directory)
         info = os.stat(source)
         if not S_ISDIR(info[ST_MODE]):
             Logs.error("Couldn't find a directory at %s" % source)
@@ -192,10 +205,10 @@ def build_zero(ctx):
         dest.close()
 
     for submodule in ['keyspace', 'nodejs', 'redis', 'pylibs']:
-        ctx(target='check.%s' % submodule,
+        ctx(target='%s.check' % submodule,
             rule=check_submodule,
             always=True,
-            name='check.%s' % submodule,
+            name='%s.check' % submodule,
             on_results=True)
 
     def compile_keyspace(task):
@@ -213,10 +226,10 @@ def build_zero(ctx):
                     copy(join(python, file), join(pylibs, file))
         write_dummy_target(task)
 
-    ctx(source='check.keyspace',
+    ctx(source='keyspace.check',
         target='keyspace',
         rule=compile_keyspace,
-        after=['check.keyspace', 'db.installed'],
+        after=['keyspace.check', 'db.install'],
         name='keyspace')
 
     def compile_redis(task):
@@ -226,10 +239,10 @@ def build_zero(ctx):
             copy(join(directory, 'redis-server'), join(BIN, 'redis'))
         write_dummy_target(task)
 
-    ctx(source='check.redis',
+    ctx(source='redis.check',
         target='redis',
         rule=compile_redis,
-        after='check.redis',
+        after='redis.check',
         name='redis')
 
     def compile_nodejs(task):
@@ -239,10 +252,10 @@ def build_zero(ctx):
             do([make, 'install'], cwd=directory)
         write_dummy_target(task)
 
-    ctx(source='check.nodejs',
+    ctx(source='nodejs.check',
         target='node',
         rule=compile_nodejs,
-        after='check.nodejs',
+        after='nodejs.check',
         name='nodejs')
 
     TaskGen.declare_chain(
@@ -326,9 +339,9 @@ def build_zero(ctx):
             rule=download_file("%s.tar.gz" % base, TMP),
             name='%s.tar.gz' % distfile)
 
-        ctx(target="%s.installed" % base,
+        ctx(target="%s.install" % base,
             rule=install_distfile(base, installer),
-            name="%s.installed" % distfile,
+            name="%s.install" % distfile,
             after='%s.tar.gz' % distfile)
 
     css_minify = (
@@ -353,10 +366,10 @@ def build_zero(ctx):
         if retval:
             raise ValueError("The pylibs setup.py install failed.")
 
-    ctx(source='check.pylibs',
+    ctx(source='pylibs.check',
         rule=pylibs_install,
-        after=['check.pylibs', 'libevent.installed'],
-        name='pylibs install')
+        after=['pylibs.check', 'libevent.install'],
+        name='pylibs.install')
 
     def pyutil_install(task):
         if not ctx.is_install > 0:
@@ -372,7 +385,7 @@ def build_zero(ctx):
         return retval
 
     ctx(rule=pyutil_install,
-        name='pyutil install',
+        name='pyutil.install',
         always=True)
 
     wrap_start = object()
