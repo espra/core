@@ -1,1 +1,144 @@
-../../misc/www/_layouts/site.genshi
+<!DOCTYPE html>
+<html xmlns:py="http://genshi.edgewall.org/">
+<?python
+
+  section_data = [
+      ('Home', 'http://ampify.it', True, True),
+      ('Source Code', 'http://github.com/tav/ampify', True, True),
+      ('Bug Tracker', 'http://githubissues.heroku.com/#tav/ampify', True, True),
+      ('Mailing List', 'http://groups.google.com/group/ampify', True, True),
+      ('IRC Logs', 'http://irclogs.ampify.it', True, True),
+      ('Espra Stream', 'http://espra.com/zero/#ampify', True, True),
+      # ('Wiki', 'http://wiki.github.com/tav/ampify/', False, False),
+      # ('Download', 'http://ampify.it/download.html', False, False),
+      # ('Changelog', 'http://ampify.it/changelog.html', False, False),
+      ]
+
+?>
+<head>
+	<title py:if="defined('title')">Ampify :: ${title}</title>
+	<title py:if="not defined('title')">${site_title}</title>
+	<meta http-equiv="content-language" content="en" />
+	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+	<meta name="author" content="${site_author}" />
+	<meta name="description" content="${site_description}" />
+	<meta name="copyright" content="${site_license}" />
+	<meta name="document-rating" content="general" />
+	<link rel="stylesheet" type="text/css" media="screen" title="default" href="css/site.css" />
+	<link rel="alternate" type="application/rss+xml" title="RSS Feed for Ampify" href="http://feeds.feedburner.com/ampify" />
+	<py:if test="defined('typekit')">
+	<script type="text/javascript" src="http://use.typekit.com/hdt8sni.js"></script>
+	<script type="text/javascript">try{Typekit.load();}catch(e){}</script>
+	</py:if>
+	<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+	<script type="text/javascript" src="js/site.js"></script>
+</head>
+<body>
+<script type="text/javascript">
+	var _gaq = [['_setAccount', '${analytics_id}'], ['_trackPageview']];
+	if (document.location.protocol !== 'file:') {
+		(function() {
+			var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+			ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+			(document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(ga);
+		})();
+	}
+</script>
+
+<div id="body-outer"><div id="body-inner"><div id="body" class="clearfix">
+
+<div id="header">
+	<div id="menu-follow">
+		<div><a href="http://www.facebook.com/Espians" title="Join Espians on Facebook"><img src="http://static.ampify.it/icon.facebook.gif" alt="Join Espians on Facebook" width="15px" height="15px" /></a></div>
+		<div><a href="http://twitter.com/tav" title="Follow @tav on Twitter"><img src="http://static.ampify.it/icon.twitter.gif" alt="Follow @tav on Twitter" width="14px" height="14px" /></a></div>
+		<div><a href="http://github.com/tav/ampify" title="Fork Ampify on GitHub"><img src="http://static.ampify.it/icon.github.png" alt="Fork Ampify on GitHub" width="15px" height="15px" /></a></div>
+		<div><a href="http://feeds.feedburner.com/ampify" title="Subscribe to the RSS Feed"><img src="http://static.ampify.it/icon.rss.png" alt="Subscribe to the RSS Feed" width="14px" height="14px" /></a></div>
+	</div>
+	<div id="logo"><a href="http://ampify.it"><img src="http://static1.ampify.it/logo.ampify.smallerstill.png" alt="Ampify" width="250px" height="56px" /></a></div>
+	<div id="menu-lang">
+		<a href="" title="Select Language" onclick="return reveal_language_options();"><img src="http://static.ampify.it/gfx.flag-uk.jpg" alt="Select Language" width="22px" height="15px" /></a>
+		<br />
+		<form id="menu-lang-form"><select id="menu-lang-select" onchange="google_translate_page(this);">
+			<option value="" id="select_language">Select Language</option>
+			<option value="&amp;langpair=en|af" id="openaf">Afrikaans</option><option
+			value="&amp;langpair=en|sq" id="opensq">Albanian</option><option
+			value="&amp;langpair=en|ar" id="openar">Arabic (العربية)</option><option
+			value="&amp;langpair=en|be" id="openbe">Belarusian</option><option
+			value="&amp;langpair=en|bg" id="openbg">Bulgarian (български)</option><option
+			value="&amp;langpair=en|ca" id="openca">Catalan (català)</option><option
+			value="&amp;langpair=en|zh-CN" id="openzh-CN">Chinese (中文 [简体])</option><option
+			value="&amp;langpair=en|zh-TW" id="openzh-TW">Chinese (中文 [繁體])</option><option
+			value="&amp;langpair=en|hr" id="openhr">Croatian (hrvatski)</option><option
+			value="&amp;langpair=en|cs" id="opencs">Czech (česky)</option><option
+			value="&amp;langpair=en|da" id="openda">Danish (Dansk)</option><option
+			value="&amp;langpair=en|nl" id="opennl">Dutch (Nederlands)</option><option
+			value="&amp;langpair=en|et" id="openet">Estonian</option><option
+			value="&amp;langpair=en|fa" id="openfa">Farsi/Persian</option><option
+			value="&amp;langpair=en|tl" id="opentl">Filipino</option><option
+			value="&amp;langpair=en|fi" id="openfi">Finnish (suomi)</option><option
+			value="&amp;langpair=en|fr" id="openfr">French (Français)</option><option
+			value="&amp;langpair=en|gl" id="opengl">Galician</option><option
+			value="&amp;langpair=en|de" id="opende">German (Deutsch)</option><option
+			value="&amp;langpair=en|el" id="openel">Greek (Ελληνικά)</option><option
+			value="&amp;langpair=en|iw" id="openiw">Hebrew (עברית)</option><option
+			value="&amp;langpair=en|hi" id="openhi">Hindi (हिन्दी)</option><option
+			value="&amp;langpair=en|hu" id="openhu">Hungarian</option><option
+			value="&amp;langpair=en|is" id="openis">Icelandic</option><option
+			value="&amp;langpair=en|id" id="openid">Indonesian</option><option
+			value="&amp;langpair=en|ga" id="openga">Irish</option><option
+			value="&amp;langpair=en|it" id="openit">Italian (Italiano)</option><option
+			value="&amp;langpair=en|ja" id="openja">Japanese (日本語)</option><option
+			value="&amp;langpair=en|ko" id="openko">Korean (한국어)</option><option
+			value="&amp;langpair=en|lv" id="openlv">Latvian (latviešu)</option><option
+			value="&amp;langpair=en|lt" id="openlt">Lithuanian (Lietuvių)</option><option
+			value="&amp;langpair=en|mk" id="openmk">Macedonian</option><option
+			value="&amp;langpair=en|ms" id="openms">Malay</option><option
+			value="&amp;langpair=en|mt" id="openmt">Maltese</option><option
+			value="&amp;langpair=en|no" id="openno">Norwegian (norsk)</option><option
+			value="&amp;langpair=en|pl" id="openpl">Polish (Polski)</option><option
+			value="&amp;langpair=en|pt" id="openpt">Portuguese (Português)</option><option
+			value="&amp;langpair=en|ro" id="openro">Romanian (Română)</option><option
+			value="&amp;langpair=en|ru" id="openru">Russian (Русский)</option><option
+			value="&amp;langpair=en|sr" id="opensr">Serbian (српски)</option><option
+			value="&amp;langpair=en|sk" id="opensk">Slovak (slovenčina)</option><option
+			value="&amp;langpair=en|sl" id="opensl">Slovenian (slovenščina)</option><option
+			value="&amp;langpair=en|es" id="openes">Spanish (Español)</option><option
+			value="&amp;langpair=en|sw" id="opensw">Swahili</option><option
+			value="&amp;langpair=en|sv" id="opensv">Swedish (Svenska)</option><option
+			value="&amp;langpair=en|th" id="openth">Thai</option><option
+			value="&amp;langpair=en|tr" id="opentr">Turkish</option><option
+			value="&amp;langpair=en|uk" id="openuk">Ukrainian (українська)</option><option
+			value="&amp;langpair=en|vi" id="openvi">Vietnamese (Tiếng Việt)</option><option
+			value="&amp;langpair=en|cy" id="opency">Welsh</option><option
+			value="&amp;langpair=en|yi" id="openyi">Yiddish</option>
+		</select></form>
+	</div>
+	<hr class="clear-left" />
+	<div id="menu-sub" py:with="last_menu_idx=len(section_data)-1"><py:for each="idx, (menu_item, menu_url, menu_show_top, menu_show_bottom) in enumerate(section_data)"><py:if test="menu_show_top"><a href="${menu_url}">${menu_item}</a><span py:if="idx != last_menu_idx" class="menu-sub-sep"> | </span></py:if></py:for></div>
+	<hr class="clear" />
+</div>
+
+<div id="content" py:if="defined('content')">
+${Markup(content)}
+</div>
+
+</div></div></div>
+
+<div id="footer"><div id="footer-content">
+<table id="footer-espians">
+<tr id="footer-espians-tr"></tr>
+</table>
+<hr class="clear" />
+<div class="footer-text">
+  <div class="footer-menu" py:with="last_menu_idx=len(section_data)-1">
+	<py:for each="idx, (menu_item, menu_url, menu_show_top, menu_show_bottom) in enumerate(section_data)"><py:if test="menu_show_bottom"><a href="${menu_url}">${menu_item.upper()}</a><span py:if="idx != last_menu_idx" class="menu-sub-sep"> &middot; </span></py:if></py:for>
+  </div>
+  <div>
+	<a href="http://espra.com/#help-spread-the-word" title="Help Spread The Word"><img src="http://static.ampify.it/gfx.help-spread-the-word.png" id="spread-button" alt="Help Spread The Word" width="372px" height="30px" /></a>
+  </div>
+</div>
+<hr class="clear" />
+</div></div>
+
+</body>
+</html>

@@ -1,9 +1,6 @@
 [submodule "third_party/redis"]
 	path = third_party/redis
 	url = git://github.com/tav/redis.git
-[submodule "third_party/v8"]
-	path = third_party/v8
-	url = git://github.com/v8/v8.git
 [submodule "third_party/nodejs"]
 	path = third_party/nodejs
 	url = git://github.com/ry/node.git
@@ -19,3 +16,9 @@
 [submodule "third_party/rubylibs"]
 	path = third_party/rubylibs
 	url = git://github.com/tav/rubylibs.git
+[submodule "third_party/keyspace"]
+	path = third_party/keyspace
+	url = git://github.com/tav/keyspace.git
+[submodule "third_party/coffee-script"]
+	path = third_party/coffee-script
+	url = git://github.com/jashkenas/coffee-script.git

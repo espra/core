@@ -1,0 +1,72 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en-US" lang="en-US">
+<head>
+  <title> Technical Infrastructure</title>
+</head>
+<body>
+
+<p>Core aspects of the technology are:</p>
+
+<ol>
+<li>Property-Value Indexes</li>
+<li>Event Routers</li>
+<li>Storage</li>
+<li>Secure Networking</li>
+<li>Secure Identities</li>
+</ol>
+
+<p><strong>Property-Value Indexes</strong></p>
+
+<ul>
+<li>These indexes are basically huge lists/btrees of [unique id, type id, value] tuples for property::value pairs which provide a robust and scalable object/metadata model for collaborative infrastructures.
+<br><br></li>
+<li>Basic indexes have been implemented by extending <a href="http://zope.org/Documentation/Books/ZopeBook/2_6Edition/SearchingZCatalog.stx">ZCatalog</a> (especially its <a href="http://zope.org/Members/ajung/howto/PluginIndexes">Plugin Indexes</a>) and <a href="http://hathaway.freezope.org/Software/BTreeFolder2">BTreeFolders</a>. (<span style="color: blue">Completed</span>)
+<br><br></li>
+<li>The Primary Indexes will be extended to cater for usage such as <a href="http://javelina.cet.middlebury.edu/lsa/out/cover_page.htm">Latent Semantic Indexing</a>. (<span style="color: green">To Be Implemented</span>)</li>
+
+</ul>
+<p><strong>Event Routers</strong></p>
+
+<ul>
+<li>By integrating the <a href="http://www.zope.org">Zope</a> Application Server and <a href="http://www.mod-pubsub.org">Mod PubSub</a>, which is the open sourced version of Knownow's <a href="http://www.knownow.com/products/platform.html">Event Routing Platform</a>, we have the necessary elements to make the whole infrastructure <a href="http://udell.roninhouse.com/bytecols/2001-11-26.html">Event-Driven</a>. (<span style="color: red">In Progress</span>)
+<br><br></li>
+<li>The event-driven network will allow interaction to be dynamic and in real time, and with integration with indexes, house the interface through which services are setup and provide capabilities such as <a href="http://xanadu.com/xuTheModel/">Bi-directional Links</a> and <a href="http://www.skyhunter.com/hyper.htm">Sensors</a>. (<span style="color: red">In Progress</span>)
+<br><br></li>
+<li>Further integration with the <a href="http://www.openflow.it">Openflow Engine</a> will mean that we will have the ability to create extremely flexible and dynamic workflows to suit individual organisations. (<span style="color: green">To Be Implemented</span>)</li>
+
+</ul>
+<p><strong>Storage</strong></p>
+
+<ul>
+<li>Currently all the data is stored directly into the <a href="http://www.zope.org/Wikis/ZODB/FrontPage">Z Object Database</a> (ZODB) which is a Python-specific object persistence framework that allows us to develop in pure Python and have the details of object persistence taken care of behind the scenes. (<span style="color: blue">Completed</span>)
+<br><br></li>
+<li>By integrating the <a href="http://hathaway.freezope.org/Software/Ape">APE Object Mapping Framework</a>, the data stored in the ZODB can be mapped onto all sorts of storage layers from the filesystem to relational databases and even to networks such as <a href="http://freenet.sourceforge.net">Freenet</a> / <a href="http://mnet.sourceforge.net">Mnet</a> / <a href="http://bitconjurer.org/BitTorrent/">Bittorrent</a>. (<span style="color: red">In Progress</span>)
+<br><br></li>
+<li>In the context of the civil society it also makes a lot of sense to maximise usage of underused resources such as hardware and thus a substrate such as <a href="http://www.heim-d.de/~heikowu/SharkyPy/">Sharkypy's</a> implementation of the <a href="http://citeseer.nj.nec.com/529075.html">Kademlia</a> distributed hash table will be used to distribute the data storage. This will also enable an object oriented filesystem to access the data and facilitate the ability to transparently work online/offline. (<span style="color: green">To Be Implemented</span>)</li>
+
+</ul>
+<p><strong>Secure Networking</strong></p>
+
+<ul>
+<li>Secure communications and link-to-link encryption between nodes are achieved by integrating Zope with the <a href="http://sandbox.rulemaker.net/ngps/m2/">M2Crypto Toolkit</a> which, in addition to  providing cryptographic functions, also acts as a wrapper to the <a href="http://www.openssl.org">OpenSSL Library</a> which implements Secure Sockets Layer (SSL) and Transport Layer Security (TLS).  (<span style="color: blue">Completed</span>)
+<br><br></li>
+<li>The data and the applications are distributed across node clusters using <a href="http://www.zope.org/Products/ZEO/ZEOFactSheet">ZEO</a>, <a href="http://www.zope.org/Members/jmunoz/ZSyncerMuteSSL">ZSyncer</a> and <a href="http://twistedmatrix.com/products/spread">Twisted Spread</a>. (<span style="color: red">In Progress</span>)
+<br><br></li>
+<li>Other aspects of <a href="http://twistedmatrix.com/products/internet">Twisted Internet</a> and <a href="http://twistedmatrix.com/products/protocols">Protocols</a> will also be used in conjunction with the <a href="http://cvs.sourceforge.net/viewcvs.py/mnet/mnet_new/doc/EGTPv2_Architecture.txt?rev=1.5&view=auto">EGTP</a> to provide further aspects of the network framework.  <a href="http://www.cakem.net/">CAKE</a> may also play a role.  (<span style="color: green">To Be Implemented</span>)</li>
+
+</ul>
+<p><strong>Secure Identities</strong></p>
+
+<ul>
+<li>These are at the heart of this system, and use <a href="http://www.mcg.org.br/cert.htm">X.509</a> (through <a href="http://sandbox.rulemaker.net/ngps/m2/">M2Crypto</a> and <a href="http://sandbox.rulemaker.net/ngps/m2/">pyCA</a>) and <a href="http://www.openpgp.org">OpenPGP</a> to provide public key infrastructure (for digital signatures and encryption of confidential material) and a flexible identity management system with accountability, coherence, dependability and, above all, correct authentication. (<span style="color: red">In Progress</span>)
+<br><br></li>
+<li>The identities are also tied in with the Primary Indexes to define each individual's/organisation's Trust Matrix which lends itself to the evaluation in Reputation Servers with <a href="http://www.freehaven.net/doc/oreilly/accountability-ch16.html">Accountability</a> as well as usage of mechanisms such as <a href="http://www.levien.com/thesis/compact.pdf">Eigenvector Trust Metrics</a> (<span style="color: red">In Progress</span>)
+<br><br></li>
+<li>Identities will be extended to include federated administration and access control systems such as <a href="http://shibboleth.internet2.edu">Shibboleth</a> and authentication mechanisms such as <a href="http://twistedmatrix.com/products/cred">Twisted.Cred</a>.  <a href="http://www.cakem.net/">CAKE</a> may also play a role here.  (<span style="color: green">To Be Implemented</span>)
+<br><br></li>
+<li>Combined with the distributed indexes and event routers, this provides the technical infrastructure needed for reputation-based points sytems, <a href="http://www.erights.org/elib/capability/">Capabilities Based Security</a>, secure digital currency, <a href="http://www.erights.org/smart-contracts/">Smart Contracts</a> and trading systems. (<span style="color: green">To Be Implemented</span>)</li>
+
+</ul>
+
+</body>
+</html>

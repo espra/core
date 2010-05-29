@@ -2,20 +2,25 @@
 
 .appengine_python_sdk
 .articlestore
+.latest
 
-client_libs/appengine/secret.py
-client_libs/appengine/updated.py
+build
+
 doc/website/*.html
 environ/local
-misc/devboard/siteconfig.py
-misc/devboard/updated.py
-misc/blog/website/*.html
-misc/blog/website/*.rss
-misc/www/website/*.html
-src/build/
-src/jsutil/ampsite.js
-src/zerodata/secret.py
-src/zerodata/updated.py
+
+src/tools/makeucd/UnicodeData.txt
+
+src/zero/client_libs/appengine/secret.py
+src/zero/client_libs/appengine/updated.py
+src/zero/css/*.css
+src/zero/js/*.js
+src/zero/espra/secret.py
+src/zero/espra/updated.py
+src/zero/espra/static/*.css
+src/zero/espra/static/*.js
+src/zero/js/ucd.js
+src/zero/sensor/sensor.js
 
 # minified css/js files
 
