@@ -355,7 +355,7 @@ def build_zero(ctx):
 
     ctx(source='check.pylibs',
         rule=pylibs_install,
-        after='check.pylibs',
+        after=['check.pylibs', 'libevent.installed'],
         name='pylibs install')
 
     def pyutil_install(task):
