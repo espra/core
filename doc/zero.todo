@@ -265,6 +265,10 @@ Front End
 ✗ amp needed view
 ✗ amp transfer view
 
+✗ json encoding/decoding
+✗ json encodes/decodes of special typed values
+✗ big number handling
+
 ✗ client-side caches
 
 ✗ iphone css
@@ -288,6 +292,9 @@ Back End
 
 ✗ http cache: etags, last-modified, if-modified-since
 ✗ proxy caching
+
+✗ json encoding
+✗ json encodes of special typed values
 
 ✗ user model
 ✗ user registration
@@ -427,6 +434,10 @@ Back End
 ✗ trends calculation
 ✗ trends query
 ✗ trends service
+
+✗ remote api
+✗ remote api auth
+✗ remote api worker
 
 ✗ mapreduce handlers
 ✗ mapreduce generated results view
