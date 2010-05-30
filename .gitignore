@@ -58,6 +58,7 @@ src/zero/sensor/sensor.js
 *.tbz
 *.tbz2
 *.tgz
+*.rdb
 
 # file patterns (xcode)
 
