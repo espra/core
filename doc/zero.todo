@@ -1,0 +1,554 @@
+#! /bin/sh
+
+# No Copyright (-) 2010 The Ampify Authors. This file is under the
+# Public Domain license that can be found in the root LICENSE file.
+
+python -c "from datetime import datetime as d; \
+           left = d(2010, 05, 31, 18, 0, 0) - d.now(); \
+           left = (left.days * 86400) + left.seconds; \
+           left, seconds = divmod(left, 60); \
+           hours, minutes = divmod(left, 60); \
+           print '# Time left:'; \
+           print '     %s hrs, %s mins, %s secs' % (hours, minutes, seconds)"
+
+TODO_FILE=$0
+
+echo
+echo "# Todo:"
+grep "^✗" $TODO_FILE | wc -l
+
+echo
+echo "# Done:"
+grep "^✓" $TODO_FILE | wc -l
+
+echo
+echo "# Total:"
+grep "^[✓✗]" $TODO_FILE | wc -l
+
+
+cat >> /dev/null << EOF
+
+=====
+Admin
+=====
+
+✗ dns
+✗ google apps setup
+✗ http redirects from apex domains
+✗ s3
+
+✓ dependencies
+✓ configure && make
+
+=========
+Front End
+=========
+
+✗ verify support for modern browser
+✗ browser update view
+
+✗ root view
+✗ registration view
+✗ login view
+✗ logout view
+
+✗ design: site css
+✗ design: buttons
+✗ design: sidebar
+✗ design: trust maps editor
+✗ design: dols
+✗ design: default profile pic
+✗ design: input box
+✗ design: auto-completion
+
+✗ input box
+✗ input box word/char count/limit
+✗ input box contenteditable
+✗ input box current place finder in content area
+✗ input box auto-completion
+✗ input box auto-completion -- users
+✗ input box auto-completion -- aspects
+✗ input box auto-completion -- spaces
+✗ input box date input, 2010-01-13T21:34Z
+✗ input box time input, 21:34
+✗ input box map input
+✗ input box "to" field
+
+✗ autogrowing editor
+✗ inline editor
+✗ auto-preview
+✗ position editor
+✗ uploader
+
+✗ google maps
+✗ map view
+✗ map clustering support
+✗ location discovery
+
+✗ calendar display
+✗ calendar view
+✗ calendar (streak)
+
+✗ url truncating...
+✗ url longurl expansion
+
+✗ google analytics
+
+✗ loading indicator
+✗ load cache
+✗ load on scroll
+
+✗ scrollbars
+✗ scrollbars theme
+
+✗ dol control: search
+✗ dol control: global/trusted
+✗ dol control: view
+✗ dol column auto-size
+
+✗ messaging view
+✗ messaging auto-split handler
+✗ messaging first-contact view
+
+✗ item editing view
+✗ item versioning view
+✗ item positioning view
+✗ item deleting view
+✗ edit controls
+✗ edit version
+
+✗ user profile view
+✗ user "edit" (trust) view
+✗ user "edit" (trust) controls
+
+✗ space view
+✗ space edit controls
+
+✗ item display
+✗ uploaded border indicator
+✗ in-flight indicator and cache/load interplay
+
+✗ /me display
+✗ /topic display
+✗ /topic handling
+✗ /user/perspective handling
+✗ /trust handling
+
+✗ +drafts
+✗ +sent
+✗ auto-save
+
+✗ amp-ing
+✗ re-spacing
+✗ pecu-allocating
+✗ commenting
+✗ symlinking
+✗ original chain traversal
+✗ via trail
+
+✗ trends view
+✗ trends search
+✗ trends listing
+
+✗ item search
+✗ search syntax
+✗ search query parser
+✗ query subset params
+✗ client-side search results merge
+✗ parallel query
+✗ merged aspect/value query
+
+✗ shaila mode
+✗ shaila mode item select
+✗ shaila mode view
+✗ shaila item render
+
+✗ include parser
+✗ inclusions retrieve and cache
+✗ inclusions expand
+✗ inclusions invalidate
+✗ include failure display
+✗ include aspect
+
+✗ parser
+✗ urls detect
+✗ links interceptor
+
+✗ oembed
+✗ oembed: skitch
+✗ oembed: flickr
+✗ oembed: mp3
+✗ oembed: soundcloud
+✗ oembed: youtube
+✗ oembed: vimeo
+
+✗ spotify uris
+✗ skype uris
+
+✗ paste handler
+✗ text upload
+✗ text upload view
+✗ preview view
+
+✗ file quotas
+✗ file upload
+✗ file upload (in background)
+✗ file upload (drag and drop)
+✗ file access
+✗ file management
+✗ file image preview
+✗ file mp3 player
+✗ file html5 video player
+✗ file download
+
+✗ media html5 video
+✗ media youtube
+✗ media mp3
+✗ media playlist
+✗ media control
+✗ media player view
+
+✗ dols management
+✗ dols session
+✗ dols minimise/expand
+✗ dols notification
+✗ dols rearrange
+
+✗ session new
+✗ session support
+✗ session load link /#session-evangineer-28937/~thruflo/foo
+✗ session save (with name)
+✗ session restore
+✗ forward/back buttons -- bookmarkability
+✗ permalink
+
+✗ error handling
+✗ error message display
+✗ handle code updated/reload mechanism
+
+✗ private space creation view
+✗ private space invitation view
+
+✗ initialise user session
+✗ items cache
+✗ live connection
+
+✗ web sockets client-side support
+✗ iframe client-side support
+
+✗ cross-site comms
+✗ cross-site auth
+✗ cross-site tokens
+
+✗ js transaction handling
+✗ pecu allocations
+✗ pecu totals
+
+✗ javascript ucd -- part 1
+✗ javascript ucd -- part 2
+
+✗ preferred language settings
+✗ google translation
+✗ transliteration support
+
+✗ timezone settings
+✗ js timezone support
+✗ olson db -> js data
+✗ relative time display
+
+✗ trust maps management
+✗ trust maps view
+
+✗ access tokens management
+
+✗ amp settings view
+✗ amp needed view
+✗ amp transfer view
+
+✗ client-side caches
+
+✗ iphone css
+✗ iphone js
+
+========
+Back End
+========
+
+✗ production/debug modes
+✗ static file serving/invalidation
+
+✗ request handling
+✗ query/post data handling
+✗ ssl support
+✗ root request
+✗ zero request
+✗ item request
+✗ ~user request
+✗ space request
+
+✗ http cache: etags, last-modified, if-modified-since
+✗ proxy caching
+
+✗ user model
+✗ user registration
+✗ user authentication
+✗ user authorisation
+✗ user quotas
+✗ user foreign connect (facebook)
+✗ user foreign connect (twitter)
+✗ user profile
+✗ user profile picture
+✗ user settings
+✗ user trust maps
+✗ user follows
+✗ user amp account
+✗ user subscriptions
+✗ user pecu account
+✗ user access tokens
+
+✗ identicon generation
+✗ identicon/profile pic update
+
+✗ user payments model
+✗ user payments
+✗ paypal
+
+✗ default spaces
+✗ default tokens
+
+✗ root template
+✗ site template
+
+✗ login
+✗ logout
+✗ redirect
+✗ ssl redirect
+
+✗ item model
+✗ item creation
+✗ item updating
+✗ item versioning
+✗ item positioning
+✗ item deleting
+
+✗ space validation
+✗ amp-ing validation
+
+✗ updated aspect handling
+
+✗ parser
+✗ unicode handling
+✗ attachment/file handling
+✗ link parsing
+✗ aspect parsing
+✗ #! handler parsing
+✗ versioned parser live upgrading
+
+✗ language detection
+✗ language models -> python data
+
+✗ link normalisation
+✗ case-folding normalisation
+✗ unicode database
+
+✗ to encoding/search
+✗ about encoding/search
+✗ refs encoding/search
+✗ links encoding/search
+✗ includes encoding/search
+✗ list encoding/search
+✗ argonought encoding
+✗ numbers encoding/search
+✗ phrase encoding/search
+✗ geo-location encoding/search
+✗ pair encoding/search
+✗ date encoding/search
+✗ time encoding/search
+✗ amp encoding/search
+✗ currency encoding/search
+✗ language encoding/search
+
+✗ search query parser
+✗ query subset params
+
+✗ transaction lock / lease
+✗ transaction save
+✗ pecu totals
+
+✗ oembed support
+✗ longurls support
+
+✗ amp account model
+✗ amp transfer
+✗ amp transaction
+✗ amp transaction fee
+
+✗ user messaging
+
+✗ private spaces
+✗ private space creation
+✗ private space invitation
+
+✗ access tokens model
+✗ access tokens creation
+✗ access tokens revoke
+✗ access tokens share
+
+✗ trust maps
+✗ trust maps listing
+✗ trust maps query
+
+✗ parallel query
+✗ parallel query cursor
+✗ parallel query filter
+✗ parallel query memcache
+✗ parallel query sensor notify
+
+✗ sanitiser: dom elements
+✗ sanitiser: css
+✗ sanitiser: xss check
+✗ sanitiser: cache
+
+✗ markdown convert
+✗ markdown syntax highlight for code
+✗ markdown github changes
+✗ markdown with {{inclusions}}
+✗ markdown + sanitiser
+✗ markdown preview view
+
+✗ rst convert
+✗ rst disable include/raw
+✗ rst preview view
+✗ rst + sanitiser
+✗ rst syntax highlight for code
+
+✗ trends model
+✗ trends updating
+✗ trends calculation
+✗ trends query
+✗ trends service
+
+✗ mapreduce handlers
+✗ mapreduce generated results view
+
+✗ quota tracking
+✗ file upload
+✗ file access
+✗ file serving
+
+✗ auto-completion query support
+✗ auto-completion cache support
+
+=========
+Live Node
+=========
+
+✗ nginx configuration
+✗ nginx load-balancing
+✗ nginx clustering
+
+✗ redis configuration
+✗ redis manager
+✗ async redis library
+
+✗ keyspace configuration
+✗ keyspace init script
+✗ keyspace client
+
+✗ redis-keyspace partitioner
+✗ redis-keyspace detector
+✗ redis-keyspace initialiser
+✗ redis-keyspace routing
+✗ redis-keyspace lease management
+
+✗ live node
+✗ live node daemon
+✗ live node manager
+✗ live node configuration
+✗ live node index file
+✗ live node ping file
+✗ live node base javascript
+
+✗ real-time update
+✗ web sockets support
+
+✗ request authentication
+✗ datastore-verified authentication
+
+✗ sensor network
+✗ sensor pattern match finder
+✗ send code updated signal
+✗ resync checker
+
+✗ server connection stats
+✗ worker node
+✗ web hooks confirmation handler
+✗ web hooks post handler
+✗ memcache invalidation handler
+✗ iana-reserved ips
+
+=====
+Extra
+=====
+
+✗ github integration
+✗ github key generation
+
+✗ google calendar integration: in
+✗ google calendar integration: out
+
+✗ rss integration: in
+✗ rss integration: out
+
+✗ twitter integration: out
+✗ facebook integration: out
+
+✗ espra bots app
+✗ espra bots phenny services
+✗ espra bots registration
+✗ espra bots subscription handling
+
+==========
+Operations
+==========
+
+✗ app engine error logging
+✗ app engine micro-format logging (user, a/b tests)
+✗ nginx request logging
+✗ live node request logging
+✗ live node error logging
+
+✗ app engine logs downloader
+✗ logs parser
+✗ logs saver from live nodes to log store
+✗ logs saver to log store
+✗ logs saver handling of inaccessible store
+✗ logs saver to s3
+✗ async s3 client
+✗ logs saver to redis
+
+✗ log store app
+✗ log store configuration
+✗ log model
+✗ input external data, e.g. user plans, quotas, etc.
+✗ mappers
+✗ reducers
+✗ default jobs, e.g. top users
+✗ a/b test jobs
+✗ reports interface
+✗ report charts
+✗ log upload access verification
+
+✗ remonit data input sources
+✗ remonit configuration
+✗ remonit notification
+✗ remonit web interface
+✗ remonit status interface
+✗ remonit recent logs interface
+✗ remonit error reporting interface
+
+✗ public status app
+✗ public status app access verification
+✗ public status app charts
+
+EOF
