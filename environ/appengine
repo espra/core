@@ -11,6 +11,8 @@ Available commands:
    run [dev_appserver.py options]
 
    deploy [appcfg.py options]
+
+   get-logs [appcfg.py request_logs options]
 """
 
 import sys
@@ -153,6 +155,25 @@ if __name__ == '__main__':
 
         subprocess.call(
             [sys.executable, join_path(OUR_SDK_PATH, 'appcfg.py')] + argv
+        )
+
+        sys.exit()
+
+    if command == 'get-logs':
+
+        if argv:
+            log_file = argv.pop(0)
+        else:
+            log_file = 'apache.log'
+            if exists(log_file):
+                print
+                print "!! An apache.log file already exists in the directory"
+                print
+                sys.exit(1)
+
+        subprocess.call(
+            [sys.executable, join_path(OUR_SDK_PATH, 'appcfg.py')] +
+            argv + ['request_logs', app_root, log_file]
         )
 
         sys.exit()
