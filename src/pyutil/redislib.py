@@ -70,6 +70,16 @@ class Connection(object):
             self.send('SELECT', str(self._db))
 
     def send(self, in_commands):
+        """Send commands to Redis & returns the response as a Python object.
+        Commands can be passed to this method either as a string or a list.
+
+        >>> import redislib
+        >>> r = redislib.Connection()
+        >>> r.send("set foo bar")
+        'OK'
+        >>> r.send("get foo")
+        'bar'
+        """
         self.connect()
 
         if type(in_commands)==type(str()):
