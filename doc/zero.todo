@@ -363,7 +363,7 @@ Back End
 ✗ geo-location encoding/search
 ✗ pair encoding/search
 ✗ date encoding/search
-✗ time encoding/search
+✗ time/timedelta encoding/search
 ✗ amp encoding/search
 ✗ currency encoding/search
 ✗ language encoding/search
