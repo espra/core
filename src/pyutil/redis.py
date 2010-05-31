@@ -5,30 +5,57 @@ from gevent import socket, spawn
 from gevent.event import AsyncResult
 from gevent.queue import Queue
 
+# ------------------------------------------------------------------------------
+# Some Constants
+# ------------------------------------------------------------------------------
 
 NORMAL_COMMANDS = """
-  APPEND AUTH BGREWRITEAOF BGSAVE BLPOP BRPOP CONFIG DBSIZE DECR DECRBY EXISTS
-  EXPIRE FLUSHALL FLUSHDB GET GETSET HDEL HEXISTS HGET HGETALL HINCRBY HKEYS
-  HLEN HMGET HMSET HSET HVALS INCR INCRBY INFO KEYS LASTSAVE LINDEX LLEN LPOP
-  LPUSH LRANGE LREM LSET LTRIM MGET MOVE MSET MSETNX PING PSUBSCRIBE PUBLISH
-  PUNSUBSCRIBE QUIT RANDOMKEY RENAME RENAMENX RPOP RPOPLPUSH RPUSH SADD SAVE
-  SCARD SDIFF SDIFFSTORE SELECT SET SETEX SETNX SHUTDOWN SINTER SINTERSTORE
-  SISMEMBER SLAVEOF SMEMBERS SMOVE SORT SPOP SRANDMEMBER SREP SUBSCRIBE SUBSTR
-  SUNION SUNIONSTORE TTL TYPE UNSUBSCRIBE ZADD ZCARD ZINCRBY ZINTERSTORE ZRANGE
+  APPEND AUTH BGREWRITEAOF BGSAVE CONFIG DBSIZE DECR DECRBY EXISTS EXPIRE
+  FLUSHALL FLUSHDB GET GETSET HDEL HEXISTS HGET HGETALL HINCRBY HKEYS HLEN HMGET
+  HMSET HSET HVALS INCR INCRBY INFO KEYS LASTSAVE LINDEX LLEN LPOP LPUSH LRANGE
+  LREM LSET LTRIM MGET MOVE MSET MSETNX PING PSUBSCRIBE PUBLISH PUNSUBSCRIBE
+  QUIT RANDOMKEY RENAME RENAMENX RPOP RPOPLPUSH RPUSH SADD SAVE SCARD SDIFF
+  SDIFFSTORE SELECT SET SETEX SETNX SHUTDOWN SINTER SINTERSTORE SISMEMBER
+  SLAVEOF SMEMBERS SMOVE SORT SPOP SRANDMEMBER SREP SUBSCRIBE SUBSTR SUNION
+  SUNIONSTORE TTL TYPE UNSUBSCRIBE ZADD ZCARD ZINCRBY ZINTERSTORE ZRANGE
   ZRANGEBYSCORE ZRANK ZREM ZREMRANGEBYRANK ZREMRANGEBYSCORE ZREVRANGE ZREVRANK
   ZSCORE ZUNIONSTORE
   """.strip().split()
 
+# ------------------------------------------------------------------------------
+# Before/After Blocks
+# ------------------------------------------------------------------------------
+
+BLOCKING_BEFORE = """
+        if not isinstance(args[-1], (int, float)): args = args + (0,)
+        self._in_use = 1"""
+
+BLOCKING_AFTER = """
+        result = AsyncResult()
+        spawn(self.handle_response, cxn).link(result)
+        self._in_use = 0
+        try:
+            return result.get()
+        finally:
+            self._cxn = None
+            self._cxns[0].put(cxn)"""
+
+# ------------------------------------------------------------------------------
+# Exceptions
+# ------------------------------------------------------------------------------
 
 class RedisError(Exception):
     pass
 
+# ------------------------------------------------------------------------------
+# The Redis Client
+# ------------------------------------------------------------------------------
 
 class Redis(object):
     """Async redis client."""
 
     _global_cxns = {}
-    _pool_size = 2
+    _pool_size = 5
     _cxn = None
     _in_use = 0
 
@@ -47,7 +74,7 @@ class Redis(object):
                 cxn._readable_fileobj.close()
             except Exception:
                 pass
-            # del cxn._readable_fileobj
+            del cxn._readable_fileobj
             cxn.close()
         except socket.error:
             pass
@@ -56,6 +83,8 @@ class Redis(object):
     for _spec in [
         ('SEND_REQUEST', None, '', ''),
         ('DEL', 'delete', '', ''),
+        ('BLPOP', BLOCKING_BEFORE, BLOCKING_AFTER),
+        ('BRPOP', BLOCKING_BEFORE, BLOCKING_AFTER),
         ('MULTI', 'self._in_use = 1', ''),
         ('EXEC', 'execute', '', """
         result = AsyncResult()
@@ -92,9 +121,16 @@ class Redis(object):
             queue, size = self._cxns
             if size < self._pool_size:
                 self._cxns[1] = size + 1
-                cxn = self._cxn = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                cxn.connect(self._addr)
-                cxn._readable_fileobj = cxn.makefile('r')
+                try:
+                    cxn = self._cxn = socket.socket(
+                        socket.AF_INET, socket.SOCK_STREAM
+                        )
+                    cxn.setsockopt(socket.SOL_TCP, socket.TCP_NODELAY, 1)
+                    cxn.connect(self._addr)
+                    cxn._readable_fileobj = cxn.makefile('r')
+                except Exception: # @/@ socket.error
+                    self._cxns[1] = size
+                    raise
             else:
                 cxn = self._cxn = queue.get()
 
@@ -127,7 +163,9 @@ class Redis(object):
     del _command, _name, _before, _after, _spec, _extra_1, _extra_2
 
     def handle_response(self, cxn, standalone=1):
-        stream = cxn._readable_fileobj
+        stream = getattr(cxn, '_readable_fileobj', None)
+        if not stream:
+            raise socket.error("Socket has been closed.")
         try:
             opener = stream.read(1)
             if opener == '+':
@@ -149,7 +187,9 @@ class Redis(object):
                     out(read(length+2)[:-2])
                 return result
             if opener == '-':
-                raise RedisError(stream.readline()[:-2])
+                if standalone:
+                    raise RedisError(stream.readline()[:-2])
+                return RedisError(stream.readline()[:-2])
             raise RedisError("Unknown response type %r" % opener)
         except socket.error:
             self.close_connection(cxn)
