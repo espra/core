@@ -3,10 +3,10 @@
 
 """Redis."""
 
-from gevent import core, spawn
+from gevent import spawn, joinall
 from gevent import socket
 from gevent.event import AsyncResult
-from gevent.hub import Waiter
+from gevent.queue import Queue
 
 
 NORMAL_COMMANDS = [
@@ -35,14 +35,14 @@ class Redis(object):
     """Async redis client."""
 
     _global_cxns = {}
-    _pool_size = 5
+    _pool_size = 2
     _cxn = None
     _in_use = 0
 
     def __init__(self, host='', port=6379):
         self._addr = addr = (host, port)
         if addr not in self._global_cxns:
-            self._cxns = self._global_cxns[addr] = [set(), set(), 0]
+            self._cxns = self._global_cxns[addr] = [Queue(), 0]
         else:
             self._cxns = self._global_cxns[addr]
 
@@ -54,19 +54,20 @@ class Redis(object):
                 cxn._readable_fileobj.close()
             except Exception:
                 pass
-            del cxn._readable_fileobj
+            # del cxn._readable_fileobj
             cxn.close()
         except socket.error:
             pass
-        self._cxns[2] -= 1
+        self._cxns[1] -= 1
 
     for _spec in [
         ('SEND_REQUEST', None, '', ''),
         ('DEL', 'delete', '', ''),
         ('MULTI', 'self._in_use = 1', ''),
-        ('EXEC', 'execute', 'self._in_use = 0', """
+        ('EXEC', 'execute', '', """
         result = AsyncResult()
         spawn(self.handle_exec_response, cxn).link(result)
+        self._in_use = 0
         return result.get()
         """),
         ('DISCARD', 'self._in_use = 0', ''),
@@ -95,21 +96,18 @@ class Redis(object):
 
         cxn = self._cxn
         if not cxn:
-            cxns, waiters, size = self._cxns
-            if cxns:
-               cxn = self._cxn = cxns.pop()
-            elif size < self._pool_size:
+            queue, size = self._cxns
+            if size < self._pool_size:
+                self._cxns[1] = size + 1
                 cxn = self._cxn = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                 cxn.connect(self._addr)
                 cxn._readable_fileobj = cxn.makefile('r')
-                self._cxns[2] = size + 1
             else:
-                waiter = Waiter()
-                waiters.add(waiter)
-                cxn = self._cxn = waiter.get()
+                cxn = self._cxn = queue.get()
 
         %s
 
+        print cxn, args, self._cxns[1]
         request = ['*%%i\r\n' %% len(args)]; out = request.append
         for arg in args:
             arg = str(arg)
@@ -126,12 +124,7 @@ class Redis(object):
 
         if not self._in_use:
             self._cxn = None
-            cxns, waiters, _ = self._cxns
-            if waiters:
-                waiter = waiters.pop()
-                waiter.switch(cxn)
-            else:
-                cxns.add(cxn)
+            self._cxns[0].put(cxn)
 
         %s
 
@@ -141,7 +134,7 @@ class Redis(object):
 
     del _command, _name, _before, _after, _spec, _extra_1, _extra_2
 
-    def handle_response(self, cxn):
+    def handle_response(self, cxn, standalone=1):
         stream = cxn._readable_fileobj
         try:
             opener = stream.read(1)
@@ -165,33 +158,64 @@ class Redis(object):
                 return result
             if opener == '-':
                 raise RedisError(stream.readline()[:-2])
-        except Exception:
+            raise RedisError("Unknown response type %r" % opener)
+        except socket.error:
             self.close_connection(cxn)
             raise
-        raise RedisError("Unknown response type %r" % opener)
+        finally:
+            if standalone and not self._in_use:
+                self._cxn = None
+                self._cxns[0].put(cxn)
 
     def handle_exec_response(self, cxn):
-        stream = cxn._readable_fileobj
-        responses = []; out = responses.append
-        handle_response = self.handle_response
-        for i in xrange(int(stream.readline()[1:-2])):
-            out(handle_response(cxn))
+        try:
+            stream = cxn._readable_fileobj
+            responses = []; out = responses.append
+            handle_response = self.handle_response
+            for i in xrange(int(stream.readline()[1:-2])):
+                out(handle_response(cxn, standalone=0))
+        finally:
+            self._cxn = None
+            self._cxns[0].put(cxn)
+        print responses
         return responses
 
 if __name__ == '__main__':
 
-    redis = Redis()
-    print redis.send_request('SET', 'foo', 'bar')
-    print redis.send_request('SET', 'foo5', 'bar')
-    print redis.set('bar', 1)
-    print redis.decr('bar')
-    print redis.incr('bar')
+#     redis = Redis()
+#     print redis.send_request('SET', 'foo', 'bar')
+#     print redis.send_request('SET', 'foo5', 'bar')
+#     print redis.set('bar', 1)
+#     print redis.decr('bar')
+#     print redis.incr('bar')
 
-    print redis.multi()
-    print redis.incr('bar')
-    print redis.incr('bar')
-    print redis.set('foawoa', '\x00aaa')
-    print redis.get('foawoa')
-    print redis.execute()
+#     print redis.multi()
+#     print redis.incr('bar')
+#     print redis.incr('bar')
+#     print redis.set('foawoa', '\x00aaa')
+#     print redis.get('foawoa')
+#     print redis.execute()
+
+    x = 1
+
+    def foo():
+        global x
+        x = x + 1
+        y = x
+        redis = Redis()
+        redis.multi()
+        redis.set('foo%s' % y, y)
+        redis.get('foo%s' % y)
+        print y, 'a'
+        redis.execute()
+        print y, 's'
+        # print redis.get('foo%s' % y)
+
+    jobs = []
+
+    for i in xrange(2000):
+        jobs.append(spawn(foo))
+
+    joinall(jobs)
 
     # core.timer(1.2, release_connection, addr, cxns[1])
