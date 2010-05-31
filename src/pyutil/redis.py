@@ -1,7 +1,7 @@
 # No Copyright (-) 2010 The Ampify Authors. This file is under the
 # Public Domain license that can be found in the root LICENSE file.
 
-from gevent import socket, spawn
+from gevent import sleep, socket, spawn
 from gevent.event import AsyncResult
 from gevent.queue import Queue
 
@@ -38,7 +38,7 @@ BLOCKING_AFTER = """
             return result.get()
         finally:
             self._cxn = None
-            self._cxns[0].put(cxn)"""
+            self._cxns.add(cxn)"""
 
 # ------------------------------------------------------------------------------
 # Exceptions
@@ -55,30 +55,32 @@ class Redis(object):
     """Async redis client."""
 
     _global_cxns = {}
-    _pool_size = 5
+    _max_cxns = 100
+    _open_cxns = 0
     _cxn = None
     _in_use = 0
 
     def __init__(self, host='', port=6379):
         self._addr = addr = (host, port)
         if addr not in self._global_cxns:
-            self._cxns = self._global_cxns[addr] = [Queue(), 0]
+            self._cxns = self._global_cxns[addr] = set()
         else:
             self._cxns = self._global_cxns[addr]
 
-    def close_connection(self, cxn=None):
+    def close_connection(self):
+        cxn, self._cxn = self._cxn, None
         if not cxn:
-            cxn, self._cxn = self._cxn, None
+            return
         try:
             try:
                 cxn._readable_fileobj.close()
             except Exception:
                 pass
-            del cxn._readable_fileobj
             cxn.close()
         except socket.error:
             pass
-        self._cxns[1] -= 1
+        finally:
+            self._open_cxns -= 1
 
     for _spec in [
         ('SEND_REQUEST', None, '', ''),
@@ -118,21 +120,24 @@ class Redis(object):
 
         cxn = self._cxn
         if not cxn:
-            queue, size = self._cxns
-            if size < self._pool_size:
-                self._cxns[1] = size + 1
+            cxns = self._cxns
+            #while (not cxns) and self._open_cxns >= self._max_cxns:
+            #    sleep(0.1)
+            if cxns:
+                cxn = self._cxn = cxns.pop()
+            else:
+                self._open_cxns += 1
                 try:
-                    cxn = self._cxn = socket.socket(
+                    cxn = socket.socket(
                         socket.AF_INET, socket.SOCK_STREAM
-                        )
+                    )
                     cxn.setsockopt(socket.SOL_TCP, socket.TCP_NODELAY, 1)
                     cxn.connect(self._addr)
                     cxn._readable_fileobj = cxn.makefile('r')
-                except Exception: # @/@ socket.error
-                    self._cxns[1] = size
+                except Exception:
+                    self._open_cxns -= 1
                     raise
-            else:
-                cxn = self._cxn = queue.get()
+                self._cxn = cxn
 
         %s
 
@@ -144,30 +149,38 @@ class Redis(object):
             out(arg)
             out('\r\n')
 
-        try:
-            cxn.sendall(''.join(request))
-        except socket.error:
-            self.close_connection()
-            raise
-
-        if not self._in_use:
-            self._cxn = None
-            self._cxns[0].put(cxn)
+        cxn.sendall(''.join(request))
+        #try:
+        #    cxn.sendall(''.join(request))
+        #except socket.error:
+        #    raise
+        #    self.close_connection()
 
         %s
 
         result = AsyncResult()
-        spawn(self.handle_response, cxn).link(result)
+        spawn(self.handle_response).link(result)
+        #res = result.get()
+        # print "RESULT"
+        #return res
         return result.get()""" % (_name, _extra_1, _extra_2, _before, _after))
 
     del _command, _name, _before, _after, _spec, _extra_1, _extra_2
 
-    def handle_response(self, cxn, standalone=1):
-        stream = getattr(cxn, '_readable_fileobj', None)
-        if not stream:
-            raise socket.error("Socket has been closed.")
-        try:
+    def handle_response(self, standalone=1):
+        global x
+        print "Handling", x
+        y = x = x + 1
+        cxn = self._cxn
+        print repr(cxn)
+        #if not cxn:
+        #    raise IOError("Connection closed.")
+        if 1:
+        #try:
+            print "Strt", y
+            stream = cxn._readable_fileobj
             opener = stream.read(1)
+            print "Strt-2", y
             if opener == '+':
                 return stream.readline()[:-2]
             if opener == ':':
@@ -191,13 +204,18 @@ class Redis(object):
                     raise RedisError(stream.readline()[:-2])
                 return RedisError(stream.readline()[:-2])
             raise RedisError("Unknown response type %r" % opener)
-        except socket.error:
-            self.close_connection(cxn)
-            raise
-        finally:
-            if standalone and not self._in_use:
-                self._cxn = None
-                self._cxns[0].put(cxn)
+        #except socket.error:
+        #    pass
+            #print "--------------------------------SOCKERR"
+            #self.close_connection()
+            #raise
+        #finally:
+        #    pass
+            #if standalone and not self._in_use:
+                #self._cxn = None
+                #self._cxns.add(cxn)
+        #print "Finished", y
+
 
     def handle_exec_response(self, cxn):
         try:
@@ -205,8 +223,29 @@ class Redis(object):
             responses = []; out = responses.append
             handle_response = self.handle_response
             for i in xrange(int(stream.readline()[1:-2])):
-                out(handle_response(cxn, standalone=0))
+                out(handle_response(standalone=0))
         finally:
             self._cxn = None
-            self._cxns[0].put(cxn)
+            self._cxns.add(cxn)
         return responses
+
+
+x = 0
+
+r = Redis('espians.com', 9094)
+
+def foo(i):
+    r.set('foo', i)
+    r.close_connection()
+
+from gevent import joinall
+from time import time
+
+start = time()
+joinall(
+    [spawn(foo, i) for i in range(1000)]
+    )
+print time() - start
+#print r.get('foo')
+
+# r.set('foo', 'bar')
