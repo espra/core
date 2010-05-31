@@ -1,30 +1,23 @@
 # No Copyright (-) 2010 The Ampify Authors. This file is under the
 # Public Domain license that can be found in the root LICENSE file.
 
-"""Redis."""
-
-from gevent import spawn, joinall
-from gevent import socket
+from gevent import socket, spawn
 from gevent.event import AsyncResult
 from gevent.queue import Queue
 
 
-NORMAL_COMMANDS = [
-    'APPEND', 'AUTH', 'BGREWRITEAOF', 'BGSAVE', 'BLPOP', 'BRPOP', 'CONFIG',
-    'DBSIZE', 'DECR', 'DECRBY', 'EXISTS', 'EXPIRE', 'FLUSHALL', 'FLUSHDB',
-    'GET', 'GETSET', 'HDEL', 'HEXISTS', 'HGET', 'HGETALL', 'HINCRBY', 'HKEYS',
-    'HLEN', 'HMGET', 'HMSET', 'HSET', 'HVALS', 'INCR', 'INCRBY', 'INFO', 'KEYS',
-    'LASTSAVE', 'LINDEX', 'LLEN', 'LPOP', 'LPUSH', 'LRANGE', 'LREM', 'LSET',
-    'LTRIM', 'MGET', 'MOVE', 'MSET', 'MSETNX', 'PING', 'PSUBSCRIBE', 'PUBLISH',
-    'PUNSUBSCRIBE', 'QUIT', 'RANDOMKEY', 'RENAME', 'RENAMENX', 'RPOP',
-    'RPOPLPUSH', 'RPUSH', 'SADD', 'SAVE', 'SCARD', 'SDIFF', 'SDIFFSTORE',
-    'SELECT', 'SET', 'SETEX', 'SETNX', 'SHUTDOWN', 'SINTER', 'SINTERSTORE',
-    'SISMEMBER', 'SLAVEOF', 'SMEMBERS', 'SMOVE', 'SORT', 'SPOP', 'SRANDMEMBER',
-    'SREP', 'SUBSCRIBE', 'SUBSTR', 'SUNION', 'SUNIONSTORE', 'TTL', 'TYPE',
-    'UNSUBSCRIBE', 'ZADD', 'ZCARD', 'ZINCRBY', 'ZINTERSTORE', 'ZRANGE',
-    'ZRANGEBYSCORE', 'ZRANK', 'ZREM', 'ZREMRANGEBYRANK', 'ZREMRANGEBYSCORE',
-    'ZREVRANGE', 'ZREVRANK', 'ZSCORE', 'ZUNIONSTORE'
-    ]
+NORMAL_COMMANDS = """
+  APPEND AUTH BGREWRITEAOF BGSAVE BLPOP BRPOP CONFIG DBSIZE DECR DECRBY EXISTS
+  EXPIRE FLUSHALL FLUSHDB GET GETSET HDEL HEXISTS HGET HGETALL HINCRBY HKEYS
+  HLEN HMGET HMSET HSET HVALS INCR INCRBY INFO KEYS LASTSAVE LINDEX LLEN LPOP
+  LPUSH LRANGE LREM LSET LTRIM MGET MOVE MSET MSETNX PING PSUBSCRIBE PUBLISH
+  PUNSUBSCRIBE QUIT RANDOMKEY RENAME RENAMENX RPOP RPOPLPUSH RPUSH SADD SAVE
+  SCARD SDIFF SDIFFSTORE SELECT SET SETEX SETNX SHUTDOWN SINTER SINTERSTORE
+  SISMEMBER SLAVEOF SMEMBERS SMOVE SORT SPOP SRANDMEMBER SREP SUBSCRIBE SUBSTR
+  SUNION SUNIONSTORE TTL TYPE UNSUBSCRIBE ZADD ZCARD ZINCRBY ZINTERSTORE ZRANGE
+  ZRANGEBYSCORE ZRANK ZREM ZREMRANGEBYRANK ZREMRANGEBYSCORE ZREVRANGE ZREVRANK
+  ZSCORE ZUNIONSTORE
+  """.strip().split()
 
 
 class RedisError(Exception):
@@ -107,7 +100,6 @@ class Redis(object):
 
         %s
 
-        print cxn, args, self._cxns[1]
         request = ['*%%i\r\n' %% len(args)]; out = request.append
         for arg in args:
             arg = str(arg)
@@ -177,45 +169,4 @@ class Redis(object):
         finally:
             self._cxn = None
             self._cxns[0].put(cxn)
-        print responses
         return responses
-
-if __name__ == '__main__':
-
-#     redis = Redis()
-#     print redis.send_request('SET', 'foo', 'bar')
-#     print redis.send_request('SET', 'foo5', 'bar')
-#     print redis.set('bar', 1)
-#     print redis.decr('bar')
-#     print redis.incr('bar')
-
-#     print redis.multi()
-#     print redis.incr('bar')
-#     print redis.incr('bar')
-#     print redis.set('foawoa', '\x00aaa')
-#     print redis.get('foawoa')
-#     print redis.execute()
-
-    x = 1
-
-    def foo():
-        global x
-        x = x + 1
-        y = x
-        redis = Redis()
-        redis.multi()
-        redis.set('foo%s' % y, y)
-        redis.get('foo%s' % y)
-        print y, 'a'
-        redis.execute()
-        print y, 's'
-        # print redis.get('foo%s' % y)
-
-    jobs = []
-
-    for i in xrange(2000):
-        jobs.append(spawn(foo))
-
-    joinall(jobs)
-
-    # core.timer(1.2, release_connection, addr, cxns[1])
