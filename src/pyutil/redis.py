@@ -9,6 +9,24 @@ from gevent.event import AsyncResult
 from gevent.hub import Waiter
 
 
+NORMAL_COMMANDS = [
+    'APPEND', 'AUTH', 'BGREWRITEAOF', 'BGSAVE', 'BLPOP', 'BRPOP', 'CONFIG',
+    'DBSIZE', 'DECR', 'DECRBY', 'EXISTS', 'EXPIRE', 'FLUSHALL', 'FLUSHDB',
+    'GET', 'GETSET', 'HDEL', 'HEXISTS', 'HGET', 'HGETALL', 'HINCRBY', 'HKEYS',
+    'HLEN', 'HMGET', 'HMSET', 'HSET', 'HVALS', 'INCR', 'INCRBY', 'INFO', 'KEYS',
+    'LASTSAVE', 'LINDEX', 'LLEN', 'LPOP', 'LPUSH', 'LRANGE', 'LREM', 'LSET',
+    'LTRIM', 'MGET', 'MOVE', 'MSET', 'MSETNX', 'PING', 'PSUBSCRIBE', 'PUBLISH',
+    'PUNSUBSCRIBE', 'QUIT', 'RANDOMKEY', 'RENAME', 'RENAMENX', 'RPOP',
+    'RPOPLPUSH', 'RPUSH', 'SADD', 'SAVE', 'SCARD', 'SDIFF', 'SDIFFSTORE',
+    'SELECT', 'SET', 'SETEX', 'SETNX', 'SHUTDOWN', 'SINTER', 'SINTERSTORE',
+    'SISMEMBER', 'SLAVEOF', 'SMEMBERS', 'SMOVE', 'SORT', 'SPOP', 'SRANDMEMBER',
+    'SREP', 'SUBSCRIBE', 'SUBSTR', 'SUNION', 'SUNIONSTORE', 'TTL', 'TYPE',
+    'UNSUBSCRIBE', 'ZADD', 'ZCARD', 'ZINCRBY', 'ZINTERSTORE', 'ZRANGE',
+    'ZRANGEBYSCORE', 'ZRANK', 'ZREM', 'ZREMRANGEBYRANK', 'ZREMRANGEBYSCORE',
+    'ZREVRANGE', 'ZREVRANK', 'ZSCORE', 'ZUNIONSTORE'
+    ]
+
+
 class RedisError(Exception):
     pass
 
@@ -44,90 +62,7 @@ class Redis(object):
 
     for _spec in [
         ('SEND_REQUEST', None, '', ''),
-        ('AUTH', '', ''),
-        ('PING', '', ''),
-        ('QUIT', '', ''),
-        ('EXISTS', '', ''),
         ('DEL', 'delete', '', ''),
-        ('TYPE', '', ''),
-        ('KEYS', '', ''),
-        ('RANDOMKEY', '', ''),
-        ('RENAME', '', ''),
-        ('RENAMENX', '', ''),
-        ('DBSIZE', '', ''),
-        ('EXPIRE', '', ''),
-        ('TTL', '', ''),
-        ('SELECT', '', ''),
-        ('MOVE', '', ''),
-        ('FLUSHDB', '', ''),
-        ('FLUSHALL', '', ''),
-        ('SET', '', ''),
-        ('GET', '', ''),
-        ('GETSET', '', ''),
-        ('MGET', '', ''),
-        ('SETNX', '', ''),
-        ('SETEX', '', ''),
-        ('MSET', '', ''),
-        ('MSETNX', '', ''),
-        ('INCR', '', ''),
-        ('INCRBY', '', ''),
-        ('DECR', '', ''),
-        ('DECRBY', '', ''),
-        ('APPEND', '', ''),
-        ('SUBSTR', '', ''),
-        ('RPUSH', '', ''),
-        ('LPUSH', '', ''),
-        ('LLEN', '', ''),
-        ('LRANGE', '', ''),
-        ('LTRIM', '', ''),
-        ('LINDEX', '', ''),
-        ('LSET', '', ''),
-        ('LREM', '', ''),
-        ('LPOP', '', ''),
-        ('RPOP', '', ''),
-        ('BLPOP', '', ''),
-        ('BRPOP', '', ''),
-        ('RPOPLPUSH', '', ''),
-        ('SADD', '', ''),
-        ('SREP', '', ''),
-        ('SPOP', '', ''),
-        ('SMOVE', '', ''),
-        ('SCARD', '', ''),
-        ('SISMEMBER', '', ''),
-        ('SINTER', '', ''),
-        ('SINTERSTORE', '', ''),
-        ('SUNION', '', ''),
-        ('SUNIONSTORE', '', ''),
-        ('SDIFF', '', ''),
-        ('SDIFFSTORE', '', ''),
-        ('SMEMBERS', '', ''),
-        ('SRANDMEMBER', '', ''),
-        ('ZADD', '', ''),
-        ('ZREM', '', ''),
-        ('ZINCRBY', '', ''),
-        ('ZRANK', '', ''),
-        ('ZREVRANK', '', ''),
-        ('ZRANGE', '', ''),
-        ('ZREVRANGE', '', ''),
-        ('ZRANGEBYSCORE', '', ''),
-        ('ZCARD', '', ''),
-        ('ZSCORE', '', ''),
-        ('ZREMRANGEBYRANK', '', ''),
-        ('ZREMRANGEBYSCORE', '', ''),
-        ('ZUNIONSTORE', '', ''),
-        ('ZINTERSTORE', '', ''),
-        ('HSET', '', ''),
-        ('HGET', '', ''),
-        ('HMGET', '', ''),
-        ('HMSET', '', ''),
-        ('HINCRBY', '', ''),
-        ('HEXISTS', '', ''),
-        ('HDEL', '', ''),
-        ('HLEN', '', ''),
-        ('HKEYS', '', ''),
-        ('HVALS', '', ''),
-        ('HGETALL', '', ''),
-        ('SORT', '', ''),
         ('MULTI', 'self._in_use = 1', ''),
         ('EXEC', 'execute', 'self._in_use = 0', """
         result = AsyncResult()
@@ -137,21 +72,8 @@ class Redis(object):
         ('DISCARD', 'self._in_use = 0', ''),
         ('WATCH', 'self._in_use = 1', ''),
         ('UNWATCH', 'self._in_use = 1', ''),
-        ('SUBSCRIBE', '', ''),
-        ('UNSUBSCRIBE', '', ''),
-        ('PUBLISH', '', ''),
-        ('PSUBSCRIBE', '', ''),
-        ('PUNSUBSCRIBE', '', ''),
-        ('SAVE', '', ''),
-        ('BGSAVE', '', ''),
-        ('LASTSAVE', '', ''),
-        ('SHUTDOWN', '', ''),
-        ('BGREWRITEAOF', '', ''),
-        ('INFO', '', ''),
-        ('SLAVEOF', '', ''),
-        ('CONFIG', '', ''),
         # ('MONITOR', '', ''),
-        ]:
+        ] + [(cmd, '', '') for cmd in NORMAL_COMMANDS]:
         if len(_spec) == 3:
             _command, _before, _after = _spec
             _name = _command.lower()
@@ -256,25 +178,14 @@ class Redis(object):
             out(handle_response(cxn))
         return responses
 
-
 if __name__ == '__main__':
 
     redis = Redis()
-    print repr(redis.send_request('SET', 'foo', 'bar'))
     print redis.send_request('SET', 'foo', 'bar')
-    print redis.send_request('SET', 'foo', 'bar')
-    print redis.send_request('SET', 'foo', 'bar')
-    print redis.send_request('SET', 'foo3', 'bar')
     print redis.send_request('SET', 'foo5', 'bar')
-
     print redis.set('bar', 1)
     print redis.decr('bar')
-    print redis.decr('bar')
-    print redis.decr('bar')
     print redis.incr('bar')
-    print redis.incr('bar')
-
-    print redis.info()
 
     print redis.multi()
     print redis.incr('bar')
