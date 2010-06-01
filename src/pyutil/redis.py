@@ -1,13 +1,18 @@
 # No Copyright (-) 2010 The Ampify Authors. This file is under the
 # Public Domain license that can be found in the root LICENSE file.
 
-from gevent import sleep, socket, spawn
-from gevent.event import AsyncResult
-from gevent.queue import Queue
+import socket
+
+from collections import deque
+
+from tornado.ioloop import IOLoop
+from tornado.iostream import IOStream
 
 # ------------------------------------------------------------------------------
 # Some Constants
 # ------------------------------------------------------------------------------
+
+Loop = IOLoop.instance()
 
 NORMAL_COMMANDS = """
   APPEND AUTH BGREWRITEAOF BGSAVE CONFIG DBSIZE DECR DECRBY EXISTS EXPIRE
@@ -67,20 +72,25 @@ class Redis(object):
         else:
             self._cxns = self._global_cxns[addr]
 
+    def handle_connection_close(self, cxn):
+        print "BOOOM", cxn
+        if not cxn._discarded:
+            Redis._open_cxns -= 1
+            cxn._discarded = 1
+            while cxn.queue:
+                _, cb = cxn.queue.popleft()
+                cb(None, socket.error("Connection closed."))
+            del cxn.queue
+        self._cxns.discard(cxn)
+
     def close_connection(self):
         cxn, self._cxn = self._cxn, None
         if not cxn:
             return
         try:
-            try:
-                cxn._readable_fileobj.close()
-            except Exception:
-                pass
             cxn.close()
         except socket.error:
             pass
-        finally:
-            self._open_cxns -= 1
 
     for _spec in [
         ('SEND_REQUEST', None, '', ''),
@@ -112,7 +122,7 @@ class Redis(object):
             _extra_1 = ''
             _extra_2 = 'args = (%r,) + args' % _command
 
-        exec(r"""def %s(self, %s*args):
+        exec(r"""def %s(self, %s*args, **kwargs):
         %s
 
         if not args:
@@ -121,22 +131,34 @@ class Redis(object):
         cxn = self._cxn
         if not cxn:
             cxns = self._cxns
-            #while (not cxns) and self._open_cxns >= self._max_cxns:
-            #    sleep(0.1)
+            if (not cxns) and Redis._open_cxns >= Redis._max_cxns:
+                closed = None
+                for addr, open_cxns in self._global_cxns.iteritems():
+                    if open_cxns:
+                        closed = open_cxns.pop()
+                        closed.close_connection()
+                        Redis._open_cxns -= 1
+                        break
+                if not closed:
+                    Loop.add_timeout(0.1, lambda: self.%s(*args))
+                    return
             if cxns:
                 cxn = self._cxn = cxns.pop()
             else:
-                self._open_cxns += 1
+                Redis._open_cxns += 1
                 try:
-                    cxn = socket.socket(
+                    sock = socket.socket(
                         socket.AF_INET, socket.SOCK_STREAM
                     )
-                    cxn.setsockopt(socket.SOL_TCP, socket.TCP_NODELAY, 1)
-                    cxn.connect(self._addr)
-                    cxn._readable_fileobj = cxn.makefile('r')
+                    sock.setsockopt(socket.SOL_TCP, socket.TCP_NODELAY, 1)
+                    sock.connect(self._addr)
+                    cxn = IOStream(sock)
+                    cxn.queue = deque()
+                    cxn._discarded = 0
                 except Exception:
-                    self._open_cxns -= 1
+                    Redis._open_cxns -= 1
                     raise
+                cxn._close_callback = lambda: self.handle_connection_close(cxn)
                 self._cxn = cxn
 
         %s
@@ -149,38 +171,48 @@ class Redis(object):
             out(arg)
             out('\r\n')
 
-        cxn.sendall(''.join(request))
-        #try:
-        #    cxn.sendall(''.join(request))
-        #except socket.error:
-        #    raise
-        #    self.close_connection()
+        try:
+            cxn.write(''.join(request))
+        except socket.error:
+            self.close_connection()
+            raise
 
         %s
 
-        result = AsyncResult()
-        spawn(self.handle_response).link(result)
-        #res = result.get()
-        # print "RESULT"
-        #return res
-        return result.get()""" % (_name, _extra_1, _extra_2, _before, _after))
+        def null(result, error):
+            print "NULL"
+            print repr(error)
+            print repr(result)
+
+        callback = kwargs.pop('callback', None)
+        if not callback:
+            callback = lambda *args: None
+            callback = null
+        cxn.queue.append((1, callback))
+        # print 'yeah', cxn.queue[0] #, cxn._close_callback()
+
+        self.dispatch()
+        return""" % (_name, _extra_1, _extra_2, _name, _before, _after))
 
     del _command, _name, _before, _after, _spec, _extra_1, _extra_2
 
+    def dispatch(self):
+        if not self._cxn:
+            return
+        if not self._cxn.queue:
+            cxn, self._cxn = self._cxn, None
+            self._cxns.add(cxn)
+            return
+        Loop.add_callback(self.handle_response)
+
     def handle_response(self, standalone=1):
-        global x
-        print "Handling", x
-        y = x = x + 1
-        cxn = self._cxn
-        print repr(cxn)
-        #if not cxn:
-        #    raise IOError("Connection closed.")
-        if 1:
-        #try:
-            print "Strt", y
+        try:
+            cxn = self._cxn
+        except Exception:
+            pass
+        finally:
             stream = cxn._readable_fileobj
             opener = stream.read(1)
-            print "Strt-2", y
             if opener == '+':
                 return stream.readline()[:-2]
             if opener == ':':
@@ -205,8 +237,6 @@ class Redis(object):
                 return RedisError(stream.readline()[:-2])
             raise RedisError("Unknown response type %r" % opener)
         #except socket.error:
-        #    pass
-            #print "--------------------------------SOCKERR"
             #self.close_connection()
             #raise
         #finally:
@@ -214,8 +244,6 @@ class Redis(object):
             #if standalone and not self._in_use:
                 #self._cxn = None
                 #self._cxns.add(cxn)
-        #print "Finished", y
-
 
     def handle_exec_response(self, cxn):
         try:
@@ -229,23 +257,26 @@ class Redis(object):
             self._cxns.add(cxn)
         return responses
 
+r = Redis()
 
-x = 0
+r.set('foo', 'bar')
 
-r = Redis('espians.com', 9094)
+Loop.start()
 
-def foo(i):
-    r.set('foo', i)
-    r.close_connection()
+# r = Redis('espians.com', 9094)
 
-from gevent import joinall
-from time import time
+# def foo(i):
+#     r.set('foo', i)
+#     r.close_connection()
 
-start = time()
-joinall(
-    [spawn(foo, i) for i in range(1000)]
-    )
-print time() - start
+# from gevent import joinall
+# from time import time
+
+# start = time()
+# joinall(
+#     [spawn(foo, i) for i in range(1000)]
+#     )
+# print time() - start
 #print r.get('foo')
 
 # r.set('foo', 'bar')
