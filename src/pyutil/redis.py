@@ -1,6 +1,7 @@
 # No Copyright (-) 2010 The Ampify Authors. This file is under the
 # Public Domain license that can be found in the root LICENSE file.
 
+import logging
 import socket
 
 from adisp import async
@@ -51,7 +52,7 @@ class Redis(object):
     """Async redis client."""
 
     _global_cxns = {}
-    _max_cxns = 5
+    _max_cxns = None
     _open_cxns = 0
     _cxn = None
     _in_txn = 0
@@ -128,7 +129,8 @@ class Redis(object):
         cxn = self._cxn
         if not cxn:
             cxns = self._cxns
-            if (not cxns) and Redis._open_cxns >= Redis._max_cxns:
+            max_cxns = Redis._max_cxns
+            if (not cxns) and max_cxns and Redis._open_cxns > max_cxns:
                 closed = None
                 for addr, open_cxns in self._global_cxns.iteritems():
                     if open_cxns:
@@ -136,8 +138,17 @@ class Redis(object):
                         closed.close()
                         break
                 if not closed:
+                    if '_start' not in kwargs:
+                        kwargs['_start'] = time()
+                    now = time()
+                    if (now - kwargs['_start']) > 60:   # @/@ configurable?
+                        kwargs['_start'] = now
+                        logging.warn(
+                            "Redis connection starving [0x%%x] %%r"
+                            %% (id(self), self._addr)
+                            )
                     Loop.add_timeout(
-                        time() + 0.1,
+                        now + 0.1,
                         lambda: self.%s.__raw__(self, %s *args[1:], **kwargs)
                     )
                     return
@@ -301,7 +312,7 @@ if __name__ == '__main__':
     from adisp import process
 
     N = 200
-    set_max_connections(100)
+    set_max_connections(5)
 
     @process
     def test_set(i):
