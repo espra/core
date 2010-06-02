@@ -3,7 +3,9 @@
 
 import socket
 
+from adisp import async
 from collections import deque
+from time import time
 
 from tornado.ioloop import IOLoop
 from tornado.iostream import IOStream
@@ -28,22 +30,11 @@ NORMAL_COMMANDS = """
   """.strip().split()
 
 # ------------------------------------------------------------------------------
-# Before/After Blocks
+# Utility Functions
 # ------------------------------------------------------------------------------
 
-BLOCKING_BEFORE = """
-        if not isinstance(args[-1], (int, float)): args = args + (0,)
-        self._in_use = 1"""
-
-BLOCKING_AFTER = """
-        result = AsyncResult()
-        spawn(self.handle_response, cxn).link(result)
-        self._in_use = 0
-        try:
-            return result.get()
-        finally:
-            self._cxn = None
-            self._cxns.add(cxn)"""
+def set_max_connections(value):
+    Redis._max_cxns = value
 
 # ------------------------------------------------------------------------------
 # Exceptions
@@ -60,10 +51,13 @@ class Redis(object):
     """Async redis client."""
 
     _global_cxns = {}
-    _max_cxns = 100
+    _max_cxns = 5
     _open_cxns = 0
     _cxn = None
-    _in_use = 0
+    _in_txn = 0
+    _multi_wait = 0
+    _in_progress = 0
+    _opened = 0
 
     def __init__(self, host='', port=6379):
         self._addr = addr = (host, port)
@@ -73,13 +67,16 @@ class Redis(object):
             self._cxns = self._global_cxns[addr]
 
     def handle_connection_close(self, cxn):
-        print "BOOOM", cxn
         if not cxn._discarded:
-            Redis._open_cxns -= 1
             cxn._discarded = 1
+            Redis._open_cxns -= 1
             while cxn.queue:
-                _, cb = cxn.queue.popleft()
-                cb(None, socket.error("Connection closed."))
+                errback = cxn.queue.popleft()[-1]
+                if errback:
+                    try:
+                        errback(socket.error("Connection closed."))
+                    except Exception:
+                        pass
             del cxn.queue
         self._cxns.discard(cxn)
 
@@ -95,19 +92,16 @@ class Redis(object):
     for _spec in [
         ('SEND_REQUEST', None, '', ''),
         ('DEL', 'delete', '', ''),
-        ('BLPOP', BLOCKING_BEFORE, BLOCKING_AFTER),
-        ('BRPOP', BLOCKING_BEFORE, BLOCKING_AFTER),
-        ('MULTI', 'self._in_use = 1', ''),
-        ('EXEC', 'execute', '', """
-        result = AsyncResult()
-        spawn(self.handle_exec_response, cxn).link(result)
-        self._in_use = 0
-        return result.get()
-        """),
-        ('DISCARD', 'self._in_use = 0', ''),
-        ('WATCH', 'self._in_use = 1', ''),
-        ('UNWATCH', 'self._in_use = 1', ''),
-        # ('MONITOR', '', ''),
+        ('BLPOP', """
+        if not isinstance(args[-1], (int, float)): args = args + (0,)""", ""),
+        ('BRPOP', """
+        if not isinstance(args[-1], (int, float)): args = args + (0,)""", ""),
+        ('MULTI', '', "txn = 1"),
+        ('EXEC', 'execute', '', "multi = txn_end = 1"),
+        ('DISCARD', '', "txn_end = 1"),
+        ('WATCH', '', "txn = 1"),
+        ('UNWATCH', '', "txn = 1"),
+        ('MONITOR', '', "persist = 1"),
         ] + [(cmd, '', '') for cmd in NORMAL_COMMANDS]:
         if len(_spec) == 3:
             _command, _before, _after = _spec
@@ -118,14 +112,17 @@ class Redis(object):
             _name = 'send_request'
             _extra_1 = 'cmd, '
             _extra_2 = 'args = (cmd,) + args'
+            _extra_3 = 'args[0], '
         else:
-            _extra_1 = ''
+            _extra_1 = _extra_3 = ''
             _extra_2 = 'args = (%r,) + args' % _command
 
         exec(r"""def %s(self, %s*args, **kwargs):
+
         %s
 
         if not args:
+            self.close_connection()
             raise ValueError("No arguments specified for redis call.")
 
         cxn = self._cxn
@@ -136,11 +133,13 @@ class Redis(object):
                 for addr, open_cxns in self._global_cxns.iteritems():
                     if open_cxns:
                         closed = open_cxns.pop()
-                        closed.close_connection()
-                        Redis._open_cxns -= 1
+                        closed.close()
                         break
                 if not closed:
-                    Loop.add_timeout(0.1, lambda: self.%s(*args))
+                    Loop.add_timeout(
+                        time() + 0.1,
+                        lambda: self.%s.__raw__(self, %s *args[1:], **kwargs)
+                    )
                     return
             if cxns:
                 cxn = self._cxn = cxns.pop()
@@ -177,91 +176,194 @@ class Redis(object):
             self.close_connection()
             raise
 
+        multi = txn = txn_end = persist = None
+
         %s
 
-        def null(result, error):
-            print "NULL"
-            print repr(error)
-            print repr(result)
-
         callback = kwargs.pop('callback', None)
-        if not callback:
-            callback = lambda *args: None
-            callback = null
-        cxn.queue.append((1, callback))
-        # print 'yeah', cxn.queue[0] #, cxn._close_callback()
+        errback = kwargs.pop('errback', None)
+        cxn.queue.append([txn, txn_end, multi, persist, 1, callback, errback])
+        self.handle_response()
 
-        self.dispatch()
-        return""" % (_name, _extra_1, _extra_2, _name, _before, _after))
+        return""" % (_name, _extra_1, _extra_2, _name, _extra_3, _before, _after))
 
-    del _command, _name, _before, _after, _spec, _extra_1, _extra_2
+        locals()[_name] = async(locals()[_name])
 
-    def dispatch(self):
-        if not self._cxn:
-            return
-        if not self._cxn.queue:
-            cxn, self._cxn = self._cxn, None
-            self._cxns.add(cxn)
-            return
-        Loop.add_callback(self.handle_response)
+    del _command, _name, _before, _after, _spec, _extra_1, _extra_2, _extra_3
 
-    def handle_response(self, standalone=1):
+    def callback(self, result, err=None):
+        self._in_progress = 0
+        queue = self._cxn.queue
+        if self._multi_wait:
+            if err:
+                self._multi_wait = None
+                del self._multi_results, self._multi_result_left
+            elif self._multi_result_left is None:
+                self._multi_result_left = left = int(result[1:-2])
+                if left == -1:
+                    result = None
+                    self._multi_wait = None
+                    del self._multi_results, self._multi_result_left
+                else:
+                    return self._cxn.read_until('\r\n', self.handle_response)
+            else:
+                self._multi_result_left -= 1
+                self._multi_results.append(result)
+                if self._multi_result_left:
+                    return self._cxn.read_until('\r\n', self.handle_response)
+                else:
+                    result = self._multi_results
+                    self._multi_wait = None
+                    del self._multi_results, self._multi_result_left
+        txn, txn_end, multi, persist, stage, callback, errback = queue.popleft()
+        if self._in_txn and txn_end:
+            self._in_txn = 0
+        cb = errback if err else callback
+        Redis._opened += 1
+        if cb:
+            cb(result)
+        if persist:
+            queue.appendleft([txn, txn_end, multi, persist, 1, callback, errback])
+        if queue:
+            Loop.add_callback(self.handle_response)
+        else:
+            if not self._in_txn:
+                self._cxns.add(self._cxn)
+                self._cxn = None
+
+    def errback(self, error):
+        self.callback(error, 1)
+
+    def handle_response(self, data=None):
         try:
             cxn = self._cxn
+            txn, _, multi, _, stage, _, _ = cxn.queue[0]
+            if data is None:
+                if self._in_progress:
+                    return
+                if txn:
+                    self._in_txn = 1
+                self._in_progress = 1
+                if multi:
+                    self._multi_wait = 1
+                    self._multi_results = []
+                    self._multi_result_left = None
+                    return cxn.read_until('\r\n', self.callback)
+                return cxn.read_until('\r\n', self.handle_response)
+            if stage == 1:
+                opener = data[0]
+                if opener == '+':
+                    return self.callback(data[1:-2])
+                if opener == ':':
+                    return self.callback(int(data[1:-2]))
+                if opener == '$':
+                    length = int(data[1:-2])
+                    if length == -1:
+                        return self.callback(None)
+                    cxn.queue[0][-3] = 2
+                    return cxn.read_bytes(length+2, self.handle_response)
+                if opener == '-':
+                    return self.errback(RedisError(data[:-2]))
+                if opener == '*':
+                    self._results = []
+                    self._result_left = int(data[1:-2])
+                    cxn.queue[0][-3] = 3
+                    return cxn.read_until('\r\n', self.handle_response)
+                return self.errback(RedisError("Unknown response %r" % data))
+            if stage == 2:
+                return self.callback(data[:-2])
+            if stage == 3:
+                length = int(data[1:-2])
+                if length == -1:
+                    self._results.append(None)
+                    self._result_left -= 1
+                    if self._result_left:
+                        return cxn.read_until('\r\n', self.handle_response)
+                else:
+                    cxn.queue[0][-3] = 4
+                    return cxn.read_bytes(length+2, self.handle_response)
+            if stage == 4:
+                self._results.append(data[:-2])
+                self._result_left -= 1
+                if self._result_left:
+                    cxn.queue[0][-3] = 3
+                    return cxn.read_until('\r\n', self.handle_response)
+            results = self._results
+            del self._results, self._result_left
+            return self.callback(results)
         except Exception:
-            pass
-        finally:
-            stream = cxn._readable_fileobj
-            opener = stream.read(1)
-            if opener == '+':
-                return stream.readline()[:-2]
-            if opener == ':':
-                return int(stream.readline()[:-2])
-            if opener == '$':
-                length = int(stream.readline()[:-2])
-                if length == '-1':
-                    return None
-                return stream.read(length+2)[:-2]
-            if opener == '*':
-                result = []; out = result.append
-                readline = stream.readline; read = stream.read
-                for i in xrange(int(readline()[:-2])):
-                    length = int(readline()[1:-2])
-                    if length == '-1':
-                        out(None)
-                    out(read(length+2)[:-2])
-                return result
-            if opener == '-':
-                if standalone:
-                    raise RedisError(stream.readline()[:-2])
-                return RedisError(stream.readline()[:-2])
-            raise RedisError("Unknown response type %r" % opener)
-        #except socket.error:
-            #self.close_connection()
-            #raise
-        #finally:
-        #    pass
-            #if standalone and not self._in_use:
-                #self._cxn = None
-                #self._cxns.add(cxn)
+            self.close_connection()
+            raise
 
-    def handle_exec_response(self, cxn):
+
+if __name__ == '__main__':
+
+    from adisp import process
+
+    N = 200
+    set_max_connections(100)
+
+    @process
+    def test_set(i):
+        redis = Redis()
+        x = yield redis.send_request('set', 'foo', i)
+        yield redis.multi()
+        x = yield redis.set('foo', i)
+        print x
         try:
-            stream = cxn._readable_fileobj
-            responses = []; out = responses.append
-            handle_response = self.handle_response
-            for i in xrange(int(stream.readline()[1:-2])):
-                out(handle_response(standalone=0))
-        finally:
-            self._cxn = None
-            self._cxns.add(cxn)
-        return responses
+            x = yield redis.get('foo', i)
+        except Exception, error:
+            print "aaas", error
+        x = yield redis.incr('foos')
+        print x
+        x = yield redis.incr('foo')
+        print repr(x)
+        x = yield redis.execute()
+        print repr(x)
+        return
+        try:
+            x = yield redis.send_request('ping')
+        except Exception, error:
+            print 'got error', repr(error), "fa"
+            return
+        # x = yield redis.ping()
+        print x
+        #_ = yield redis.set('foo', i)
+        # print _, i
 
-r = Redis()
+    @process
+    def test_get():
+        redis = Redis()
+        result = yield redis.send_request('get', 'foo')
+        print "Got:", result
 
-r.set('foo', 'bar')
+    def test_monitor():
+        def handle_monitor_line(line):
+            print "mon", line
+        redis = Redis()
+        redis.monitor()(handle_monitor_line)
 
-Loop.start()
+    test_monitor()
+
+    for i in xrange(N):
+        test_set(i)
+    else:
+        print 'get'
+        test_get()
+
+    def print_max():
+        print Redis._opened
+        Loop.add_timeout(time() + 1, print_max)
+
+    print_max()
+
+    def on_event(result):
+        print "GOT!!", result
+
+    r = Redis()
+    r.blpop('hmz')(callback=on_event)
+
+    Loop.start()
 
 # r = Redis('espians.com', 9094)
 
