@@ -8,6 +8,8 @@ from adisp import async
 from collections import deque
 from time import time
 
+from pyutil.async import wrap_method
+
 from tornado.ioloop import IOLoop
 from tornado.iostream import IOStream
 
@@ -151,7 +153,7 @@ class Redis(object):
                         now + 0.1,
                         lambda: self.%s.__raw__(self, %s *args[1:], **kwargs)
                     )
-                    return
+                    return self
             if cxns:
                 cxn = self._cxn = cxns.pop()
             else:
@@ -196,9 +198,9 @@ class Redis(object):
         cxn.queue.append([txn, txn_end, multi, persist, 1, callback, errback])
         self.handle_response()
 
-        return""" % (_name, _extra_1, _extra_2, _name, _extra_3, _before, _after))
+        return self""" % (_name, _extra_1, _extra_2, _name, _extra_3, _before, _after))
 
-        locals()[_name] = async(locals()[_name])
+        locals()[_name] = wrap_method(locals()[_name])
 
     del _command, _name, _before, _after, _spec, _extra_1, _extra_2, _extra_3
 
@@ -310,6 +312,13 @@ class Redis(object):
 if __name__ == '__main__':
 
     from adisp import process
+
+    redis = Redis()
+    def handle_get(result):
+        print "GOT:", result
+
+    redis.set('name', 'tav', run=1)
+    redis.get('name')(handle_get)
 
     N = 200
     set_max_connections(5)
