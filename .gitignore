@@ -13,14 +13,19 @@ src/tools/makeucd/UnicodeData.txt
 
 src/zero/client_libs/appengine/secret.py
 src/zero/client_libs/appengine/updated.py
-src/zero/css/*.css
-src/zero/js/*.js
+src/zero/logstore/app.yaml
+src/zero/logstore/secret.py
+src/zero/logstore/updated.py
+src/zero/espra/*.css
+src/zero/espra/*.js
+src/zero/espra/fabfile.py
 src/zero/espra/secret.py
 src/zero/espra/updated.py
-src/zero/espra/static/*.css
-src/zero/espra/static/*.js
-src/zero/js/ucd.js
-src/zero/sensor/sensor.js
+src/zero/espra/www/*.css
+src/zero/espra/www/*.js
+src/zero/zerodata/app.yaml
+src/zero/zerodata/secret.py
+src/zero/zerodata/updated.py
 
 # minified css/js files
 
