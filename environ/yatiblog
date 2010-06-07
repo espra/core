@@ -9,6 +9,4 @@ import pylibs
 
 from pyutil.yatiblog import main
 
-
-if __name__ == '__main__':
-    main()
+main()

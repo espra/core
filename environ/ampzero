@@ -5,6 +5,6 @@
 
 import pylibs
 
-from ampzero.remonit import main
+from ampzero.main import main
 
 main()
