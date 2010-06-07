@@ -98,9 +98,9 @@ function _have () {
 export AMPIFY_LOCAL=$AMPIFY_ROOT/environ/local
 
 if [ "x$PATH" != "x" ]; then
-	export PATH=$AMPIFY_ROOT/environ:$AMPIFY_LOCAL/bin:$AMPIFY_ROOT/src/tools/codereview:$PATH
+	export PATH=$AMPIFY_ROOT/environ:$AMPIFY_LOCAL/bin:$AMPIFY_ROOT/src/codereview:$PATH
 else
-	export PATH=$AMPIFY_ROOT/environ:$AMPIFY_LOCAL/bin:$AMPIFY_ROOT/src/tools/codereview
+	export PATH=$AMPIFY_ROOT/environ:$AMPIFY_LOCAL/bin:$AMPIFY_ROOT/src/codereview
 fi
 
 case $_OS_NAME in
@@ -117,9 +117,9 @@ case $_OS_NAME in
 esac
 	
 if [ "x$PYTHONPATH" != "x" ]; then
-	export PYTHONPATH=$AMPIFY_ROOT/src:$AMPIFY_ROOT/third_party/pylibs:$PYTHONPATH
+	export PYTHONPATH=$AMPIFY_ROOT/src:$AMPIFY_ROOT/src/zero:$AMPIFY_ROOT/third_party/pylibs:$PYTHONPATH
 else
-	export PYTHONPATH=$AMPIFY_ROOT/src:$AMPIFY_ROOT/third_party/pylibs
+	export PYTHONPATH=$AMPIFY_ROOT/src:$AMPIFY_ROOT/src/zero:$AMPIFY_ROOT/third_party/pylibs
 fi
 
 if [ "x$MANPATH" != "x" ]; then
