@@ -164,9 +164,9 @@ def configure(ctx):
 
     ctx.env['AMPIFY_ROOT'] = ROOT
     ctx.env['AMPIFY_BIN'] = BIN
-    ctx.env['ZERO_STATIC'] = join(ROOT, 'src', 'zero', 'espra', 'static')
-    ctx.env['ZERO_COFFEE_OUTPUT'] = join(ROOT, 'src', 'zero', 'js')
-    ctx.env['ZERO_SASS_OUTPUT'] = join(ROOT, 'src', 'zero', 'css')
+    ctx.env['ZERO_STATIC'] = join(ROOT, 'src', 'zero', 'espra', 'www')
+    ctx.env['ZERO_COFFEE_OUTPUT'] = join(ROOT, 'src', 'zero', 'espra')
+    ctx.env['ZERO_SASS_OUTPUT'] = join(ROOT, 'src', 'zero', 'espra', 'www')
 
 def build(ctx):
     """build ampify"""
@@ -269,7 +269,7 @@ def build_zero(ctx):
 
     coffeescript_files = [
         'third_party/coffee-script/examples/underscore.coffee'
-        ] + ctx.path.ant_glob('src/zero/js/*.coffee').split()
+        ] + ctx.path.ant_glob('src/zero/espra/*.coffee').split()
 
     for path in coffeescript_files:
         dest_path = '%s.js' % path.rsplit('.', 1)[0]
@@ -284,7 +284,7 @@ def build_zero(ctx):
         reentrant=False
         )
 
-    for path in ctx.path.ant_glob('src/zero/css/*.sass').split():
+    for path in ctx.path.ant_glob('src/zero/espra/*.sass').split():
         dest_path = '%s.css' % path.rsplit('.', 1)[0]
         ctx(source=path)
         ctx.install_files('${ZERO_SASS_OUTPUT}', dest_path)
@@ -349,13 +349,13 @@ def build_zero(ctx):
         % join(BIN, JAR_FILES['yuicompressor.jar'])
         )
 
-    ctx(target='src/zero/espra/static/espra.min.css',
-        source='src/zero/css/espra.css',
+    ctx(target='src/zero/espra/www/site.min.css',
+        source='src/zero/espra/site.css',
         rule=css_minify,
         after=['yuicompressor.jar', 'sass'],
         name="css.minify")
 
-    ctx.install_files('${ZERO_STATIC}', 'src/zero/espra/static/espra.min.css')
+    ctx.install_files('${ZERO_STATIC}', 'src/zero/espra/www/site.min.css')
 
     def pylibs_install(task):
         if not ctx.is_install > 0:
@@ -452,13 +452,12 @@ def build_zero(ctx):
         'third_party/coffee-script/examples/underscore.js',
         wrap_end,
         wrap_start,
-        'src/zero/js/naaga.js',
-        'src/zero/js/espra.js',
+        'src/zero/espra/ampzero.js',
         wrap_end
         ]
 
     concat_js(
-        'zero.js', zerojs_segments, 'src/zero/espra/static/zero.js',
+        'ampzero.js', zerojs_segments, 'src/zero/espra/www/ampzero.js',
         '${ZERO_STATIC}'
         )
 
