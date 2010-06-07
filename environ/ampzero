@@ -5,6 +5,6 @@
 
 import pylibs
 
-from ampzero.main import main
+from ampzero.app import main
 
 main()
