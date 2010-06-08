@@ -18,10 +18,14 @@ out = 'build'
 
 APPNAME = 'ampify'
 VERSION = 'zero'
+INSTALL_VERSION = 1
 
 ROOT = os.path.realpath(os.getcwd())
 LOCAL = os.path.join(ROOT, 'environ', 'local')
 BIN = os.path.join(LOCAL, 'bin')
+INCLUDE = os.path.join(LOCAL, 'include')
+INFO = os.path.join(LOCAL, 'share', 'info')
+LIB = os.path.join(LOCAL, 'lib')
 RECEIPTS = os.path.join(LOCAL, 'share', 'installed')
 TMP = os.path.join(LOCAL, 'tmp')
 
@@ -83,10 +87,16 @@ def write_dummy_target(task, target=None):
 # distfiles support
 # ------------------------------------------------------------------------------
 
-def default_install():
-    do(['./configure', '--prefix', LOCAL])
-    do([make])
-    do([make, 'install'])
+def default_install(extra=None):
+    config = ['./configure', '--prefix', LOCAL]
+    if extra:
+        config.extend(extra)
+    env = os.environ.copy()
+    env['CPPFLAGS'] = '-I%s' % INCLUDE
+    env['LDFLAGS'] = '-L%s' % LIB
+    do(config, env=env)
+    do([make], env=env)
+    do([make, 'install'], env=env)
 
 def bdb_install():
     if os.name != 'posix':
@@ -100,16 +110,22 @@ def bdb_install():
     do([make])
     do([make, 'install'])
 
-def python_install():
-    do(['./configure', '--prefix', LOCAL, '--enable-unicode=ucs2',
-        '--enable-ipv6'])
+def openssl_install():
+    do(['./config', 'shared', 'no-idea', 'no-krb5', 'no-mdc2', 'no-rc5', 'zlib',
+        '--prefix=%s' % LOCAL, '-L%s' % LIB, '-I%s' % INCLUDE])
     do([make])
     do([make, 'install'])
 
 DISTFILES = {
-    'db': ('4.8.26', bdb_install),
-    'libevent': ('1.4.13', default_install),
-    'python': ('2.7rc1', python_install)
+    'db': ('4.8.26', bdb_install, []),
+    'libevent': ('1.4.13', None, []),
+    'python': ('2.7rc1', ['--enable-unicode=ucs2', '--enable-ipv6'], [
+        'readline.install', 'openssl.install', 'zlib.install'
+        ]),
+    'openssl': ('0.9.8o', openssl_install, ['zlib.install']),
+    'pcre': ('8.02', None, ['zlib.install']),
+    'readline': ('6.1', ['--infodir=%s' % INFO], []),
+    'zlib': ('1.2.5', None, [])
     }
 
 # ------------------------------------------------------------------------------
@@ -118,6 +134,7 @@ DISTFILES = {
 
 def set_options(ctx):
     ctx.add_option('--zero', action='store_true', help='build the zero variant')
+    ctx.add_option('--force', action='store_true', help='override base checks')
 
 def configure(ctx):
     """configure the ampify installation"""
@@ -176,12 +193,14 @@ def configure(ctx):
         ctx.fatal('Java 6 Runtime not found!')
 
     ctx.find_program(make, var='MAKE', mandatory=True)
+    ctx.find_program('perl', var='PERL', mandatory=True)
     ctx.find_program('ruby', var='RUBY', mandatory=True)
     ctx.find_program('sass', var='SASS', mandatory=True)
     ctx.find_program('touch', var='TOUCH', mandatory=True)
 
     ctx.env['AMPIFY_ROOT'] = ROOT
     ctx.env['AMPIFY_BIN'] = BIN
+    ctx.env['INSTALL_VERSION'] = INSTALL_VERSION
     ctx.env['ZERO_STATIC'] = join(ROOT, 'src', 'zero', 'espra', 'www')
     ctx.env['ZERO_COFFEE_OUTPUT'] = join(ROOT, 'src', 'zero', 'espra')
     ctx.env['ZERO_SASS_OUTPUT'] = join(ROOT, 'src', 'zero', 'espra', 'www')
@@ -199,6 +218,17 @@ def build_zero(ctx):
     from shutil import copy
     from stat import S_ISDIR, ST_MODE, ST_MTIME
     from urllib import urlopen
+
+    if INSTALL_VERSION != ctx.env.INSTALL_VERSION:
+        if not Options.options.force:
+            Logs.error("""
+            The base setup has changed!!
+
+            Please run ``make distclean`` and start again with ./configure.
+
+            Thanks!
+            """)
+            sys.exit(1)
 
     if not os.environ.get('AMPIFY_ROOT'):
         Logs.error(AMPENV_ERROR_MESSAGE)
@@ -340,7 +370,12 @@ def build_zero(ctx):
                 tar.extractall()
                 tar.close()
                 os.chdir(base)
-                installer()
+                _installer = installer
+                if not _installer:
+                    _installer = default_install
+                elif isinstance(_installer, list):
+                    _installer = lambda: default_install(installer)
+                _installer()
                 os.chdir(cwd)
                 dest = open(dest_path, 'wb')
                 dest.write('1')
@@ -349,7 +384,7 @@ def build_zero(ctx):
 
         return install
 
-    for distfile, (version, installer) in DISTFILES.iteritems():
+    for distfile, (version, installer, deps) in DISTFILES.iteritems():
 
         base = "%s-%s" % (distfile, version)
 
@@ -360,7 +395,7 @@ def build_zero(ctx):
         ctx(target="%s.install" % base,
             rule=install_distfile(base, installer),
             name="%s.install" % distfile,
-            after='%s.tar.gz' % distfile)
+            after=['%s.tar.gz' % distfile] + deps)
 
     css_minify = (
         "${JAVA} -jar %s --charset utf-8 ${SRC} -o ${TGT}"
@@ -534,6 +569,22 @@ def distclean(ctx):
 
 def clean(ctx):
     """remove the generated files"""
+
+    from errno import ENOENT
+    from os.path import join
+    from shutil import rmtree
+
+    for name, path in [
+        # ('environ/local/tmp', TMP),
+        ('environ/local/docs', join(LOCAL, 'docs')),
+        ]:
+        try:
+            rmtree(path)
+        except IOError:
+            pass
+        except OSError, e:
+            if e.errno != ENOENT:
+                Logs.warn("Couldn't remove the %s directory." % name)
 
     Scripting.clean(ctx)
 
