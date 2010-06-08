@@ -28,6 +28,7 @@ INFO = os.path.join(LOCAL, 'share', 'info')
 LIB = os.path.join(LOCAL, 'lib')
 RECEIPTS = os.path.join(LOCAL, 'share', 'installed')
 TMP = os.path.join(LOCAL, 'tmp')
+VAR = os.path.join(LOCAL, 'var')
 
 DOWNLOAD_ROOT = "http://cloud.github.com/downloads/tav/ampify/"
 
@@ -71,7 +72,17 @@ def do(*args, **kwargs):
     if 'redirect_stderr' not in kwargs:
         kwargs['redirect_stderr'] = False
 
-    return run_command(*args, **kwargs)
+    if 'retcode' in kwargs:
+        return run_command(*args, **kwargs)
+
+    kwargs['retcode'] = 1
+    result = run_command(*args, **kwargs)
+
+    retcode = result[-1]
+    if retcode:
+        raise ValueError("Error running %s" % ' '.join(args[0]))
+
+    return result[:-1]
 
 def get_target(task):
     return task.outputs[0].bldpath(task.env)
@@ -110,6 +121,29 @@ def bdb_install():
     do([make])
     do([make, 'install'])
 
+def nginx_install():
+    join = os.path.join
+    nginx = join(LOCAL, 'nginx')
+    tmp = join(nginx, 'tmp')
+    os.makedirs(tmp)
+    config = [
+        './configure', '--with-http_stub_status_module',
+        '--prefix=%s' % nginx,
+        '--sbin-path=%s' % join(BIN, 'nginx'),
+        '--conf-path=%s' % join(nginx, 'etc', 'nginx.conf'),
+        '--pid-path=%s' % join(nginx, 'var', 'nginx.pid'),
+        '--error-log-path=%s' % join(nginx, 'var', 'error.log'),
+        '--http-log-path=%s' % join(nginx, 'var', 'access.log'),
+        '--http-client-body-temp-path=%s' % join(tmp, 'http_client'),
+        '--http-proxy-temp-path=%s' % join(tmp, 'proxy'),
+        '--http-fastcgi-temp-path=%s' % join(tmp, 'fastcgi'),
+        '--with-cc-opt=-I%s' % INCLUDE, '--with-ld-opt=-L%s' % LIB,
+        '--with-ipv6', '--with-http_ssl_module'
+        ]
+    do(config)
+    do([make])
+    do([make, 'install'])
+
 def openssl_install():
     do(['./config', 'shared', 'no-idea', 'no-krb5', 'no-mdc2', 'no-rc5', 'zlib',
         '--prefix=%s' % LOCAL, '-L%s' % LIB, '-I%s' % INCLUDE])
@@ -122,6 +156,8 @@ DISTFILES = {
     'python': ('2.7rc1', ['--enable-unicode=ucs2', '--enable-ipv6'], [
         'readline.install', 'openssl.install', 'zlib.install'
         ]),
+    'nginx': ('0.7.65', nginx_install,
+              ['openssl.install', 'pcre.install', 'zlib.install']),
     'openssl': ('0.9.8o', openssl_install, ['zlib.install']),
     'pcre': ('8.02', None, ['zlib.install']),
     'readline': ('6.1', ['--infodir=%s' % INFO], []),
