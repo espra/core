@@ -137,6 +137,18 @@ def configure(ctx):
     if not ctx.env.CXX:
         ctx.fatal('C++ Compiler not found!')
 
+    try:
+        gcc_ver = do(
+            [ctx.env.CC[0], '--version'], redirect_stdout=True,
+            reterror=True
+            )
+        gcc_ver = gcc_ver[0].splitlines()[0].split()[0].split('-')[-1]
+        gcc_ver = tuple(map(int, gcc_ver.split('.')))
+        if gcc_ver < (4, 2):
+            raise RuntimeError("Invalid GCC version")
+    except:
+        ctx.fatal('GCC 4.2+ not found!')
+
     ctx.check_tool('bison')
     ctx.check_tool('flex')
     ctx.check_tool('libtool')
