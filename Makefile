@@ -27,8 +27,8 @@ build:
 	@$(WAF) build
 
 clean:
-	@$(WAF) uninstall --zero
-	@$(WAF) clean --zero
+	@$(WAF) uninstall --zero --force
+	@$(WAF) clean --zero --force
 
 debug:
 	@$(WAF) build --debug
