@@ -100,9 +100,16 @@ def bdb_install():
     do([make])
     do([make, 'install'])
 
+def python_install():
+    do(['./configure', '--prefix', LOCAL, '--enable-unicode=ucs2',
+        '--enable-ipv6'])
+    do([make])
+    do([make, 'install'])
+
 DISTFILES = {
     'db': ('4.8.26', bdb_install),
-    'libevent': ('1.4.13', default_install)
+    'libevent': ('1.4.13', default_install),
+    'python': ('2.7rc1', python_install)
     }
 
 # ------------------------------------------------------------------------------
@@ -139,11 +146,10 @@ def configure(ctx):
 
     try:
         gcc_ver = do(
-            [ctx.env.CC[0], '--version'], redirect_stdout=True,
+            [ctx.env.CC[0], '-dumpversion'], redirect_stdout=True,
             reterror=True
             )
-        gcc_ver = gcc_ver[0].splitlines()[0].split()[0].split('-')[-1]
-        gcc_ver = tuple(map(int, gcc_ver.split('.')))
+        gcc_ver = tuple(map(int, gcc_ver[0].strip().split('.')))
         if gcc_ver < (4, 2):
             raise RuntimeError("Invalid GCC version")
     except:
@@ -369,10 +375,12 @@ def build_zero(ctx):
 
     ctx.install_files('${ZERO_STATIC}', 'src/zero/espra/www/site.min.css')
 
+    python_exe = join(BIN, 'python')
+
     def pylibs_install(task):
         if not ctx.is_install > 0:
             return
-        stdout, retval = do([sys.executable, 'setup.py'],
+        stdout, retval = do([python_exe, 'setup.py'],
                             retcode=True,
                             cwd=join(ROOT, 'third_party', 'pylibs'))
         if retval:
@@ -380,14 +388,14 @@ def build_zero(ctx):
 
     ctx(source='pylibs.check',
         rule=pylibs_install,
-        after=['pylibs.check', 'libevent.install'],
+        after=['pylibs.check', 'libevent.install', 'python.install'],
         name='pylibs.install')
 
     def pyutil_install(task):
         if not ctx.is_install > 0:
             return
         stdout, retval = do(
-            [sys.executable, 'setup.py'],
+            [python_exe, 'setup.py'],
             retcode=True,
             cwd=join(ROOT, 'src'),
             redirect_stdout=True
@@ -398,6 +406,7 @@ def build_zero(ctx):
 
     ctx(rule=pyutil_install,
         name='pyutil.install',
+        after=['python.install'],
         always=True)
 
     wrap_start = object()
