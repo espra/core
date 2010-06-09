@@ -84,6 +84,22 @@ def do(*args, **kwargs):
 
     return result[:-1]
 
+def delete_directory(path, name=None):
+
+    from errno import ENOENT
+    from shutil import rmtree
+
+    if not name:
+        name = path
+
+    try:
+        rmtree(path)
+    except IOError:
+        pass
+    except OSError, e:
+        if e.errno != ENOENT:
+            Logs.warn("Couldn't remove the %s directory." % name)
+
 def get_target(task):
     return task.outputs[0].bldpath(task.env)
 
@@ -576,19 +592,13 @@ def distclean(ctx):
 
     Scripting.distclean(ctx)
 
-    for name, path in [
-        ('environ/local', LOCAL),
-        ('src/build', join(ROOT, 'src', 'build')),
-        ('third_party/pylibs/build',
-         join(ROOT, 'third_party', 'pylibs', 'build'))
-        ]:
-        try:
-            rmtree(path)
-        except IOError:
-            pass
-        except OSError, e:
-            if e.errno != ENOENT:
-                Logs.warn("Couldn't remove the %s directory." % name)
+    delete_directory(LOCAL, 'environ/local')
+    delete_directory(join(ROOT, 'src', 'build'), 'src/build')
+
+    delete_directory(
+        join(ROOT, 'third_party', 'pylibs', 'build'),
+        'third_party/pylibs/build'
+        )
 
     redis = join(ROOT, 'third_party', 'redis')
     do([make, 'clean'], cwd=redis)
@@ -607,26 +617,12 @@ def distclean(ctx):
 def clean(ctx):
     """remove the generated files"""
 
-    from errno import ENOENT
-    from os.path import join
-    from shutil import rmtree
-
-    for name, path in [
-        # ('environ/local/tmp', TMP),
-        ('environ/local/docs', join(LOCAL, 'docs')),
-        ]:
-        try:
-            rmtree(path)
-        except IOError:
-            pass
-        except OSError, e:
-            if e.errno != ENOENT:
-                Logs.warn("Couldn't remove the %s directory." % name)
+    delete_directory(os.path.join(LOCAL, 'docs'), 'environ/local/docs')
+    # delete_directory(TMP, 'environ/local/tmp')
 
     Scripting.clean(ctx)
 
 def uninstall(ctx):
-
     Scripting.uninstall(ctx)
 
 # ------------------------------------------------------------------------------
