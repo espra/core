@@ -125,7 +125,8 @@ def nginx_install():
     join = os.path.join
     nginx = join(LOCAL, 'nginx')
     tmp = join(nginx, 'tmp')
-    os.makedirs(tmp)
+    if not os.path.exists(tmp):
+        os.makedirs(tmp)
     config = [
         './configure', '--with-http_stub_status_module',
         '--prefix=%s' % nginx,
@@ -206,7 +207,7 @@ def configure(ctx):
         if gcc_ver < (4, 2):
             raise RuntimeError("Invalid GCC version")
     except:
-        ctx.fatal('GCC 4.2+ not found!')
+        ctx.fatal('%s is not gcc 4.2+' % ctx.env.CC[0])
 
     ctx.check_tool('bison')
     ctx.check_tool('flex')
