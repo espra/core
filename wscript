@@ -204,10 +204,10 @@ def configure(ctx):
             reterror=True
             )
         gcc_ver = tuple(map(int, gcc_ver[0].strip().split('.')))
-        if gcc_ver < (4, 2):
+        if gcc_ver < (4, 0):
             raise RuntimeError("Invalid GCC version")
     except:
-        ctx.fatal('%s is not gcc 4.2+' % ctx.env.CC[0])
+        ctx.fatal('%s is not gcc 4.0+' % ctx.env.CC[0])
 
     ctx.check_tool('bison')
     ctx.check_tool('flex')
