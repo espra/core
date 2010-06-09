@@ -14,6 +14,7 @@ release for the end of this year — [see the planfile].
     $ git update
     $ ./configure
     $ make
+    $ less src/zero/README.md
 
 **Resources**
 
