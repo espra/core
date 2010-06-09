@@ -79,7 +79,7 @@ def do(*args, **kwargs):
     result = run_command(*args, **kwargs)
 
     retcode = result[-1]
-    if retcode:
+    if retcode and not Options.options.force:
         raise ValueError("Error running %s" % ' '.join(args[0]))
 
     return result[:-1]
@@ -98,7 +98,7 @@ def delete_directory(path, name=None):
         pass
     except OSError, e:
         if e.errno != ENOENT:
-            Logs.warn("Couldn't remove the %s directory." % name)
+            Logs.error("Couldn't remove the %s directory." % name)
 
 def get_target(task):
     return task.outputs[0].bldpath(task.env)
@@ -136,6 +136,7 @@ def bdb_install():
     do(['../dist/configure', '--enable-cxx', '--prefix', LOCAL])
     do([make])
     do([make, 'install'])
+    delete_directory(os.path.join(LOCAL, 'docs'), 'environ/local/docs')
 
 def nginx_install():
     join = os.path.join
@@ -393,8 +394,9 @@ def build_zero(ctx):
     def download_file(filename, directory=BIN):
 
         def download(task):
+            receipt_path = join(RECEIPTS, filename)
             dest_path = join(directory, filename)
-            if not exists(dest_path):
+            if not exists(receipt_path):
                 Logs.warn("Downloading %s" % filename)
                 source = urlopen(DOWNLOAD_ROOT + filename)
                 data = source.read()
@@ -402,6 +404,9 @@ def build_zero(ctx):
                 dest = open(dest_path, 'wb')
                 dest.write(data)
                 dest.close()
+                receipt = open(receipt_path, 'wb')
+                receipt.write('1')
+                receipt.close()
             write_dummy_target(task)
 
         return download
@@ -422,6 +427,7 @@ def build_zero(ctx):
                 tar = tarfile.open("%s.tar.gz" % base, 'r:gz')
                 tar.extractall()
                 tar.close()
+                os.remove("%s.tar.gz" % base)
                 os.chdir(base)
                 _installer = installer
                 if not _installer:
@@ -433,6 +439,7 @@ def build_zero(ctx):
                 dest = open(dest_path, 'wb')
                 dest.write('1')
                 dest.close()
+                delete_directory(join(TMP, base), 'environ/local/tmp/%s' % base)
             write_dummy_target(task)
 
         return install
@@ -449,6 +456,13 @@ def build_zero(ctx):
             rule=install_distfile(base, installer),
             name="%s.install" % distfile,
             after=['%s.tar.gz' % distfile] + deps)
+
+    # get rid of the bloat from the python tests directory
+    ctx(rule=lambda task: delete_directory(
+            join(LIB, 'python2.7', 'test'), 'lib/python2.7/test'
+        ),
+        name='python.install.cleanup',
+        after=['python.install'])
 
     css_minify = (
         "${JAVA} -jar %s --charset utf-8 ${SRC} -o ${TGT}"
@@ -617,7 +631,6 @@ def distclean(ctx):
 def clean(ctx):
     """remove the generated files"""
 
-    delete_directory(os.path.join(LOCAL, 'docs'), 'environ/local/docs')
     # delete_directory(TMP, 'environ/local/tmp')
 
     Scripting.clean(ctx)
