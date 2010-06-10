@@ -291,7 +291,7 @@ add yourself to the `AUTHORS` file and send a pull request to me —
 
 
 
-[README]: ../../README.md
+[README]: http://github.com/tav/ampify/blob/master/README.md
 [convention over configuration]: http://en.wikipedia.org/wiki/Convention_over_configuration
 [https://localhost:8040]: https://localhost:8040/
 [TyphoonAE]: http://code.google.com/p/typhoonae/
