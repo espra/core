@@ -8,13 +8,13 @@ See the sections below for further info on each command:
 
 **Quickstart**
 
-Assuming you wanted to call your instance, `kickass`, run:
+Assuming you want to call your instance "kickass", run:
 
     $ ampinit kickass
     $ amprun kickass
 
 And then, assuming you'd chosen the default port settings, point your  
-browser at [https://localhost:8040].
+browser at [https://localhost:8040]. Tada!
 
 **Introduction**
 
