@@ -1,3 +1,4 @@
+
 This directory houses the code and resources for the proof of concept  
 version of Ampify — Ampify Zero.
 
@@ -7,8 +8,8 @@ IT DOESN'T WORK YET.
 
 Assuming you want to call your instance "kickass", run:
 
-    $ ampinit kickass
-    $ amprun kickass
+    $ ampzero init kickass
+    $ ampzero run kickass
 
 And then, assuming you'd chosen the default port settings, point your  
 browser at [https://localhost:8040]. Tada!
@@ -23,15 +24,15 @@ Ampify Zero setup (Keyspace cluster, Redis servers, Google App Engine
 instances and ampzero itself).
 
 And unless you're used to modern "high-scalability" deployments in other  
-contexts, it could all be quite a head fuck. Therefore, a few utility scripts  
-are provided to help ease the pain.
+contexts, it could all be quite a head fuck. Therefore, a utility script  
+is provided to help ease the pain.
 
 **Initialise A New Setup**
 
-The `ampinit` script is used to create a completely new instance. So, if  
+The `ampzero init` command is used to create a completely new instance. So, if  
 you want to create an instance called `kickass`, you'd create it with:
 
-    $ ampinit kickass
+    $ ampzero init kickass
 
 The layout of the instance directory would look like:
 
@@ -88,21 +89,21 @@ Then the new `kickass` instance will be at:
 
     /home/tav/repo/kickass
 
-The are two reasons for this. First of all, the various scripts tend towards  
+The are two reasons for this. First of all, the various commands tend towards  
 a "[convention over configuration]" approach and many files are symlinked  
 using relative paths.
 
 Secondly, Ampify Zero is still in development and by using symlinks, it  
 helps keep various files in sync without too much hassle.
 
-Now when you run `ampinit`, it will ask you various questions and will  
+Now when you run `ampzero init`, it will ask you various questions and will  
 use your answers to create the relevant files — just hit enter to use the  
 default values for the questions.
 
 Most of the files can be easily re-created. And you can even over-write  
 the files in an existing instance, e.g.
 
-    $ ampinit kickass --clobber
+    $ ampzero init kickass --clobber
 
 This is useful to keep up with any changes that might be available in the  
 ampify repository.
@@ -119,13 +120,13 @@ These contain public/private/control keys for you and your instance:
 
 The public key components will have been signed by `amphub.org` and  
 you'd have been given unique user and instance ID numbers when you  
-first ran `ampinit`.
+first ran `ampzero init`.
 
 You can share the public key and ID numbers, but the private and control  
 keys must be kept safe and private. The control key in particular is used  
 to update your keys with `amphub.org` — never share it!
 
-And, finally, `ampinit` will have automatically setup a git repository in  
+And, finally, `ampzero init` will have automatically setup a git repository in  
 the instance directory. You might want to push this to a private GitHub  
 repo (or equivalent) for both backup and collaboration purposes.
 
@@ -134,10 +135,10 @@ The control keys will not be checked into this repo and are excluded via
 
 **Running Ampify Zero**
 
-Once you have an instance setup, you can use `amprun` to run all the  
-components at once, e.g. to run the above `kickass`, you'd:
+Once you have an instance setup, you can use `ampzero run` to run  
+all the components at once, e.g. to run the above `kickass`, you'd:
 
-    $ amprun kickass
+    $ ampzero run kickass
 
 Behind the scenes, this would start up a bunch of different processes:
 
@@ -148,111 +149,120 @@ Behind the scenes, this would start up a bunch of different processes:
 * ampzero instances
 * nginx frontend
 
-And, assuming that you'd chosen the default port settings, you should  
-now be able to point your browser at the following URL and login:
+And, assuming that you'd chosen the default port settings, you  
+should now be able to point your browser at the following URL and  
+login:
 
 * [https://localhost:8040]
 
-The various log, pid and related files for these processes will be within  
-the `amprun_root` setting as specified in your `amprun.yaml` file  
-and defaults to:
+The various log, pid and related files for these processes will be  
+within the `amprun_root_directory` setting as specified in your  
+`amprun.yaml` file and defaults to:
 
     /opt/ampzero/var/
 
-You might want to fix up the directory permissions by doing something  
-like:
+When you run `ampzero init` it might run commands via sudo  
+to fix the directory permissions. You can do this yourself by  
+doing  something like:
 
     $ sudo mkdir /opt/ampzero
     $ sudo chown your-username /opt/ampzero
 
-By default, the amprun process daemonises itself. You can suppress  
-this with the `--no-daemon` parameter — allowing you to kill all the  
-processes with a single ^C.
+By default, the ampzero run process daemonises itself. You can  
+suppress this with the `--no-daemon` parameter — allowing you  
+to kill all the processes with a single ^C.
 
 Otherwise, you can stop or force quit a running set of processes, e.g.
 
-    $ amprun kickass stop
-    $ amprun kickass quit
+    $ ampzero run kickass stop
+    $ ampzero run kickass quit
 
 You can also enable debug mode settings, e.g.
 
-    $ amprun kickass --debug
+    $ ampzero run kickass --debug
 
 This also implicitly sets the `--no-daemon` parameter.
 
-By default, your instance will communicate with `amphub.org` so that  
-other instances can know how to contact you. You can disable this:
+By default, your instance will communicate with `amphub.org`  
+so that other instances can know how to contact you. You can  
+disable this:
 
-    $ amprun kickass --no-hub
+    $ ampzero run kickass --no-hub
 
-However, until amp routing is developed, other nodes will not be able  
-to contact you if your address changes and you're in this mode. It can,  
-however, be quite useful whilst you're developing though.
+However, until amp routing is developed, other nodes will not be  
+able to contact you if your address changes and you're in this  
+mode. It can, however, be quite useful whilst you're developing  
+though.
 
-And, on a related front, amprun will try to figure out your public/external  
-IP address and establish a port mapping with any NAT device that might  
-be in between your machine and the internet. You can disable this, e.g.
+And, on a related front, ampzero run will try to figure out your  
+public/external IP address and establish a port mapping with  
+any NAT device that might be in between your machine and the  
+internet. You can disable this, e.g.
 
-    $ amprun kickass --no-nat-bypass
+    $ ampzero run kickass --no-nat-bypass
 
-This setting is also implicit in the command that you'd use to run an  
-instance on a "proper" server or VPS:
+This setting is also implicit in the command that you'd use to  
+run an instance on a "proper" server or VPS:
 
-    $ amprun kickass --server
+    $ ampzero run kickass --server
 
-This mode differs from the default (which is suited for single-machine  
-instances), in that it'd only start the following processes:
+This mode differs from the default (which is suited for normal  
+single-machine instances), in that it'd only start the following  
+processes:
 
 * redis servers
 * ampzero instances
 * nginx frontend
 
-It assumes that you've got stable Keyspace servers running and that  
-the zerodata/logstore apps are running — either on Google App Engine  
-or elsewhere using [AppScale] or [TyphoonAE].
+It assumes that you've got stable Keyspace servers running and  
+that the zerodata/logstore apps are running — either on Google  
+App Engine or elsewhere using [AppScale] or [TyphoonAE].
 
 **Server/Cloud Deployment**
 
-Until amp routing is developed, there's no built-in support to let other  
-instances provide offline replication. So, in order to run an instance  
-which is accessible when you're offline, you're going to have to deploy  
-to a server with decent internet connectivity.
+Until amp routing is developed, there's no built-in support to let  
+other instances provide offline replication. So, in order to run an  
+instance which is accessible when you're offline, you're going to  
+have to deploy to a server with decent internet connectivity.
 
-This is easy enough when you've got just a single server but becomes  
-quite problematic once you have anything more than 2 servers. So, to  
-help with the problem, the `ampdeploy` script tries to simplify things:
+This is easy enough when you've got just a single server but  
+becomes quite problematic once you have anything more than 2  
+servers. So, to help with the problem, the `ampzero deploy`  
+command tries to simplify things:
 
-    $ ampdeploy kickass
+    $ ampzero deploy kickass
 
-This will first generate tarballs of specific directories from your ampify  
-and instance repositories. This step requires clean working directories,  
-so either commit or `git stash` your changes first.
+This will first generate tarballs of specific directories from your  
+ampify and instance repositories. This step requires clean working  
+directories, so either commit or `git stash` your changes first.
 
-The script will then communicate to the various `username@hosts`  
-that you've specified in your `deployment.yaml` file. This will happen  
-over SSH, so you need to have SSH servers running and the keys.
+It will then communicate to the various `username@hosts/ips`  
+that you've specified in your `deployment.yaml` file. This will  
+happen over SSH, so you need to have the respective SSH keys.
 
 You can limit deployment to specific hosts with:
 
-    $ ampdeploy kickass --host tav@212.4.3.2
+    $ ampzero deploy kickass --host tav@212.4.3.2
 
 You can also use an alternative file instead of `deployment.yaml`,  
 e.g.
 
-    $ ampdeloy kickass --config ~/path/to/alt.yaml
+    $ ampzero deploy kickass --config ~/path/to/alt.yaml
 
-The script will try to find out if there's an existing deployment, and  
-if it's previously generated a tarball matching those versions, it'd  create  
-a compressed diff to send — otherwise, it'd transfer over the full tarball.
+The `ampzero deploy` will try to find out if there's an existing  
+deployment, and if it's previously generated a tarball matching those  
+versions, it'd  create a compressed diff to send — otherwise, it'd  
+transfer over the full tarball.
 
 And, finally, it'd run through a series of commands in order to switch  
 over all of your servers in a synchronised manner:
 
+* build new tarballs if remote architecture differs
 * double-verify tarballs/patches in case of memory corruption
 * extract and setup the updated directories
-* run `amprun stop` for any existing contexts
+* run `ampzero run stop` for any existing contexts
 * switch over symlinks
-* launch `amprun` in the new deployment
+* launch `ampzero run` in the new deployment
 * clean up all but the most recent of any previous deployments
 
 The directory layout on your servers would end up looking something  
@@ -273,38 +283,38 @@ like:
                 patches/
             var/
 
-Now, the mechanism used by `ampdeploy` is far from perfect. It is not  
-robust against your servers failing and it wouldn't scale beyond 100 or so  
-servers.
+Now, the mechanism used by `ampzero deploy` is far from perfect.  
+It is not robust against your servers failing and it wouldn't scale  
+beyond 100 or so servers.
 
-A far better solution, `redpill`, has already been designed and it'll be  
-implemented as part of the Ampify development. It'll allow for scalable,  
-failure-tolerant, synchronised updates and multi-version deployment.
+A far better solution, `redpill`, has already been designed and it'll  
+be implemented as part of the Ampify development. It'll allow for  
+scalable, failure-tolerant, synchronised updates and multi-version  
+deployment.
 
-But, for now, `ampdeploy` is all we have.
+But, for now, `ampzero deploy` is all we have.
 
 **Customising Your Instance**
 
-You can create custom services and modify the templates by changing  
-the files inside your instance's ``ampzero`` directory.
+You can create custom services and modify the templates by  
+changing the files inside your instance's ``ampzero`` directory.
 
-Be sure to update the `ampzero.yaml` config file with the modules for  
-any new services you define.
+Be sure to update the `ampzero.yaml` config file with the modules  
+for any new services you define.
 
 **Cheatsheet**
 
-    $ ampinit <instance-name>    # initialise a new setup
-    $ amprun <instance-name>     # run all the components
-    $ ampdeploy <instance-name>  # deploy to remote hosts
+    $ ampzero init <instance-name>    # initialise a new setup
+    $ ampzero run <instance-name>     # run all the components
+    $ ampzero deploy <instance-name>  # deploy to remote hosts
 
 **Resources**
 
-You can use `--help` on all the above scripts. For more info or even to  
-just say hi, visit the:
+You can use `--help` on all the above commands. For more info or  
+to just say hi, come visit the:
 
 * irc channel: [irc://irc.freenode.net/esp], [irc logs]
 * mailing list: [http://groups.google.com/group/ampify]
-* online docs: [http://ampify.it]
 
 **Contribute**
 
