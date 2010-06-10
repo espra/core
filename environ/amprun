@@ -6,6 +6,6 @@
 import sys
 import pylibs
 
-from ampzero.main import ampzero
+from ampzero.main import amprun
 
-ampzero()
+amprun()
