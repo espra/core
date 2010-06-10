@@ -37,7 +37,7 @@ dist:
 	@$(WAF) dist
 
 distclean: clean
-	@$(WAF) distclean
+	@$(WAF) distclean --force
 
 docs:
 	@$(WAF) docs
