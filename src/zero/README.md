@@ -1,17 +1,7 @@
-This directory houses the code and resources for Ampify Zero — the proof  
-of concept version zero of Ampify.
+This directory houses the code and resources for the proof of concept  
+version of Ampify — Ampify Zero.
 
 IT DOESN'T WORK YET.
-
-But, you can read below about how it's meant to be run... =)
-
-**Cheatsheet**
-
-See the sections below for further info on each command:
-
-    $ ampinit <instance-name>    # initialise a new setup
-    $ amprun <instance-name>     # run all the components
-    $ ampdeploy <instance-name>  # deploy to remote hosts
 
 **Quickstart**
 
@@ -47,13 +37,18 @@ The layout of the instance directory would look like:
 
     kickass/
         .git/
+        .gitignore
         README.md
         amprun.yaml
         ampzero/
-            admin-user.info
+            admin-user.control.key
+            admin-user.private.key
+            admin-user.public.key
             ampzero.yaml
-            hub.info
-            provider.info
+            host.control.key
+            host.private.key
+            host.public.key
+            hub.public.key
             redis.conf
             services/
             templates/
@@ -67,8 +62,9 @@ The layout of the instance directory would look like:
             app.yaml
             index.yaml
             config.py
-            logstore.py
             lib/
+            logstore.py
+            remote.py
             www/
         nginx/
             nginx.conf
@@ -78,9 +74,10 @@ The layout of the instance directory would look like:
             app.yaml
             index.yaml
             config.py
-            zerodata.py
             lib/
+            remote.py
             www/
+            zerodata.py
 
 It will be created as a sibling directory to wherever you'd checked out  
 the  ampify repo. That is, if the ampify repo had been checked out into:
@@ -110,22 +107,30 @@ the files in an existing instance, e.g.
 This is useful to keep up with any changes that might be available in the  
 ampify repository.
 
-However, 2 of the generated files are special and will not be clobbered.  
-These contain public/private key-pairs for you and your instance:
+However, 6 of the generated files are special and will not be clobbered.  
+These contain public/private/control keys for you and your instance:
 
-    ampzero/admin-user.info
-    ampzero/provider.info
+    ampzero/admin-user.control.key
+    ampzero/admin-user.private.key
+    ampzero/admin-user.public.key
+    ampzero/host.control.key
+    ampzero/host.private.key
+    ampzero/host.public.key
 
 The public key components will have been signed by `amphub.org` and  
 you'd have been given unique user and instance ID numbers when you  
 first ran `ampinit`.
 
-You can share the public key and IDs, but the private key bits must be  
-kept safe and private — you might even want to back them up... =)
+You can share the public key and ID numbers, but the private and control  
+keys must be kept safe and private. The control key in particular is used  
+to update your keys with `amphub.org` — never share it!
 
 And, finally, `ampinit` will have automatically setup a git repository in  
 the instance directory. You might want to push this to a private GitHub  
 repo (or equivalent) for both backup and collaboration purposes.
+
+The control keys will not be checked into this repo and are excluded via  
+`.gitignore` — you should back them up separately and securely.
 
 **Running Ampify Zero**
 
@@ -204,7 +209,7 @@ instances), in that it'd only start the following processes:
 
 It assumes that you've got stable Keyspace servers running and that  
 the zerodata/logstore apps are running — either on Google App Engine  
-or elsewhere using [TyphoonAE].
+or elsewhere using [AppScale] or [TyphoonAE].
 
 **Server/Cloud Deployment**
 
@@ -286,6 +291,11 @@ the files inside your instance's ``ampzero`` directory.
 Be sure to update the `ampzero.yaml` config file with the modules for  
 any new services you define.
 
+**Cheatsheet**
+
+    $ ampinit <instance-name>    # initialise a new setup
+    $ amprun <instance-name>     # run all the components
+    $ ampdeploy <instance-name>  # deploy to remote hosts
 
 **Resources**
 
@@ -311,6 +321,7 @@ add yourself to the `AUTHORS` file and send a pull request to me —
 [README]: http://github.com/tav/ampify/blob/master/README.md
 [convention over configuration]: http://en.wikipedia.org/wiki/Convention_over_configuration
 [https://localhost:8040]: https://localhost:8040/
+[AppScale]: http://code.google.com/p/appscale/
 [TyphoonAE]: http://code.google.com/p/typhoonae/
 
 [http://github.com/tav]: http://github.com/tav
