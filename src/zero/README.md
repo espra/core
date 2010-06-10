@@ -1,4 +1,4 @@
-This directory houses the code and resources for Ampify Zero — the proof
+This directory houses the code and resources for Ampify Zero — the proof  
 of concept version zero of Ampify.
 
 IT DOESN'T WORK YET.
