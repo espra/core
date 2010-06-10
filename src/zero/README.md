@@ -1,3 +1,10 @@
+This directory houses the code and resources for Ampify Zero — the proof
+of concept version zero of Ampify.
+
+IT DOESN'T WORK YET.
+
+But, you can read below about how it's meant to be run... =)
+
 **Cheatsheet**
 
 See the sections below for further info on each command:
