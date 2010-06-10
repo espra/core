@@ -6,6 +6,16 @@ See the sections below for further info on each command:
     $ amprun <instance-name>     # run all the components
     $ ampdeploy <instance-name>  # deploy to remote hosts
 
+**Quickstart**
+
+Assuming you wanted to call your instance, `kickass`, run:
+
+    $ ampinit kickass
+    $ amprun kickass
+
+And then, assuming you'd chosen the default port settings, point your  
+browser at [https://localhost:8040].
+
 **Introduction**
 
 Assuming that you've successfully built all the dependencies according  
