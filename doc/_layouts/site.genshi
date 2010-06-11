@@ -8,7 +8,7 @@
       ('Bug Tracker', 'http://githubissues.heroku.com/#tav/ampify', True, True),
       ('Mailing List', 'http://groups.google.com/group/ampify', True, True),
       ('IRC Logs', 'http://irclogs.ampify.it', True, True),
-      ('Espra Stream', 'http://espra.com/zero/#ampify', True, True),
+      # ('Espra Stream', 'http://espra.com/zero/#ampify', True, True),
       # ('Wiki', 'http://wiki.github.com/tav/ampify/', False, False),
       # ('Download', 'http://ampify.it/download.html', False, False),
       # ('Changelog', 'http://ampify.it/changelog.html', False, False),
