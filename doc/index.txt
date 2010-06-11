@@ -11,15 +11,15 @@ App Engine, Xanadu and Wikis.
 
 The goal for the final 1.0 release is to have a fully decentralised "internet
 operating system" style platform. We're currently working towards an initial
-release for the end of this year -- `see the planfile <planfile.html>`_ for more
-info.
+release, ``Ampify Zero``, for the end of this year -- `see the planfile
+<planfile.html>`_ for more info.
 
 
 Get Started
 -----------
 
-You need to have `Git <http://git-scm.com/>`_, a recent Python 2.x and general
-dev tools (gcc, make, etc.) installed.
+You need to have `Git <http://git-scm.com/>`_, a Unix-like OS, a recent Python
+2.x and general dev tools (gcc, make, etc.) installed.
 
 .. syntax:: bash
 
@@ -29,7 +29,7 @@ dev tools (gcc, make, etc.) installed.
   $ git update                                  # (3)
   $ ./configure                                 # (4)
   $ make                                        # (5)
-
+  $ less src/zero/README.md                     # (6)
 
 1. Clone the repository. If you have Git 1.7+, you should use the more efficient
    smart HTTP protocol:
@@ -42,13 +42,18 @@ dev tools (gcc, make, etc.) installed.
    Ampify related environment variables like ``$AMPIFY_ROOT``, ``$PATH``, &c.
 
 3. The new ``git update`` command will now be accessible and you should use it
-   to keep the repository updated from now on. It takes care of keeping git
-   submodules updated.
+   to keep the repository updated from now on. It takes care of both pulling and
+   keeping git submodules updated. This only works with recent versions of Git
+   -- otherwise you'd need to init/update the submodules yourself:
+
+   .. syntax:: bash
+
+     $ git submodule update --init
 
 4. The ``configure`` step verifies that you have the necessary base
    dependencies. You can give it a ``--prefix`` parameter, but that's currently
    meaningless as all "installations" are self-contained within the
-   ``environ/local`` sub-directory.
+   ``environ/local`` sub-directory that will be automatically created.
 
 5. Running ``make`` is currently equivalent to ``make zero`` which builds
    various dependencies like Node.js, compiles CoffeeScript/Sass files and
@@ -58,6 +63,44 @@ dev tools (gcc, make, etc.) installed.
    dependencies, which you can also remove using the full ``make distclean``. Be
    sure to re-run ``make`` after you do a git pull or update -- this will keep
    the generated files up-to-date.
+
+   Behind the scenes, ``make`` calls the ``waf`` build system. If the colours
+   are not agreeable to you, you can disable them by setting the ``NOCOLOR``
+   environment variable before calling ``make``, e.g.
+
+   .. syntax:: bash
+
+     $ NOCOLOR=1 make
+
+   Please note that running ``make`` for the first time currently takes around
+   20 minutes, so you might want to grab something to drink and do something
+   else like read `HN <http://news.ycombinator.com/>`_ or `xkcd
+   <http://xkcd.com/>`_ -- with an eye on your terminal for any errors that
+   might occur.
+
+6. This last step points you to the `Ampify Zero README
+   <http://github.com/tav/ampify/blob/master/src/zero/README.md>`_. As it states
+   in the README, Ampify Zero doesn't work yet, but it goes into detail of how
+   an instance is meant to be setup and run.
+
+   You first initialise an instance using the ``ampzero`` utility script. This
+   asks you a few questions and generates the appropriate files in a sibling
+   directory to your Ampify repository. So, if you wanted to create an instance
+   called ``kickass``, you'd:
+
+   .. syntax:: bash
+
+     $ ampzero init kickass
+
+   Then, you'd run the various component processes of Ampify Zero with:
+
+   .. syntax:: bash
+
+     $ ampzero run kickass
+
+   Do read the `Ampify Zero README
+   <http://github.com/tav/ampify/blob/master/src/zero/README.md>`_ for more
+   info.
 
 
 Get Involved
