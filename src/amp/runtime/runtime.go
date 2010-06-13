@@ -18,13 +18,16 @@ import (
 
 const Platform = syscall.OS
 
-// Try and figure out the number of CPUs on the current machine.
+var CPUCount int
+
+// The ``runtime.GetCPUCount`` function tries to detect the number of CPUs on
+// the current machine.
 func GetCPUCount() (count int) {
 	// On BSD systems, it should be possible to use ``sysctl -n hw.ncpu`` to
 	// figure this out.
 	if (Platform == "darwin") || (Platform == "freebsd") {
 		output, err := command.GetOutput(
-			[]string{"/usr/sbin/sysctl", "-n", "hw.ncpu"}
+			[]string{"/usr/sbin/sysctl", "-n", "hw.ncpu"},
 		)
 		if err != nil {
 			return 1
@@ -33,7 +36,7 @@ func GetCPUCount() (count int) {
 		if err != nil {
 			return 1
 		}
-	// Linux provides introspection via ``/proc/cpuinfo``.
+	// Linux systems provide introspection via ``/proc/cpuinfo``.
 	} else if Platform == "linux" {
 		output, err := command.GetOutput([]string{"/bin/cat", "/proc/cpuinfo"})
 		if err != nil {
@@ -45,8 +48,7 @@ func GetCPUCount() (count int) {
 			}
 		}
 	}
-	// If on an unknown platform, we assume that there's just a single
-	// processor.
+	// For unknown platforms, we assume that there's just a single processor.
 	if count == 0 {
 		return 1
 	}
@@ -55,4 +57,8 @@ func GetCPUCount() (count int) {
 
 // A utility function ``runtime.Init`` is provided which will set Go's internal
 // ``GOMAXPROCS`` to the number of CPUs detected.
-func Init() { runtime.GOMAXPROCS(GetCPUCount()) }
+func Init() { runtime.GOMAXPROCS(CPUCount) }
+
+// A package initialiser sets the ``runtime.CPUCount`` variable to the number of
+// CPUs detected.
+func init() { CPUCount = GetCPUCount() }

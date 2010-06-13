@@ -8,5 +8,5 @@ import "fmt"
 
 func main() {
 	runtime.Init()
-	fmt.Printf("Running Ampnode with %d CPUs.\n", runtime.GetCPUCount())
+	fmt.Printf("Running Ampnode with %d CPUs.\n", runtime.CPUCount)
 }
