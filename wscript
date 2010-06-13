@@ -255,9 +255,9 @@ def configure(ctx):
     ctx.env['AMPIFY_ROOT'] = ROOT
     ctx.env['AMPIFY_BIN'] = BIN
     ctx.env['INSTALL_VERSION'] = INSTALL_VERSION
-    ctx.env['ZERO_STATIC'] = join(ROOT, 'src', 'zero', 'espra', 'www')
-    ctx.env['ZERO_COFFEE_OUTPUT'] = join(ROOT, 'src', 'zero', 'espra')
-    ctx.env['ZERO_SASS_OUTPUT'] = join(ROOT, 'src', 'zero', 'espra', 'www')
+    ctx.env['ZERO_STATIC'] = join(ROOT, 'src', 'zero', 'resource', 'www')
+    ctx.env['ZERO_COFFEE_OUTPUT'] = join(ROOT, 'src', 'zero', 'resource')
+    ctx.env['ZERO_SASS_OUTPUT'] = join(ROOT, 'src', 'zero', 'resource', 'www')
 
 def build(ctx):
     """build ampify"""
@@ -302,9 +302,15 @@ def build_zero(ctx):
         if not S_ISDIR(info[ST_MODE]):
             Logs.error("Couldn't find a directory at %s" % source)
             return
+        if exists(target):
+            ctx.initial_check_states[directory] = 1
+        else:
+            ctx.initial_check_states[directory] = 0
         dest = open(target, 'w')
         dest.write(str(info[ST_MTIME]))
         dest.close()
+
+    ctx.initial_check_states = {}
 
     for submodule in ['keyspace', 'nodejs', 'redis', 'pylibs']:
         ctx(target='%s.check' % submodule,
@@ -315,7 +321,8 @@ def build_zero(ctx):
 
     def compile_keyspace(task):
         directory = join(ROOT, 'third_party', 'keyspace')
-        if not exists(join(BIN, 'keyspaced')):
+        if (ctx.initial_check_states['keyspace'] or
+            (not exists(join(BIN, 'keyspaced')))):
             env = os.environ.copy()
             env['PREFIX'] = LOCAL
             do([make], cwd=directory, env=env)
@@ -336,7 +343,8 @@ def build_zero(ctx):
 
     def compile_redis(task):
         directory = join(ROOT, 'third_party', 'redis')
-        if not exists(join(BIN, 'redis')):
+        if (ctx.initial_check_states['redis'] or
+            (not exists(join(BIN, 'redis')))):
             do([make], cwd=directory)
             copy(join(directory, 'redis-server'), join(BIN, 'redis'))
         write_dummy_target(task)
@@ -349,7 +357,8 @@ def build_zero(ctx):
 
     def compile_nodejs(task):
         directory = join(ROOT, 'third_party', 'nodejs')
-        if not exists(join(BIN, 'node')):
+        if (ctx.initial_check_states['nodejs'] or
+            (not exists(join(BIN, 'node')))):
             do(['./configure', '--prefix', LOCAL], cwd=directory)
             do([make, 'install'], cwd=directory)
         write_dummy_target(task)
@@ -358,6 +367,7 @@ def build_zero(ctx):
         target='node',
         rule=compile_nodejs,
         after='nodejs.check',
+        #on_results=True,
         name='nodejs')
 
     TaskGen.declare_chain(
@@ -371,7 +381,7 @@ def build_zero(ctx):
 
     coffeescript_files = [
         'third_party/coffee-script/examples/underscore.coffee'
-        ] + ctx.path.ant_glob('src/zero/espra/*.coffee').split()
+        ] + ctx.path.ant_glob('src/zero/resource/*.coffee').split()
 
     for path in coffeescript_files:
         dest_path = '%s.js' % path.rsplit('.', 1)[0]
@@ -386,7 +396,7 @@ def build_zero(ctx):
         reentrant=False
         )
 
-    for path in ctx.path.ant_glob('src/zero/espra/*.sass').split():
+    for path in ctx.path.ant_glob('src/zero/resource/*.sass').split():
         dest_path = '%s.css' % path.rsplit('.', 1)[0]
         ctx(source=path)
         ctx.install_files('${ZERO_SASS_OUTPUT}', dest_path)
@@ -469,13 +479,13 @@ def build_zero(ctx):
         % join(BIN, JAR_FILES['yuicompressor.jar'])
         )
 
-    ctx(target='src/zero/espra/www/site.min.css',
-        source='src/zero/espra/site.css',
+    ctx(target='src/zero/resource/www/site.min.css',
+        source='src/zero/resource/site.css',
         rule=css_minify,
         after=['yuicompressor.jar', 'sass'],
         name="css.minify")
 
-    ctx.install_files('${ZERO_STATIC}', 'src/zero/espra/www/site.min.css')
+    ctx.install_files('${ZERO_STATIC}', 'src/zero/resource/www/site.min.css')
 
     python_exe = join(BIN, 'python')
 
@@ -575,12 +585,12 @@ def build_zero(ctx):
         'third_party/coffee-script/examples/underscore.js',
         wrap_end,
         wrap_start,
-        'src/zero/espra/ampzero.js',
+        'src/zero/resource/ampzero.js',
         wrap_end
         ]
 
     concat_js(
-        'ampzero.js', zerojs_segments, 'src/zero/espra/www/ampzero.js',
+        'ampzero.js', zerojs_segments, 'src/zero/resource/www/ampzero.js',
         '${ZERO_STATIC}'
         )
 
