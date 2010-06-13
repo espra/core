@@ -6,9 +6,9 @@ package runtime
 import (
 	"amp/command"
 	"os"
-    "strings"
-    "strconv"
-    "testing"
+	"strings"
+	"strconv"
+	"testing"
 )
 
 func TestCPUCount(t *testing.T) {
