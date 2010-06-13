@@ -22,3 +22,6 @@
 [submodule "third_party/coffee-script"]
 	path = third_party/coffee-script
 	url = git://github.com/jashkenas/coffee-script.git
+[submodule "third_party/nodelint"]
+	path = third_party/nodelint
+	url = git://github.com/tav/nodelint.js.git
