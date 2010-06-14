@@ -3,7 +3,7 @@
 # No Copyright (-) 2010 The Ampify Authors. This file is under the
 # Public Domain license that can be found in the root LICENSE file.
 
-"""Runner Script for Ampify Zero"""
+"""AmpEngine Runner Script"""
 
 import pylibs
 import sys
@@ -60,25 +60,36 @@ def main(argv=None):
 
     deploy    deploy an instance to remote host(s)
     init      initialise a new amp instance
-    run       run the components for an amp instance""", add_help_option=False)
+    run       run the components for an amp instance
+    \nSee `%prog help <command>` for more info on a specific command.""")
 
     op.add_option('-v', '--version', dest='version', action='store_true',
                   help="show the version number and exit")
-
-    op.add_option('-h', '--help', dest='help', action='store_true',
-                  help="show the help message for the specified command")
 
     options, args = op.parse_args(argv)
 
     if not args:
         if options.version:
-            print 'amp 0.0.0'
+            print 'AmpEngine 0.0.0'
             sys.exit()
         op.print_help()
         sys.exit(1)
 
     command = args[0]
     argv = argv[1:]
+
+    if command == 'help':
+        show_help = 0
+        if not argv:
+            show_help = 1
+        else:
+            command = argv[0]
+            argv = ['--help']
+            if command not in COMMANDS:
+                show_help = 1
+        if show_help:
+            op.print_help()
+            sys.exit(1)
 
     if command not in COMMANDS:
         print "ERROR: Unknown command %r" % command
