@@ -9,10 +9,10 @@ import pylibs
 import sys
 
 from optparse import OptionParser, SUPPRESS_USAGE
-from os import chdir, makedirs, symlink
+from os import chdir, environ, makedirs, symlink
 from os.path import dirname, exists, join, realpath, split
 
-from pyutil.env import run_command
+from pyutil.env import run_command, CommandNotFound
 
 # ------------------------------------------------------------------------------
 # Utility Functions
@@ -79,18 +79,27 @@ def main(argv=None):
     argv = argv[1:]
 
     if command == 'help':
-        if argv and argv[0] in COMMANDS:
+        if argv:
             command = argv[0]
             argv = ['--help']
         else:
             op.print_help()
             sys.exit(1)
 
-    if command not in COMMANDS:
+    if command in COMMANDS:
+        return COMMANDS[command](argv)
+
+    try:
+        output, retcode = run_command(
+            ['amp-%s' % command] + argv, retcode=True, redirect_stdout=False,
+            redirect_stderr=False
+            )
+    except CommandNotFound:
         print "ERROR: Unknown command %r" % command
         sys.exit(1)
 
-    COMMANDS[command](argv)
+    if retcode:
+        sys.exit(retcode)
 
 # ------------------------------------------------------------------------------
 # init
