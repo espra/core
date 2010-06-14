@@ -11,11 +11,11 @@ environ/local
 
 src/amp/ampnode/ampnode
 src/instance/*.css
-src/instance/*.js
 src/instance/fabfile.py
 src/instance/www/*.css
 src/instance/www/*.js
 src/kalati/UnicodeData.txt
+src/kalati/*.js
 
 # minified css/js files
 
