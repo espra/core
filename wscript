@@ -255,9 +255,9 @@ def configure(ctx):
     ctx.env['AMPIFY_ROOT'] = ROOT
     ctx.env['AMPIFY_BIN'] = BIN
     ctx.env['INSTALL_VERSION'] = INSTALL_VERSION
-    ctx.env['ZERO_STATIC'] = join(ROOT, 'src', 'zero', 'resource', 'www')
-    ctx.env['ZERO_COFFEE_OUTPUT'] = join(ROOT, 'src', 'zero', 'resource')
-    ctx.env['ZERO_SASS_OUTPUT'] = join(ROOT, 'src', 'zero', 'resource', 'www')
+    ctx.env['ZERO_STATIC'] = join(ROOT, 'src', 'instance', 'www')
+    ctx.env['ZERO_COFFEE_OUTPUT'] = join(ROOT, 'src', 'instance')
+    ctx.env['ZERO_SASS_OUTPUT'] = join(ROOT, 'src', 'instance', 'www')
 
 def build(ctx):
     """build ampify"""
@@ -381,7 +381,7 @@ def build_zero(ctx):
 
     coffeescript_files = [
         'third_party/coffee-script/examples/underscore.coffee'
-        ] + ctx.path.ant_glob('src/zero/resource/*.coffee').split()
+        ] + ctx.path.ant_glob('src/instance/*.coffee').split()
 
     for path in coffeescript_files:
         dest_path = '%s.js' % path.rsplit('.', 1)[0]
@@ -396,7 +396,7 @@ def build_zero(ctx):
         reentrant=False
         )
 
-    for path in ctx.path.ant_glob('src/zero/resource/*.sass').split():
+    for path in ctx.path.ant_glob('src/instance/*.sass').split():
         dest_path = '%s.css' % path.rsplit('.', 1)[0]
         ctx(source=path)
         ctx.install_files('${ZERO_SASS_OUTPUT}', dest_path)
@@ -479,13 +479,13 @@ def build_zero(ctx):
         % join(BIN, JAR_FILES['yuicompressor.jar'])
         )
 
-    ctx(target='src/zero/resource/www/site.min.css',
-        source='src/zero/resource/site.css',
+    ctx(target='src/instance/www/site.min.css',
+        source='src/instance/site.css',
         rule=css_minify,
         after=['yuicompressor.jar', 'sass'],
         name="css.minify")
 
-    ctx.install_files('${ZERO_STATIC}', 'src/zero/resource/www/site.min.css')
+    ctx.install_files('${ZERO_STATIC}', 'src/instance/www/site.min.css')
 
     python_exe = join(BIN, 'python')
 
@@ -585,12 +585,12 @@ def build_zero(ctx):
         'third_party/coffee-script/examples/underscore.js',
         wrap_end,
         wrap_start,
-        'src/zero/resource/ampzero.js',
+        'src/instance/ampzero.js',
         wrap_end
         ]
 
     concat_js(
-        'ampzero.js', zerojs_segments, 'src/zero/resource/www/ampzero.js',
+        'ampzero.js', zerojs_segments, 'src/instance/www/ampzero.js',
         '${ZERO_STATIC}'
         )
 

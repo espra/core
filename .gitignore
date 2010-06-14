@@ -9,23 +9,13 @@ build
 doc/website/*.html
 environ/local
 
-src/tools/makeucd/UnicodeData.txt
-
-src/zero/client_libs/appengine/secret.py
-src/zero/client_libs/appengine/updated.py
-src/zero/logstore/app.yaml
-src/zero/logstore/secret.py
-src/zero/logstore/updated.py
-src/zero/espra/*.css
-src/zero/espra/*.js
-src/zero/espra/fabfile.py
-src/zero/espra/secret.py
-src/zero/espra/updated.py
-src/zero/espra/www/*.css
-src/zero/espra/www/*.js
-src/zero/zerodata/app.yaml
-src/zero/zerodata/secret.py
-src/zero/zerodata/updated.py
+src/amp/ampnode/ampnode
+src/instance/*.css
+src/instance/*.js
+src/instance/fabfile.py
+src/instance/www/*.css
+src/instance/www/*.js
+src/kalati/UnicodeData.txt
 
 # minified css/js files
 
