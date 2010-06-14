@@ -56,17 +56,11 @@ Initialising A New Instance
         amprun.yaml
         ampnode/
             ampnode.yaml
-            host-7.control.key
-            host-7.private.key
-            host-7.public.key
-            hub.public.key
+            certs/
             keyspace.conf
             redis.conf
             services/
             templates/
-            user-23.control.key
-            user-23.private.key
-            user-23.public.key
         deployment.yaml
         nginx/
             nginx.conf
@@ -107,12 +101,12 @@ Initialising A New Instance
   However, 6 of the generated files are special and will not be clobbered. These
   contain public/private/control keys for you and your instance::
 
-    ampnode/user-<id>.control.key
-    ampnode/user-<id>.private.key
-    ampnode/user-<id>.public.key
-    ampnode/host-<id>.control.key
-    ampnode/host-<id>.private.key
-    ampnode/host-<id>.public.key
+    ampnode/certs/user-<id>.control.key
+    ampnode/certs/user-<id>.private.key
+    ampnode/certs/user-<id>.public.key
+    ampnode/certs/host-<id>.control.key
+    ampnode/certs/host-<id>.private.key
+    ampnode/certs/host-<id>.public.key
 
   The public key components will have been signed by ``amphub.org`` and you'd
   have been given unique user and instance ID numbers when you first ran ``amp
