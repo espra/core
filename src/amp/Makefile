@@ -1,9 +1,6 @@
 # No Copyright (-) 2010 The Ampify Authors. This file is under the
 # Public Domain license that can be found in the root LICENSE file.
 
-APPS=\
-	ampnode\
-
 PACKAGES=\
 	command\
 	runtime\
@@ -23,7 +20,6 @@ endif
 NULLSTRING :=
 SPACE := $(NULLSTRING) # a space at the end
 QUOTED_GOROOT=$(subst $(SPACE),\ ,$(GOROOT))
-QUOTED_GOBIN=$(subst $(SPACE),\ ,$(GOBIN))
 
 BENCH=\
 	$(filter-out $(NOBENCH),$(PACKAGES))
@@ -32,7 +28,6 @@ TEST=\
 	$(filter-out $(NOTEST),$(PACKAGES))
 
 all: install
-	@cd ampnode && $(make)
 
 bench.dirs: $(addsuffix .bench, $(BENCH))
 clean.dirs: $(addsuffix .clean, $(PACKAGES))
@@ -59,6 +54,8 @@ bench: bench.dirs
 
 clean: clean.dirs
 	@cd ampnode && $(make) clean
+
+distclean: nuke
 
 nuke: nuke.dirs
 	@echo rm -rf $(QUOTED_GOROOT)/pkg/amp
