@@ -1,16 +1,14 @@
+#! /usr/bin/env python
+
 # No Copyright (-) 2010 The Ampify Authors. This file is under the
 # Public Domain license that can be found in the root LICENSE file.
 
-"""
-==============================
-Runner Scripts for Ampify Zero
-==============================
+"""Runner Script for Ampify Zero"""
 
-"""
-
+import pylibs
 import sys
 
-from optparse import OptionParser
+from optparse import OptionParser, SUPPRESS_USAGE
 from os import chdir, makedirs, symlink
 from os.path import dirname, exists, join, realpath, split
 
@@ -50,14 +48,51 @@ def relative_path(source, destination):
     pass
 
 # ------------------------------------------------------------------------------
-# ampinit
+# Main Runner
 # ------------------------------------------------------------------------------
 
-def ampinit(argv=None):
+def main(argv=None):
 
     argv = argv or sys.argv[1:]
 
-    op = OptionParser(usage="Usage: %prog <instance-name> [options]")
+    op = OptionParser(usage="""Usage: %prog <command> [options]
+    \nCommands:
+
+    deploy    deploy an instance to remote host(s)
+    init      initialise a new amp instance
+    run       run the components for an amp instance""", add_help_option=False)
+
+    op.add_option('-v', '--version', dest='version', action='store_true',
+                  help="show the version number and exit")
+
+    op.add_option('-h', '--help', dest='help', action='store_true',
+                  help="show the help message for the specified command")
+
+    options, args = op.parse_args(argv)
+
+    if not args:
+        if options.version:
+            print 'amp 0.0.0'
+            sys.exit()
+        op.print_help()
+        sys.exit(1)
+
+    command = args[0]
+    argv = argv[1:]
+
+    if command not in COMMANDS:
+        print "ERROR: Unknown command %r" % command
+        sys.exit(1)
+
+    COMMANDS[command](argv)
+
+# ------------------------------------------------------------------------------
+# init
+# ------------------------------------------------------------------------------
+
+def init(argv):
+
+    op = OptionParser(usage="Usage: %prog init <instance-name> [options]")
 
     op.add_option('--clobber', dest='clobber', action='store_true',
                   help="clobber any existing files/directories if they exist")
@@ -111,39 +146,19 @@ def ampinit(argv=None):
         readme = open('README.md', 'wb')
         readme.close()
         do('git', 'add', 'README.md')
-        do('git', 'commit', '-m', "Initialised the instance [ampinit].")
+        do('git', 'commit', '-m', "Initialised the instance [amp].")
         first_run = 1
 
     diff = do('git', 'diff', '--cached', '--name-only', redirect_stdout=1)
     if diff.strip():
-        do('git', 'commit', '-m', "Updated instance [ampinit].")
-
-# ------------------------------------------------------------------------------
-# ampzero
-# ------------------------------------------------------------------------------
-
-def ampzero(argv=None):
-
-    argv = argv or sys.argv[1:]
-    op = OptionParser(usage="Usage: %prog [options] [path/to/app/directory]")
-
-    op.add_option('-d', '--debug', dest='debug', action='store_true',
-                  help="enable debug mode")
-
-    options, args = op.parse_args(argv)
-
-    DEBUG = False
-
-    if options.debug:
-        DEBUG = True
+        do('git', 'commit', '-m', "Updated instance [amp].")
 
     print DEBUG
 
-def amprun(argv=None):
+def run(argv=None):
     
-    argv = argv or sys.argv[1:]
     op = OptionParser(
-        usage="Usage: %prog <instance-name> [options] [stop|quit|restart]"
+        usage="Usage: %prog run <instance-name> [options] [stop|quit|restart]"
         )
 
     op.add_option('-d', '--debug', dest='debug', action='store_true',
@@ -151,20 +166,47 @@ def amprun(argv=None):
 
     options, args = op.parse_args(argv)
 
-def ampdeploy(argv=None):
+    if not args:
+        op.print_help()
+        sys.exit(1)
 
-    argv = argv or sys.argv[1:]
-    op = OptionParser(usage="Usage: %prog <instance-name> [options]")
+    DEBUG = False
 
-    options, args = op.parse_args(argv)
+    if options.debug:
+        DEBUG = True
 
-def amphub(argv=None):
+def deploy(argv):
 
-    argv = argv or sys.argv[1:]
-    op = OptionParser(usage="Usage: %prog [register|update] [options]")
+    op = OptionParser(usage="Usage: %prog deploy <instance-name> [options]")
 
     options, args = op.parse_args(argv)
 
     if not args:
         op.print_help()
         sys.exit(1)
+
+def hub(argv):
+
+    op = OptionParser(usage="Usage: %prog hub [register|update] [options]")
+
+    options, args = op.parse_args(argv)
+
+    if not args:
+        op.print_help()
+        sys.exit(1)
+
+# ------------------------------------------------------------------------------
+# Command Mapping
+# ------------------------------------------------------------------------------
+
+COMMANDS = {
+    'deploy': deploy,
+    'init': init,
+    'run': run
+    }
+
+# ------------------------------------------------------------------------------
+# Self Runner
+# ------------------------------------------------------------------------------
+
+main()
