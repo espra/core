@@ -2,14 +2,16 @@
 // Public Domain license that can be found in the root LICENSE file.
 
 // Ampify Runtime
-// --------------
+// ==============
 
 // The runtime package provides utilities to manage the runtime environment for
-// a given Go process/application.
+// a given Ampify process/application.
 package runtime
 
 import (
 	"amp/command"
+	"fmt"
+	"os"
 	"runtime"
 	"strconv"
 	"strings"
@@ -18,7 +20,10 @@ import (
 
 const Platform = syscall.OS
 
-var CPUCount int
+var (
+	AmpifyRoot string
+	CPUCount int
+)
 
 // The ``runtime.GetCPUCount`` function tries to detect the number of CPUs on
 // the current machine.
@@ -57,8 +62,27 @@ func GetCPUCount() (count int) {
 
 // A utility function ``runtime.Init`` is provided which will set Go's internal
 // ``GOMAXPROCS`` to the number of CPUs detected.
-func Init() { runtime.GOMAXPROCS(CPUCount) }
+func Init() {
+	runtime.GOMAXPROCS(CPUCount)
+}
 
-// A package initialiser sets the ``runtime.CPUCount`` variable to the number of
-// CPUs detected.
-func init() { CPUCount = GetCPUCount() }
+// -----------------------------------------------------------------------------
+// Package Initialiser
+// -----------------------------------------------------------------------------
+
+func init() {
+
+	// First set the ``runtime.CPUCount`` variable to the number of CPUs
+	// detected.
+	CPUCount = GetCPUCount()
+
+	// See if the ``$AMPIFY_ROOT`` environment variable has been set, if not
+	// exit the application with an error message.
+	AmpifyRoot = os.Getenv("AMPIFY_ROOT")
+	if AmpifyRoot == "" {
+		fmt.Printf(
+			"ERROR: The AMPIFY_ROOT environment variable hasn't been set.\n")
+		os.Exit(1)
+	}
+
+}

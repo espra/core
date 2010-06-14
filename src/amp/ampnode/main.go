@@ -5,19 +5,8 @@ package main
 
 import "amp/runtime"
 import "fmt"
-import "os"
-
-var AMPIFY_ROOT string
 
 func main() {
-
-	// Check if ``$AMPIFY_ROOT`` has been set.
-	AMPIFY_ROOT = os.Getenv("AMPIFY_ROOT")
-	if AMPIFY_ROOT == "" {
-		fmt.Printf(
-			"ERROR: The AMPIFY_ROOT environment variable hasn't been set.\n")
-		os.Exit(1)
-	}
 
 	// Run Ampnode on multiple processors if possible.
 	runtime.Init()
