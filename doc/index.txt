@@ -30,7 +30,7 @@ You need to have `Git <http://git-scm.com/>`_, a Unix-like OS, a recent Python
   $ git update                                  # (3)
   $ ./configure                                 # (4)
   $ make                                        # (5)
-  $ less src/README.md                          # (6)
+  $ less doc/running-ampify-zero.txt            # (6)
 
 1. Clone the repository. If you have Git 1.7+, you should use the more efficient
    smart HTTP protocol:
@@ -79,10 +79,9 @@ You need to have `Git <http://git-scm.com/>`_, a Unix-like OS, a recent Python
    <http://xkcd.com/>`_ -- with an eye on your terminal for any errors that
    might occur.
 
-6. This last step points you to the `Ampify Zero README
-   <http://github.com/tav/ampify/blob/master/src/README.md>`_. As it states
-   in the README, Ampify Zero doesn't work yet, but it goes into detail of how
-   an instance is meant to be setup and run.
+6. This last step points you to the `Running Ampify Zero
+   <running-ampify-zero.html>`_ document. As it states, Ampify Zero doesn't work
+   yet, but it goes into detail of how an instance is meant to be setup and run.
 
    You first initialise an instance using the ``amp`` utility script. This asks
    you a few questions and generates the appropriate files in a sibling
@@ -99,8 +98,8 @@ You need to have `Git <http://git-scm.com/>`_, a Unix-like OS, a recent Python
 
      $ amp run kickass
 
-   Do read the `Ampify Zero README
-   <http://github.com/tav/ampify/blob/master/src/README.md>`_ for more info.
+   Do read the `Running Ampify Zero <running-ampify-zero.html>`_ doc for more
+   info.
 
 
 Get Involved

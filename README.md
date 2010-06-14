@@ -14,7 +14,7 @@ release, `Ampify Zero`, for the end of this year — [see the planfile].
     $ git update
     $ ./configure
     $ make
-    $ less src/README.md
+    $ less doc/running-ampify-zero.txt
 
 **Resources**
 
