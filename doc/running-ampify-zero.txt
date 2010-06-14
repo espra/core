@@ -60,6 +60,7 @@ Initialising A New Instance
             host-7.private.key
             host-7.public.key
             hub.public.key
+            keyspace.conf
             redis.conf
             services/
             templates/
@@ -67,31 +68,10 @@ Initialising A New Instance
             user-23.private.key
             user-23.public.key
         deployment.yaml
-        keyspace/
-            keyspace-single.conf
-            keyspace-0.conf
-            keyspace-1.conf
-            keyspace-2.conf
-        logstore/
-            app.yaml
-            index.yaml
-            config.py
-            lib/
-            logstore.py
-            remote.py
-            www/
         nginx/
             nginx.conf
             server.cert
             www/
-        zerodata/
-            app.yaml
-            index.yaml
-            config.py
-            lib/
-            remote.py
-            www/
-            zerodata.py
 
   It will be created as a sibling directory to wherever you'd checked out the
   ampify repo. That is, if the ampify repo had been checked out into::
@@ -167,8 +147,6 @@ Running Your Instance
   Behind the scenes, this would start up a bunch of different processes:
 
   * keyspace node (running in single mode)
-  * logstore server
-  * zerodata server
   * redis servers
   * ampnode instances
   * nginx frontend
