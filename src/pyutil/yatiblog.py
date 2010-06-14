@@ -655,6 +655,7 @@ def main(argv=None):
             if ('title' in props) and props['title']:
                 info['title'] = props['title']
 
+            code = code.replace('\t', '    ')
             code_html = highlight(code, get_lexer_by_name(conf[0]), SYNTAX_FORMATTER)
 
             docs_split = conf[7].split(docs_html)
