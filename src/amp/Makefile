@@ -5,40 +5,72 @@ APPS=\
 	ampnode\
 
 PACKAGES=\
-		command\
-		runtime\
+	command\
+	runtime\
+
+NOBENCH=\
+	command\
+
+NOTEST=\
+	command\
+
+ifeq ($(shell uname),FreeBSD)
+make=gmake
+else
+make=make
+endif
 
 NULLSTRING :=
 SPACE := $(NULLSTRING) # a space at the end
 QUOTED_GOROOT=$(subst $(SPACE),\ ,$(GOROOT))
+QUOTED_GOBIN=$(subst $(SPACE),\ ,$(GOBIN))
 
-clean_dirs := $(addsuffix .clean, $(DIRS))
-install_dirs := $(addsuffix .install, $(DIRS))
-test_dirs := $(addsuffix .test, $(DIRS))
+BENCH=\
+	$(filter-out $(NOBENCH),$(PACKAGES))
 
-distclean_dirs := $(addsuffix .test, $(PACKAGES))
+TEST=\
+	$(filter-out $(NOTEST),$(PACKAGES))
 
 all: install
+	@cd ampnode && $(make)
+
+bench.dirs: $(addsuffix .bench, $(BENCH))
+clean.dirs: $(addsuffix .clean, $(PACKAGES))
+nuke.dirs: $(addsuffix .nuke, $(PACKAGES))
+install.dirs: $(addsuffix .install, $(PACKAGES))
+test.dirs: $(addsuffix .test, $(TEST))
+
+%.bench:
+	+cd $* && $(make) bench
 
 %.clean:
-	+cd $* && make clean
+	+cd $* && $(make) clean
 
 %.install:
-	+cd $* && make install
+	+cd $* && $(make) install
+
+%.nuke:
+	+cd $* && $(make) nuke
 
 %.test:
-	+cd $* && make test
+	+cd $* && $(make) test
 
-clean: $(clean_dirs)
+bench: bench.dirs
 
-distclean: clean
-	@echo rm -rf $(QUOTED_GOROOT)/pkg/amp/*
+clean: clean.dirs
+	@cd ampnode && $(make) clean
 
-install: $(install_dirs)
+nuke: nuke.dirs
+	@echo rm -rf $(QUOTED_GOROOT)/pkg/amp
+	@cd ampnode && $(make) nuke
 
-test: $(test_dirs)
+install: install.dirs
+	@cd ampnode && $(make) install
+
+test: test.dirs
 
 # ------------------------------------------------------------------------------
-# package dependencies
+# Package Dependencies
 # ------------------------------------------------------------------------------
 
+runtime.install: command.install
