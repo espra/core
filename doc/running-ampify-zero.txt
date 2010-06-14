@@ -112,10 +112,6 @@ Initialising A New Instance
   have been given unique user and instance ID numbers when you first ran ``amp
   init``.
 
-  The numbers in the ``user-23.public.key`` and ``host-7.public.key`` filenames
-  in the instance directory listing above are references to the respective
-  unique user and instance ID numbers.
-
   You can share the public keys and ID numbers, but the private and control keys
   must be kept safe and private. The control keys in particular are used to
   update your keys with ``amphub.org`` — never share it!
