@@ -1,6 +1,6 @@
 ---
-license: Public Domain
 layout: page
+license: Public Domain
 title: Public Domain License
 ---
 

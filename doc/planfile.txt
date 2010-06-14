@@ -1,6 +1,6 @@
 ---
-license: Public Domain
 layout: page
+license: Public Domain
 title: Planfile
 ---
 
@@ -80,7 +80,8 @@ Rationale
   Wherever appropriate, Ampify makes use of existing open source technologies as
   much as possible, e.g. Caja_, Chromium_, CoffeeScript_, Dirac_, FFmpeg_,
   FreeSWITCH_, Git_, Go_, jQuery_, Keyspace_, Mapnik_, `Native Client`_,
-  Node.js_, PyPy_, Python_, QuantLib_, Redis_, Ruby_, Sizzle_, Theora_, V8_, &c.
+  Node.js_, PyPy_, Python_, QuantLib_, Redis_, Ruby_, Sizzle_, Theora_, V8_,
+  WebM_, &c.
 
   Ampify is without doubt a very ambitious undertaking. And, despite having had
   over 10 years of research, it is going to be quite a challenge to pull off.
@@ -99,9 +100,9 @@ Rationale
 Ampify Zero
 -----------
 
-The Ampify Zero network is built up of independent instances (Hosts) and a
-minimal registry at ``amphub.org``. The vision is that, eventually, every
-individual would run their own Host.
+The Ampify network is built up of independent instances (Hosts) and a minimal
+registry at ``amphub.org``. The vision is that, eventually, every individual
+would run their own Host.
 
 A Host can be run from a single machine, e.g. on a mobile device or on someone's
 laptop, or it can be deployed across multiple servers — even across multiple
@@ -2933,6 +2934,7 @@ social routing
 .. _Sizzle: http://sizzlejs.com
 .. _Theora: http://www.theora.org
 .. _V8: http://code.google.com/p/v8/
+.. _WebM: http://www.webmproject.org
 
 .names for providers
 
