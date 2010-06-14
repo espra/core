@@ -1,5 +1,5 @@
-This directory houses the code and resources for the proof of concept  
-version of Ampify — Ampify Zero. IT DOESN'T WORK YET.
+This directory houses the code and resources for Ampify.
+IT DOESN'T WORK YET.
 
 **Introduction**
 
@@ -7,30 +7,29 @@ Assuming that you've successfully built all the dependencies according
 to the root [README] file, you should now be all set to run Ampify Zero.
 
 Unfortunately, there are a number of different components involved in an  
-Ampify Zero setup (Keyspace cluster, Redis servers, Google App Engine  
-instances and Ampnodes).
+Ampify Zero setup (Keyspace cluster, Redis servers and Ampnodes).
 
 And unless you're used to modern "high-scalability" deployments in other  
 contexts, it could all be quite a head fuck. Therefore, a utility script  
-called `ampzero` is provided to help ease the pain.
+called `amp` is provided to help ease the pain.
 
 **Quickstart**
 
 Assuming you want to call your instance "kickass", run:
 
-    $ ampzero init kickass
-    $ ampzero run kickass
+    $ amp init kickass
+    $ amp run kickass
 
 And then, assuming you'd chosen the default port settings, point your  
 browser at [https://localhost:8040]. Tada!
 
 **Initialise A New Setup**
 
-The `ampzero init` command is used to create a completely new  
+The `amp init` command is used to create a completely new  
 instance. So, if you want to create an instance called `kickass`,  
 you'd create it with:
 
-    $ ampzero init kickass
+    $ amp init kickass
 
 The layout of the instance directory would look something like:
 
@@ -94,14 +93,14 @@ using relative paths.
 Secondly, Ampify Zero is still in development and by using symlinks, it  
 helps keep various files in sync without too much hassle.
 
-Now when you run `ampzero init`, it will ask you various questions and will  
+Now when you run `amp init`, it will ask you various questions and will  
 use your answers to create the relevant files — just hit enter to use the  
 default values for the questions.
 
 Most of the files can be easily re-created. And you can even over-write  
 the files in an existing instance, e.g.
 
-    $ ampzero init kickass --clobber
+    $ amp init kickass --clobber
 
 This will freshly re-create the various files as if you'd run init for the  
 first time. It'd leave other files alone though. This is useful to keep  
@@ -119,7 +118,7 @@ These contain public/private/control keys for you and your instance:
 
 The public key components will have been signed by `amphub.org` and  
 you'd have been given unique user and instance ID numbers when you  
-first ran `ampzero init`.
+first ran `amp init`.
 
 The numbers in the `user-23.public.key` and `host-7.public.key`  
 filenames in the instance directory listing above are references to the  
@@ -129,7 +128,7 @@ You can share the public keys and ID numbers, but the private and control
 keys must be kept safe and private. The control keys in particular are used  
 to update your keys with `amphub.org` — never share it!
 
-And, finally, `ampzero init` will have automatically setup a git repository in  
+And, finally, `amp init` will have automatically setup a git repository in  
 the instance directory. You might want to push this to a private GitHub  
 repo (or equivalent) for both backup and collaboration purposes.
 
@@ -138,10 +137,10 @@ The control keys will not be checked into this repo and are excluded via
 
 **Running Ampify Zero**
 
-Once you have an instance setup, you can use `ampzero run` to run  
+Once you have an instance setup, you can use `amp run` to run  
 all the components at once, e.g. to run the above `kickass`, you'd:
 
-    $ ampzero run kickass
+    $ amp run kickass
 
 Behind the scenes, this would start up a bunch of different processes:
 
@@ -162,27 +161,27 @@ The various log, pid and related files for these processes will be
 within the `amprun_root_directory` setting as specified in your  
 `amprun.yaml` file and defaults to:
 
-    /opt/ampzero/var/
+    /opt/ampify/var/
 
-When you run `ampzero init` it might run commands via sudo  
+When you run `amp init` it might run commands via sudo  
 to fix the directory permissions. You can do this yourself by  
 doing  something like:
 
-    $ sudo mkdir /opt/ampzero
-    $ sudo chown your-username /opt/ampzero
+    $ sudo mkdir /opt/ampify
+    $ sudo chown your-username /opt/ampify
 
-By default, the ampzero run process daemonises itself. You can  
+By default, the `amp run` process daemonises itself. You can  
 suppress this with the `--no-daemon` parameter — allowing you  
 to kill all the processes with a single ^C.
 
 Otherwise, you can stop or force quit a running set of processes, e.g.
 
-    $ ampzero run kickass stop
-    $ ampzero run kickass quit
+    $ amp run kickass stop
+    $ amp run kickass quit
 
 You can also enable debug mode settings, e.g.
 
-    $ ampzero run kickass --debug
+    $ amp run kickass --debug
 
 This also implicitly sets the `--no-daemon` parameter.
 
@@ -190,24 +189,24 @@ By default, your instance will communicate with `amphub.org`
 so that other instances can know how to contact you. You can  
 disable this:
 
-    $ ampzero run kickass --no-hub
+    $ amp run kickass --no-hub
 
 However, until amp routing is developed, other nodes will not be  
 able to contact you if your address changes and you're in this  
 mode. It can, however, be quite useful whilst you're developing  
 though.
 
-And, on a related front, the `ampzero` run will try to figure  
+And, on a related front, the `amp` run will try to figure  
 out your public/external IP address and establish a port mapping  
 with any NAT device that might be in between your machine and  
 the internet. You can disable this, e.g.
 
-    $ ampzero run kickass --no-nat-bypass
+    $ amp run kickass --no-nat-bypass
 
 This setting is also implicit in the command that you'd use to  
 run an instance on a "proper" server or VPS:
 
-    $ ampzero run kickass --server
+    $ amp run kickass --server
 
 This mode differs from the default (which is suited for normal  
 single-machine instances), in that it'd only start the following  
@@ -230,10 +229,10 @@ have to deploy to a server with decent internet connectivity.
 
 This is easy enough when you've got just a single server but  
 becomes quite problematic once you have anything more than 2  
-servers. So, to help with the problem, the `ampzero deploy`  
+servers. So, to help with the problem, the `amp deploy`  
 command tries to simplify things:
 
-    $ ampzero deploy kickass
+    $ amp deploy kickass
 
 This will first generate tarballs of specific directories from your  
 ampify and instance repositories. This step requires clean working  
@@ -245,14 +244,14 @@ happen over SSH, so you need to have the respective SSH keys.
 
 You can limit deployment to specific hosts with:
 
-    $ ampzero deploy kickass --host tav@212.4.3.2
+    $ amp deploy kickass --host tav@212.4.3.2
 
 You can also use an alternative file instead of `deployment.yaml`,  
 e.g.
 
-    $ ampzero deploy kickass --config ~/path/to/alt.yaml
+    $ amp deploy kickass --config ~/path/to/alt.yaml
 
-The `ampzero deploy` will try to find out if there's an existing  
+The `amp deploy` will try to find out if there's an existing  
 deployment, and if it's previously generated a tarball matching those  
 versions, it'd  create a compressed diff to send — otherwise, it'd  
 transfer over the full tarball.
@@ -266,10 +265,10 @@ over all of your servers in a synchronised manner:
 * extracts and sets up the updated directories
 * runs host-specific `pre_update` scripts if you'd specified any
 * tells nginx to serve a placeholder "being upgraded" page
-* runs `ampzero run stop` for any existing contexts
+* runs `amp run stop` for any existing contexts
 * switches over symlinks
 * reloads nginx — upgrading to a new binary on the fly
-* launches `ampzero run` in the new deployment
+* launches `amp run` in the new deployment
 * tells nginx to go back to serving requests as normal
 * cleans up all but the most recent of any previous deployments
 * runs the `post_deploy` script if you'd specified one
@@ -278,7 +277,7 @@ The directory layout on your servers would end up looking something
 like:
 
     opt/
-        ampzero/
+        ampify/
             dist/
                 .current
                 .previous
@@ -292,7 +291,7 @@ like:
                 patches/
             var/
 
-Now, the mechanism used by `ampzero deploy` is far from perfect.  
+Now, the mechanism used by `amp deploy` is far from perfect.  
 It is not robust against your servers failing and it wouldn't scale  
 beyond 100 or so servers.
 
@@ -301,7 +300,7 @@ be implemented as part of the Ampify development. It'll allow for
 scalable, failure-tolerant, synchronised updates and multi-version  
 deployment.
 
-But, for now, `ampzero deploy` is all we have.
+But, for now, `amp deploy` is all we have.
 
 **Customising Your Instance**
 
@@ -313,9 +312,9 @@ for any new services you define.
 
 **Cheatsheet**
 
-    $ ampzero init <instance-name>    # initialise a new setup
-    $ ampzero run <instance-name>     # run all the components
-    $ ampzero deploy <instance-name>  # deploy to remote hosts
+    $ amp init <instance-name>    # initialise a new setup
+    $ amp run <instance-name>     # run all the components
+    $ amp deploy <instance-name>  # deploy to remote hosts
 
 **Resources**
 
