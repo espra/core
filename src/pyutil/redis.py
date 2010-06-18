@@ -4,7 +4,6 @@
 import logging
 import socket
 
-from adisp import async
 from collections import deque
 from time import time
 
