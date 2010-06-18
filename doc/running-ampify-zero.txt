@@ -10,13 +10,21 @@ Running Ampify Zero
 **Note: THIS DOES NOT WORK YET!**
 
 Assuming that you've successfully built all the dependencies according to `the
-instructions <http://ampify.it/#get-started>`_, you should now be all set to run
-``Ampify Zero``.
+getting started instructions <http://ampify.it/#get-started>`_, you should now
+be all set to run ``Ampify Zero``. |contents|
+
+.. contents::   Table of Contents
+                :depth: 2
+                :backlinks: none
 
 Unfortunately, there are a number of different components involved (keyspace,
 nginx, redis and ampnodes). And unless you're used to modern "high-scalability"
 deployments in other contexts, it could all be quite a head fuck. Therefore, the
 ``amp`` script is provided to help ease the pain.
+
+.. raw:: html
+
+  <hr class="clear" />
 
 
 Quickstart
@@ -340,5 +348,10 @@ Contribute
 
   -- Enjoy, tav <tav@espians.com>
 
+
+
+.. |contents| raw:: html
+
+  [ <a href="#table-of-contents" class="table-of-contents-handler">Table of Contents</a> ]
 
 .. _irc logs: http://irclogs.ampify.it

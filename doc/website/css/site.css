@@ -342,6 +342,7 @@ body > #body-outer {
 	display: none;
 	float: left;
 	margin-top: 10px;
+	margin-right: 20px;
 }
 
 #table-of-contents .topic-title {
