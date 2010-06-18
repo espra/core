@@ -123,7 +123,20 @@ Get Involved
   chatlogs: <a href="http://irclogs.ampify.it">irclogs.ampify.it</a>
   </pre>
 
-* Get on the `ampify mailing list <http://groups.google.com/group/ampify>`_.
+* Subscribe to the `Ampify mailing list
+  <http://groups.google.com/group/ampify>`_.
+
+.. raw:: html
+
+  <div style="text-align: center; margin-top: 5px; margin-bottom: 15px">
+    <a href="http://groups.google.com/group/ampify"><img
+       src="http://groups.google.com/intl/en/images/logos/groups_logo_sm.gif"
+       height="30px" width="140px" alt="Google Groups"></a>
+    <form action="http://groups.google.com/group/ampify/boxsubscribe">
+      <input type="text" name="email" value="" size="20" placeholder="Your email address" > &nbsp;
+      <input type="submit" name="sub" value="Subscribe">
+    </form>
+  </div>
 
 * Sign up to GitHub if you don't have an `account
   <https://github.com/signup/free>`_ — it takes just a minute! You can then
