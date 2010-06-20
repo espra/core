@@ -31,9 +31,9 @@ match_js_in_uri_ref = re.compile(
 
 match_valid_uri_scheme = re.compile(
     '(http|https|aim|amp|callto|data|dict|dns|fax|fb|feed|file|freenet|ftp|geo|'
-    'git|gtalk|im|irc|ircs|itms|lastfm|magnet|mailto|maps|md5|msnim|news|nntp|'
-    'psyc|rsync|rtsp|secondlife|sftp|sha|sip|sips|skype|sms|spotify|ssh|svn|tag|'
-    'tel|urn|uuid|webcal|xmpp|xri|ymsgr):.*', re.IGNORECASE
+    'git|gtalk|im|irc|ircs|itms|lastfm|magnet|mailto|maps|md5|mms|msnim|news|'
+    'nntp|psyc|rsync|rtsp|secondlife|sftp|sha|sip|sips|skype|sms|spotify|ssh|'
+    'svn|tag|tel|urn|uuid|webcal|xmpp|xri|ymsgr):.*', re.IGNORECASE
     ).match
 
 match_valid_css_value = re.compile(
