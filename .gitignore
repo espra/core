@@ -17,6 +17,11 @@ src/instance/www/*.js
 src/kalati/UnicodeData.txt
 src/kalati/*.js
 
+src/tentapp/secret.py
+src/tentapp/static/*.css
+src/tentapp/static/*.js
+src/tentapp/updated.py
+
 # minified css/js files
 
 *.min.js
