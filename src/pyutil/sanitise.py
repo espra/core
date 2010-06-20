@@ -195,8 +195,11 @@ VALID_CSS_KEYWORDS = create_set("""
 
     lr-tb tb-rl
 
-    arial constantina consolas courier cursive fantasy geneva georgia helvetica
-    impact monaco monospace sans-serif serif tahoma times verdana
+    arial arial-black comic-sans-ms constantina consolas courier courier-new
+    cursive fantasy franklin-gothic-medium geneva georgia helvetica
+    helvetica-neue impact lucida-console lucida-grande lucida-sans-unicode
+    monaco monospace palatino-linotype sans-serif serif tahoma times
+    times-new-roman trebuchet-ms verdana
 
     !important aqua auto black block blue bold bolder both bottom brown center
     collapse compact dashed dotted double embed fixed fuchsia gray green groove
@@ -272,19 +275,60 @@ def sanitise(
                     if len(style) != 2:
                         continue
                     prop, value = style
-                    prop = prop.strip()
+                    prop = prop.strip().lower()
                     if prop not in valid_css_properties:
                         continue
-                    value = value.strip()
+                    components = []; add_component = components.append
+                    segments = filter(None, value.split(','))
+                    segcount = len(segments) - 1
+                    for idx, segment in enumerate(segments):
+                        current = None
+                        in_quotes = 0
+                        for char in segment:
+                            if current is None:
+                                if char.isspace():
+                                    continue
+                                if char == '"' or char == "'":
+                                    in_quotes = 1
+                                    current = ''
+                                else:
+                                    current = char
+                                continue
+                            if in_quotes:
+                                if char == '"' or char == "'":
+                                    in_quotes = 0
+                                    add_component(current)
+                                    current = None
+                                else:
+                                    current += char
+                            else:
+                                if char.isspace():
+                                    add_component(current)
+                                    current = None
+                                else:
+                                    current += char
+                        if current:
+                            add_component(current)
+                        if idx != segcount:
+                            add_component(',')
                     valid = True
-                    for part in value.split():
-                        part = part.lower()
-                        if part not in valid_css_keywords:
-                            if not match_valid_css_value(part):
+                    new_value = []; add_part = new_value.append
+                    for component in components:
+                        if component == ',':
+                            add_part(',')
+                            continue
+                        norm = '-'.join(component.lower().split())
+                        if norm not in valid_css_keywords:
+                            if not match_valid_css_value(norm):
                                 valid = False
+                                break
+                        if ' ' in component:
+                            add_part('"%s"' % component)
+                        else:
+                            add_part(component)
                     if not valid:
                         continue
-                    add_style("%s: %s;" % (prop, value))
+                    add_style("%s: %s;" % (prop, ''.join(new_value)))
                 if not new_style:
                     continue
                 val = ''.join(new_style)
