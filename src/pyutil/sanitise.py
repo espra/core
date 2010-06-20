@@ -1,6 +1,40 @@
 # No Copyright (-) 2008-2010 The Ampify Authors. This file is under the
 # Public Domain license that can be found in the root LICENSE file.
 
+r"""
+===============
+HTML5 Sanitiser
+===============
+
+This module provides a single ``sanitise`` function which should protect you
+from a wide range of XSS attacks:
+
+  >>> sanitise('<SCRIPT SRC=http://ha.ckers.org/xss.js></SCRIPT>')
+  ''
+
+  >>> sanitise("'';!--\"<XSS>=&{()}") == "'';!--\"=&{()}"
+  True
+
+  >>> sanitise("<IMG SRC=JaVaScRiPt:alert('XSS')>")
+  '<img />'
+
+  >>> sanitise('<INPUT TYPE="image" SRC="javascript:alert(\'XSS\');">')
+  '<input type="image" />'
+
+  >>> sanitise('<SCRIPT>document.write("<SCRI");</SCRIPT>PT SRC="http://ha.ckers.org/xss.js"></SCRIPT>')
+  'document.write("'
+
+  >>> sanitise('<SCRIPT a=">\'>" SRC="http://ha.ckers.org/xss.js"></SCRIPT>')
+  '\'>" SRC="http://ha.ckers.org/xss.js">'
+
+  >>> sanitise('<<SCRIPT>alert("XSS");//<</SCRIPT>')
+  ''
+
+  >>> sanitise('<SCRIPT/SRC="http://ha.ckers.org/xss.js"></SCRIPT>')
+  'SRC="http:/ha.ckers.org/xss.js">'
+
+""" # emacs "'
+
 # See http://ha.ckers.org/xss.html for a listing of various XSS attacks
 
 import re
@@ -232,7 +266,7 @@ def sanitise(
     valid_css_keywords=VALID_CSS_KEYWORDS,
     valid_css_classes=VALID_CSS_CLASSES,
     secure_id_prefix='local-', strip_cdata=True, strip_comments=True,
-    strip_pi=True, rel_whitelist=None, second_run=True
+    strip_pi=True, rel_whitelist=None, second_run=False
     ):
     """Return a sanitised version of the provided HTML."""
 
@@ -361,4 +395,13 @@ def sanitise(
             strip_pi, rel_whitelist, True
             )
 
-    return soup.renderContents().replace('<script>', '').replace('<script ', '')
+    return soup.renderContents()
+
+# ------------------------------------------------------------------------------
+# Run Tests
+# ------------------------------------------------------------------------------
+
+if __name__ == '__main__':
+
+    import doctest
+    doctest.testmod()
