@@ -38,7 +38,7 @@ match_valid_uri_scheme = re.compile(
 
 match_valid_css_value = re.compile(
     '^(#[0-9a-f]+|rgb\(\d+%?,\d*%?,?\d*%?\)?|\d{0,2}\.?\d{0,2}'
-    '(cm|deg|em|ex|Hz|hz|in|mm|pc|pt|px|s|%|,|\))?)$'
+    '(cm|deg|em|ex|hz|in|mm|pc|pt|px|s|%|,|\))?)$'
     ).match
 
 # ------------------------------------------------------------------------------
@@ -195,6 +195,9 @@ VALID_CSS_KEYWORDS = create_set("""
 
     lr-tb tb-rl
 
+    arial constantina consolas courier cursive fantasy geneva georgia helvetica
+    impact monaco monospace sans-serif serif tahoma times verdana
+
     !important aqua auto black block blue bold bolder both bottom brown center
     collapse compact dashed dotted double embed fixed fuchsia gray green groove
     hide hidden inherit inline inline-block inset invert italic justify left
@@ -275,6 +278,7 @@ def sanitise(
                     value = value.strip()
                     valid = True
                     for part in value.split():
+                        part = part.lower()
                         if part not in valid_css_keywords:
                             if not match_valid_css_value(part):
                                 valid = False
