@@ -114,16 +114,16 @@ VALID_CSS_PROPERTIES = create_set("""
     pitch-range richness ruby-align ruby-overhang ruby-position speak
     speak-header speak-numeral speak-punctuation speech-rate stress table-layout
     text-align text-align-last text-autospace text-decoration text-justify
-    text-kashida-space text-overflow text-transform unicode-bidi vertical-align
-    voice-family volume white-space width word-break word-spacing word-wrap
-    writing-mode
+    text-kashida-space text-overflow text-shadow text-transform unicode-bidi
+    vertical-align voice-family volume white-space width word-break word-spacing
+    word-wrap writing-mode
 
     """)
 
 # background* box-shadow* clip column* content counter counter-increment cue*
 # filter include-source layer* left/right/top/bottom margin list-style-image
 # marker-offset orphans page* play-during position quotes scrollbar* size
-# text-indent text-shadow (has a potential comma) text-underline-position widows
+# text-indent text-underline-position widows
 # z-index zoom
 
 VALID_CSS_KEYWORDS = create_set("""
@@ -315,7 +315,7 @@ def sanitise(
                     new_value = []; add_part = new_value.append
                     for component in components:
                         if component == ',':
-                            add_part(',')
+                            add_part(', ')
                             continue
                         norm = '-'.join(component.lower().split())
                         if norm not in valid_css_keywords:
@@ -323,9 +323,9 @@ def sanitise(
                                 valid = False
                                 break
                         if ' ' in component:
-                            add_part('"%s"' % component)
+                            add_part(' "%s"' % component)
                         else:
-                            add_part(component)
+                            add_part(' %s' % component)
                     if not valid:
                         continue
                     add_style("%s: %s;" % (prop, ''.join(new_value)))
