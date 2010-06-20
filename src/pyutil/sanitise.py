@@ -177,6 +177,10 @@ def sanitise(
 
         for attr, val in tag.attrs:
             if attr not in valid_attrs:
+                for prefix in valid_attr_prefixes:
+                    if attr.startswith(prefix):
+                        append((attr, val))
+                        break
                 continue
             if attr == 'id':
                 if not val.startswith(secure_id_prefix):
