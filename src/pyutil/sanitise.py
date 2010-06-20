@@ -38,7 +38,7 @@ match_valid_uri_scheme = re.compile(
 
 match_valid_css_value = re.compile(
     '^(#[0-9a-f]+|rgb\(\d+%?,\d*%?,?\d*%?\)?|\d{0,2}\.?\d{0,2}'
-    '(cm|deg|em|ex|in|mm|pc|pt|px|%|,|\))?)$'
+    '(cm|deg|em|ex|Hz|hz|in|mm|pc|pt|px|s|%|,|\))?)$'
     ).match
 
 # ------------------------------------------------------------------------------
@@ -96,21 +96,35 @@ ATTRS_WITH_URI_REFS = frozenset(['action', 'cite', 'formaction', 'href', 'src'])
 VALID_CSS_PROPERTIES = create_set("""
 
     azimuth background-color border border-bottom border-bottom-color
-    border-bottom-style border-bottom-width border-collapse border-color
-    border-left border-left-color border-left-style border-left-width
+    border-bottom-left-radius border-bottom-right-radius border-bottom-style
+    border-bottom-width border-collapse border-color border-left
+    border-left-color border-left-style border-left-width border-radius
     border-right border-right-color border-right-style border-right-width
-    border-spacing border-style border-top border-top-color border-top-style
+    border-spacing border-style border-top border-top-color
+    border-top-left-radius border-top-right-radius border-top-style
     border-top-width border-width caption-side clear color cursor direction
-    display elevation empty-cells float font font-family font-size font-style
-    font-variant font-weight height letter-spacing line-height overflow padding
-    padding-bottom padding-left padding-right padding-top pause pause-after
-    pause-before pitch pitch-range richness speak speak-header speak-numeral
-    speak-punctuation speech-rate stress text-align text-decoration text-indent
-    unicode-bidi vertical-align voice-family volume white-space width
+    display elevation empty-cells float font font-family font-size
+    font-size-adjust font-stretch font-style font-variant font-weight height
+    ime-mode layout-flow layout-grid layout-grid-char layout-grid-char-spacing
+    layout-grid-line layout-grid-mode layout-grid-type letter-spacing
+    line-height line-break list-style list-style-position list-style-type marks
+    max-height max-width min-height min-width outline-color outline-style
+    outline-width overflow overflow-x overflow-y padding padding-bottom
+    padding-left padding-right padding-top pause pause-after pause-before pitch
+    pitch-range richness ruby-align ruby-overhang ruby-position speak
+    speak-header speak-numeral speak-punctuation speech-rate stress table-layout
+    text-align text-align-last text-autospace text-decoration text-justify
+    text-kashida-space text-overflow text-transform unicode-bidi vertical-align
+    voice-family volume white-space width word-break word-spacing word-wrap
+    writing-mode
 
     """)
 
-# clip content counter counter-increment cue* filter
+# background* box-shadow* clip column* content counter counter-increment cue*
+# filter include-source layer* left/right/top/bottom margin list-style-image
+# marker-offset orphans page* play-during position quotes scrollbar* size
+# text-indent text-shadow (has a potential comma) text-underline-position widows
+# z-index zoom
 
 VALID_CSS_KEYWORDS = create_set("""
 
@@ -123,17 +137,80 @@ VALID_CSS_KEYWORDS = create_set("""
     crosshair default grab grabbing hand help move no-drop not-allowed pointer
     progress spinning text vertical-text wait
 
-    !important aqua auto black block blue bold both bottom brown center collapse
-    compact dashed dotted double embed fuchsia gray green groove hide hidden
-    inherit inline inline-block inset italic left lime list-item ltr marker
-    maroon medium navy none normal nowrap olive outset pointer purple red ridge
-    right rtl run-in separate show silver solid table table-cell table-column
-    table-column-group table-footer-group table-header-group table-row
-    table-row-group teal top transparent underline white yellow
+    caption icon menu message-box small-caption status-bar
+
+    large larger medium small smaller x-large x-small xx-large xx-small
+
+    condensed expanded extra-condensed extra-expanded narrower normal
+    semi-condensed semi-expanded ultra-condensed ultra-expanded wider
+
+    active inactive deactivated
+
+    horizontal vertical-ideographic
+
+    both char fixed line loose strict
+
+    inside outside
+
+    armenian circle cjk-ideographic decimal decimal-leading-zero disc georgian
+    hebrew katakana-iroha hiragana hiragana-iroha katakana lower-alpha
+    lower-greek lower-latin lower-roman square upper-alpha upper-latin
+    upper-roman
+
+    crop cross
+
+    medium thick thin
+
+    hidden scroll visible
+
+    high low medium x-high x-low
+
+    above center distribute-letter distribute-space inline left line-edge right
+    whitespace
+
+    always code continuous digits once spell-out
+
+    fast medium slow x-fast x-slow
+
+    ideograph-alpha ideograph-numeric ideograph-parenthesis ideograph-space
+
+    distribute distribute-all-lines inter-cluster inter-ideograph inter-word
+    newspaper
+
+    clip ellipsis
+
+    capitalize lowercase uppercase
+
+    bidi-override embed
+
+    baseline bottom middle sub super text-bottom text-top top
+
+    collapse hidden hide show visible
+
+    male female child
+
+    loud medium silent soft x-loud x-soft
+
+    break-all break-word keep-all
+
+    lr-tb tb-rl
+
+    !important aqua auto black block blue bold bolder both bottom brown center
+    collapse compact dashed dotted double embed fixed fuchsia gray green groove
+    hide hidden inherit inline inline-block inset invert italic justify left
+    lighter lime line-through list-item ltr marker maroon medium navy none
+    normal nowrap oblique olive outset overline pointer pre purple red ridge
+    right rtl run-in separate show silver small-caps solid strict table
+    table-cell table-column table-column-group table-footer-group
+    table-header-group table-row table-row-group teal top transparent underline
+    white yellow
 
     """)
 
 # *-resize (for cursor)
+# font-family/size
+# text-decoration: blink
+# voice-family
 
 VALID_CSS_CLASSES = frozenset()
 
