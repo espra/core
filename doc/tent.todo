@@ -92,7 +92,7 @@ Front End
 ✗ url truncating...
 ✗ url longurl expansion
 
-✗ google analytics
+✓ google analytics
 
 ✗ loading indicator
 ✗ load cache
@@ -133,6 +133,7 @@ Front End
 ✗ /topic handling
 ✗ /user/perspective handling
 ✗ /trust handling
+✗ /pecu handling
 
 ✗ +drafts
 ✗ +sent
@@ -425,11 +426,11 @@ Back End
 ✗ markdown + sanitiser
 ✗ markdown preview view
 
-✗ rst convert
-✗ rst disable include/raw
-✗ rst preview view
-✗ rst + sanitiser
-✗ rst syntax highlight for code
+# rst convert
+# rst disable include/raw
+# rst preview view
+# rst + sanitiser
+# rst syntax highlight for code
 
 ✗ trends model
 ✗ trends updating
@@ -498,7 +499,7 @@ Live Node
 ✗ web hooks confirmation handler
 ✗ web hooks post handler
 ✗ memcache invalidation handler
-✗ iana-reserved ips
+# iana-reserved ips
 
 =====
 Extra
