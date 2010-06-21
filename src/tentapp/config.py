@@ -35,7 +35,4 @@ TAMPER_PROOF_DEFAULT_DURATION = timedelta(minutes=20)
 
 REMOTE_KEY = "secret"
 
-try:
-    from secret import *
-except:
-    pass
+from secret import *
