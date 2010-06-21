@@ -4,7 +4,7 @@
 # Public Domain license that can be found in the root LICENSE file.
 
 python -c "from datetime import datetime as d; \
-           left = d(2010, 05, 31, 18, 0, 0) - d.now(); \
+           left = d(2010, 06, 30, 23, 0, 0) - d.now(); \
            left = (left.days * 86400) + left.seconds; \
            left, seconds = divmod(left, 60); \
            hours, minutes = divmod(left, 60); \
@@ -32,10 +32,10 @@ cat >> /dev/null << EOF
 Admin
 =====
 
-✗ dns
-✗ google apps setup
-✗ http redirects from apex domains
-✗ s3
+✓ dns
+✓ google apps setup
+✓ http redirects from apex domains
+# s3
 
 ✓ dependencies
 ✓ configure && make
@@ -244,12 +244,12 @@ Front End
 ✗ pecu allocations
 ✗ pecu totals
 
-✗ javascript ucd -- part 1
-✗ javascript ucd -- part 2
+# javascript ucd -- part 1
+# javascript ucd -- part 2
 
 ✗ preferred language settings
 ✗ google translation
-✗ transliteration support
+# transliteration support
 
 ✗ timezone settings
 ✗ js timezone support
@@ -316,6 +316,7 @@ Back End
 ✗ identicon generation
 ✗ identicon/profile pic update
 
+✗ user invitation
 ✗ user payments model
 ✗ user payments
 ✗ paypal
@@ -412,9 +413,10 @@ Back End
 ✗ parallel query sensor notify
 
 ✗ sanitiser: dom elements
-✗ sanitiser: css
-✗ sanitiser: xss check
-✗ sanitiser: cache
+✗ sanitiser: jsonp
+✓ sanitiser: css
+✓ sanitiser: xss check
+# sanitiser: cache
 
 ✗ markdown convert
 ✗ markdown syntax highlight for code
@@ -435,9 +437,9 @@ Back End
 ✗ trends query
 ✗ trends service
 
-✗ remote api
-✗ remote api auth
-✗ remote api worker
+✓ remote api
+✓ remote api auth
+# remote api worker
 
 ✗ mapreduce handlers
 ✗ mapreduce generated results view
@@ -460,7 +462,7 @@ Live Node
 
 ✗ redis configuration
 ✗ redis manager
-✗ async redis library
+✓ async redis library
 
 ✗ keyspace configuration
 ✗ keyspace init script
@@ -523,43 +525,43 @@ Extra
 Operations
 ==========
 
-✗ app engine error logging
-✗ app engine micro-format logging (user, a/b tests)
-✗ nginx request logging
-✗ live node request logging
-✗ live node error logging
+# app engine error logging
+# app engine micro-format logging (user, a/b tests)
+# nginx request logging
+# live node request logging
+# live node error logging
 
-✗ app engine logs downloader
-✗ logs parser
-✗ logs saver from live nodes to log store
-✗ logs saver to log store
-✗ logs saver handling of inaccessible store
-✗ logs saver to s3
-✗ async s3 client
-✗ logs saver to redis
+# app engine logs downloader
+# logs parser
+# logs saver from live nodes to log store
+# logs saver to log store
+# logs saver handling of inaccessible store
+# logs saver to s3
+# async s3 client
+# logs saver to redis
 
-✗ log store app
-✗ log store configuration
-✗ log model
-✗ input external data, e.g. user plans, quotas, etc.
-✗ mappers
-✗ reducers
-✗ default jobs, e.g. top users
-✗ a/b test jobs
-✗ reports interface
-✗ report charts
-✗ log upload access verification
+# log store app
+# log store configuration
+# log model
+# input external data, e.g. user plans, quotas, etc.
+# mappers
+# reducers
+# default jobs, e.g. top users
+# a/b test jobs
+# reports interface
+# report charts
+# log upload access verification
 
-✗ remonit data input sources
-✗ remonit configuration
-✗ remonit notification
-✗ remonit web interface
-✗ remonit status interface
-✗ remonit recent logs interface
-✗ remonit error reporting interface
+# remonit data input sources
+# remonit configuration
+# remonit notification
+# remonit web interface
+# remonit status interface
+# remonit recent logs interface
+# remonit error reporting interface
 
-✗ public status app
-✗ public status app access verification
-✗ public status app charts
+# public status app
+# public status app access verification
+# public status app charts
 
 EOF
