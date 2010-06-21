@@ -11,7 +11,7 @@ clean:
 	+rm -f static/tentapp.js
 	+rm -f static/tentapp.min.js
 
-static/site.css:
+static/site.css: static/site.sass
 	@echo "# Generating CSS files from the SASS input."
 	@sass static/site.sass static/site.css
 
@@ -19,7 +19,7 @@ static/site.min.css: static/site.css
 	@echo "# Minifying CSS files."
 	@java -jar $(BIN)/yuicompressor-2.4.2.jar --charset utf-8 static/site.css -o static/site.min.css
 
-static/tentapp.js:
+static/tentapp.js: static/tentapp.coffee
 	@echo "# Generating JS files from the CoffeeScript input."
 	@coffee -c -o static static/tentapp.coffee
 
