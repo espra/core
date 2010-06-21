@@ -413,7 +413,7 @@ Back End
 ✗ parallel query sensor notify
 
 ✗ sanitiser: dom elements
-✗ sanitiser: jsonp
+✓ sanitiser: jsonp
 ✓ sanitiser: css
 ✓ sanitiser: xss check
 # sanitiser: cache
