@@ -17,7 +17,17 @@ from os.path import join as join_path
 op = OptionParser(usage="Usage: %prog <css-file> [options]")
 
 op.add_option(
-    '-r', '--root', dest='root', help="set the root directory for asset paths."
+    '-r', '--root', dest='root', help="set the root directory for asset paths"
+    )
+
+op.add_option(
+    '--IE', dest='IE', action='store_true',
+    help="generate output for older browsers like IE 7"
+    )
+
+op.add_option(
+    '--static-root', dest='static',
+    help="set the root for URLs (required with --IE)"
     )
 
 options, args = op.parse_args(sys.argv[1:])
@@ -26,7 +36,12 @@ if not args:
     op.print_help()
     sys.exit(1)
 
+if options.IE and not options.static:
+    op.print_help()
+    sys.exit(1)
+
 root_path = options.root or getcwd()
+static_url = options.static
 
 # Main Regex
 
@@ -47,8 +62,15 @@ def convert_to_data_uri(foo):
         return "embed(%s)" % path
     return 'url("data:%s;base64,%s")' % (ctype, data)
 
+def convert_to_url(foo):
+    path = foo.group(1)
+    return 'url("%s%s")' % (static_url, path)
+
 # Run
 
 for path in args:
     source = open(path, 'rb').read()
-    print substitute_embed(convert_to_data_uri, source)
+    if options.IE:
+        print substitute_embed(convert_to_url, source)
+    else:
+        print substitute_embed(convert_to_data_uri, source)
