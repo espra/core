@@ -1,0 +1,54 @@
+#! /usr/bin/env python
+
+# No Copyright (-) 2010 The Ampify Authors. This file is under the
+# Public Domain license that can be found in the root LICENSE file.
+
+import base64
+import mimetypes
+import re
+import sys
+
+from optparse import OptionParser
+from os import getcwd
+from os.path import join as join_path
+
+# Handle Command Line Options
+
+op = OptionParser(usage="Usage: %prog <css-file> [options]")
+
+op.add_option(
+    '-r', '--root', dest='root', help="set the root directory for asset paths."
+    )
+
+options, args = op.parse_args(sys.argv[1:])
+
+if not args:
+    op.print_help()
+    sys.exit(1)
+
+root_path = options.root or getcwd()
+
+# Main Regex
+
+substitute_embed = re.compile(r'embed\("([^\)]*)"\)').sub
+
+# Main Data URI Conversion Function
+
+def convert_to_data_uri(foo):
+    path = foo.group(1)
+    ctype = mimetypes.guess_type(path)[0]
+    if not ctype:
+        print "Could not detect the file type of: %s" % path
+        sys.exit(1)
+    data = open(join_path(root_path, path), 'rb').read()
+    data = base64.b64encode(data)
+    if len(data) > 32000:
+        print "Skipping %r (%d bytes long)" % (path, len(data))
+        return "embed(%s)" % path
+    return 'url("data:%s;base64,%s")' % (ctype, data)
+
+# Run
+
+for path in args:
+    source = open(path, 'rb').read()
+    print substitute_embed(convert_to_data_uri, source)
