@@ -2,6 +2,7 @@
 # Public Domain license that can be found in the root LICENSE file.
 
 BIN=$(AMPIFY_ROOT)/environ/local/bin
+CSSEMBED_ARGS=--static-prefix /static/ --static-suffix "?`date +%s`"
 
 all: static/site.min.css static/tentapp.min.js
 
@@ -20,8 +21,8 @@ static/site.source.css: static/site.sass
 
 static/site.css: static/site.source.css
 	@echo "# Expanding embedded files from the CSS input."
-	@cssembed static/site.source.css --root static > static/site.css
-	@cssembed static/site.source.css --static-root /static/ --IE > static/site.ie.css
+	@cssembed static/site.source.css $(CSSEMBED_ARGS) --root static > static/site.css
+	@cssembed static/site.source.css $(CSSEMBED_ARGS) --IE > static/site.ie.css
 
 static/site.min.css: static/site.css
 	@echo "# Minifying CSS files."

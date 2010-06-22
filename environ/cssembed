@@ -26,8 +26,13 @@ op.add_option(
     )
 
 op.add_option(
-    '--static-root', dest='static',
-    help="set the root for URLs (required with --IE)"
+    '--static-prefix', dest='static_prefix',
+    help="set the static URL prefix (required)"
+    )
+
+op.add_option(
+    '--static-suffix', dest='static_suffix', default='',
+    help="set the static URL suffix"
     )
 
 options, args = op.parse_args(sys.argv[1:])
@@ -36,12 +41,13 @@ if not args:
     op.print_help()
     sys.exit(1)
 
-if options.IE and not options.static:
+if not options.static_prefix:
     op.print_help()
     sys.exit(1)
 
 root_path = options.root or getcwd()
-static_url = options.static
+static_prefix = options.static_prefix
+static_suffix = options.static_suffix
 
 # Main Regex
 
@@ -53,24 +59,22 @@ def convert_to_data_uri(foo):
     path = foo.group(1)
     ctype = mimetypes.guess_type(path)[0]
     if not ctype:
-        print "Could not detect the file type of: %s" % path
-        sys.exit(1)
+        raise ValueError("Could not detect the file type of: %s" % path)
     data = open(join_path(root_path, path), 'rb').read()
     data = base64.b64encode(data)
     if len(data) > 32000:
-        print "Skipping %r (%d bytes long)" % (path, len(data))
-        return "embed(%s)" % path
+        return 'url("%s%s%s")' % (static_prefix, path, static_suffix)
     return 'url("data:%s;base64,%s")' % (ctype, data)
 
 def convert_to_url(foo):
     path = foo.group(1)
-    return 'url("%s%s")' % (static_url, path)
+    return 'url("%s%s%s")' % (static_prefix, path, static_suffix)
 
 # Run
 
-for path in args:
-    source = open(path, 'rb').read()
-    if options.IE:
-        print substitute_embed(convert_to_url, source)
-    else:
-        print substitute_embed(convert_to_data_uri, source)
+path = args[0]
+source = open(path, 'rb').read()
+if options.IE:
+    print substitute_embed(convert_to_url, source)
+else:
+    print substitute_embed(convert_to_data_uri, source)
