@@ -10,8 +10,10 @@ Tent App Collaboration Platform
 
 import logging
 import os
+import re
 import sys
 
+from BaseHTTPServer import BaseHTTPRequestHandler
 from cgi import FieldStorage
 from time import time
 from traceback import format_exception
@@ -23,50 +25,36 @@ from google.appengine.ext import db
 # Extend the sys.path to include the ``lib`` subdirectory.
 sys.path.insert(0, 'lib')
 
-from simplejson import dumps as json_encode, loads as json_decode
+from cookie import SimpleCookie # note: this is our cookie and not Cookie...
 from pyutil.crypto import validate_tamper_proof_string
+from pyutil.exception import html_format_exception
+from pyutil.io import DEVNULL
+from pyutil.sanitise import match_valid_uri_scheme, sanitise
+from simplejson import dumps as json_encode, loads as json_decode
 
 from config import *
+from config import APPLICATION_TIMESTAMP
 
 # ------------------------------------------------------------------------------
-# the age of ampify has begun!
+# Constants
 # ------------------------------------------------------------------------------
 
-AMPIFY_EPOCH = 1262790477000 # in milliseconds since the unix epoch
+# Item IDs are generated relative to the Ampify epoch in order to save space.
+# This is, in turn, defined in terms of milliseconds since the Unix epoch.
+AMPIFY_EPOCH = 1262790477000
 
-# ------------------------------------------------------------------------------
-# I/O Helpers
-# ------------------------------------------------------------------------------
+COOKIE_KEY_NAMES = frozenset([
+    'domain', 'expires', 'httponly', 'max-age', 'path', 'secure', 'version'
+    ])
 
-class DevNull(object):
-    """Provide a file-like interface emulating /dev/null."""
-
-    def __call__(self, *args, **kwargs):
-        pass
-
-    def flush(self):
-        pass
-
-    def log(self, *args, **kwargs):
-        pass
-
-    def write(self, input):
-        pass
-
-# ------------------------------------------------------------------------------
-# Some Constants
-# ------------------------------------------------------------------------------
-
-API_HANDLERS = {}
-DEVNULL = DevNull()
-
-API_REQUEST_KEYS = frozenset(['payload', 'sig'])
-SSL_FLAGS = frozenset(['yes', 'on', '1'])
+HTTP_STATUS_MESSAGES = BaseHTTPRequestHandler.responses
 
 if os.environ.get('SERVER_SOFTWARE', '').startswith('Google'):
     RUNNING_ON_GOOGLE_SERVERS = True
 else:
     RUNNING_ON_GOOGLE_SERVERS = False
+
+SSL_FLAGS = frozenset(['yes', 'on', '1'])
 
 OK = "Status: 200 OK\r\n"
 ERROR = "Status: 500 Server Error\r\n"
@@ -88,6 +76,49 @@ VALID_REQUEST_CONTENT_TYPES = frozenset([
     ])
 
 # ------------------------------------------------------------------------------
+# Exceptions
+# ------------------------------------------------------------------------------
+
+# Services can throw exceptions to return specifc HTTP response codes.
+#
+# The ``Redirect`` exception is used to handle both internal as well as external
+# HTTP 301/302 redirects.
+class Redirect(Exception):
+    def __init__(self, uri, method=None, permanent=False):
+        self.uri = uri
+        self.method = method
+        self.permanent = permanent
+
+# The ``NotFound`` is used to represent the classic 404 error.
+class NotFound(Exception):
+    pass
+
+# The ``HTTPError`` is used to represent all other response codes.
+class HTTPError(Exception):
+    def __init__(self, code=500):
+        self.code = code
+
+# ------------------------------------------------------------------------------
+# Cookies
+# ------------------------------------------------------------------------------
+
+# The ``get_cookie_headers_to_write`` function returns HTTP response headers for
+# the given ``cookies``.
+def get_cookie_headers_to_write(cookies, valid_keys=COOKIE_KEY_NAMES):
+    output = SimpleCookie()
+    for name, values in cookies.iteritems():
+        name = str(name)
+        output[name] = values.pop('value')
+        cur = output[name]
+        for key, value in values.items():
+            if key == 'max_age':
+                key = 'max-age'
+            if key not in valid_keys:
+                continue
+            cur[key] = value
+    return str(output)
+
+# ------------------------------------------------------------------------------
 # App Runner
 # ------------------------------------------------------------------------------
 
@@ -101,14 +132,23 @@ def run_app(
     ERROR_HEADER=ERROR_HEADER,
     NOTFOUND=NOTFOUND,
     ):
-    """The core application runner."""
 
+    # We copy ``os.environ`` just in case App Engine doesn't reset any changes
+    # we make to it.
     env = dict(os.environ)
-    kwargs = {}
 
+    # We redirect the stdout to a ``/dev/null`` like interface so that any
+    # accidental prints by libraries don't end up being written as part of the
+    # response.
     sys._boot_stdout = sys.stdout
     sys.stdout = DEVNULL
     write = sys._boot_stdout.write
+
+    # We
+    service = None
+    args = []
+    kwargs = {}
+
 
     try:
 
@@ -116,12 +156,40 @@ def run_app(
         content_type = env.get('CONTENT-TYPE', '')
         api_method = env['PATH_INFO'][1:]
 
+        content = """
+<html>
+  <head>
+    <title>Hello World</title>
+    <script src="/static/tentapp.js?%s"></script>
+    <!--[if !IE]><!-->
+      <link rel="stylesheet" type="text/css" href="static/site.css?%s" />
+    <!--<![endif]-->
+    <!--[if gte IE 8]>
+      <link rel="stylesheet" type="text/css" href="static/site.css?%s" />
+    <![endif]-->
+    <!--[if lte IE 7]>
+      <link rel="stylesheet" type="text/css" href="static/site.ie.css?%s" />
+    <![endif]-->
+  </head>
+  <body>
+    Hello!
+  </body>
+</html>""" % (APPLICATION_TIMESTAMP, APPLICATION_TIMESTAMP, APPLICATION_TIMESTAMP, APPLICATION_TIMESTAMP)
+
         write(
-            "Status: 302 Moved\r\n"
-            "Location: http://socialstartuplabs-1.eventbrite.com/\r\n"
+            "Status: 200 OK\r\n"
+            "Content-Length: %s\r\n\r\n"
+            "%s" % (len(content), content)
             )
 
         return
+
+#         write(
+#             "Status: 302 Moved\r\n"
+#             "Location: http://socialstartuplabs-1.eventbrite.com/\r\n"
+#             )
+
+#         return
 
         if not 0:
             pass
@@ -223,6 +291,36 @@ def foo():
     words = text.split()
     if len(words) > 5000:
         raise ValueError("The text is longer than 5,000 words!")
+
+# ------------------------------------------------------------------------------
+# patch beaker to support app engine memcache
+# ------------------------------------------------------------------------------
+
+# First, setup the App Engine memcache client as an importable memcache module.
+import google.appengine.api.memcache as memcache
+
+sys.modules['memcache'] = memcache
+
+import beaker.container
+import beaker.ext.memcached
+
+# And, then patch the beaker ``Value`` object.
+class Value(beaker.container.Value):
+
+    def get_value(self):
+        stored, expired, value = self._get_value()
+        if not self._is_expired(stored, expired):
+            return value
+
+        if not self.createfunc:
+            raise KeyError(self.key)
+
+        v = self.createfunc()
+        self.set_value(v)
+        return v
+
+beaker.container.Value = Value
+beaker.ext.memcached.verify_directory = lambda x: None
 
 # ------------------------------------------------------------------------------
 # the zerodatastore api
@@ -647,3 +745,41 @@ class ParallelQuery(object):
 # query.run('by =', [('evangineer', 'olasofia', 'sbp']))
 
 # query.results <--- {'evangineer': [...], 'olasofia': [...]}
+
+
+
+#replace_links = re.compile(r'[^\\]\[(.*?)\]', re.DOTALL).sub
+replace_links = re.compile(r'\[(.*?)\]', re.DOTALL).sub
+
+def escape(s):
+    return s.replace(
+        "&", "&amp;"
+        ).replace(
+        "<", "&lt;"
+        ).replace(
+        ">", "&gt;"
+        ).replace(
+        '"', "&quot;"
+        )
+
+text = """
+
+hmz, [foo] and [bar|yes] oi [skype:foo|call me] hehe and okay or \[skype:ignore|yes] okay
+yes, [http://google.com|google] and an attack [http://www.google.com " onclick="foo"|evil
+link]
+
+""" # emacs "
+
+def handle_links(content):
+    link = content.group(1)
+    if '|' in link:
+        uri, name = link.split('|', 1)
+        uri = uri.strip()
+        name = name.strip()
+    else:
+        uri = name = link.strip()
+    if not match_valid_uri_scheme(uri):
+        return content.group()
+    return '<a href="%s">%s</a>' % (escape(uri), escape(name))
+
+print replace_links(handle_links, text)
