@@ -5,6 +5,7 @@
 
 require File.join(File.dirname(__FILE__), 'rubylibs')
 require 'haml/exec'
+require 'haml/util'
 
 if ARGV.length == 0
     ARGV << "--help"
@@ -12,5 +13,6 @@ elsif not ARGV.include? "--cache-location"
     ARGV.unshift "--cache-location", MAIN_ROOT.join('.sass-cache').to_s
 end
 
+#Haml.init_rails(binding) if defined?(Haml)
 opts = Haml::Exec::Sass.new(ARGV)
 opts.parse!
