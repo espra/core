@@ -60,10 +60,11 @@ Front End
 ✗ design: default profile pic
 ✗ design: input box
 ✗ design: auto-completion
+# design: pie menu
 
 ✗ input box
 ✗ input box word/char count/limit
-✗ input box contenteditable
+# input box contenteditable
 ✗ input box current place finder in content area
 ✗ input box auto-completion
 ✗ input box auto-completion -- users
@@ -79,6 +80,7 @@ Front End
 ✗ auto-preview
 ✗ position editor
 ✗ uploader
+# pie menu
 
 ✗ google maps
 ✗ map view
@@ -99,7 +101,7 @@ Front End
 ✗ load on scroll
 
 ✗ scrollbars
-✗ scrollbars theme
+# scrollbars theme
 
 ✗ dol control: search
 ✗ dol control: global/trusted
@@ -183,8 +185,8 @@ Front End
 ✗ oembed: youtube
 ✗ oembed: vimeo
 
-✗ spotify uris
-✗ skype uris
+✓ spotify uris
+✓ skype uris
 
 ✗ paste handler
 ✗ text upload
@@ -234,14 +236,14 @@ Front End
 ✗ items cache
 ✗ live connection
 
-✗ web sockets client-side support
+# web sockets client-side support
 ✗ iframe client-side support
 
 ✗ cross-site comms
 ✗ cross-site auth
 ✗ cross-site tokens
 
-✗ js transaction handling
+# js transaction handling
 ✗ pecu allocations
 ✗ pecu totals
 
@@ -302,7 +304,7 @@ Back End
 ✗ user authentication
 ✗ user authorisation
 ✗ user quotas
-✗ user foreign connect (facebook)
+# user foreign connect (facebook)
 ✗ user foreign connect (twitter)
 ✗ user profile
 ✗ user profile picture
@@ -318,6 +320,7 @@ Back End
 ✗ identicon/profile pic update
 
 ✗ user invitation
+✗ user mail-out / email list
 ✗ user payments model
 ✗ user payments
 ✗ paypal
@@ -484,7 +487,7 @@ Live Node
 ✗ live node base javascript
 
 ✗ real-time update
-✗ web sockets support
+# web sockets support
 
 ✗ request authentication
 ✗ datastore-verified authentication
@@ -511,11 +514,11 @@ Extra
 ✗ google calendar integration: in
 ✗ google calendar integration: out
 
-✗ rss integration: in
-✗ rss integration: out
+# rss integration: in
+# rss integration: out
 
 ✗ twitter integration: out
-✗ facebook integration: out
+# facebook integration: out
 
 ✗ espra bots app
 ✗ espra bots phenny services
