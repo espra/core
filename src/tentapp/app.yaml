@@ -17,7 +17,7 @@ handlers:
   expiration: 1d
   secure: optional
 
-- url: /static/.*
+- url: /static
   static_dir: static
   expiration: 1d
   secure: optional
