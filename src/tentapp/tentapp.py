@@ -6,7 +6,7 @@
 Tent Collaboration Platform
 ===========================
 
-Tent is a collaboration platform that brings together IRC-like real-time with
+Tent brings together IRC-like real-time collaboration with trust maps and
 structured data.
 
 """
@@ -85,6 +85,17 @@ ERROR_WRAPPER = """<!DOCTYPE html>
 </html>
 """ % (CSS_FILE_PATH, CSS_FILE_PATH, CSS_FILE_PATH)
 
+ERROR_401 = ERROR_WRAPPER % """
+  <div class="error">
+    <h1>Invalid authorisation token</h1>
+    Your session may have expired or you may not have access.
+    <ul>
+      <li><a href="/">Return home</a></li>
+      <li><a href="/login">Login</a></li>
+    </ul>
+  </div>
+  """ # emacs"
+
 ERROR_404 = ERROR_WRAPPER % """
   <div class="error">
     <h1>The page you requested was not found</h1>
@@ -133,6 +144,13 @@ RESPONSE_302 = (
     "Location: %s\r\n\r\n"
     )
 
+RESPONSE_401 = (
+    "Status: 401 Unauthorized\r\n"
+    "Content-Type: text/html\r\n"
+    "Content-Length: %d\r\n\r\n"
+    "%s"
+    ) % (len(ERROR_401), ERROR_401)
+
 RESPONSE_404 = (
     "Status: 404 Not Found\r\n"
     "Content-Type: text/html\r\n"
@@ -147,18 +165,14 @@ RESPONSE_500_BASE = (
     "%s"
     )
 
-RESPONSE_500 = (
-    "Status: 500 Server Error\r\n"
-    "Content-Type: text/html\r\n"
-    "Content-Length: %d\r\n\r\n"
-    "%s"
-    ) % (len(ERROR_500), ERROR_500)
+RESPONSE_500 = RESPONSE_500_BASE % (len(ERROR_500), ERROR_500)
 
 if os.environ.get('SERVER_SOFTWARE', '').startswith('Google'):
     RUNNING_ON_GOOGLE_SERVERS = True
 else:
     RUNNING_ON_GOOGLE_SERVERS = False
     TENT_HTTP_HOST = TENT_HTTPS_HOST = 'http://localhost:8080'
+    COOKIE_DOMAIN_HTTP = COOKIE_DOMAIN_HTTPS = ''
 
 SERVICE_REGISTRY = {}
 
@@ -187,6 +201,10 @@ class HTTPContent(Exception):
     def __init__(self, content):
         self.content = content
 
+# The ``AuthError`` is used to represent the Not Authorised error.
+class AuthError(Exception):
+    pass
+
 # The ``NotFound`` is used to represent the classic 404 error.
 class NotFound(Exception):
     pass
@@ -210,7 +228,7 @@ if DEBUG:
 else:
 
     def STATIC(path, minifiable=1, secure=0, cache={}, host_size=HOST_SIZE):
-        if STATIC.ctx and STATIC.ctx.ssl_mode:
+        if STATIC.ssl_mode:
             secure = 1
         if (path, minifiable, secure) in cache:
             return cache[(path, minifiable, secure)]
@@ -230,7 +248,7 @@ else:
             STATIC_PATH, path, APPLICATION_TIMESTAMP
             ))
 
-    STATIC.ctx = None
+STATIC.ssl_mode = None
 
 # ------------------------------------------------------------------------------
 # Memcache
@@ -321,9 +339,6 @@ class Context(object):
 
     end_pipeline = False
 
-    http_host = TENT_HTTP_HOST
-    https_host = TENT_HTTPS_HOST
-
     def __init__(self, request_cookies, ssl_mode):
         self.status = (200, 'OK')
         self.raw_headers = []
@@ -384,10 +399,7 @@ class Context(object):
         headers['Pragma'] =  "no-cache"                        # HTTP/1.0
 
     def compute_url(self, *args, **kwargs):
-        if self.ssl_mode:
-            host = self.https_host
-        else:
-            host = self.http_host
+        host = TENT_HTTPS_HOST if self.ssl_mode else TENT_HTTP_HOST
         return self.compute_url_for_host(host, *args, **kwargs)
 
     def compute_url_for_host(self, host, *args, **kwargs):
@@ -455,7 +467,6 @@ class Context(object):
         return None
 
     def get_user_id(self):
-        return None
         if self._user_id is not None:
             return self._user_id
         session = self.get_session()
@@ -642,8 +653,8 @@ def handle_http_request(
         if 'submit' in kwargs:
             del kwargs['submit']
 
-        ssl_mode = env.get('HTTPS') in SSL_FLAGS
-        ctx = STATIC.ctx = Context(cookies, ssl_mode)
+        ssl_mode = STATIC.ssl_mode = env.get('HTTPS') in SSL_FLAGS
+        ctx = Context(cookies, ssl_mode)
 
         # check that there's a token and it validates
         if 0: # @/@
@@ -663,7 +674,7 @@ def handle_http_request(
 
             # @/@ this is insecure ...
 
-            if '__token__' in special_kwargs:
+            if 'token' in special_kwargs:
                 # if not self.ssl_mode:
                 #     raise Error("It is insecure to use an auth token over a non-SSL connection.")
                 session_token = special_kwargs['__token__']
@@ -671,14 +682,24 @@ def handle_http_request(
                 if '__token__' in cookies:
                     session_token = cookies['__token__']
 
-            self.session_token = session_token
-
             if session_token and '__csrf__' in special_kwargs:
                 session = self.get_session()
                 if session and (special_kwargs['__csrf__'] == session.csrf_key):
                     self.valid_auth_token = True
 
         service, renderers, config = SERVICE_REGISTRY[service_name]
+
+        if config['ssl_only']:
+            raise Redirect(
+                TENT_HTTPS_HOST + env['PATH_INFO'] +
+                (env['QUERY_STRING'] and "?%s" % env['QUERY_STRING'] or "")
+                )
+
+        if config['admin_only'] and not ctx.is_admin_user():
+            raise NotFound
+
+        if config['token_required'] and not ctx.valid_auth_token:
+            raise AuthError
 
         if config['cache']:
             cache_info = config['cache_key'](
@@ -759,6 +780,11 @@ def handle_http_request(
     # Handle 404s.
     except NotFound:
         write(RESPONSE_404)
+        return
+
+    # Handle 401s.
+    except AuthError:
+        write(RESPONSE_401)
         return
 
     # Handle HTTP 301/302 redirects.
@@ -1231,35 +1257,6 @@ def handle_links(content):
 
 # print replace_links(handle_links, text)
 
-OK = "Status: 200 OK\r\n"
-ERROR = "Status: 500 Server Error\r\n"
-
-CONTENT_TYPE = "Content-Type: text/plain; charset=utf-8\r\n"
-LINE = '\r\n'
-OK_HEADER = OK + CONTENT_TYPE + LINE
-ERROR_HEADER = ERROR + CONTENT_TYPE + LINE
-
-DISABLED = '{"error":"CapabilityError", "error_msg":"Datastore disabled"}'
-NOTFOUND = '{"error":"NotFound", "error_msg":"Invalid API call"}'
-NOTAUTHORISED = '{"error":"NotAuthorised", "error_msg":"Invalid API call"}'
-
-UTF8 = 'utf-8'
-
-VALID_HTTP_METHODS = frozenset(['GET', 'POST'])
-VALID_REQUEST_CONTENT_TYPES = frozenset([
-    '', 'application/x-www-form-urlencoded', 'multipart/form-data'
-    ])
-
-
-# ------------------------------------------------------------------------------
-# you can thank evangineer for this craziness ;p
-# ------------------------------------------------------------------------------
-
-# class Lease(db.Model):
-
-#     id = db.StringProperty(name='i')
-#     expires = db.DateTimeProperty(default=timedelta(seconds=45), name='e')
-
 # /pecu @evangineer 500
 # /pecu-allocated-total: + 500
 
@@ -1313,7 +1310,6 @@ VALID_REQUEST_CONTENT_TYPES = frozenset([
 #     write = db.BooleanProperty(default=False)
 
 # class Reference(db.Model):
-
 #     key = db.ByteStringProperty()
 
 # read
@@ -1321,31 +1317,6 @@ VALID_REQUEST_CONTENT_TYPES = frozenset([
 # read + write
 
 # "+lcl": 374092796242946496297492
-
-def multiop(
-    pre_id=None,
-    pre_query=None,
-    pre_cond=None, # == != in > < >= <= not in
-    pre_cond_attr=None,
-    pre_cond_val=None,
-    pre_op=None, # incr, decr, push, pop, set, delitem
-    pre_op_attr=None,
-    pre_op_value=None,
-    pre_op_return=None,
-    put_id=None,
-    put_val=None,
-    post_id=None,
-    post_query=None,
-    post_cond=None,
-    post_cond_attr=None,
-    post_cond_val=None,
-    post_op=None,
-    post_op_attr=None,
-    post_op_value=None,
-    post_op_return=None,
-    ):
-    pass
-
 
 def normalise(id, valid_chars=frozenset('abcdefghijklmnopqrstuvwxyz0123456789.-/')):
     r"normalise the id"
@@ -1356,10 +1327,13 @@ def foo():
     if len(words) > 5000:
         raise ValueError("The text is longer than 5,000 words!")
 
-
 @register_service('test', [json])
 def test(ctx, a, b):
     return "f: %s" % (a + b)
+
+@register_service('moop', [], token_required=1)
+def root(ctx):
+    return "Hello World."
 
 
 @register_service('root', ['main'])
