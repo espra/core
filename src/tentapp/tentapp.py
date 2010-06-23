@@ -30,7 +30,6 @@ from urlparse import urljoin
 from wsgiref.headers import Headers
 
 from google.appengine.api.capabilities import CapabilitySet
-from google.appengine.api import users
 from google.appengine.ext import db
 
 # Extend the sys.path to include the ``lib`` subdirectory.
@@ -42,6 +41,7 @@ from pyutil.crypto import create_tamper_proof_string
 from pyutil.crypto import validate_tamper_proof_string
 from pyutil.exception import html_format_exception
 from pyutil.io import DEVNULL
+from pyutil.jsonp import is_valid_jsonp_callback_value
 from pyutil.sanitise import match_valid_uri_scheme, sanitise
 from simplejson import dumps as json_encode, loads as json_decode
 
@@ -158,16 +158,17 @@ if os.environ.get('SERVER_SOFTWARE', '').startswith('Google'):
     RUNNING_ON_GOOGLE_SERVERS = True
 else:
     RUNNING_ON_GOOGLE_SERVERS = False
-
-SERVICE_DEFAULT_CONFIG = {
-    'token': False
-    }
+    TENT_HTTP_HOST = TENT_HTTPS_HOST = 'http://localhost:8080'
 
 SERVICE_REGISTRY = {}
 
 SSL_FLAGS = frozenset(['yes', 'on', '1'])
 
 SUPPORTED_HTTP_METHODS = frozenset(['GET', 'HEAD', 'POST'])
+
+VALID_REQUEST_CONTENT_TYPES = frozenset([
+    '', 'application/x-www-form-urlencoded', 'multipart/form-data'
+    ])
 
 # ------------------------------------------------------------------------------
 # Exceptions
@@ -180,6 +181,11 @@ class Redirect(Exception):
     def __init__(self, uri, permanent=False):
         self.uri = urljoin('', uri)
         self.permanent = permanent
+
+# The ``HTTPContent`` is used to return the associated content.
+class HTTPContent(Exception):
+    def __init__(self, content):
+        self.content = content
 
 # The ``NotFound`` is used to represent the classic 404 error.
 class NotFound(Exception):
@@ -227,17 +233,82 @@ else:
     STATIC.ctx = None
 
 # ------------------------------------------------------------------------------
-# Service Registration
+# Memcache
 # ------------------------------------------------------------------------------
 
+# Generate cache key/info for the render service call.
+def cache_key_gen(ctx, cache_spec, name, *args, **kwargs):
+
+    user = ''
+    if cache_spec.get('user', True):
+        user = ctx.get_user_id()
+        if (not cache_spec.get('anon', True)) and not user:
+            return
+
+    if cache_spec.get('ignore_args', False):
+        args = ()
+
+    if cache_spec.get('ignore_kwargs', False):
+        kwargs = {}
+
+    key = sha1(
+        "%r-%r-%r" % (user, args, sorted(kwargs.iteritems()))
+        ).hexdigest()
+
+    namespace = cache_spec.get('namespace', None)
+    if namespace is None:
+        namespace = name
+
+    return key, namespace, cache_spec.get('time', 20)
+
+# ------------------------------------------------------------------------------
+# Service Utilities
+# ------------------------------------------------------------------------------
+
+SERVICE_DEFAULT_CONFIG = {
+    'admin_only': False,
+    'cache': False,
+    'cache_key': cache_key_gen,
+    'cache_spec': dict(namespace=None, time=10, player=True, anon=True),
+    'ssl_only': False,
+    'token_required': False
+    }
+
 # The ``register_service`` decorator is used to turn a function into a service.
-def register_service(name, renderers=['json'], **config):
+def register_service(name, renderers, **config):
     def __register_service(function):
         __config = SERVICE_DEFAULT_CONFIG.copy()
         __config.update(config)
         SERVICE_REGISTRY[name] = (function, renderers, __config)
         return function
     return __register_service
+
+# The default JSON renderer generates JSON-encoded output.
+def json(ctx, content, callback=None):
+
+    if 'Content-Type' not in ctx.response_headers:
+        ctx.response_headers['Content-Type'] = 'application/json; charset=utf-8'
+
+    if callback:
+        if not is_valid_jsonp_callback_value(callback):
+            raise ValueError(
+                "%r is not an accepted callback parameter." % callback
+                )
+        return '%s(%s)' % (callback, json_encode(content))
+    return json_encode(content)
+
+# ------------------------------------------------------------------------------
+# HTTP Utilities
+# ------------------------------------------------------------------------------
+
+# Return an HTTP header date/time string.
+def get_http_datetime(timestamp=None):
+    if timestamp:
+        if not isinstance(timestamp, datetime):
+            timestamp = datetime.fromtimestamp(timestamp)
+    else:
+        timestamp = datetime.utcnow()
+    return timestamp.strftime('%a, %d %B %Y %H:%M:%S GMT') # %m
 
 # ------------------------------------------------------------------------------
 # Context
@@ -247,6 +318,11 @@ def register_service(name, renderers=['json'], **config):
 # specific to the current request, is passed in as the first parameter to all
 # service calls.
 class Context(object):
+
+    end_pipeline = False
+
+    http_host = TENT_HTTP_HOST
+    https_host = TENT_HTTPS_HOST
 
     def __init__(self, request_cookies, ssl_mode):
         self.status = (200, 'OK')
@@ -300,40 +376,24 @@ class Context(object):
         kwargs.update({'max_age': 0, 'expires': "Fri, 31-Dec-99 23:59:59 GMT"})
         self.set_cookie(name, 'deleted', **kwargs) # @/@ 'deleted' or just '' ?
 
-    _http_host = ''
-    _https_host = ''
-
-    auth_token = None
-    return_render = None
-    valid_auth_token = False
-
-    _current_player = None
-    _current_player_id = None
-    _current_session = None
-    _is_admin_user = None
-    _is_logged_in = None
-
-    create_google_logout_url = staticmethod(users.create_logout_url)
-    create_google_login_url = staticmethod(users.create_login_url)
-    is_current_user_admin = staticmethod(users.is_current_user_admin)
-    get_current_google_user = staticmethod(users.get_current_user)
-
     def set_to_not_cache_response(self):
-        headers = self.headers
+        headers = self.response_headers
         headers['Expires'] = "Fri, 31 December 1999 23:59:59 GMT"
         headers['Last-Modified'] = get_http_datetime()
         headers['Cache-Control'] = "no-cache, must-revalidate" # HTTP/1.1
         headers['Pragma'] =  "no-cache"                        # HTTP/1.0
 
-    def compute_site_url(self, *args, **kwargs):
-        return self.compute_site_uri_for_host(self.site_uri, *args, **kwargs)
+    def compute_url(self, *args, **kwargs):
+        if self.ssl_mode:
+            host = self.https_host
+        else:
+            host = self.http_host
+        return self.compute_url_for_host(host, *args, **kwargs)
 
-    def compute_site_url_for_host(self, host, *args, **kwargs):
-
+    def compute_url_for_host(self, host, *args, **kwargs):
         out = host + '/' + '/'.join(
             arg.encode('utf-8') for arg in args
             )
-
         if kwargs:
             out += '?'
             _set = 0
@@ -356,15 +416,23 @@ class Context(object):
                         _l, key, urlquote(value.encode('utf-8')).replace(' ', '+')
                         )
                     _set = 1
-
         return out
 
-    def get_current_session(self):
-        if self._current_session is not None:
-            return self._current_session
+    auth_token = None
+    valid_auth_token = False
+
+    _user = None
+    _user_id = None
+    _session = None
+    _is_admin_user = None
+    _is_logged_in = None
+
+    def get_session(self):
+        if self._session is not None:
+            return self._session
         token = self.session_token
         if not token:
-            self._current_session = None
+            self._session = None
             return None
         try:
             session = Session.all().filter('e =', token).get()
@@ -373,35 +441,37 @@ class Context(object):
                 session = None
         except:
             session = None
-        self._current_session = session
+        self._session = session
         return session
 
-    def get_current_player(self):
-        if self._current_player is not None:
-            return self._current_player
-        player_id = self.get_current_player_id()
-        if player_id:
-            self._current_player = Player.get_by_id(player_id)
-            return self._current_player
-        self._current_player = None
+    def get_user(self):
+        if self._user is not None:
+            return self._user
+        user_id = self.get_user_id()
+        if user_id:
+            self._user = User.get_by_id(user_id)
+            return self._user
+        self._user = None
         return None
 
-    def get_current_player_id(self):
-        if self._current_player_id is not None:
-            return self._current_player_id
-        session = self.get_current_session()
+    def get_user_id(self):
+        return None
+        if self._user_id is not None:
+            return self._user_id
+        session = self.get_session()
         if session:
-            self._current_player_id = session.player
+            self._user_id = session.user
             self._is_logged_in = True
-            return self._current_player_id
-        self._current_player_id = None
+            return self._user_id
+        self._user_id = None
         self._is_logged_in = False
         return None
 
     def is_logged_in(self):
+        return False
         if self._is_logged_in is not None:
             return self._is_logged_in
-        if self.get_current_player_id():
+        if self.get_user_id():
             return True
 
     def is_admin_user(self):
@@ -409,16 +479,16 @@ class Context(object):
         if self._is_admin_user is not None:
             return self._is_admin_user
 
-        player_id = self.get_current_player_id()
+        user_id = self.get_user_id()
 
-        if not player_id:
+        if not user_id:
             self._is_admin_user = False
             return False
 
         identity = Identity.all().filter(
             'a =', 'google'
             ).filter(
-            'c =', player_id
+            'c =', user_id
             ).get()
 
         if identity.id in SITE_ADMINS:
@@ -429,8 +499,21 @@ class Context(object):
         return False
 
     def only_allow_admins(self):
-        if not self.is_current_user_admin():
+        if not self.is_user_admin():
             raise self.Redirect(self.create_google_login_url(self.uri))
+
+# ------------------------------------------------------------------------------
+# Templating
+# ------------------------------------------------------------------------------
+
+TEMPLATE_BUILTINS = {
+    'DEBUG': DEBUG,
+    'STATIC': STATIC,
+    'urlencode': urlencode,
+    'urlquote': urlquote,
+    'page_title': 'Espra Tent',
+    'slot': 'content_slot'
+    }
 
 # ------------------------------------------------------------------------------
 # App Runner
@@ -459,7 +542,6 @@ def handle_http_request(
     try:
 
         http_method = env['REQUEST_METHOD']
-        content_type = env.get('CONTENT-TYPE', '')
 
         if http_method == 'OPTIONS':
             write(RESPONSE_OPTIONS)
@@ -475,15 +557,15 @@ def handle_http_request(
             ]
 
         if env['HTTP_HOST'].startswith('www.'):
-            service = 'root.www'
+            service_name = 'root.www'
         else:
             if args:
-                service = args.pop(0)
+                service_name = args.pop(0)
             else:
-                service = 'root'
+                service_name = 'root'
 
-        if service not in SERVICE_REGISTRY:
-            logging.error("Service not found: %s" % service)
+        if service_name not in SERVICE_REGISTRY:
+            logging.error("Service not found: %s" % service_name)
             raise NotFound
 
         kwargs = {}
@@ -528,6 +610,7 @@ def handle_http_request(
         # Parse the POST body if it exists and is of a known content type.
         if http_method == 'POST':
 
+            content_type = env.get('CONTENT-TYPE', '')
             if ';' in content_type:
                 content_type = content_type.split(';', 1)[0]
 
@@ -591,33 +674,59 @@ def handle_http_request(
             self.session_token = session_token
 
             if session_token and '__csrf__' in special_kwargs:
-                session = self.get_current_session()
+                session = self.get_session()
                 if session and (special_kwargs['__csrf__'] == session.csrf_key):
                     self.valid_auth_token = True
 
-        service, renderers, config = SERVICE_REGISTRY[service]
+        service, renderers, config = SERVICE_REGISTRY[service_name]
+
+        if config['cache']:
+            cache_info = config['cache_key'](
+                ctx, config['cache_spec'], service_name, *args, **kwargs
+                )
+            if cache_info is not None:
+                cache_key, cache_namespace, cache_time = cache_info
+                output = memcache.get(cache_key, cache_namespace)
+                if output is not None:
+                    raise HTTPContent(output)
 
         # Try and respond with the result of calling the service.
         content = service(ctx, *args, **kwargs)
 
         for renderer in renderers:
-            if renderer == 'json':
-                content = json_encode(content)
-            elif isinstance(renderer, str):
-                if not isinstance(content, dict):
-                    content = {
-                        'content': content
-                        }
-                content = get_template(renderer).render(ctx=ctx, **content)
+            if ctx.end_pipeline:
+                break
+            if not isinstance(content, dict):
+                content = {
+                    'content': content
+                    }
+            if isinstance(renderer, str):
+                kwargs = TEMPLATE_BUILTINS.copy()
+                kwargs.update(content)
+                template = get_mako_template(renderer)
+                content = template.render(ctx=ctx, **kwargs)
             else:
-                content = renderer(ctx, content)
+                content = renderer(ctx, **content)
 
         if isinstance(content, unicode):
             content = content.encode('utf-8')
 
-        ctx.response_headers['Content-Length'] = str(len(content))
+        if config['cache'] and cache_info is not None:
+            memcache.set(
+                cache_key, output, cache_time, namespace=cache_namespace
+                )
 
-        ctx.set_cookie('foo', 'bar')
+        raise HTTPContent(content)
+
+    # Return the content.
+    except HTTPContent, payload:
+
+        content = payload.content
+
+        if 'Content-Type' not in ctx.response_headers:
+            ctx.response_headers['Content-Type'] = 'text/html; charset=utf-8'
+
+        ctx.response_headers['Content-Length'] = str(len(content))
 
         # Figure out the HTTP headers for the response ``cookies``.
         cookie_output = SimpleCookie()
@@ -741,7 +850,7 @@ class MakoTemplateLookup(object):
         'preprocessor': None
         }
 
-    templates_directory = 'templates'
+    templates_directory = 'template'
 
     def __init__(self, **kwargs):
         self.template_args = self.default_template_args.copy()
@@ -1248,17 +1357,14 @@ def foo():
         raise ValueError("The text is longer than 5,000 words!")
 
 
-@register_service('root')
-def test(ctx, a, b):
-    return a + b
-
-
-@register_service('test')
+@register_service('test', [json])
 def test(ctx, a, b):
     return "f: %s" % (a + b)
 
 
-
+@register_service('root', ['main'])
+def root(ctx):
+    return "Hello World."
 
 # ------------------------------------------------------------------------------
 # Run In Standalone Mode
