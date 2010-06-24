@@ -17,10 +17,12 @@ import re
 import sys
 
 from BaseHTTPServer import BaseHTTPRequestHandler
+from binascii import hexlify
 from cgi import FieldStorage
 from datetime import datetime
 from hashlib import sha1
 from md5 import md5
+from os import urandom
 from os.path import exists, join as join_path, getmtime
 from posixpath import split as split_path
 from time import time
@@ -29,8 +31,8 @@ from urllib import urlencode, quote as urlquote, unquote as urlunquote
 from urlparse import urljoin
 from wsgiref.headers import Headers
 
-from google.appengine.api.capabilities import CapabilitySet
 from google.appengine.ext import db
+from google.appengine.runtime.apiproxy_errors import CapabilityDisabledError
 
 # Extend the sys.path to include the ``lib`` subdirectory.
 sys.path.insert(0, 'lib')
@@ -87,7 +89,7 @@ ERROR_WRAPPER = """<!DOCTYPE html>
 
 ERROR_401 = ERROR_WRAPPER % """
   <div class="error">
-    <h1>Invalid authorisation token</h1>
+    <h1>Invalid Authorisation Token</h1>
     Your session may have expired or you may not have access.
     <ul>
       <li><a href="/">Return home</a></li>
@@ -98,7 +100,7 @@ ERROR_401 = ERROR_WRAPPER % """
 
 ERROR_404 = ERROR_WRAPPER % """
   <div class="error">
-    <h1>The page you requested was not found</h1>
+    <h1>The item you requested was not found</h1>
     You may have clicked a dead link or mistyped the address. Some web addresses
     are case sensitive.
     <ul>
@@ -125,6 +127,17 @@ ERROR_500_TRACEBACK = ERROR_500_BASE % """
     <div class="traceback">%s</div>
   """ # emacs"
 
+ERROR_503 = ERROR_WRAPPER % """
+  <div class="error">
+    <h1>Service Unavailable</h1>
+    Google App Engine is currently down for a scheduled maintenance.
+    Please try again later.
+    <ul>
+      <li><a href="/">Return home</a></li>
+    </ul>
+  </div>
+  """ # emacs"
+
 HTTP_STATUS_MESSAGES = BaseHTTPRequestHandler.responses
 
 RESPONSE_NOT_IMPLEMENTED = "Status: 501 Not Implemented\r\n\r\n"
@@ -144,28 +157,27 @@ RESPONSE_302 = (
     "Location: %s\r\n\r\n"
     )
 
-RESPONSE_401 = (
-    "Status: 401 Unauthorized\r\n"
+RESPONSE_X = (
+    "Status: %s\r\n"
     "Content-Type: text/html\r\n"
-    "Content-Length: %d\r\n\r\n"
-    "%s"
-    ) % (len(ERROR_401), ERROR_401)
-
-RESPONSE_404 = (
-    "Status: 404 Not Found\r\n"
-    "Content-Type: text/html\r\n"
-    "Content-Length: %d\r\n\r\n"
-    "%s"
-    ) % (len(ERROR_404), ERROR_404)
-
-RESPONSE_500_BASE = (
-    "Status: 500 Server Error\r\n"
-    "Content-Type: text/html\r\n"
-    "Content-Length: %d\r\n\r\n"
+    "Content-Length: %s\r\n\r\n"
     "%s"
     )
 
-RESPONSE_500 = RESPONSE_500_BASE % (len(ERROR_500), ERROR_500)
+RESPONSE_401 = RESPONSE_X % ("401 Unauthorized", len(ERROR_401), ERROR_401)
+RESPONSE_404 = RESPONSE_X % ("404 Not Found", len(ERROR_404), ERROR_404)
+RESPONSE_500_BASE = RESPONSE_X % ("500 Server Error", "%s", "%s")
+RESPONSE_500 = RESPONSE_X % ("500 Server Error", len(ERROR_500), ERROR_500)
+RESPONSE_503 = RESPONSE_X % (
+    "503 Service Unavailable", len(ERROR_503), ERROR_503
+    )
+
+RESPONSE_JSON_ERROR = (
+    "Status: 500 Server Error\r\n"
+    "Content-Type: application/json; charset=utf-8\r\n"
+    "Content-Length: %s\r\n\r\n"
+    "%s"
+    )
 
 if os.environ.get('SERVER_SOFTWARE', '').startswith('Google'):
     RUNNING_ON_GOOGLE_SERVERS = True
@@ -190,29 +202,343 @@ VALID_REQUEST_CONTENT_TYPES = frozenset([
 
 # Services can throw exceptions to return specifc HTTP response codes.
 #
+# All the errors subclass the ``BaseHTTPError``.
+class BaseHTTPError(Exception):
+    pass
+
 # The ``Redirect`` exception is used to handle HTTP 301/302 redirects.
-class Redirect(Exception):
+class Redirect(BaseHTTPError):
     def __init__(self, uri, permanent=False):
         self.uri = urljoin('', uri)
         self.permanent = permanent
 
 # The ``HTTPContent`` is used to return the associated content.
-class HTTPContent(Exception):
+class HTTPContent(BaseHTTPError):
     def __init__(self, content):
         self.content = content
 
-# The ``AuthError`` is used to represent the Not Authorised error.
-class AuthError(Exception):
+# The ``AuthError`` is used to represent the 401 Not Authorized error.
+class AuthError(BaseHTTPError):
     pass
 
 # The ``NotFound`` is used to represent the classic 404 error.
-class NotFound(Exception):
+class NotFound(BaseHTTPError):
     pass
 
 # The ``HTTPError`` is used to represent all other response codes.
-class HTTPError(Exception):
+class HTTPError(BaseHTTPError):
     def __init__(self, code=500):
         self.code = code
+
+# ------------------------------------------------------------------------------
+# Models
+# ------------------------------------------------------------------------------
+
+class Alias(db.Model):
+    v = db.IntegerProperty(default=0, name='v')
+
+class Amp(db.Model):
+    v = db.IntegerProperty(default=0, name='v')
+
+class AccessToken(db.Model):
+    v = db.IntegerProperty(default=0, name='v')
+    accepted = db.BooleanProperty(default=False)
+    control_ref = db.StringProperty()
+    defined = db.StringListProperty()
+    expires = db.IntegerProperty()
+    name = db.StringProperty()
+    oneshot = db.BooleanProperty(default=False, indexed=False)
+    pretend = db.StringProperty()
+    read_ref = db.StringProperty(indexed=False)
+    remove_ref = db.StringProperty(indexed=False)
+    space = db.StringProperty()
+    write_ref = db.StringProperty(indexed=False)
+    write_aspects_ref = db.StringProperty(indexed=False)
+
+class Item(db.Model):
+    v = db.IntegerProperty(default=0, name='v')
+    created = db.DateTimeProperty(auto_now_add=True)
+    # public
+
+class Locker(db.Model):
+    v = db.IntegerProperty(default=0, name='v')
+    created = db.DateTimeProperty(auto_now_add=True)
+    control_ref = db.StringProperty()
+    name = db.StringProperty()
+    pay_cost = db.StringProperty(default='0')
+    read_ref = db.StringProperty()
+    title = db.StringProperty()
+    write_ref = db.StringProperty()
+    write_aspects = db.ListStringProperty()
+    write_aspects_ref = db.StringProperty()
+    remove_ref = db.StringProperty()
+
+class OAuthClient(db.Model):
+    v = db.IntegerProperty(default=0, name='v')
+    created = db.DateTimeProperty(auto_now_add=True)
+    description = db.TextProperty()
+    name = db.StringProperty(indexed=False)
+    owner = db.StringProperty()
+    redirect = db.StringProperty(indexed=False)
+    secret = db.StringProperty(indexed=False)
+    url = db.StringProperty(indexed=False)
+
+class OAuthCode(db.Model):
+    v = db.IntegerProperty(default=0, name='v')
+    created = db.DateTimeProperty(auto_now_add=True)
+    client = db.StringProperty()
+    redirect = db.StringProperty(indexed=False)
+    scope = db.StringProperty(indexed=False)
+
+class OAuthRequest(db.Model):
+    v = db.IntegerProperty()
+    created = db.DateTimeProperty(auto_now_add=True)
+    client = db.StringProperty()
+    redirect = db.StringProperty(indexed=False)
+    scope = db.StringProperty(indexed=False)
+    state = db.StringProperty(indexed=False)
+    type = db.StringProperty(indexed=False)
+
+class TokenReference(db.Model):
+    v = db.IntegerProperty(default=0, name='v')
+    client = db.StringProperty()
+    scopes = db.StringListProperty()
+    created = db.DateTimeProperty(auto_now_add=True)
+
+class Trend(db.Model):
+    v = db.IntegerProperty(default=0, name='v')
+
+class User(db.Model):
+    v = db.IntegerProperty(default=0, name='v')
+    created = db.DateTimeProperty(auto_now_add=True)
+
+# ------------------------------------------------------------------------------
+# Parallel Query
+# ------------------------------------------------------------------------------
+
+# def on_complete(results):
+#     return [item.key().id() for item in results]
+
+# query = ParallelQuery(
+#   Item, query_key='/intentions #espians',
+#   notify='http://notify.tentapp.com', on_complete=on_complete
+#   )
+
+# query.filter('aspect =', '/intention')
+# query.filter('space =', 'espians')
+# query.run('by =', [('evangineer', 'olasofia', 'sbp']))
+
+# query.results <--- {'evangineer': [...], 'olasofia': [...]}
+
+from google.appengine.api import urlfetch
+from google.appengine.api.apiproxy_stub_map import UserRPC
+from google.appengine.api.datastore import _ToDatastoreError, Entity, Query as RawQuery
+from google.appengine.api.datastore_types import Key
+from google.appengine.datastore import datastore_index
+from google.appengine.datastore.datastore_pb import QueryResult, NextRequest
+from google.appengine.ext.db import Query
+from google.appengine.runtime.apiproxy_errors import ApplicationError
+
+# Our BaseQuery subclass.
+class BaseQuery(Query):
+
+    _cursor = None
+    _prev = 0
+
+    def execute(
+        self, limit, offset, value, set_result, add_callback, deadline, on_complete
+        ):
+
+        self._limit = limit
+        self._offset = offset
+        self._value = value
+        self._deadline = deadline
+        self.set_result = set_result
+        self.add_callback = add_callback
+        self.on_complete = on_complete
+
+        raw_query = self._get_query()
+        if not isinstance(raw_query, RawQuery):
+            raise ValueError(
+                "IN and != MultiQueries are not allowed in a ParallelQuery."
+                )
+        self._buffer = []
+        self.rpc_init(raw_query)
+
+    def rpc_init(self, raw_query):
+
+        rpc = UserRPC('datastore_v3', self._deadline)
+        rpc.callback = lambda : self.rpc_callback(rpc)
+        rpc.make_call(
+            'RunQuery', raw_query._ToPb(self._limit, self._offset, self._limit),
+            QueryResult()
+            )
+        self.add_callback(rpc.check_success)
+
+    def rpc_next(self, request):
+
+        rpc = UserRPC('datastore_v3', self._deadline)
+        rpc.callback = lambda : self.rpc_callback(rpc)
+        rpc.make_call('Next', request, QueryResult())
+        self.add_callback(rpc.check_success)
+
+    def rpc_callback(self, rpc):
+
+        try:
+            rpc.check_success()
+        except ApplicationError, err:
+            try:
+                raise _ToDatastoreError(err)
+            except datastore_errors.NeedIndexError, exc:
+                yaml = datastore_index.IndexYamlForQuery(
+                    *datastore_index.CompositeIndexForQuery(rpc.request)[1:-1])
+                raise datastore_errors.NeedIndexError(
+                    str(exc) + '\nThis query needs this index:\n' + yaml)
+
+        response = rpc.response
+        more = response.more_results()
+        buffer = self._buffer
+        buffer.extend(response.result_list())
+
+        if more:
+            if self._cursor is None:
+                self._cursor = response.cursor()
+            remaining = self._limit - len(buffer)
+            if remaining and (remaining != self._prev):
+                self._prev = remaining
+                # logging.error("Requesting %r more for %r [%r]" % (remaining, self._value, len(buffer)))
+                request = NextRequest()
+                request.set_count(remaining)
+                request.mutable_cursor().CopyFrom(self._cursor)
+                return self.rpc_next(request)
+
+        self.finish()
+
+    def finish(self):
+
+        try:
+            if self._keys_only:
+                results = [Key._FromPb(e.key()) for e in self._buffer[:self._limit]]
+            else:
+                results = [Entity._FromPb(e) for e in self._buffer[:self._limit]]
+                if self._model_class is not None:
+                    from_entity = self._model_class.from_entity
+                    results = [from_entity(e) for e in results]
+                else:
+                    results = [class_for_kind(e.kind()).from_entity(e) for e in results]
+        finally:
+            del self._buffer[:]
+
+        if self.on_complete:
+            results = self.on_complete(results)
+        self.set_result(self._value, results)
+
+
+# Parallel query object for doing Trust map queries.
+class ParallelQuery(object):
+
+    def __init__(
+        self, model_class=None, keys_only=False, query_key=None,
+        cache_duration=5*60, namespace='pq', notify=True, limit=50, offset=0,
+        deadline=None, on_complete=None
+        ):
+        self.model_class = model_class
+        self.keys_only = keys_only
+        self.query_key = query_key
+        self.cache_duration = cache_duration
+        self.namespace = namespace
+        self.notify = notify
+        self.limit = min(limit, 1000)
+        self.offset = offset
+        self.deadline = deadline
+        self.on_complete = on_complete
+        self.ops = []
+        self.operate = self.ops.append
+        self.callbacks = []
+        self.results = {}
+
+    def filter(self, property_operator, value):
+        self.operate((0, (property_operator, value)))
+        return self
+
+    def order(self, property):
+        self.operate((1, (property,)))
+        return self
+
+    def ancestor(self, ancestor):
+        self.operate((2, (ancestor,)))
+        return self
+
+    def run(self, property_operator, values, hasher=sha1):
+
+        if not isinstance(values, (list, tuple)):
+            raise ValueError(
+                "The values for for a ParallelQuery run need to be a list."
+                )
+
+        model_class = self.model_class
+        keys_only = self.keys_only
+        query_key = self.query_key
+        limit = self.limit
+        offset = self.offset
+        deadline = self.deadline
+        on_complete = self.on_complete
+        ops = self.ops
+        results = self.results
+        set_result = results.__setitem__
+        callbacks = self.callbacks
+        add_callback = callbacks.append
+
+        if query_key:
+            key_prefix = '%s-%s-%s' % (
+                hasher(query_key).hexdigest(), limit, offset
+                )
+            cache = memcache.get_multi(values, key_prefix, self.namespace)
+        else:
+            cache = {}
+
+        for value in values:
+            if value in cache:
+                continue
+            if limit == 0:
+                set_result(value, [])
+                continue
+            query = BaseQuery(model_class, keys_only)
+            for op, args in ops:
+                if op == 0:
+                    query.filter(*args)
+                elif op == 1:
+                    query.order(*args)
+                elif op == 2:
+                    query.ancestor(*args)
+            query.filter(property_operator, value)
+            query.execute(
+                limit, offset, value, set_result, add_callback, deadline,
+                on_complete
+                )
+
+        try:
+            while callbacks:
+                callback = callbacks.pop()
+                callback()
+            if query_key:
+                unset_keys = memcache.set_multi(
+                    results, cache_duration, key_prefix, self.namespace
+                    )
+                if notify:
+                    set_keys = set(results).difference(set(unset_keys))
+                    if set_keys:
+                        rpc = urlfetch.create_rpc(deadline=10)
+                        urlfetch.make_fetch_call(
+                            rpc, notify, method='POST', payload=json_encode({
+                                'key_prefix': key_prefix, 'keys': set_keys
+                                })
+                            )
+            for key in cache:
+                results[key] = cache[key]
+            return self
+        finally:
+            del callbacks[:]
 
 # ------------------------------------------------------------------------------
 # Static
@@ -220,12 +546,7 @@ class HTTPError(Exception):
 
 HOST_SIZE = len(STATIC_HTTP_HOSTS)
 
-if DEBUG:
-
-    def STATIC(path, minifiable=1, secure=0):
-        return '%s%s?%s' % (STATIC_PATH, path, APPLICATION_TIMESTAMP)
-
-else:
+if RUNNING_ON_GOOGLE_SERVERS:
 
     def STATIC(path, minifiable=1, secure=0, cache={}, host_size=HOST_SIZE):
         if STATIC.ssl_mode:
@@ -240,13 +561,18 @@ else:
             else:
                 path = '%s/%s.min.%s' % (path, filename, ext)
         if secure:
-            hosts = STATIC_SECURE_HOSTS
+            hosts = STATIC_HTTPS_HOSTS
         else:
-            hosts = STATIC_HOSTS
+            hosts = STATIC_HTTP_HOSTS
         return cache.setdefault((path, minifiable, secure), "%s%s%s?%s" % (
             hosts[int('0x' + md5(path).hexdigest(), 16) % host_size],
             STATIC_PATH, path, APPLICATION_TIMESTAMP
             ))
+
+else:
+
+    def STATIC(path, minifiable=1, secure=0):
+        return '%s%s?%s' % (STATIC_PATH, path, APPLICATION_TIMESTAMP)
 
 STATIC.ssl_mode = None
 
@@ -285,6 +611,7 @@ def cache_key_gen(ctx, cache_spec, name, *args, **kwargs):
 
 SERVICE_DEFAULT_CONFIG = {
     'admin_only': False,
+    'anon_access': False,
     'cache': False,
     'cache_key': cache_key_gen,
     'cache_spec': dict(namespace=None, time=10, player=True, anon=True),
@@ -302,11 +629,10 @@ def register_service(name, renderers, **config):
     return __register_service
 
 # The default JSON renderer generates JSON-encoded output.
-def json(ctx, content, callback=None):
-
+def json(ctx, content):
     if 'Content-Type' not in ctx.response_headers:
         ctx.response_headers['Content-Type'] = 'application/json; charset=utf-8'
-
+    callback = ctx.callback
     if callback:
         if not is_valid_jsonp_callback_value(callback):
             raise ValueError(
@@ -337,6 +663,7 @@ def get_http_datetime(timestamp=None):
 # service calls.
 class Context(object):
 
+    callback = None
     end_pipeline = False
 
     def __init__(self, request_cookies, ssl_mode):
@@ -433,26 +760,27 @@ class Context(object):
     auth_token = None
     valid_auth_token = False
 
+    _is_admin_user = None
+    _is_logged_in = None
     _user = None
     _user_id = None
     _session = None
-    _is_admin_user = None
-    _is_logged_in = None
 
     def get_session(self):
         if self._session is not None:
             return self._session
         token = self.session_token
         if not token:
-            self._session = None
-            return None
+            return
         try:
             session = Session.all().filter('e =', token).get()
+            if not session:
+                return
             if session.expires and (session.expires < datetime.now()):
                 session.delete()
-                session = None
+                return
         except:
-            session = None
+            return
         self._session = session
         return session
 
@@ -486,32 +814,22 @@ class Context(object):
             return True
 
     def is_admin_user(self):
-
         if self._is_admin_user is not None:
             return self._is_admin_user
-
         user_id = self.get_user_id()
-
         if not user_id:
             self._is_admin_user = False
             return False
-
         identity = Identity.all().filter(
             'a =', 'google'
             ).filter(
             'c =', user_id
             ).get()
-
         if identity.id in SITE_ADMINS:
             self._is_admin_user = True
             return True
-
         self._is_admin_user = False
         return False
-
-    def only_allow_admins(self):
-        if not self.is_user_admin():
-            raise self.Redirect(self.create_google_login_url(self.uri))
 
 # ------------------------------------------------------------------------------
 # Templating
@@ -531,11 +849,8 @@ TEMPLATE_BUILTINS = {
 # ------------------------------------------------------------------------------
 
 def handle_http_request(
-    api=None,
-    dict=dict,
-    sys=sys,
-    valid_cookie_keys=COOKIE_KEY_NAMES,
-    DEVNULL=DEVNULL,
+    dict=dict, isinstance=isinstance, sys=sys, urlunquote=urlunquote,
+    unicode=unicode
     ):
 
     # We copy ``os.environ`` just in case App Engine doesn't reset any changes
@@ -553,6 +868,7 @@ def handle_http_request(
     try:
 
         http_method = env['REQUEST_METHOD']
+        ssl_mode = STATIC.ssl_mode = env.get('HTTPS') in SSL_FLAGS
 
         if http_method == 'OPTIONS':
             write(RESPONSE_OPTIONS)
@@ -567,13 +883,22 @@ def handle_http_request(
             for arg in env['PATH_INFO'].split('/') if arg
             ]
 
-        if env['HTTP_HOST'].startswith('www.'):
+        host = env['HTTP_HOST']
+
+        if host.startswith('www.'):
             service_name = 'root.www'
+        elif host.endswith('.appspot.com') and not ssl_mode:
+            raise Redirect(
+                TENT_HTTPS_HOST + env['PATH_INFO'] +
+                (env['QUERY_STRING'] and "?%s" % env['QUERY_STRING'] or "")
+                )
         else:
             if args:
                 service_name = args.pop(0)
             else:
                 service_name = 'root'
+
+
 
         if service_name not in SERVICE_REGISTRY:
             logging.error("Service not found: %s" % service_name)
@@ -650,11 +975,13 @@ def handle_http_request(
                         continue
                     kwargs[key] = value
 
+        ctx = Context(cookies, ssl_mode)
+
         if 'submit' in kwargs:
             del kwargs['submit']
 
-        ssl_mode = STATIC.ssl_mode = env.get('HTTPS') in SSL_FLAGS
-        ctx = Context(cookies, ssl_mode)
+        if 'callback' in kwargs:
+            ctx.callback = kwargs.pop('callback')
 
         # check that there's a token and it validates
         if 0: # @/@
@@ -689,11 +1016,8 @@ def handle_http_request(
 
         service, renderers, config = SERVICE_REGISTRY[service_name]
 
-        if config['ssl_only']:
-            raise Redirect(
-                TENT_HTTPS_HOST + env['PATH_INFO'] +
-                (env['QUERY_STRING'] and "?%s" % env['QUERY_STRING'] or "")
-                )
+        if config['ssl_only'] and RUNNING_ON_GOOGLE_SERVERS and not ssl_mode:
+            raise NotFound
 
         if config['admin_only'] and not ctx.is_admin_user():
             raise NotFound
@@ -712,7 +1036,20 @@ def handle_http_request(
                     raise HTTPContent(output)
 
         # Try and respond with the result of calling the service.
-        content = service(ctx, *args, **kwargs)
+        if renderers and renderers[-1] == json:
+            try:
+                content = service(ctx, *args, **kwargs)
+            except BaseHTTPError:
+                raise
+            except Exception, error:
+                response = json(ctx, {
+                    'error_type': error.__class__.__name__,
+                    'error': str(error)
+                    })
+                write(RESPONSE_JSON_ERROR % (len(response), response))
+                return
+        else:
+            content = service(ctx, *args, **kwargs)
 
         for renderer in renderers:
             if ctx.end_pipeline:
@@ -758,7 +1095,7 @@ def handle_http_request(
             for key, value in values.items():
                 if key == 'max_age':
                     key = 'max-age'
-                if key not in valid_cookie_keys:
+                if key not in COOKIE_KEY_NAMES:
                     continue
                 cur[key] = value
 
@@ -801,14 +1138,19 @@ def handle_http_request(
               % (error.code, HTTP_STATUS_MESSAGES[error.code]))
         return
 
+    except CapabilityDisabledError:
+        write(RESPONSE_503)
+        return
+
     # Log any errors and return an HTTP 500 response.
     except Exception, error:
         logging.critical(''.join(format_exception(*sys.exc_info())))
         if DEBUG:
-            response = ERROR_500_TRACEBACK % ''.join(html_format_exception())
-            write(RESPONSE_500_BASE % (len(response), response))
-            return
-        write(RESPONSE_500)
+            error = ''.join(html_format_exception())
+        else:
+            error = escape("%s: %s" % (error.__class__.__name__, error))
+        response = ERROR_500_TRACEBACK % error
+        write(RESPONSE_500_BASE % (len(response), response))
         return
 
     # We set ``sys.stdout`` back to the way we found it.
@@ -991,234 +1333,6 @@ else:
 
 
 
-"""Parallel Query support."""
-
-from google.appengine.api import urlfetch
-from google.appengine.api.apiproxy_stub_map import UserRPC
-from google.appengine.api.datastore import _ToDatastoreError, Entity, Query as RawQuery
-from google.appengine.api.datastore_types import Key
-from google.appengine.datastore import datastore_index
-from google.appengine.datastore.datastore_pb import QueryResult, NextRequest
-from google.appengine.ext.db import Query
-from google.appengine.runtime.apiproxy_errors import ApplicationError
-
-
-class BaseQuery(Query):
-    """Our BaseQuery subclass."""
-
-    _cursor = None
-    _prev = 0
-
-    def execute(
-        self, limit, offset, value, set_result, add_callback, deadline, on_complete
-        ):
-
-        self._limit = limit
-        self._offset = offset
-        self._value = value
-        self._deadline = deadline
-        self.set_result = set_result
-        self.add_callback = add_callback
-        self.on_complete = on_complete
-
-        raw_query = self._get_query()
-        if not isinstance(raw_query, RawQuery):
-            raise ValueError(
-                "IN and != MultiQueries are not allowed in a ParallelQuery."
-                )
-        self._buffer = []
-        self.rpc_init(raw_query)
-
-    def rpc_init(self, raw_query):
-
-        rpc = UserRPC('datastore_v3', self._deadline)
-        rpc.callback = lambda : self.rpc_callback(rpc)
-        rpc.make_call(
-            'RunQuery', raw_query._ToPb(self._limit, self._offset, self._limit),
-            QueryResult()
-            )
-        self.add_callback(rpc.check_success)
-
-    def rpc_next(self, request):
-
-        rpc = UserRPC('datastore_v3', self._deadline)
-        rpc.callback = lambda : self.rpc_callback(rpc)
-        rpc.make_call('Next', request, QueryResult())
-        self.add_callback(rpc.check_success)
-
-    def rpc_callback(self, rpc):
-
-        try:
-            rpc.check_success()
-        except ApplicationError, err:
-            try:
-                raise _ToDatastoreError(err)
-            except datastore_errors.NeedIndexError, exc:
-                yaml = datastore_index.IndexYamlForQuery(
-                    *datastore_index.CompositeIndexForQuery(rpc.request)[1:-1])
-                raise datastore_errors.NeedIndexError(
-                    str(exc) + '\nThis query needs this index:\n' + yaml)
-
-        response = rpc.response
-        more = response.more_results()
-        buffer = self._buffer
-        buffer.extend(response.result_list())
-
-        if more:
-            if self._cursor is None:
-                self._cursor = response.cursor()
-            remaining = self._limit - len(buffer)
-            if remaining and (remaining != self._prev):
-                self._prev = remaining
-                # logging.error("Requesting %r more for %r [%r]" % (remaining, self._value, len(buffer)))
-                request = NextRequest()
-                request.set_count(remaining)
-                request.mutable_cursor().CopyFrom(self._cursor)
-                return self.rpc_next(request)
-
-        self.finish()
-
-    def finish(self):
-
-        try:
-            if self._keys_only:
-                results = [Key._FromPb(e.key()) for e in self._buffer[:self._limit]]
-            else:
-                results = [Entity._FromPb(e) for e in self._buffer[:self._limit]]
-                if self._model_class is not None:
-                    from_entity = self._model_class.from_entity
-                    results = [from_entity(e) for e in results]
-                else:
-                    results = [class_for_kind(e.kind()).from_entity(e) for e in results]
-        finally:
-            del self._buffer[:]
-
-        if self.on_complete:
-            results = self.on_complete(results)
-        self.set_result(self._value, results)
-
-
-class ParallelQuery(object):
-    """Parallel query object for doing Trust map queries."""
-
-    def __init__(
-        self, model_class=None, keys_only=False, query_key=None,
-        cache_duration=5*60, namespace='pq', notify=True, limit=50, offset=0,
-        deadline=None, on_complete=None
-        ):
-        self.model_class = model_class
-        self.keys_only = keys_only
-        self.query_key = query_key
-        self.cache_duration = cache_duration
-        self.namespace = namespace
-        self.notify = notify
-        self.limit = min(limit, 1000)
-        self.offset = offset
-        self.deadline = deadline
-        self.on_complete = on_complete
-        self.ops = []
-        self.operate = self.ops.append
-        self.callbacks = []
-        self.results = {}
-
-    def filter(self, property_operator, value):
-        self.operate((0, (property_operator, value)))
-        return self
-
-    def order(self, property):
-        self.operate((1, (property,)))
-        return self
-
-    def ancestor(self, ancestor):
-        self.operate((2, (ancestor,)))
-        return self
-
-    def run(self, property_operator, values, hasher=sha1):
-
-        if not isinstance(values, (list, tuple)):
-            raise ValueError(
-                "The values for for a ParallelQuery run need to be a list."
-                )
-
-        model_class = self.model_class
-        keys_only = self.keys_only
-        query_key = self.query_key
-        limit = self.limit
-        offset = self.offset
-        deadline = self.deadline
-        on_complete = self.on_complete
-        ops = self.ops
-        results = self.results
-        set_result = results.__setitem__
-        callbacks = self.callbacks
-        add_callback = callbacks.append
-
-        if query_key:
-            key_prefix = '%s-%s-%s' % (
-                hasher(query_key).hexdigest(), limit, offset
-                )
-            cache = memcache.get_multi(values, key_prefix, self.namespace)
-        else:
-            cache = {}
-
-        for value in values:
-            if value in cache:
-                continue
-            if limit == 0:
-                set_result(value, [])
-                continue
-            query = BaseQuery(model_class, keys_only)
-            for op, args in ops:
-                if op == 0:
-                    query.filter(*args)
-                elif op == 1:
-                    query.order(*args)
-                elif op == 2:
-                    query.ancestor(*args)
-            query.filter(property_operator, value)
-            query.execute(
-                limit, offset, value, set_result, add_callback, deadline,
-                on_complete
-                )
-
-        try:
-            while callbacks:
-                callback = callbacks.pop()
-                callback()
-            if query_key:
-                unset_keys = memcache.set_multi(
-                    results, cache_duration, key_prefix, self.namespace
-                    )
-                if notify:
-                    set_keys = set(results).difference(set(unset_keys))
-                    if set_keys:
-                        rpc = urlfetch.create_rpc(deadline=10)
-                        urlfetch.make_fetch_call(
-                            rpc, notify, method='POST', payload=json_encode({
-                                'key_prefix': key_prefix, 'keys': set_keys
-                                })
-                            )
-            for key in cache:
-                results[key] = cache[key]
-            return self
-        finally:
-            del callbacks[:]
-
-
-# def on_complete(results):
-#     return [item.key().id() for item in results]
-
-# query = ParallelQuery(
-#   Item, query_key='/intentions #espians',
-#   notify='http://notify.tentapp.com', on_complete=on_complete
-#   )
-
-# query.filter('aspect =', '/intention')
-# query.filter('space =', 'espians')
-# query.run('by =', [('evangineer', 'olasofia', 'sbp']))
-
-# query.results <--- {'evangineer': [...], 'olasofia': [...]}
-
 
 
 #replace_links = re.compile(r'[^\\]\[(.*?)\]', re.DOTALL).sub
@@ -1331,14 +1445,166 @@ def foo():
 def test(ctx, a, b):
     return "f: %s" % (a + b)
 
-@register_service('moop', [], token_required=1)
+@register_service('moop', ['main'])
 def root(ctx):
     return "Hello World."
 
+# ------------------------------------------------------------------------------
+# OAuth
+# ------------------------------------------------------------------------------
 
-@register_service('root', ['main'])
+# This implements OAuth 2.0 -- or rather, something more like what Facebook
+# calls OAuth 2.0.
+#
+# We diverge from the still-being-defined standard by not supporting HTTP Basic
+# Authentication for the Client. It just complicates the implementation
+# needlessly as we doesn't use basic auth -- not to mention the fact that most
+# OAuth 2.0 clients don't even support it!
+#
+# We also relax the requirement to specify the client ``type`` parameter for the
+# end-user authorisation endpoint and assume a default of ``web_server``.
+@register_service('oauth.authorise', ['oauth.authorise', 'main'])
+def oauth_authorise(
+    ctx, client_id=None, redirect_uri=None, scope='*', state=None,
+    type='web_server'
+    ):
+
+    if not client_id:
+        raise ValueError("The client_id parameter was not specified.")
+
+    if not redirect_uri:
+        raise ValueError("The redirect_uri parameter was not specified.")
+
+    client = OAuthClient.get_by_key_name(client_id)
+    if not client:
+        raise ValueError(
+            "Could not find records for the given client_id, '%s'."
+            % client_id
+            )
+
+    if client.redirect and redirect_uri != client.redirect:
+        raise ValueError(
+            "The registered redirect URI and the redirect_uri parameter "
+            "do not match."
+            )
+
+    scope = scope or '*'
+    request_id = hexlify(urandom(12))
+
+    request = OAuthRequest(
+        key_name=request_id,
+        client=client_id,
+        redirect=redirect_uri,
+        scope=scope,
+        state=state,
+        type=type
+        )
+
+    db.put(request)
+
+    return {
+        'request_id': request_id,
+        'request_type': type,
+        'scopes': scope.split(' ')
+        }
+
+@register_service('oauth.redirect', [])
+def oauth_redirect(grant, request_id, limit=None):
+
+    request = OAuthRequest.get_by_key_name(request_id)
+    if not request:
+        raise ValueError(
+            "Could not find records for the OAuth request."
+            )
+
+    if request.state:
+        response = {'state': state}
+    else:
+        response = {}
+
+    ua_request = request.type == 'user_agent'
+
+    if grant == 'yes':
+        token_id = hexlify(urandom(12))
+        if ua_request:
+            token = AccessToken(
+                key_name=token_id,
+                client=client_id, scopes=request.scope.split(' ')
+                )
+            response['access_token'] = token_id
+            if limit:
+                expiry = int(86400 * limit) # number of days
+                response['expires_in'] = str(expiry)
+                token.expires = time() + expiry
+        else:
+            token = AuthCode(
+                key_name=token_id, client=client_id,
+                scope=request.scope, redirect=request.redirect
+                )
+            response['code'] = token_id
+    else:
+        response['error'] = 'user_denied'
+
+    uri = request.redirect
+    if ua_request:
+        if '#' not in uri:
+            uri += '#'
+
+    if '?' in uri:
+        uri += '&%s' % urlencode(response)
+    else:
+        uri += '?%s' % urlencode(response)
+
+    try:
+        db.delete(request)
+    finally:
+        raise Redirect(uri)
+
+# With the token endpoint, we again simplify things by not implementing any
+# support for Assertions and Refresh Tokens. We also relax the requirement to
+# specify the ``grant_type`` and assume a default of ``authorization_code``.
+@register_service('oauth.token', [json], ssl_only=1)
+def oauth(
+    ctx, client_id=None, client_secret=None, code=None,
+    grant_type='authorization_code', redirect_uri=None,
+    scope=None, username=None, password=None,
+    ):
+
+    ctx.response_headers['Cache-Control'] = 'no-store'
+
+    if 1:
+        return {
+            'access_token': 'foo',
+            'expires_in': 'foo',
+            'scope': ''
+            }
+
+    ctx.set_response_status(400)
+
+    x = """
+    redirect_uri_mismatch
+    bad_authorization_code
+    invalid_client_credentials
+    unauthorized_client - The client is not permitted to use this access grant type.
+    invalid_assertion
+    unknown_format
+    authorization_expired
+    multiple_credentials
+    invalid_user_credentials
+    """
+
+    return {
+        'error': 'incorrect_client_credentials'
+        }
+
+@register_service('root', ['main'], anon_access=1)
 def root(ctx):
+    1/0
+    raise CapabilityDisabledError
     return "Hello World."
+
+# default to seeing trusted view of a locker according to the space link was
+# clicked from
 
 # ------------------------------------------------------------------------------
 # Run In Standalone Mode
