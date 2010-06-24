@@ -242,18 +242,24 @@ class Amp(db.Model):
 
 class AccessToken(db.Model):
     v = db.IntegerProperty(default=0, name='v')
+    created = db.DateTimeProperty(auto_now_add=True)
     accepted = db.BooleanProperty(default=False)
-    control_ref = db.StringProperty()
+    control_ref = db.StringProperty(indexed=False)
     defined = db.StringListProperty()
-    expires = db.IntegerProperty()
-    name = db.StringProperty()
-    oneshot = db.BooleanProperty(default=False, indexed=False)
-    pretend = db.StringProperty()
+    expires = db.IntegerProperty() # any number less than 1000 => "oneshot"
     read_ref = db.StringProperty(indexed=False)
     remove_ref = db.StringProperty(indexed=False)
-    space = db.StringProperty()
+    space = db.StringProperty() # *, +739, ~tav, ~tav/foo*, #blah, #*, @tav
     write_ref = db.StringProperty(indexed=False)
     write_aspects_ref = db.StringProperty(indexed=False)
+
+class CloakToken(db.Model):
+    v = db.IntegerProperty(default=0, name='v')
+    created = db.DateTimeProperty(auto_now_add=True)
+    accepted = db.BooleanProperty(default=False)
+    aspects = db.StringListProperty()
+    expires = db.IntegerProperty() # any number less than 1000 => "oneshot"
+    space = db.StringProperty()
 
 class Item(db.Model):
     v = db.IntegerProperty(default=0, name='v')
@@ -265,11 +271,11 @@ class Locker(db.Model):
     created = db.DateTimeProperty(auto_now_add=True)
     control_ref = db.StringProperty()
     name = db.StringProperty()
-    pay_cost = db.StringProperty(default='0')
+    pay_cost = db.StringProperty(default='')
     read_ref = db.StringProperty()
     title = db.StringProperty()
     write_ref = db.StringProperty()
-    write_aspects = db.ListStringProperty()
+    write_aspects = db.StringListProperty()
     write_aspects_ref = db.StringProperty()
     remove_ref = db.StringProperty()
 
