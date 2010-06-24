@@ -14,8 +14,9 @@ except:
     APPLICATION_TIMESTAMP = time()
 
 __all__ = [
-    'APPLICATION_TIMESTAMP', 'DEBUG', 'LIVE_HOST', 'REMOTE_KEY', 'SITE_ADMINS',
-    'STATIC_HTTP_HOSTS', 'STATIC_HTTPS_HOSTS', 'STATIC_PATH',
+    'APPLICATION_TIMESTAMP', 'COOKIE_DOMAIN_HTTP', 'COOKIE_DOMAIN_HTTPS',
+    'DEBUG', 'LIVE_HOST', 'REMOTE_KEY', 'SITE_ADMINS', 'STATIC_HTTP_HOSTS',
+    'STATIC_HTTPS_HOSTS', 'STATIC_PATH',
     'TAMPER_PROOF_DEFAULT_DURATION', 'TAMPER_PROOF_KEY', 'TENT_HTTP_HOST',
     'TENT_HTTPS_HOST'
     ]
@@ -24,7 +25,11 @@ __all__ = [
 # Core Settings
 # ------------------------------------------------------------------------------
 
+COOKIE_DOMAIN_HTTP = '.espra.com'
+COOKIE_DOMAIN_HTTPS = 'espra.appspot.com'
+
 DEBUG = False
+#DEBUG = 1
 
 LIVE_HOST = 'https://tentlive.espra.com'
 
@@ -56,6 +61,9 @@ SITE_ADMINS = frozenset([
 TAMPER_PROOF_KEY = "key"
 
 TAMPER_PROOF_DEFAULT_DURATION = timedelta(minutes=20)
+
+#CLEANUP_BATCH_SIZE = 100
+#EXPIRATION_WINDOW = timedelta(seconds=60*60*1) # 1 hour
 
 REMOTE_KEY = "secret"
 
