@@ -1,25 +1,5 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
-<!--
-
-site_author: Ampify Authors
-site_description:
-    Ampify is a vision of a better future. Help it happen with £10/month. Open
-    Source + Reputation Economy = Web 4.0
-
-site_license: This work has been placed into the Public Domain.
-site_title: "Support Ampify: Create Weapons of Mass Construction!"
-site_url: http://ampify.it
-
-analytics_id: UA-90176-24
-section_id: about
-
-index_pages:
-- bank-transfer.html: bank-transfer.genshi
-- community.html: community.genshi
-- index.html: index.genshi
-
--->
 <head>
   <meta content="text/html; charset=utf-8" http-equiv="content-type" />
   <title>Espra Tent &#187; (page_title)</title>
@@ -48,7 +28,7 @@ index_pages:
       #body-wrapper { height: 100%; }
     </style>
   <![endif]-->
-  <script type="text/javascript" src="${ctx.req_scheme}://ajax.googleapis.com/ajax/libs/jquery/1.3.2/jquery.min.js"></script>
+  <script type="text/javascript" src="${ctx.ssl_mode and 'https' or 'http'}://ajax.googleapis.com/ajax/libs/jquery/1.3.2/jquery.min.js"></script>
   <script type="text/javascript" src="http://eu.live.app.com/info.js"></script>
   <script type="text/javascript" src="http://usa.live.app.com/info.js"></script>
   <script type="text/javascript">
