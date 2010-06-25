@@ -1315,166 +1315,6 @@ def render_mako_template(template_name, **kwargs):
     return get_mako_template(template_name).render(**kwargs)
 
 # ------------------------------------------------------------------------------
-# Main Function
-# ------------------------------------------------------------------------------
-
-# The main function has to be called ``main`` in order to be cached by the App
-# Engine runtime framework.
-if DEBUG == 2:
-
-    from cProfile import Profile
-    from pstats import Stats
-
-    # This particular main function wraps the real runner within a profiler and
-    # dumps the profiled statistics to the logs for later inspection.
-    def main():
-
-        profiler = Profile()
-        profiler = profiler.runctx("handle_http_request()", globals(), locals())
-        iostream = StringIO()
-
-        stats = Stats(profiler, stream=iostream)
-        stats.sort_stats("time")  # or cumulative
-        stats.print_stats(80)     # 80 == how many to print
-
-        # optional:
-        # stats.print_callees()
-        # stats.print_callers()
-
-        logging.info("Profile data:\n%s", iostream.getvalue())
-
-else:
-
-    main = handle_http_request
-
-
-
-
-
-
-
-
-
-
-
-
-
-#replace_links = re.compile(r'[^\\]\[(.*?)\]', re.DOTALL).sub
-
-replace_links = re.compile(r'\[(.*?)\]', re.DOTALL).sub
-
-def escape(s):
-    return s.replace(
-        "&", "&amp;"
-        ).replace(
-        "<", "&lt;"
-        ).replace(
-        ">", "&gt;"
-        ).replace(
-        '"', "&quot;"
-        )
-
-text = """
-
-hmz, [foo] and [bar|yes] oi [skype:foo|call me] hehe and okay or \[skype:ignore|yes] okay
-yes, [http://google.com|google] and an attack [http://www.google.com " onclick="foo"|evil
-link]
-
-""" # emacs "
-
-def handle_links(content):
-    link = content.group(1)
-    if '|' in link:
-        uri, name = link.split('|', 1)
-        uri = uri.strip()
-        name = name.strip()
-    else:
-        uri = name = link.strip()
-    if not match_valid_uri_scheme(uri):
-        return content.group()
-    return '<a href="%s">%s</a>' % (escape(uri), escape(name))
-
-# print replace_links(handle_links, text)
-
-# /pecu @evangineer 500
-# /pecu-allocated-total: + 500
-
-# allocate_ids(Item, count)
-
-# already exists:
-# id1 = {'aspect': '/pecu-allocated-total', 'value': 1000}
-
-# new allocation:
-# msg = {'aspect': '/pecu', 'value': 500, 'ref': '@evangineer'}
-
-#! source, new_id, target_id = get_lease('/pecu-allocated-total')
-
-# source looks like:
-# {'aspect': '/pecu-allocated-total', 'value': 1000, 'expires': now+45, 'key': 1, 'target': 3, 'other': None}
-
-# new_id: 2
-# target_id: 3
-
-# if source:
-#   source.value += msg.value
-#   msg.key = new_id
-#   msg.target = 
-#!   save_as(new_id, source)
-#!   save_as(target_id, msg)
-
-# read / write / take
-
-
-# <evangineer> hello
-
-# Item:
-#     id = 123
-#     by = 'evangineer' # ? 73947
-#     to = '#foo'
-#     scope/cap = 0
-#     value = 'hello'
-#     aspect = 'default'
-
-# Item:
-#     id = 124
-#     by = 'evangineer' # ? 73947
-#     to = '374092796242946496297492'
-#     value = 'hello'
-#     aspect = 'default'
-
-# class Token(db.Model):
-
-#     ref = db.IntegerProperty()
-#     read = db.BooleanProperty(default=False)
-#     write = db.BooleanProperty(default=False)
-
-# class Reference(db.Model):
-#     key = db.ByteStringProperty()
-
-# read
-# write
-# read + write
-
-# "+lcl": 374092796242946496297492
-
-def normalise(id, valid_chars=frozenset('abcdefghijklmnopqrstuvwxyz0123456789.-/')):
-    r"normalise the id"
-    id = '-'.join(id.replace('_', ' ').lower().split())
-
-def foo():
-    words = text.split()
-    if len(words) > 5000:
-        raise ValueError("The text is longer than 5,000 words!")
-
-@register_service('test', [json])
-def test(ctx, a, b):
-    return "f: %s" % (a + b)
-
-@register_service('moop', ['main'])
-def root(ctx):
-    return "Hello World."
-
-# ------------------------------------------------------------------------------
 # OAuth
 # ------------------------------------------------------------------------------
 
@@ -1723,6 +1563,213 @@ def oauth_token(
     else:
         ctx.set_response_status(400)
         return {'error': 'unknown_format', 'error_type': 'OAuthError'}
+
+# ------------------------------------------------------------------------------
+# Main Function
+# ------------------------------------------------------------------------------
+
+# The main function has to be called ``main`` in order to be cached by the App
+# Engine runtime framework.
+if DEBUG == 2:
+
+    from cProfile import Profile
+    from pstats import Stats
+
+    # This particular main function wraps the real runner within a profiler and
+    # dumps the profiled statistics to the logs for later inspection.
+    def main():
+
+        profiler = Profile()
+        profiler = profiler.runctx("handle_http_request()", globals(), locals())
+        iostream = StringIO()
+
+        stats = Stats(profiler, stream=iostream)
+        stats.sort_stats("time")  # or cumulative
+        stats.print_stats(80)     # 80 == how many to print
+
+        # optional:
+        # stats.print_callees()
+        # stats.print_callers()
+
+        logging.info("Profile data:\n%s", iostream.getvalue())
+
+else:
+
+    main = handle_http_request
+
+# ------------------------------------------------------------------------------
+# Misc
+# ------------------------------------------------------------------------------
+
+# find_all_words = compile_regex(
+#     r'[^\s!\"#$%&()*+,-./:;<=>?@\[\\^_`{|}~]*'
+#     ).findall
+
+# find_all_words = compile_regex(r'(?u)\w+').findall # (?L)\w+
+
+find_all_words = compile_regex(r'(?u)\w+').findall # (?L)\w+
+
+XML_PATTERNS = (
+    # cdata
+    compile_regex(r'<!\[CDATA\[((?:[^\]]+|\](?!\]>))*)\]\]>').sub,
+    # comment
+    compile_regex(r'<!--((?:[^-]|(?:-[^-]))*)-->').sub,
+    # pi
+    compile_regex(r'<\?(\S+)[\t\n\r ]+(([^\?]+|\?(?!>))*)\?>').sub,
+    # doctype
+    compile_regex(r'(?m)(<!DOCTYPE[\t\n\r ]+\S+[^\[]+?(\[[^\]]+?\])?\s*>)').sub,
+    # entities
+    compile_regex(r'&[A-Za-z]+;').sub,
+    # tag
+    compile_regex(r'(?ms)<[^>]+>').sub,
+
+    # re.compile(r'<[^<>]*>').sub,
+
+    )
+
+def harvest_words(
+    text, strip=True, min_word_length=1,
+    stop_words=STOP_WORDS, xml_patterns=XML_PATTERNS,
+    find_words_in_text=find_all_words
+    ):
+
+    if strip:
+        for replace_xml in xml_patterns:
+            text = replace_xml(' ', text)
+
+    text = text.lower() # @/@ handle i18n ??
+    words = set(); add_word = words.add
+
+    for word in find_words_in_text(text):
+
+        while word.startswith("'"):
+            word = word[1:]
+        while word.endswith("'"):
+            word = word[:-1]
+
+        if (len(word) > min_word_length) and (word not in stop_words):
+            add_word(word)
+
+    return list(words)
+
+# is digit or alpha
+# multiple word groups
+# .ti = 3 property
+
+#replace_links = re.compile(r'[^\\]\[(.*?)\]', re.DOTALL).sub
+
+replace_links = re.compile(r'\[(.*?)\]', re.DOTALL).sub
+
+def escape(s):
+    return s.replace(
+        "&", "&amp;"
+        ).replace(
+        "<", "&lt;"
+        ).replace(
+        ">", "&gt;"
+        ).replace(
+        '"', "&quot;"
+        )
+
+text = """
+
+hmz, [foo] and [bar|yes] oi [skype:foo|call me] hehe and okay or \[skype:ignore|yes] okay
+yes, [http://google.com|google] and an attack [http://www.google.com " onclick="foo"|evil
+link]
+
+""" # emacs "
+
+def handle_links(content):
+    link = content.group(1)
+    if '|' in link:
+        uri, name = link.split('|', 1)
+        uri = uri.strip()
+        name = name.strip()
+    else:
+        uri = name = link.strip()
+    if not match_valid_uri_scheme(uri):
+        return content.group()
+    return '<a href="%s">%s</a>' % (escape(uri), escape(name))
+
+# print replace_links(handle_links, text)
+
+# /pecu @evangineer 500
+# /pecu-allocated-total: + 500
+
+# allocate_ids(Item, count)
+
+# already exists:
+# id1 = {'aspect': '/pecu-allocated-total', 'value': 1000}
+
+# new allocation:
+# msg = {'aspect': '/pecu', 'value': 500, 'ref': '@evangineer'}
+
+#! source, new_id, target_id = get_lease('/pecu-allocated-total')
+
+# source looks like:
+# {'aspect': '/pecu-allocated-total', 'value': 1000, 'expires': now+45, 'key': 1, 'target': 3, 'other': None}
+
+# new_id: 2
+# target_id: 3
+
+# if source:
+#   source.value += msg.value
+#   msg.key = new_id
+#   msg.target =
+#!   save_as(new_id, source)
+#!   save_as(target_id, msg)
+
+# read / write / take
+
+
+# <evangineer> hello
+
+# Item:
+#     id = 123
+#     by = 'evangineer' # ? 73947
+#     to = '#foo'
+#     scope/cap = 0
+#     value = 'hello'
+#     aspect = 'default'
+
+# Item:
+#     id = 124
+#     by = 'evangineer' # ? 73947
+#     to = '374092796242946496297492'
+#     value = 'hello'
+#     aspect = 'default'
+
+# class Token(db.Model):
+
+#     ref = db.IntegerProperty()
+#     read = db.BooleanProperty(default=False)
+#     write = db.BooleanProperty(default=False)
+
+# class Reference(db.Model):
+#     key = db.ByteStringProperty()
+
+# read
+# write
+# read + write
+
+# "+lcl": 374092796242946496297492
+
+def normalise(id, valid_chars=frozenset('abcdefghijklmnopqrstuvwxyz0123456789.-/')):
+    r"normalise the id"
+    id = '-'.join(id.replace('_', ' ').lower().split())
+
+def foo():
+    words = text.split()
+    if len(words) > 5000:
+        raise ValueError("The text is longer than 5,000 words!")
+
+@register_service('test', [json])
+def test(ctx, a, b):
+    return "f: %s" % (a + b)
+
+@register_service('moop', ['main'])
+def root(ctx):
+    return "Hello World."
 
 @register_service('root', ['main'], anon_access=1)
 def root(ctx):
