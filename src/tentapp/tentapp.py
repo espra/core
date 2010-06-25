@@ -1449,11 +1449,15 @@ def oauth_redirect(grant, request_id, limit=None):
     if ua_request:
         if '#' not in uri:
             uri += '#'
-
-    if '?' in uri:
-        uri += '&%s' % urlencode(response)
+        if uri.rfind('#') == (len(uri) - 1):
+            uri += urlencode(response)
+        else:
+            uri += '&%s' % urlencode(response)
     else:
-        uri += '?%s' % urlencode(response)
+        if '?' in uri:
+            uri += '&%s' % urlencode(response)
+        else:
+            uri += '?%s' % urlencode(response)
 
     try:
         db.delete(request)
