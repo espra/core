@@ -89,7 +89,7 @@ ERROR_WRAPPER = """<!DOCTYPE html>
 
 ERROR_401 = ERROR_WRAPPER % """
   <div class="error">
-    <h1>Invalid Authorisation Token</h1>
+    <h1>Not Authorized</h1>
     Your session may have expired or you may not have access.
     <ul>
       <li><a href="/">Return home</a></li>
@@ -164,7 +164,14 @@ RESPONSE_X = (
     "%s"
     )
 
-RESPONSE_401 = RESPONSE_X % ("401 Unauthorized", len(ERROR_401), ERROR_401)
+RESPONSE_401 = (
+    "Status: 401 Unauthorized\r\n"
+    "WWW-Authenticate: Token realm='Service', error='token_expired'\r\n"
+    "Content-Type: text/html\r\n"
+    "Content-Length: %s\r\n\r\n"
+    "%s"
+    ) % (len(ERROR_401), ERROR_401)
+
 RESPONSE_404 = RESPONSE_X % ("404 Not Found", len(ERROR_404), ERROR_404)
 RESPONSE_500_BASE = RESPONSE_X % ("500 Server Error", "%s", "%s")
 RESPONSE_500 = RESPONSE_X % ("500 Server Error", len(ERROR_500), ERROR_500)
@@ -305,11 +312,11 @@ class OAuthRequest(db.Model):
     state = db.StringProperty(indexed=False)
     type = db.StringProperty(indexed=False)
 
-class TokenReference(db.Model):
+class OAuthToken(db.Model):
     v = db.IntegerProperty(default=0, name='v')
-    client = db.StringProperty()
-    scopes = db.StringListProperty()
     created = db.DateTimeProperty(auto_now_add=True)
+    client = db.StringProperty()
+    scope = db.StringProperty()
 
 class Trend(db.Model):
     v = db.IntegerProperty(default=0, name='v')
@@ -635,7 +642,7 @@ def register_service(name, renderers, **config):
     return __register_service
 
 # The default JSON renderer generates JSON-encoded output.
-def json(ctx, content):
+def json(ctx, **content):
     if 'Content-Type' not in ctx.response_headers:
         ctx.response_headers['Content-Type'] = 'application/json; charset=utf-8'
     callback = ctx.callback
@@ -994,12 +1001,12 @@ def handle_http_request(
             signature = kwargs.pop('sig', None)
             if not signature:
                 write(ERROR_HEADER)
-                write(NOTAUTHORISED)
+                write(NOTAUTHORIZED)
                 return
             if not validate_tamper_proof_string(
                 'token', token, key=API_KEY, timestamped=True
                 ):
-                logging.info("Unauthorised API Access Attempt: %r", token)
+                logging.info("Unauthorized API Access Attempt: %r", token)
                 write(UNAUTH)
                 return
 
@@ -1048,10 +1055,10 @@ def handle_http_request(
             except BaseHTTPError:
                 raise
             except Exception, error:
-                response = json(ctx, {
-                    'error_type': error.__class__.__name__,
-                    'error': str(error)
-                    })
+                response = json(
+                    ctx, error=str(error),
+                    error_type=error.__class__.__name__
+                    )
                 write(RESPONSE_JSON_ERROR % (len(response), response))
                 return
         else:
@@ -1459,19 +1466,31 @@ def root(ctx):
 # OAuth
 # ------------------------------------------------------------------------------
 
-# This implements OAuth 2.0 -- or rather, something more like what Facebook
-# calls OAuth 2.0.
+# This implements a fairly conformant implementation of `OAuth 2.0
+# <http://tools.ietf.org/html/draft-ietf-oauth-v2-08>`_.
 #
 # We diverge from the still-being-defined standard by not supporting HTTP Basic
-# Authentication for the Client. It just complicates the implementation
-# needlessly as we doesn't use basic auth -- not to mention the fact that most
-# OAuth 2.0 clients don't even support it!
+# Authentication or the Authorization Request Header Field for the Client. It
+# just complicates the implementation needlessly -- not to mention the fact that
+# most OAuth 2.0 clients don't even support them!
 #
-# We also relax the requirement to specify the client ``type`` parameter for the
-# end-user authorisation endpoint and assume a default of ``web_server``.
-@register_service('oauth.authorise', ['oauth.authorise', 'main'])
-def oauth_authorise(
-    ctx, client_id=None, redirect_uri=None, scope='*', state=None,
+# We also make life simpler for developers by providing additional informative
+# error messages (with an HTTP 500 response status) and relaxing a few REQUIRED
+# fields:
+#
+# * the ``type`` parameter doesn't need to be specified for the end-user
+#   authorisation endpoint -- a default of ``web_server`` is assumed.
+#
+# * the ``grant_type`` parameter doesn't need to be specified for the token
+#   endpoint -- a default of ``authorization_code`` is assumed.
+#
+# And like other implementations, e.g. Facebook, we use the more sensible
+# ``access_token`` parameter name as opposed to ``oauth_token`` as the spec
+# states for the purpose of validating access to protected resources. Hopefully
+# the spec will be updated to reflect this before it is finalised.
+@register_service('oauth.authorize', ['oauth.authorize', 'main'])
+def oauth_authorize(
+    ctx, client_id=None, redirect_uri=None, scope=None, state=None,
     type='web_server'
     ):
 
@@ -1481,6 +1500,9 @@ def oauth_authorise(
     if not redirect_uri:
         raise ValueError("The redirect_uri parameter was not specified.")
 
+    if type not in ['web_server', 'user_agent']:
+        raise ValueError("Unknown OAuth request type: %r." % type)
+
     client = OAuthClient.get_by_key_name(client_id)
     if not client:
         raise ValueError(
@@ -1488,13 +1510,31 @@ def oauth_authorise(
             % client_id
             )
 
-    if client.redirect and redirect_uri != client.redirect:
-        raise ValueError(
-            "The registered redirect URI and the redirect_uri parameter "
-            "do not match."
-            )
+    # We enforce strict equality of the redirect URI and the use of HTTPS if
+    # it's a ``user_agent`` request. Otherwise, as long as the client hasn't
+    # specified a redirect URI, it can pass in wherever it wants.
+    if type == 'web_server':
+        if client.redirect and redirect_uri != client.redirect:
+            raise ValueError(
+                "The registered redirect URI and the redirect_uri parameter "
+                "do not match."
+                )
+    else:
+        if RUNNING_ON_GOOGLE_SERVERS and not ctx.ssl_mode:
+            raise ValueError(
+                "A user_agent request can only be conducted over HTTPS."
+                )
+        if redirect_uri != client.redirect:
+            raise ValueError(
+                "The registered redirect URI and the redirect_uri parameter "
+                "do not match."
+                )
+        if not redirect_uri.startswith('https://'):
+            raise ValueError(
+                "The redirect_uri needs to be HTTPS for a user_agent request."
+                )
 
-    scope = scope or '*'
+    scope = scope or ctx.get_user_id()
     request_id = hexlify(urandom(12))
 
     request = OAuthRequest(
@@ -1533,9 +1573,8 @@ def oauth_redirect(grant, request_id, limit=None):
     if grant == 'yes':
         token_id = hexlify(urandom(12))
         if ua_request:
-            token = AccessToken(
-                key_name=token_id,
-                client=client_id, scopes=request.scope.split(' ')
+            token = OAuthToken(
+                key_name=token_id, client=client_id, scope=request.scope
                 )
             response['access_token'] = token_id
             if limit:
@@ -1543,7 +1582,7 @@ def oauth_redirect(grant, request_id, limit=None):
                 response['expires_in'] = str(expiry)
                 token.expires = time() + expiry
         else:
-            token = AuthCode(
+            token = OAuthCode(
                 key_name=token_id, client=client_id,
                 scope=request.scope, redirect=request.redirect
                 )
@@ -1566,17 +1605,87 @@ def oauth_redirect(grant, request_id, limit=None):
     finally:
         raise Redirect(uri)
 
-# With the token endpoint, we again simplify things by not implementing any
-# support for Assertions and Refresh Tokens. We also relax the requirement to
-# specify the ``grant_type`` and assume a default of ``authorization_code``.
 @register_service('oauth.token', [json], ssl_only=1)
 def oauth(
     ctx, client_id=None, client_secret=None, code=None,
     grant_type='authorization_code', redirect_uri=None,
-    scope=None, username=None, password=None,
+    scope=None, username=None, password=None, assertion_type=None,
+    assertion=None, refresh_token=None
     ):
 
     ctx.response_headers['Cache-Control'] = 'no-store'
+
+    if not client_id:
+        raise ValueError("The client_id parameter was not specified.")
+
+    if not client_secret:
+        raise ValueError("The client_secret parameter was not specified.")
+
+    client = OAuthClient.get_by_key_name(client_id)
+    if not client:
+        raise ValueError(
+            "Could not find records for the given client_id, '%s'."
+            % client_id
+            )
+
+    if client_secret != client.secret:
+        ctx.set_response_status(400)
+        return {
+            'error': 'invalid_client_credentials', 'error_type': 'OAuthError'
+            }
+
+    if grant_type == "authorization_code":
+        if not code:
+            raise ValueError("The code parameter was not specified.")
+        code = OAuthCode.get_by_key_name(code)
+        if not code:
+            raise ValueError(
+                "Could not find a record for the OAuth code."
+                )
+        if code.redirect != redirect_uri:
+            ctx.set_response_status(400)
+            return {
+                'error': 'redirect_uri_mismatch', 'error_type': 'OAuthError'
+                }
+        # authorization_expired
+        token_id = hexlify(urandom(12))
+        token = OAuthToken(
+            key_name=token_id, client=client_id, scope=code.scope
+            )
+    elif grant_type == "user_basic_credentials":
+        if not username:
+            raise ValueError("The username parameter was not specified.")
+        if not password:
+            raise ValueError("The password parameter was not specified.")
+        user = User.get_by_key_name(sha1(username).hexdigest())
+        if not user:
+            raise ValueError(
+                "Could not find a record for the given username."
+                )
+        if user.password != password: # @/@ update to actual check later
+            ctx.set_response_status(400)
+            return {
+                'error': 'invalid_user_credentials', 'error_type': 'OAuthError'
+                }
+        token_id = hexlify(urandom(12))
+        token = OAuthToken(
+            key_name=token_id, client=client_id, scope=username
+            )
+    elif grant_type == "assertion":
+        ctx.set_response_status(400)
+        return {
+            'error': 'invalid_assertion', 'error_type': 'OAuthError'
+            }
+    elif grant_type == "none":
+        # The spec doesn't actually say what should happen in the case where
+        # it's acting on behalf of itself.
+        pass
+    elif grant_type == "refresh_token":
+        if not refresh_token:
+            raise ValueError("The refresh_token parameter was not specified.")
+    else:
+        ctx.set_response_status(400)
+        return {'error': 'unknown_format', 'error_type': 'OAuthError'}
 
     if 1:
         return {
@@ -1584,24 +1693,6 @@ def oauth(
             'expires_in': 'foo',
             'scope': ''
             }
-
-    ctx.set_response_status(400)
-
-    x = """
-    redirect_uri_mismatch
-    bad_authorization_code
-    invalid_client_credentials
-    unauthorized_client - The client is not permitted to use this access grant type.
-    invalid_assertion
-    unknown_format
-    authorization_expired
-    multiple_credentials
-    invalid_user_credentials
-    """
-
-    return {
-        'error': 'incorrect_client_credentials'
-        }
 
 @register_service('root', ['main'], anon_access=1)
 def root(ctx):
