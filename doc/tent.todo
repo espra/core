@@ -266,7 +266,7 @@ Front End
 
 ✗ amp settings view
 ✗ amp needed view
-✗ amp transfer view
+✗ amp transfer view (handle negtive/zero)
 
 ✗ json encoding/decoding
 ✗ json encodes/decodes of special typed values
@@ -281,14 +281,14 @@ Front End
 Back End
 ========
 
-✗ production/debug modes
-✗ static file serving/invalidation
+✓ production/debug modes
+✓ static file serving/invalidation
 
-✗ request handling
-✗ query/post data handling
-✗ ssl support
-✗ root request
-✗ zero request
+✓ request handling
+✓ query/post data handling
+✓ ssl support
+✗ www request
+✗ tent request
 ✗ item request
 ✗ ~user request
 ✗ space request
@@ -296,7 +296,7 @@ Back End
 ✗ http cache: etags, last-modified, if-modified-since
 ✗ proxy caching
 
-✗ json encoding
+✓ json encoding
 ✗ json encodes of special typed values
 
 ✗ user model
@@ -328,13 +328,13 @@ Back End
 ✗ default spaces
 ✗ default tokens
 
-✗ root template
-✗ site template
+✗ www template
+✗ tent template
 
 ✗ login
 ✗ logout
 ✗ redirect
-✗ ssl redirect
+✓ ssl redirect
 
 ✗ item model
 ✗ item creation
@@ -401,7 +401,7 @@ Back End
 ✗ private space creation
 ✗ private space invitation
 
-✗ access tokens model
+✓ access tokens model
 ✗ access tokens creation
 ✗ access tokens revoke
 ✗ access tokens share
@@ -455,6 +455,8 @@ Back End
 
 ✗ auto-completion query support
 ✗ auto-completion cache support
+
+✓ oauth 2.0 support
 
 =========
 Live Node
@@ -519,6 +521,7 @@ Extra
 
 ✗ twitter integration: out
 # facebook integration: out
+✗ anonymous posting
 
 ✗ espra bots app
 ✗ espra bots phenny services
