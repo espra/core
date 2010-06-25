@@ -271,6 +271,7 @@ class CloakToken(db.Model):
 class Item(db.Model):
     v = db.IntegerProperty(default=0, name='v')
     created = db.DateTimeProperty(auto_now_add=True)
+
     # public
 
 class Locker(db.Model):
@@ -300,6 +301,7 @@ class OAuthCode(db.Model):
     v = db.IntegerProperty(default=0, name='v')
     created = db.DateTimeProperty(auto_now_add=True)
     client = db.StringProperty()
+    expires = db.IntegerProperty()
     redirect = db.StringProperty(indexed=False)
     scope = db.StringProperty(indexed=False)
 
@@ -316,6 +318,7 @@ class OAuthToken(db.Model):
     v = db.IntegerProperty(default=0, name='v')
     created = db.DateTimeProperty(auto_now_add=True)
     client = db.StringProperty()
+    expires = db.IntegerProperty()
     scope = db.StringProperty()
 
 class Trend(db.Model):
@@ -331,16 +334,13 @@ class User(db.Model):
 
 # def on_complete(results):
 #     return [item.key().id() for item in results]
-
 # query = ParallelQuery(
 #   Item, query_key='/intentions #espians',
 #   notify='http://notify.tentapp.com', on_complete=on_complete
 #   )
-
 # query.filter('aspect =', '/intention')
 # query.filter('space =', 'espians')
 # query.run('by =', [('evangineer', 'olasofia', 'sbp']))
-
 # query.results <--- {'evangineer': [...], 'olasofia': [...]}
 
 from google.appengine.api import urlfetch
@@ -359,7 +359,8 @@ class BaseQuery(Query):
     _prev = 0
 
     def execute(
-        self, limit, offset, value, set_result, add_callback, deadline, on_complete
+        self, limit, offset, value, set_result, add_callback, deadline,
+        on_complete
         ):
 
         self._limit = limit
@@ -383,7 +384,8 @@ class BaseQuery(Query):
         rpc = UserRPC('datastore_v3', self._deadline)
         rpc.callback = lambda : self.rpc_callback(rpc)
         rpc.make_call(
-            'RunQuery', raw_query._ToPb(self._limit, self._offset, self._limit),
+            'RunQuery',
+            raw_query._ToPb(self._limit, self._offset, self._limit),
             QueryResult()
             )
         self.add_callback(rpc.check_success)
@@ -404,7 +406,8 @@ class BaseQuery(Query):
                 raise _ToDatastoreError(err)
             except datastore_errors.NeedIndexError, exc:
                 yaml = datastore_index.IndexYamlForQuery(
-                    *datastore_index.CompositeIndexForQuery(rpc.request)[1:-1])
+                    *datastore_index.CompositeIndexForQuery(rpc.request)[1:-1]
+                    )
                 raise datastore_errors.NeedIndexError(
                     str(exc) + '\nThis query needs this index:\n' + yaml)
 
@@ -419,7 +422,9 @@ class BaseQuery(Query):
             remaining = self._limit - len(buffer)
             if remaining and (remaining != self._prev):
                 self._prev = remaining
+
                 # logging.error("Requesting %r more for %r [%r]" % (remaining, self._value, len(buffer)))
+
                 request = NextRequest()
                 request.set_count(remaining)
                 request.mutable_cursor().CopyFrom(self._cursor)
@@ -431,14 +436,21 @@ class BaseQuery(Query):
 
         try:
             if self._keys_only:
-                results = [Key._FromPb(e.key()) for e in self._buffer[:self._limit]]
+                results = [
+                    Key._FromPb(e.key()) for e in self._buffer[:self._limit]
+                    ]
             else:
-                results = [Entity._FromPb(e) for e in self._buffer[:self._limit]]
+                results = [
+                    Entity._FromPb(e) for e in self._buffer[:self._limit]
+                    ]
                 if self._model_class is not None:
                     from_entity = self._model_class.from_entity
                     results = [from_entity(e) for e in results]
                 else:
-                    results = [class_for_kind(e.kind()).from_entity(e) for e in results]
+                    results = [
+                        class_for_kind(e.kind()).from_entity(e)
+                        for e in results
+                        ]
         finally:
             del self._buffer[:]
 
@@ -452,8 +464,8 @@ class ParallelQuery(object):
 
     def __init__(
         self, model_class=None, keys_only=False, query_key=None,
-        cache_duration=5*60, namespace='pq', notify=True, limit=50, offset=0,
-        deadline=None, on_complete=None
+        cache_duration=5*60, namespace='pq', notify=True, limit=50,
+        offset=0, deadline=None, on_complete=None
         ):
         self.model_class = model_class
         self.keys_only = keys_only
@@ -997,7 +1009,8 @@ def handle_http_request(
             ctx.callback = kwargs.pop('callback')
 
         # check that there's a token and it validates
-        if 0: # @/@
+
+        if 0:
             signature = kwargs.pop('sig', None)
             if not signature:
                 write(ERROR_HEADER)
@@ -1015,8 +1028,6 @@ def handle_http_request(
             # @/@ this is insecure ...
 
             if 'token' in special_kwargs:
-                # if not self.ssl_mode:
-                #     raise Error("It is insecure to use an auth token over a non-SSL connection.")
                 session_token = special_kwargs['__token__']
             else:
                 if '__token__' in cookies:
@@ -1349,6 +1360,7 @@ else:
 
 
 #replace_links = re.compile(r'[^\\]\[(.*?)\]', re.DOTALL).sub
+
 replace_links = re.compile(r'\[(.*?)\]', re.DOTALL).sub
 
 def escape(s):
@@ -1572,13 +1584,14 @@ def oauth_redirect(grant, request_id, limit=None):
 
     if grant == 'yes':
         token_id = hexlify(urandom(12))
+        if limit:
+            expiry = int(86400 * limit) # number of days
         if ua_request:
             token = OAuthToken(
                 key_name=token_id, client=client_id, scope=request.scope
                 )
             response['access_token'] = token_id
             if limit:
-                expiry = int(86400 * limit) # number of days
                 response['expires_in'] = str(expiry)
                 token.expires = time() + expiry
         else:
@@ -1586,6 +1599,8 @@ def oauth_redirect(grant, request_id, limit=None):
                 key_name=token_id, client=client_id,
                 scope=request.scope, redirect=request.redirect
                 )
+            if limit:
+                token.expires = time() + expiry
             response['code'] = token_id
     else:
         response['error'] = 'user_denied'
@@ -1606,7 +1621,7 @@ def oauth_redirect(grant, request_id, limit=None):
         raise Redirect(uri)
 
 @register_service('oauth.token', [json], ssl_only=1)
-def oauth(
+def oauth_token(
     ctx, client_id=None, client_secret=None, code=None,
     grant_type='authorization_code', redirect_uri=None,
     scope=None, username=None, password=None, assertion_type=None,
@@ -1647,11 +1662,25 @@ def oauth(
             return {
                 'error': 'redirect_uri_mismatch', 'error_type': 'OAuthError'
                 }
-        # authorization_expired
+        now = int(time())
+        expires = code.expires
+        if expires and expires <= now:
+            ctx.set_response_status(400)
+            return {
+                'error': 'authorization_expired', 'error_type': 'OAuthError'
+                }
         token_id = hexlify(urandom(12))
         token = OAuthToken(
-            key_name=token_id, client=client_id, scope=code.scope
+            key_name=token_id, client=client_id,
+            expires=expires, scope=code.scope
             )
+        response = {
+            'access_token': token_id,
+            'scope': code.scope
+            }
+        if expires:
+            response['expires_in'] = expires - now
+        return response
     elif grant_type == "user_basic_credentials":
         if not username:
             raise ValueError("The username parameter was not specified.")
@@ -1671,28 +1700,29 @@ def oauth(
         token = OAuthToken(
             key_name=token_id, client=client_id, scope=username
             )
+        return {
+            'access_token': token_id,
+            'scope': username
+            }
     elif grant_type == "assertion":
         ctx.set_response_status(400)
         return {
             'error': 'invalid_assertion', 'error_type': 'OAuthError'
             }
     elif grant_type == "none":
-        # The spec doesn't actually say what should happen in the case where
-        # it's acting on behalf of itself.
+        # The spec doesn't actually say what should happen in the case when
+        # ``grant_type`` is ``none``, i.e. when it's acting on behalf of itself.
         pass
     elif grant_type == "refresh_token":
         if not refresh_token:
             raise ValueError("The refresh_token parameter was not specified.")
+        ctx.set_response_status(400)
+        return {
+            'error': 'authorization_expired', 'error_type': 'OAuthError'
+            }
     else:
         ctx.set_response_status(400)
         return {'error': 'unknown_format', 'error_type': 'OAuthError'}
-
-    if 1:
-        return {
-            'access_token': 'foo',
-            'expires_in': 'foo',
-            'scope': ''
-            }
 
 @register_service('root', ['main'], anon_access=1)
 def root(ctx):
