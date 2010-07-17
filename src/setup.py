@@ -16,9 +16,13 @@ extensions = [
         "pyutil.pylzf",
         ["pyutil/pylzf.c", "pyutil/lzf/lzf_c.c", "pyutil/lzf/lzf_d.c"],
         include_dirs=["pyutil/lzf"],
-        ),
-    Extension("pyutil.darwinsandbox", ["pyutil/darwinsandbox.c"])
+        )
     ]
+
+if sys.platform == 'darwin':
+    extensions.append(
+        Extension("pyutil.darwinsandbox", ["pyutil/darwinsandbox.c"])
+        )
 
 # ------------------------------------------------------------------------------
 # run setup
