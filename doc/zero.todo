@@ -3,13 +3,14 @@
 # No Copyright (-) 2010 The Ampify Authors. This file is under the
 # Public Domain license that can be found in the root LICENSE file.
 
-python -c "from datetime import datetime as d; \
-           left = d(2010, 06, 30, 23, 0, 0) - d.now(); \
-           left = (left.days * 86400) + left.seconds; \
+python -c "from datetime import datetime as d, timedelta as t; \
+           left = d(2010, 7, 21, 05, 0, 0) + t(days=40) - d.now(); \
+           print left + d.now(); \
+           days, left = left.days, left.seconds; \
            left, seconds = divmod(left, 60); \
            hours, minutes = divmod(left, 60); \
            print '# Time left:'; \
-           print '     %s hrs, %s mins, %s secs' % (hours, minutes, seconds)"
+           print '     %s days, %s hrs, %s mins, %s secs' % (days, hours, minutes, seconds)"
 
 TODO_FILE=$0
 
@@ -25,50 +26,123 @@ echo
 echo "# Total:"
 grep "^[✓✗]" $TODO_FILE | wc -l
 
-
 cat >> /dev/null << EOF
+
+=======
+40 Days
+=======
+
+* develop ampify zero
+* create espra video draft
+* up-to-date documentation
+* learn spanish
+* exercise/yoga: develop a 6-pack
+* learn linear algebra
+* learn bioengineering
 
 =====
 Admin
 =====
 
-✓ dns
-✓ google apps setup
-✓ http redirects from apex domains
-# s3
+✗ dns setup
+✗ hostway servers order
+✗ base linux setup on servers
+✗ ssl certificates
+✗ http setup including redirects from apex domains
+✗ amphub deployment
+✗ amp deployment
 
-✓ dependencies
-✓ configure && make
+============
+Installation
+============
 
-=========
-Front End
-=========
+✗ configure
+✗ make
+✗ redpill: init
+✗ redpill: config
+✗ redpill: packages
+✗ redpill: distribution
+✗ redpill: install
+✗ redpill: uninstall
+✗ redpill: daemon
+
+✗ package: base dependencies
+✗ package: zlib
+✗ package: bz2
+✗ package: readline
+✗ package: libevent
+✗ package: libjpeg
+✗ package: libpng
+✗ package: libnatpmp
+✗ package: miniupnc
+✗ package: libxml2
+✗ package: libxslt
+✗ package: redis
+✗ package: go
+✗ package: berkeleydb
+✗ package: keyspace
+✗ package: coffeescript
+✗ package: qrencode
+✗ package: freetype
+✗ package: pcre
+✗ package: nginx
+✗ package: openssl
+✗ package: git
+✗ package: python
+✗ package: python imaging library
+✗ package: cython
+✗ package: gevent
+✗ package: lxml
+✗ package: sass
+✗ package: python-packages
+
+✗ amp config handling
+✗ amp init
+✗ amp hub registration: host
+✗ amp hub registration: user
+✗ amp sign: new node
+✗ amp run
+✗ amp run --no-hub
+✗ amp run --server
+✗ amp run --services
+✗ amp deploy
+✗ pre/post deploy scripts
+
+✗ keyspace config
+✗ nginx config
+✗ redis config
+
+===========
+Ampify Core
+===========
+
+✗ default configuration
+✗ configuration handler
+✗ yaml parser nodule
+✗ yaml parser caller
 
 ✗ verify support for modern browser
 ✗ browser update view
 
-✗ root view
-✗ registration view
-✗ login view
-✗ logout view
-
 ✗ design: site css
+✗ design: general layout
 ✗ design: buttons
 ✗ design: sidebar
 ✗ design: trust maps editor
+✗ design: trust maps graph
 ✗ design: dols
 ✗ design: default profile pic
 ✗ design: input box
 ✗ design: auto-completion
-# design: pie menu
 
 ✗ input box
 ✗ input box word/char count/limit
-# input box contenteditable
+✗ input box contenteditable
 ✗ input box current place finder in content area
 ✗ input box auto-completion
 ✗ input box auto-completion -- users
 ✗ input box auto-completion -- aspects
+✗ input box auto-completion -- services
 ✗ input box auto-completion -- spaces
 ✗ input box date input, 2010-01-13T21:34Z
 ✗ input box time input, 21:34
@@ -78,12 +152,16 @@ Front End
 ✗ autogrowing editor
 ✗ inline editor
 ✗ auto-preview
-✗ position editor
+✗ position list editor
 ✗ uploader
-# pie menu
+
+✗ pie menu
+✗ pie menu: design
+✗ pie menu: options hook
 
 ✗ google maps
 ✗ map view
+✗ map view: design
 ✗ map clustering support
 ✗ location discovery
 
@@ -94,19 +172,22 @@ Front End
 ✗ url truncating...
 ✗ url longurl expansion
 
-✓ google analytics
+✗ google analytics
 
 ✗ loading indicator
 ✗ load cache
 ✗ load on scroll
 
 ✗ scrollbars
-# scrollbars theme
+✗ scrollbars theme
 
 ✗ dol control: search
 ✗ dol control: global/trusted
 ✗ dol control: view
 ✗ dol column auto-size
+
+✗ introduction service
+✗ introduction service: view
 
 ✗ messaging view
 ✗ messaging auto-split handler
@@ -136,6 +217,12 @@ Front End
 ✗ /user/perspective handling
 ✗ /trust handling
 ✗ /pecu handling
+✗ /intention handling
+✗ /need handling
+✗ questions handling
+✗ question options view
+✗ question answer view
+✗ answers handling
 
 ✗ +drafts
 ✗ +sent
@@ -149,10 +236,6 @@ Front End
 ✗ original chain traversal
 ✗ via trail
 
-✗ trends view
-✗ trends search
-✗ trends listing
-
 ✗ item search
 ✗ search syntax
 ✗ search query parser
@@ -162,6 +245,7 @@ Front End
 ✗ merged aspect/value query
 
 ✗ shaila mode
+✗ shaila mode editor
 ✗ shaila mode item select
 ✗ shaila mode view
 ✗ shaila item render
@@ -177,6 +261,12 @@ Front End
 ✗ urls detect
 ✗ links interceptor
 
+✗ fonts
+✗ fonts: loader
+✗ fonts: font files
+✗ fonts: css
+✗ fonts: naaga
+
 ✗ oembed
 ✗ oembed: skitch
 ✗ oembed: flickr
@@ -185,8 +275,8 @@ Front End
 ✗ oembed: youtube
 ✗ oembed: vimeo
 
-✓ spotify uris
-✓ skype uris
+✗ spotify uris
+✗ skype uris
 
 ✗ paste handler
 ✗ text upload
@@ -200,6 +290,7 @@ Front End
 ✗ file access
 ✗ file management
 ✗ file image preview
+✗ file font
 ✗ file mp3 player
 ✗ file html5 video player
 ✗ file download
@@ -209,7 +300,9 @@ Front End
 ✗ media mp3
 ✗ media playlist
 ✗ media control
-✗ media player view
+✗ media auto-pecu allocation
+✗ media player: view
+✗ media player: design
 
 ✗ dols management
 ✗ dols session
@@ -236,107 +329,332 @@ Front End
 ✗ items cache
 ✗ live connection
 
-# web sockets client-side support
+✗ web sockets client-side support
 ✗ iframe client-side support
+✗ postMessage client-side support
 
 ✗ cross-site comms
 ✗ cross-site auth
 ✗ cross-site tokens
 
-# js transaction handling
+✗ js transaction handling
 ✗ pecu allocations
 ✗ pecu totals
 
-# javascript ucd -- part 1
-# javascript ucd -- part 2
-
 ✗ preferred language settings
 ✗ google translation
-# transliteration support
+✗ transliteration support
 
 ✗ timezone settings
 ✗ js timezone support
 ✗ olson db -> js data
 ✗ relative time display
+✗ recurring events
+
+✗ events app
+✗ events app: view
+✗ events app: event creator
+✗ events app: event editor
 
 ✗ trust maps management
 ✗ trust maps view
+✗ trust maps graph view
 
 ✗ access tokens management
 
-✗ amp settings view
-✗ amp needed view
-✗ amp transfer view (handle negtive/zero)
-
-✗ json encoding/decoding
-✗ json encodes/decodes of special typed values
-✗ big number handling
+✗ amp creds settings view
+✗ amp creds needed view
+✗ amp creds transfer view (handle negtive/zero)
 
 ✗ client-side caches
 
-✗ iphone css
-✗ iphone js
+✗ iphone/ipad css
+✗ iphone/ipad js
+✗ iphone/ipad dynamic column view
+✗ iphone/ipad input
+✗ iphone/ipad touch events
 
-========
-Back End
-========
+✗ local names support
+✗ on-save name->id mapping
+✗ on-load id->name mapping
 
-✓ production/debug modes
-✓ static file serving/invalidation
+✗ code editor
+✗ code editor: preview
+✗ code editor: handler
+✗ code editor: wysiwyg field
+✗ code editor: scroll
+✗ code editor: cut/paste
+✗ code editor: text
+✗ code editor: syntax highlighter
+✗ code editor: naaga syntax
+✗ code editor: autocompletion
+✗ code editor: help viewer
+✗ code editor: commands
+✗ code editor: live output renderer
+✗ code editor: error reporter
 
-✓ request handling
-✓ query/post data handling
-✓ ssl support
+✗ ipv4 support
+✗ ipv6 support
+
+✗ ampnode main()
+✗ ampnode command line arguments handler
+
+✗ lzf compression
+✗ lzf compression: dictionary-support
+
+✗ mail service
+✗ mail service: naaga support
+✗ mail service: smtp client
+✗ mail service: sendgrid support
+
+✗ urlfetch service
+✗ urlfetch service: caller
+✗ urlfetch service: naaga
+✗ urlfetch service: headers
+✗ iana-reserved ips
+✗ ssl cert verification
+
+✗ images service
+✗ images service: nodule
+✗ images service: caller
+✗ images service: naaga
+✗ images service: functions
+
+✗ taskqueue service
+✗ taskqueue service: caller
+✗ taskqueue service: naaga
+✗ taskqueue service: functions
+
+✗ memstore service
+✗ memstore service: caller
+✗ memstore service: naaga
+✗ memstore service: functions
+
+✗ routing service
+✗ routing service: caller
+✗ routing service: naaga
+✗ routing service: functions
+
+✗ relay service
+✗ relay service: caller
+✗ relay service: naaga
+✗ relay service: functions
+✗ relay service: setup
+✗ relay service: request
+✗ relay service: accept
+✗ relay service: update
+
+✗ amphub service
+✗ amphub service: caller
+✗ amphub service: naaga
+✗ amphub service: functions
+✗ amphub service: registration
+✗ amphub service: update
+
+✗ peerfund service
+✗ peerfund service: caller
+✗ peerfund service: naaga
+✗ peerfund service: functions
+✗ peerfund service: templates
+✗ peerfund service: accounts
+
+✗ confluence app
+✗ confluence app: view
+✗ confluence app: timeline
+✗ confluence app: graph view
+
+✗ naaga service
+✗ naaga service: nodejs nodule
+✗ naaga service: multi process
+✗ naaga service: base runtime
+✗ naaga service: error handler
+✗ naaga service: package
+✗ naaga service: loader
+✗ naaga service: callback
+✗ naaga service: auth
+✗ naaga service: call services
+✗ naaga service: timeout
+
+✗ naaga: package
+✗ naaga: versioning support
+✗ naaga: remote call
+
+✗ http -> https redirect
+✗ upgrade notifier: html page, json, amptp
+✗ ampnode binary upgrade
+✗ redpill daemon
+
+✗ global trust map config
+✗ global trust map query
+✗ global trust map proxy
+✗ global trust map calculation
+
+✗ trust metrics calculation
+✗ trust metrics cache
+✗ trust metrics loader
+✗ incomplete trust maps calculation/results notifier
+✗ anti top-40 inertia measures
+
+✗ file server
+✗ file transfer: tit-for-tat
+✗ file transfer: tree hash
+✗ file transfer: combined hasher support
+✗ file transfer: multi-transfer
+✗ file transfer: range get
+✗ file transfer: upload
+
+✗ tls support
+✗ tls cert loading
+✗ tls connection
+✗ tls server init
+
+✗ request handling
+✗ http request parser
+✗ https request handler
+✗ amptp request parser
+
+✗ amptp
+✗ amptp what is my ip
+✗ amptp upnp/natpmp
+✗ amptp upnp/natpmp nodule
+✗ amptp udp bind
+✗ amptp ordering
+✗ amptp ordering 2
+✗ amptp framing
+✗ amptp framing 2
+✗ amptp framing 3
+✗ amptp congestion control
+✗ amptp congestion control 2
+✗ amptp congestion control 3
+✗ amptp secure connection
+✗ amptp secure connection 2
+✗ amptp secure connection 3
+✗ amptp recall connection
+✗ amptp ping
+✗ amptp auto-compression
+
+✗ query data handling
+✗ post data handling
+✗ argonought data handling
+
+✗ template renderer
+✗ template escaper
+✗ production/debug modes
+✗ static file serving/invalidation
+✗ static function
+
+✗ nodule dispatcher
+✗ nodule dispatcher: call
+✗ nodule dispatcher: remote node
+
 ✗ www request
-✗ tent request
+✗ ampsite request
+✗ ampsite / ampclient files
 ✗ item request
 ✗ ~user request
 ✗ space request
 
+✗ www template
+✗ www view
+✗ ampsite template
+✗ ampsite view
+
+✗ registration view
+✗ registration handler
+✗ login handler
+✗ login view
+✗ logout handler
+✗ logout view
+
+✗ redirect handler
 ✗ http cache: etags, last-modified, if-modified-since
 ✗ proxy caching
+✗ unauth handler
 
-✓ json encoding
-✗ json encodes of special typed values
+✗ argonought encoding
+✗ argonought calls: synchronous
+✗ argonought calls: async
+✗ argonought encodes of special typed values
+
+✗ replication service
+✗ replication request
+✗ replication accept
+✗ replication update amphub
+✗ replication pattern handler
+✗ replication notification
+
+✗ current sensors check
+✗ current sensors view
+✗ current sensors refresh
+
+✗ identity service
+✗ identity service: caller
+✗ identity service: naaga
 
 ✗ user model
 ✗ user registration
 ✗ user authentication
 ✗ user authorisation
 ✗ user quotas
-# user foreign connect (facebook)
+✗ user foreign connect (facebook)
 ✗ user foreign connect (twitter)
 ✗ user profile
 ✗ user profile picture
 ✗ user settings
 ✗ user trust maps
 ✗ user follows
-✗ user amp account
+✗ user amp creds account
 ✗ user subscriptions
 ✗ user pecu account
 ✗ user access tokens
 
-✗ identicon generation
-✗ identicon/profile pic update
+✗ default profile picture
+✗ profile pic update
 
 ✗ user invitation
 ✗ user mail-out / email list
 ✗ user payments model
 ✗ user payments
-✗ paypal
+
+✗ paypal basic api
+✗ paypal recurring payments
+✗ paypal adaptive payments
 
 ✗ default spaces
 ✗ default tokens
 
-✗ www template
-✗ tent template
-
-✗ login
-✗ logout
-✗ redirect
-✓ ssl redirect
+✗ datastore service
+✗ datastore service: caller
+✗ datastore service: naaga
+✗ datastore service: serialisation
+✗ datastore service: disk store
+✗ datastore service: memstore
+✗ datastore service: incremental encoding
+✗ datastore service: scan
+✗ datastore service: index generation
+✗ datastore service: index update
+✗ datastore service: rollback
+✗ datastore service: index rollback
+✗ datastore service: api
+✗ datastore service: put
+✗ datastore service: get
+✗ datastore service: query
+✗ datastore service: query / zig zag
+✗ datastore service: query / parallel
+✗ datastore service: query / planner
+✗ datastore service: replicate
+✗ datastore service: keyspace
+✗ datastore service: log
+✗ datastore service: transaction
+✗ datastore service: transaction keyspace handler
+✗ datastore service: transaction run
+✗ datastore service: transaction commit
+✗ datastore service: transaction rollback
+✗ datastore service: blobstore
+✗ datastore service: sensor integration
 
 ✗ item model
+✗ item multi model
 ✗ item creation
 ✗ item updating
 ✗ item versioning
@@ -357,11 +675,18 @@ Back End
 ✗ versioned parser live upgrading
 
 ✗ language detection
-✗ language models -> python data
+✗ language models generation
+✗ language models -> naaga data
 
+✗ javascript ucd -- part 1
+✗ javascript ucd -- part 2
+✗ javascript unicode normalisation
+✗ javascript case-folding normalisation
+✗ go ucd -- part 1
+✗ go ucd -- part 2
+✗ go unicode normalisation
+✗ go case-folding normalisation
 ✗ link normalisation
-✗ case-folding normalisation
-✗ unicode database
 
 ✗ to encoding/search
 ✗ about encoding/search
@@ -376,9 +701,169 @@ Back End
 ✗ pair encoding/search
 ✗ date encoding/search
 ✗ time/timedelta encoding/search
-✗ amp encoding/search
+✗ amp creds encoding/search
 ✗ currency encoding/search
 ✗ language encoding/search
+✗ units encoding/search
+✗ pecus encoding/search
+✗ multi encoding/search
+
+✗ naaga
+✗ naaga: tokeniser
+✗ naaga: lexer
+✗ naaga: parser
+✗ naaga: parser combinator
+✗ naaga: quasi literals
+✗ naaga: auto-sanitising html
+✗ naaga: templated expansion
+✗ naaga: element literals
+✗ naaga: auto-binding
+✗ naaga: coherent reaction
+✗ naaga: tick
+✗ naaga: reaction ordering
+✗ naaga: auto-value propagation
+✗ naaga: lexical scoping
+✗ naaga: auto-scope binding
+✗ naaga: """strings"""
+✗ naaga: comments
+✗ naaga: package
+✗ naaga: service call
+✗ naaga: versioning
+✗ naaga: help/preview
+✗ naaga: dom sandboxing
+✗ naaga: dom query
+✗ naaga: do blocks
+✗ naaga: if/else conditionals
+✗ naaga: comparisons
+✗ naaga: pipe operator
+✗ naaga: for loops
+✗ naaga: while loops
+✗ naaga: list comprehensions
+✗ naaga: set comprehensions
+✗ naaga: dict comprehensions
+✗ naaga: functions
+✗ naaga: function calls
+✗ naaga: blocks
+✗ naaga: try/catch
+✗ naaga: try/catch/finally
+✗ naaga: lazy ranges
+✗ naaga: slices
+✗ naaga: eval
+✗ naaga: assignment
+✗ naaga: variables
+✗ naaga: multiple assignment
+✗ naaga: assignment swap
+✗ naaga: repl
+✗ naaga: order precendence
+✗ naaga: exponentiation
+✗ naaga: square roots
+✗ naaga: ? operator
+✗ naaga: % remainder operator
+✗ naaga: and/or operators
+✗ naaga: sub expresions
+✗ naaga: mixed list/dict object
+✗ naaga: make object
+✗ naaga: i18n
+✗ naaga: timezones
+✗ naaga: raphael graphs
+✗ naaga: html generation
+
+✗ argonought: string
+✗ naaga argo: string
+✗ naaga object: string
+✗ argonought: quasi
+✗ naaga argo: quasi
+✗ naaga object: quasi
+✗ argonought: number
+✗ naaga argo: number
+✗ naaga object: number
+✗ argonought: integer
+✗ naaga argo: integer
+✗ naaga object: integer
+✗ argonought: float
+✗ naaga argo: float
+✗ naaga object: float
+✗ argonought: complex
+✗ naaga argo: complex
+✗ naaga object: complex
+✗ argonought: date
+✗ naaga argo: date
+✗ naaga object: date
+✗ argonought: time
+✗ naaga argo: time
+✗ naaga object: time
+✗ argonought: datetime
+✗ naaga argo: datetime
+✗ naaga object: datetime
+✗ argonought: timedelta
+✗ naaga argo: timedelta
+✗ naaga object: timedelta
+✗ argonought: currency
+✗ naaga argo: currency
+✗ naaga object: currency
+✗ argonought: units
+✗ naaga argo: units
+✗ naaga object: units
+✗ argonought: pair
+✗ naaga argo: pair
+✗ naaga object: pair
+✗ argonought: geo-location
+✗ naaga argo: geo-location
+✗ naaga object: geo-location
+✗ argonought: pecus
+✗ naaga argo: pecus
+✗ naaga object: pecus
+✗ argonought: language
+✗ naaga argo: language
+✗ naaga object: language
+✗ argonought: amp
+✗ naaga argo: amp
+✗ naaga object: amp
+✗ argonought: list
+✗ naaga argo: list
+✗ naaga object: list
+✗ argonought: set
+✗ naaga argo: set
+✗ naaga object: set
+✗ argonought: dict
+✗ naaga argo: dict
+✗ naaga object: dict
+✗ argonought: named value
+✗ naaga argo: named value
+✗ naaga object: named value
+✗ argonought: link
+✗ naaga argo: link
+✗ naaga object: link
+✗ argonought: user
+✗ naaga argo: user
+✗ naaga object: user
+✗ argonought: aspect
+✗ naaga argo: aspect
+✗ naaga object: aspect
+✗ argonought: call
+✗ naaga argo: call
+✗ naaga object: call
+✗ argonought: element
+✗ naaga argo: element
+✗ naaga object: element
+✗ argonought: ip
+✗ naaga argo: ip
+✗ naaga object: ip
+✗ argonought: range
+✗ naaga argo: range
+✗ naaga object: range
+✗ argonought: code
+✗ naaga argo: code
+✗ naaga object: code
+✗ argonought: object
+✗ naaga argo: object
+✗ naaga object: object
+✗ argonought: spaces
+✗ naaga argo: spaces
+✗ naaga object: spaces
+✗ argonought: tokens
+✗ naaga argo: tokens
+✗ naaga object: tokens
 
 ✗ search query parser
 ✗ query subset params
@@ -388,12 +873,27 @@ Back End
 ✗ pecu totals
 
 ✗ oembed support
+✗ oembed store data
 ✗ longurls support
+✗ longurls store data
 
-✗ amp account model
-✗ amp transfer
-✗ amp transaction
-✗ amp transaction fee
+✗ double entry support
+✗ amp creds: service
+✗ amp creds: caller
+✗ amp creds: naaga
+✗ amp creds: account model
+✗ amp creds: transfer
+✗ amp creds: transaction
+✗ amp creds: transaction fee
+
+✗ hashcash generator
+✗ hashcash verifier
+
+✗ service tokens
+✗ service tokens: transfer
+✗ service tokens: storage
+✗ service tokens: processing
+✗ service tokens: request
 
 ✗ user messaging
 
@@ -401,7 +901,7 @@ Back End
 ✗ private space creation
 ✗ private space invitation
 
-✓ access tokens model
+✗ access tokens model
 ✗ access tokens creation
 ✗ access tokens revoke
 ✗ access tokens share
@@ -417,10 +917,10 @@ Back End
 ✗ parallel query sensor notify
 
 ✗ sanitiser: dom elements
-✓ sanitiser: jsonp
-✓ sanitiser: css
-✓ sanitiser: xss check
-# sanitiser: cache
+✗ sanitiser: jsonp
+✗ sanitiser: css
+✗ sanitiser: xss check
+✗ sanitiser: cache
 
 ✗ markdown convert
 ✗ markdown syntax highlight for code
@@ -429,49 +929,46 @@ Back End
 ✗ markdown + sanitiser
 ✗ markdown preview view
 
-# rst convert
-# rst disable include/raw
-# rst preview view
-# rst + sanitiser
-# rst syntax highlight for code
+✗ syntax highlighter for code
 
 ✗ trends model
 ✗ trends updating
 ✗ trends calculation
 ✗ trends query
 ✗ trends service
-
-✓ remote api
-✓ remote api auth
-# remote api worker
+✗ trends view
+✗ trends search
+✗ trends listing
 
 ✗ mapreduce handlers
 ✗ mapreduce generated results view
 
 ✗ quota tracking
-✗ file upload
-✗ file access
-✗ file serving
 
 ✗ auto-completion query support
 ✗ auto-completion cache support
 
-✓ oauth 2.0 support
+✗ ampauth server
+✗ ampauth client
+✗ ampauth views
 
-=========
-Live Node
-=========
+✗ oauth support
+✗ oauth server
+✗ oauth client
+✗ oauth settings
+✗ oauth clients view
 
 ✗ nginx configuration
 ✗ nginx load-balancing
 ✗ nginx clustering
 
 ✗ redis configuration
+✗ redis nodule
 ✗ redis manager
-✓ async redis library
+✗ redis client library
 
-✗ keyspace configuration
-✗ keyspace init script
+✗ keyspace nodule
+✗ keyspace proxy
 ✗ keyspace client
 
 ✗ redis-keyspace partitioner
@@ -489,86 +986,119 @@ Live Node
 ✗ live node base javascript
 
 ✗ real-time update
-# web sockets support
+✗ web sockets support
 
 ✗ request authentication
 ✗ datastore-verified authentication
 
+✗ sensor service
+✗ sensor service: caller
+✗ sensor service: naaga
 ✗ sensor network
 ✗ sensor pattern match finder
 ✗ send code updated signal
 ✗ resync checker
 
-✗ server connection stats
-✗ worker node
+✗ node connection stats
+✗ worker nodule
 ✗ web hooks confirmation handler
 ✗ web hooks post handler
 ✗ memcache invalidation handler
-# iana-reserved ips
-
-=====
-Extra
-=====
 
 ✗ github integration
 ✗ github key generation
 
+✗ git review
+✗ git review init
+✗ git review: builtins
+✗ git review: github cross repository compare
+✗ git review: diff view
+✗ git review: comment
+✗ git review: test runner
+✗ git review: build slave
+✗ git review: try bot
+✗ git review: watchlist
+✗ git review: view
+
 ✗ google calendar integration: in
 ✗ google calendar integration: out
 
-# rss integration: in
-# rss integration: out
+✗ rss feed service
+✗ rss feed service: caller
+✗ rss feed service: parser
+✗ rss feed service: naaga handler
+✗ rss feed service: cache
+✗ rss feed generator for __format__=rss
 
-✗ twitter integration: out
-# facebook integration: out
+✗ twitter: oauth
+✗ twitter: link to user account
+✗ twitter: settings view
+✗ twitter: "post to" support
+✗ twitter: post
+
+✗ facebook: oauth
+✗ facebook: link to user account
+✗ facebook: settings view
+✗ facebook: "post to" support
+✗ facebook: post
+
+✗ web services service
+✗ web services service: naaga
+✗ google map geocoding call
+
 ✗ anonymous posting
+✗ anonymous posting: payment
 
-✗ espra bots app
-✗ espra bots phenny services
-✗ espra bots registration
-✗ espra bots subscription handling
+✗ register sensor callback handler
+✗ port phenny services
 
-==========
-Operations
-==========
+✗ log to datastore handler
+✗ log to disk handler
 
-# app engine error logging
-# app engine micro-format logging (user, a/b tests)
-# nginx request logging
-# live node request logging
-# live node error logging
+✗ logging service
+✗ logging service: caller
+✗ logging service: naaga
 
-# app engine logs downloader
-# logs parser
-# logs saver from live nodes to log store
-# logs saver to log store
-# logs saver handling of inaccessible store
-# logs saver to s3
-# async s3 client
-# logs saver to redis
+✗ request logging
+✗ error logging
+✗ error logging: micro-format (user, a/b tests)
+✗ service request logging
+✗ service error logging
+✗ live request logging
+✗ live error logging
+✗ input external data, e.g. user plans, quotas, etc.
 
-# log store app
-# log store configuration
-# log model
-# input external data, e.g. user plans, quotas, etc.
-# mappers
-# reducers
-# default jobs, e.g. top users
-# a/b test jobs
-# reports interface
-# report charts
-# log upload access verification
+✗ quota limits
+✗ quota limit setter
+✗ quota usage logger
+✗ quota usage view
 
-# remonit data input sources
-# remonit configuration
-# remonit notification
-# remonit web interface
-# remonit status interface
-# remonit recent logs interface
-# remonit error reporting interface
+✗ async s3 client
+✗ logs saver to s3
+✗ logs saver to redis
+✗ datastore saver to s3
+✗ datastore restore from s3
 
-# public status app
-# public status app access verification
-# public status app charts
+✗ log store view
+✗ log store configuration
+✗ log model
+✗ mappers
+✗ reducers
+✗ default jobs, e.g. top users
+✗ a/b test jobs
+✗ reports interface
+✗ report charts
+
+✗ remonit data input sources
+✗ remonit configuration
+✗ remonit notification
+✗ remonit web interface
+✗ remonit status interface
+✗ remonit recent logs interface
+✗ remonit error reporting interface
+
+✗ public status app
+✗ public status app access verification
+✗ public status app charts
 
 EOF
