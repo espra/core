@@ -78,7 +78,7 @@ Installation
 ✗ package: libxml2
 ✗ package: libxslt
 ✗ package: redis
-✗ package: go
+# package: go
 ✗ package: berkeleydb
 ✗ package: keyspace
 ✗ package: coffeescript
@@ -108,9 +108,9 @@ Installation
 ✗ amp deploy
 ✗ pre/post deploy scripts
 
-✗ keyspace config
-✗ nginx config
-✗ redis config
+✗ detect node on local subnet from teredo IP
+✗ rendezvous support
+✗ rendezvous announce
 
 ===========
 Ampify Core
@@ -399,7 +399,7 @@ Ampify Core
 ✗ ampnode main()
 ✗ ampnode command line arguments handler
 
-✗ lzf compression
+✓ lzf compression
 ✗ lzf compression: dictionary-support
 
 ✗ mail service
@@ -523,15 +523,25 @@ Ampify Core
 ✗ amptp framing
 ✗ amptp framing 2
 ✗ amptp framing 3
-✗ amptp congestion control
-✗ amptp congestion control 2
-✗ amptp congestion control 3
-✗ amptp secure connection
-✗ amptp secure connection 2
-✗ amptp secure connection 3
+
+# amptp congestion control
+# amptp congestion control 2
+# amptp congestion control 3
+# amptp secure connection
+# amptp secure connection 2
+# amptp secure connection 3
 ✗ amptp recall connection
 ✗ amptp ping
 ✗ amptp auto-compression
+
+✗ openvpn setup
+✗ openvpn multihome updater script
+
+✗ ssl cert generate
+✗ ssl cert sign
+
+✗ dmca support
+✗ dmca service
 
 ✗ query data handling
 ✗ post data handling
@@ -682,10 +692,10 @@ Ampify Core
 ✗ javascript ucd -- part 2
 ✗ javascript unicode normalisation
 ✗ javascript case-folding normalisation
-✗ go ucd -- part 1
-✗ go ucd -- part 2
-✗ go unicode normalisation
-✗ go case-folding normalisation
+✓ python ucd -- part 1
+✓ python ucd -- part 2
+✗ python unicode normalisation
+✗ python case-folding normalisation
 ✗ link normalisation
 
 ✗ to encoding/search
@@ -960,13 +970,14 @@ Ampify Core
 
 ✗ nginx configuration
 ✗ nginx load-balancing
-✗ nginx clustering
+✗ multi-process ampnode
 
 ✗ redis configuration
 ✗ redis nodule
 ✗ redis manager
-✗ redis client library
+✓ redis client library
 
+✗ keyspace configuration
 ✗ keyspace nodule
 ✗ keyspace proxy
 ✗ keyspace client
