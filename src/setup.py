@@ -14,8 +14,8 @@ from distutils.core import Extension, setup
 
 extensions = [
     Extension(
-        "ampify.pylzf",
-        ["ampify/pylzf.c", "ampify/lzf/lzf_c.c", "ampify/lzf/lzf_d.c"],
+        "ampify.lzf",
+        ["ampify/lzf.c", "ampify/lzf/lzf_c.c", "ampify/lzf/lzf_d.c"],
         include_dirs=["ampify/lzf"],
         )
     ]

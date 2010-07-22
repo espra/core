@@ -5,7 +5,6 @@
 
 cimport python_exc
 
-
 cdef extern from "stdlib.h":
     ctypedef unsigned long size_t
     void free(void *ptr)
@@ -14,12 +13,10 @@ cdef extern from "stdlib.h":
     size_t strlen(char *s)
     char *strcpy(char *dest, char *src)
 
-
 cdef extern from "lzf.h":
     unsigned int lzf_compress (char *in_data, unsigned int in_len, void *out_data, unsigned int out_len)
     unsigned int lzf_decompress (char *in_data,  unsigned int in_len, void *out_data, unsigned int out_len)
     
-
 def compress(bytes data):
     """Compress the given data."""
 
@@ -41,7 +38,6 @@ def compress(bytes data):
         return out_data[:retval + 4]
     finally:
         free(out_data)
-
 
 def decompress(bytes data):
     """Decompress the given data."""
