@@ -238,7 +238,7 @@ class HTMLExceptionFormatter(TextExceptionFormatter):
     line_sep = '<br />\r\n'
 
     def escape(self, s):
-        return cgi.escape(s)
+        return cgi.escape(s, 1)
 
     def getPrefix(self):
         return '<p>Traceback (most recent call last):\r\n<ul>'
@@ -280,6 +280,16 @@ def format_exception(
         formatter = TextExceptionFormatter(limit, with_filenames)
 
     return formatter.formatException(type, value, traceback)
+
+def html_format_exception(type=None, value=None, traceback=None, limit=LIMIT):
+    """Format a stack trace and the exception information as HTML."""
+
+    if not type:
+        type, value, traceback = sys.exc_info()
+
+    return HTMLExceptionFormatter(limit).formatException(
+        type, value, traceback
+        )
 
 def print_exception(
     type=None, value=None, traceback=None, limit=LIMIT, as_html=False,
