@@ -8,7 +8,9 @@ Argonought -- the support extension to JSON for a richer experience.
 
 from datetime import date, datetime, timedelta
 from decimal import Decimal, getcontext, ROUND_DOWN
+from struct import pack as struct_pack, unpack as struct_unpack
 
+from pyutil.optimise import optimise
 from simplejson import dumps as encode_json, loads as decode_json
 
 
@@ -17,6 +19,38 @@ __all__ = [
     'NUMERIC_TYPES'
     ]
 
+serialisation_cache = {}
+serialisation_map = {}
+deserialisation_map = {}
+
+# ------------------------------------------------------------------------------
+# some utility funktions
+# ------------------------------------------------------------------------------
+
+def register_serialiser(argo_type, type, cache=True, cache_size=1000):
+    def _register_serialiser(serialiser):
+        serialisation_map[type] = (argo_type, serialiser, cache)
+        if argo_type not in serialisation_cache:
+            serialisation_cache[argo_type] = CachingDict(cache_size)
+        return optimise()(serialiser)
+    return _register_serialiser
+
+def register_deserialiser(argo_type):
+    def _register_deserialiser(deserialiser):
+        deserialisation_map[type_string2id_map[argo_type]] = deserialiser
+        return optimise()(deserialiser)
+    return _register_deserialiser
+
+def pack(object, stream=None, retval=False):
+    if not stream:
+        stream = StringIO()
+        retval = True
+    stream.write(serialise_object(object, SerialisationContext(stream)))
+    stream.flush()
+    if retval:
+        return stream.getvalue()
+
+# IPv4Address(struct.unpack('!I', data)[0])
 
 decimal_context = getcontext()
 decimal_context.prec = 20
