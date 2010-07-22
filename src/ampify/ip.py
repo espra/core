@@ -158,11 +158,11 @@ class IPv6(long):
             self.ip_str = ':'.join(compress_hextets(hextets))
         return self.ip_str
 
-    def get_teredo_ipv4_address(self, prefix=['2001', '']):
-        ip = repr(self).split(':')
-        if ip[:2] != prefix:
+    def get_teredo_ipv4_address(self, prefix='20010000'):
+        ip = '%032x' % self
+        if ip[:8] != prefix:
             return
-        return IPv4(int('0x' + ip[-2] + ip[-1], 16) ^ 4294967295)
+        return IPv4(int('0x' + ip[-8:], 16) ^ 0xffffffff)
 
 
 if __name__ == '__main__':
