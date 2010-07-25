@@ -1,12 +1,3 @@
-[submodule "third_party/redis"]
-	path = third_party/redis
-	url = https://github.com/tav/redis.git
-[submodule "third_party/nodejs"]
-	path = third_party/nodejs
-	url = https://github.com/ry/node.git
-[submodule "third_party/go"]
-	path = third_party/go
-	url = https://github.com/tav/go.git
 [submodule "third_party/pylibs"]
 	path = third_party/pylibs
 	url = https://github.com/tav/pylibs.git
@@ -16,12 +7,6 @@
 [submodule "third_party/rubylibs"]
 	path = third_party/rubylibs
 	url = https://github.com/tav/rubylibs.git
-[submodule "third_party/keyspace"]
-	path = third_party/keyspace
-	url = https://github.com/tav/keyspace.git
-[submodule "third_party/coffee-script"]
-	path = third_party/coffee-script
-	url = https://github.com/jashkenas/coffee-script.git
 [submodule "third_party/nodelint"]
 	path = third_party/nodelint
 	url = https://github.com/tav/nodelint.js.git
