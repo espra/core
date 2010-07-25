@@ -34,8 +34,7 @@ distclean: clean
 	rm -rf environ/local
 
 docs: build
-	@cd doc
-	@yatiblog
+	@./environ/yatiblog doc
 
 test:
 	@$(AMP) test

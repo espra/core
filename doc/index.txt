@@ -6,9 +6,9 @@ license: Public Domain
 Ampify
 ======
 
-Ampify is a vision of an open and decentralised application platform. For
-comparison, perhaps imagine a bastardised mix between Git, Facebook, Unix, IRC,
-App Engine, Xanadu and Wikis.
+Ampify is a vision of an open and decentralised social platform. For comparison,
+perhaps imagine a bastardised mix between Git, Facebook, Unix, IRC, App Engine,
+Xanadu and Wikis.
 
 The goal for the final 1.0 release is to have a fully decentralised "internet
 operating system" style platform. We're currently working towards an initial
@@ -27,7 +27,7 @@ recent Python 2.x and general dev tools (gcc, make, etc.) installed.
   $ git clone https://github.com/tav/ampify.git # (1)
   $ cd ampify
   $ make                                        # (2)
-  $ export PATH=`pwd`/environ:$PATH             # (3)
+  $ source environ/ampdev.sh                    # (3)
   $ amp init kickass                            # (4)
   $ amp run kickass                             # (5)
   $ open https://localhost:8040                 # (6)
@@ -51,16 +51,18 @@ recent Python 2.x and general dev tools (gcc, make, etc.) installed.
    <http://xkcd.com/>`_ -- with an eye on your terminal for any errors that
    might occur.
 
-3. By extending your ``$PATH`` to include the ``environ`` directory, a number of
-   new commands will now be available to you -- including the core ``amp``
-   command. You might want to add this to your ``~/.bashrc`` file or equivalent.
+3. The ``ampdev.sh`` script adds command line auto-completion support on bash
+   shells and extends your ``$PATH`` to include the ``environ`` directory. As a
+   result, a number of new commands will now be available to you -- including
+   the core ``amp`` command.
 
-   So if you'd cloned the repository into ``/home/tav/ampify``, then you would
-   add the following line to your ``~/.bashrc`` file:
+   You might want to add this line to your ``~/.bashrc`` file or equivalent. So
+   if you'd cloned the repository into ``/home/tav/ampify``, then you would add
+   the following line to your ``~/.bashrc`` file:
 
    .. syntax:: bash
 
-     export PATH=/home/tav/ampify/environ:$PATH
+     source /home/tav/ampify/environ/ampdev.sh
 
 4. This last step points you to the `Running Ampify Zero
    <running-ampify-zero.html>`_ document. As it states, Ampify Zero doesn't work

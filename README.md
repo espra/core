@@ -11,7 +11,7 @@ release, `Ampify Zero`, for the end of this year — [see the planfile].
 **Getting Started**
 
     $ make
-    $ export PATH=`pwd`/environ:$PATH
+    $ source environ/ampdev.sh
     $ amp init kickass
     $ amp run kickass
     $ open https://localhost:8040
