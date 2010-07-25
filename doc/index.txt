@@ -16,15 +16,15 @@ release, ``Ampify Zero``, for the end of this year -- `see the planfile
 <planfile.html>`_ for more info.
 
 
-Get Started
------------
+Get Started With Ampify Development
+-----------------------------------
 
 You need to have `Git <http://git-scm.com/>`_, a Unix-like OS, a recent Python
 2.x and general dev tools (gcc, make, etc.) installed.
 
 .. syntax:: bash
 
-  $ git clone git://github.com/tav/ampify.git   # (1)
+  $ git clone https://github.com/tav/ampify.git # (1)
   $ cd ampify
   $ source environ/ampenv.sh                    # (2)
   $ git update                                  # (3)
@@ -32,12 +32,8 @@ You need to have `Git <http://git-scm.com/>`_, a Unix-like OS, a recent Python
   $ make                                        # (5)
   $ less doc/running-ampify-zero.txt            # (6)
 
-1. Clone the repository. If you have Git 1.7+, you should use the more efficient
-   smart HTTP protocol:
-
-   .. syntax:: bash
-
-     $ git clone http://github.com/tav/ampify.git
+1. Clone the repository. You need to have Git 1.7+ in order to use the smart
+   HTTP protocol.
 
 2. The ``ampenv.sh`` script currently only works on bash shells where it sets up
    Ampify related environment variables like ``$AMPIFY_ROOT``, ``$PATH``, &c.
@@ -147,7 +143,7 @@ Get Involved
 .. syntax:: bash
 
   $ git clone git@github.com:yourUsername/ampify.git
-  $ git remote add upstream git://github.com/tav/ampify.git
+  $ git remote add upstream https://github.com/tav/ampify.git
 
 * Read the `getting started with git
   <http://www.espians.com/getting-started-with-git.html>`_ guide for Ampify
