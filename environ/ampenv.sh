@@ -35,7 +35,7 @@ if [ "x$0" == "x$BASH_SOURCE" ]; then
 	echo
 	echo "    $ source $__FILE"
 	echo
-	echo "You might want to add it to your login .bash*/profile/etc."
+	echo "You might want to add it to your login .bashrc/profile/etc."
 	echo
 	exit
 fi
@@ -77,7 +77,7 @@ export AMPIFY_ROOT=$(dirname $AMPIFY_STARTUP_DIRECTORY)
 # exit if $AMPIFY_ROOT is not set
 # ------------------------------------------------------------------------------
 
-if [ ! "$AMPIFY_ROOT" ]; then
+if [ "x$AMPIFY_ROOT" == "x" ]; then
 	echo "ERROR: Sorry, couldn't detect the Ampify Root Directory."
 	return
 fi
