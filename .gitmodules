@@ -1,27 +1,27 @@
 [submodule "third_party/redis"]
 	path = third_party/redis
-	url = git://github.com/tav/redis.git
+	url = https://github.com/tav/redis.git
 [submodule "third_party/nodejs"]
 	path = third_party/nodejs
-	url = git://github.com/ry/node.git
+	url = https://github.com/ry/node.git
 [submodule "third_party/go"]
 	path = third_party/go
-	url = git://github.com/tav/go.git
+	url = https://github.com/tav/go.git
 [submodule "third_party/pylibs"]
 	path = third_party/pylibs
-	url = git://github.com/tav/pylibs.git
+	url = https://github.com/tav/pylibs.git
 [submodule "third_party/jslibs"]
 	path = third_party/jslibs
-	url = git://github.com/tav/jslibs.git
+	url = https://github.com/tav/jslibs.git
 [submodule "third_party/rubylibs"]
 	path = third_party/rubylibs
-	url = git://github.com/tav/rubylibs.git
+	url = https://github.com/tav/rubylibs.git
 [submodule "third_party/keyspace"]
 	path = third_party/keyspace
-	url = git://github.com/tav/keyspace.git
+	url = https://github.com/tav/keyspace.git
 [submodule "third_party/coffee-script"]
 	path = third_party/coffee-script
-	url = git://github.com/jashkenas/coffee-script.git
+	url = https://github.com/jashkenas/coffee-script.git
 [submodule "third_party/nodelint"]
 	path = third_party/nodelint
-	url = git://github.com/tav/nodelint.js.git
+	url = https://github.com/tav/nodelint.js.git
