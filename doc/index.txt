@@ -19,7 +19,7 @@ release, ``Ampify Zero``, for the end of this year -- `see the planfile
 Get Started With Ampify Development
 -----------------------------------
 
-You need to have `Git <http://git-scm.com/>`_, a Unix-like OS, a Bash shell, a
+You need to have `Git <http://git-scm.com/>`_, a Unix-like OS, a bash shell, a
 recent Python 2.x and general dev tools (gcc, make, etc.) installed.
 
 .. syntax:: bash
@@ -27,9 +27,10 @@ recent Python 2.x and general dev tools (gcc, make, etc.) installed.
   $ git clone https://github.com/tav/ampify.git # (1)
   $ cd ampify
   $ make                                        # (2)
-  $ amp init kickass                            # (3)
-  $ amp run kickass                             # (4)
-  $ open https://localhost:8040                 # (5)
+  $ export PATH=`pwd`/environ:$PATH             # (3)
+  $ amp init kickass                            # (4)
+  $ amp run kickass                             # (5)
+  $ open https://localhost:8040                 # (6)
 
 1. Clone the repository. You need to have Git 1.7+ in order to use the smart
    HTTP protocol.
@@ -50,7 +51,18 @@ recent Python 2.x and general dev tools (gcc, make, etc.) installed.
    <http://xkcd.com/>`_ -- with an eye on your terminal for any errors that
    might occur.
 
-3. This last step points you to the `Running Ampify Zero
+3. By extending your ``$PATH`` to include the ``environ`` directory, a number of
+   new commands will now be available to you -- including the core ``amp``
+   command. You might want to add this to your ``~/.bashrc`` file or equivalent.
+
+   So if you'd cloned the repository into ``/home/tav/ampify``, then you would
+   add the following line to your ``~/.bashrc`` file:
+
+   .. syntax:: bash
+
+     export PATH=/home/tav/ampify/environ:$PATH
+
+4. This last step points you to the `Running Ampify Zero
    <running-ampify-zero.html>`_ document. As it states, Ampify Zero doesn't work
    yet, but it goes into detail of how an instance is meant to be setup and run.
 
