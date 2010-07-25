@@ -3,9 +3,14 @@
 # No Copyright (-) 2010 The Ampify Authors. This file is under the
 # Public Domain license that can be found in the root LICENSE file.
 
-AMPIFY_ROOT=$(dirname $(dirname $BASH_SOURCE))
+if [[ "x$BASH_SOURCE" == "x" ]]; then
+	echo "Sorry, this only works under Bash shells atm. Patches welcome... =)"
+	exit
+fi
 
-if [ "x$AMPIFY_ROOT" == "x" ]; then
+AMPIFY_ROOT=$(dirname $(dirname $0))
+
+if [[ "x$AMPIFY_ROOT" == "x" ]]; then
 	echo "ERROR: Sorry, couldn't detect the Ampify Root Directory."
 fi
 

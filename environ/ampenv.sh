@@ -7,6 +7,11 @@
 # on Ubuntu Linux and OS X. Any patches to make it work under alternative Unix
 # shells, versions and platforms are very welcome!
 
+if [[ "x$BASH_SOURCE" == "x" ]]; then
+	echo "Sorry, this only works under Bash shells atm. Patches welcome... =)"
+	exit
+fi
+
 _OS_NAME=$(uname -s | tr [[:upper:]] [[:lower:]])
 _OS_ARCH=$(uname -m)
 
