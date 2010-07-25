@@ -10,13 +10,13 @@ ${Markup(content)}
 </div>
 <div id="sidebar">
 <div style="line-height: 129px; text-align: center;">
-  <code>git://github.com/tav/ampify.git</code>
+  <code>https://github.com/tav/ampify.git</code>
 </div>
 <div style="text-align: right"><a href="http://github.com/tav/ampify" title="Fork me on GitHub"><img src="http://s3.amazonaws.com/github/ribbons/forkme_right_red_aa0000.png" style="margin-top: -129px;" /></a></div>
 <h3>Resources</h3>
 <ul>
   <li>
-	<a href="http://ampify.it/#get-started">Getting Started</a>
+	<a href="http://ampify.it/#get-started-with-ampify-development">Getting Started</a>
 	<div>A quickstart guide to setting up the environment for Ampify development.</div>
   </li>
   <li>
