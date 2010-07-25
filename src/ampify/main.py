@@ -4,11 +4,11 @@
 import ampify
 import sys
 
-from optparse import OptionParser, SUPPRESS_USAGE
-from os import chdir, environ, listdir, makedirs, symlink
+from optparse import OptionParser
+from os import chdir, environ, makedirs, symlink
 from os.path import dirname, exists, join, realpath, split
 
-from pyutil.optcomplete import autocomplete, DirCompleter, ListCompleter
+from pyutil.optcomplete import autocomplete, ListCompleter
 from pyutil.env import run_command, CommandNotFound
 
 # ------------------------------------------------------------------------------
@@ -16,6 +16,20 @@ from pyutil.env import run_command, CommandNotFound
 # ------------------------------------------------------------------------------
 
 AMPIFY_ROOT = dirname(dirname(dirname(realpath(__file__))))
+AMPIFY_ROOT_PARENT = dirname(AMPIFY_ROOT)
+
+ERRMSG_GIT_NAME_DETECTION = (
+    "ERROR: Couldn't detect the instance name from the Git URL.\n"
+    "ERROR: Please provide an instance name parameter. Thanks!"
+    )
+
+# ------------------------------------------------------------------------------
+# Exceptions
+# ------------------------------------------------------------------------------
+
+class CompletionResult(Exception):
+    def __init__(self, result):
+        self.result = result
 
 # ------------------------------------------------------------------------------
 # Utility Functions
@@ -50,6 +64,25 @@ def query(question, options='Y/n', default='Y', alter=1):
 def relative_path(source, destination):
     pass
 
+# This function normalises instance names -- just in case someone accidentally
+# passed in a path name.
+def normalise_instance_name(instance_name):
+    instance_name = split(realpath(instance_name))[-1]
+    instance_root = join(AMPIFY_ROOT_PARENT, instance_name)
+    return instance_name, instance_root
+
+def parse_options(parser, argv, completer=None, exit_if_no_args=False):
+    if completer:
+        raise CompletionResult(parser)
+    if argv == ['--help']:
+        parser.print_help()
+        sys.exit(1)
+    options, args = parser.parse_args(argv)
+    if exit_if_no_args and not args:
+        parser.print_help()
+        sys.exit(1)
+    return options, args
+
 # ------------------------------------------------------------------------------
 # Main Runner
 # ------------------------------------------------------------------------------
@@ -58,19 +91,21 @@ def main(argv=None, show_help=False):
 
     argv = argv or sys.argv[1:]
 
+    # Set the script name to ``amp`` so that OptionParser error messages don't
+    # display a meaningless ``main.py`` to end users.
+    sys.argv[0] = 'amp'
+
     usage = ("""Usage: amp <command> [options]
     \nCommands:
     \n%s
-    \nSee `amp help <command>` for more info on a specific command.
-    \nOptions:
-    -h, --help      show this help message and exit
-    -v, --version   show the version number and exit""" %
+    version  show the version number and exit
+    \nSee `amp help <command>` for more info on a specific command.""" %
     '\n'.join("    %-8s %s" % (cmd, COMMANDS[cmd].help) for cmd in sorted(COMMANDS))
     )
 
     autocomplete(
         OptionParser(add_help_option=False),
-        ListCompleter(AUTOCOMPLETE_COMMANDS.keys() + ['-v', '--version']),
+        ListCompleter(AUTOCOMPLETE_COMMANDS.keys() + ['version']),
         subcommands=AUTOCOMPLETE_COMMANDS
         )
 
@@ -87,8 +122,8 @@ def main(argv=None, show_help=False):
                 argv = ['--help']
             else:
                 show_help = True
-        elif command in ['-v', '--version', 'version']:
-            print 'Ampify', ampify.__release__
+        if command in ['-v', '--version', 'version']:
+            print 'ampify-%s' % ampify.__release__
             sys.exit()
 
     if show_help:
@@ -98,6 +133,9 @@ def main(argv=None, show_help=False):
     if command in COMMANDS:
         return COMMANDS[command](argv)
 
+    # We support git-command like behaviour. That is, if there's an external
+    # binary named ``amp-foo`` available on the ``$PATH``, then running ``amp
+    # foo`` will automatically delegate to it.
     try:
         output, retcode = run_command(
             ['amp-%s' % command] + argv, retcode=True, redirect_stdout=False,
@@ -116,17 +154,12 @@ def main(argv=None, show_help=False):
 
 def build(argv=None, completer=None):
 
-    op = OptionParser(
-        usage="Usage: amp build [options]"
-        )
+    op = OptionParser(usage="Usage: amp build [options]", add_help_option=False)
 
     op.add_option('-d', '--debug', dest='debug', action='store_true',
                   help="enable debug mode")
 
-    if completer:
-        return op
-
-    options, args = op.parse_args(argv)
+    options, args = parse_options(op, argv, completer)
 
     DEBUG = False
 
@@ -139,16 +172,12 @@ def build(argv=None, completer=None):
 
 def deploy(argv=None, completer=None):
 
-    op = OptionParser(usage="Usage: amp deploy <instance-name> [options]")
+    op = OptionParser(
+        usage="Usage: amp deploy <instance-name> [options]",
+        add_help_option=False
+        )
 
-    if completer:
-        return op
-
-    options, args = op.parse_args(argv)
-
-    if not args:
-        op.print_help()
-        sys.exit(1)
+    options, args = parse_options(op, argv, completer, True)
 
 # ------------------------------------------------------------------------------
 # Hub Command
@@ -156,65 +185,50 @@ def deploy(argv=None, completer=None):
 
 def hub(argv=None, completer=None):
 
-    op = OptionParser(usage="Usage: amp hub [register|update] [options]")
+    op = OptionParser(
+        usage="Usage: amp hub [register|update] [options]",
+        add_help_option=False
+        )
 
-    if completer:
-        return op
-
-    options, args = op.parse_args(argv)
-
-    if not args:
-        op.print_help()
-        sys.exit(1)
+    options, args = parse_options(op, argv, completer, True)
 
 # ------------------------------------------------------------------------------
 # Init Command
 # ------------------------------------------------------------------------------
 
-ERRMSG_GIT_NAME_DETECTION = (
-    "ERROR: Couldn't detect the instance name from the Git URL.\n"
-    "ERROR: Please provide an instance name parameter. Thanks!"
-    )
-
 def init(argv=None, completer=None):
 
-    op = OptionParser(usage="Usage: amp init <instance-name> [options]")
+    op = OptionParser(
+        usage="Usage: amp init <instance-name> [options]",
+        add_help_option=False
+        )
 
     op.add_option('--clobber', dest='clobber', action='store_true',
                   help="clobber any existing files/directories if they exist")
 
-    op.add_option('--clone', dest='clone', action='store_true',
+    op.add_option('--from', dest='git_repo', default='',
                   help="initialise by cloning the given git repository")
 
-    if completer:
-        return op
+    options, args = parse_options(op, argv, completer)
 
-    options, args = op.parse_args(argv)
-
-    if not args:
-        op.print_help()
-        sys.exit(1)
-
-    if len(args) == 2:
-        git_url, instance_name = args
-    else:
-        instance_name = git_url = args[0]
-        if instance_name.endswith('.git'):
-            instance_name = git_url.split('/')[-1].rsplit('.', 1)[0]
+    git_repo = options.git_repo
+    if git_repo:
+        if args:
+            instance_name = args[0]
+        else:
+            instance_name = git_repo.split('/')[-1].rsplit('.', 1)[0]
             if not instance_name:
                 print ERRMSG_GIT_NAME_DETECTION
                 sys.exit(1)
+    else:
+        if args:
+            instance_name = args[0]
         else:
-            git_url = None
+            op.print_help()
+            sys.exit(1)
 
-    print sys.modules.keys()
-    sys.exit()
-
+    instance_name, instance_root = normalise_instance_name(instance_name)
     clobber = options.clobber
-    instance_name = split(realpath(args[0]))[-1]
-
-    zero_root = join(ampify_root, 'src', 'zero')
-    instance_root = join(dirname(ampify_root), instance_name)
 
     if exists(instance_root):
         if not clobber:
@@ -268,7 +282,8 @@ def init(argv=None, completer=None):
 def run(argv=None, completer=None):
     
     op = OptionParser(
-        usage="Usage: amp run <instance-name> [options] [stop|quit|restart]"
+        usage="Usage: amp run <instance-name> [options] [stop|quit|restart]",
+        add_help_option=False
         )
 
     op.add_option('-d', '--debug', dest='debug', action='store_true',
@@ -277,19 +292,14 @@ def run(argv=None, completer=None):
     op.add_option("--file", dest="filename",
                   help="Input file to read data from")
 
-    if completer:
-        return op
-
-    options, args = op.parse_args(argv)
-
-    if not args:
-        op.print_help()
-        sys.exit(1)
+    options, args = parse_options(op, argv, completer, True)
 
     DEBUG = False
 
     if options.debug:
         DEBUG = True
+
+    instance_name, instance_root = normalise_instance_name(args[0])
 
 # ------------------------------------------------------------------------------
 # Test Command
@@ -297,15 +307,12 @@ def run(argv=None, completer=None):
 
 def test(argv=None, completer=None, run_all=False):
 
-    op = OptionParser(usage="Usage: amp test [options]")
+    op = OptionParser(usage="Usage: amp test [options]", add_help_option=False)
 
     op.add_option('-a', '--all', dest='all', action='store_true',
                   help="run the comprehensive test suite")
 
-    if completer:
-        return op
-
-    options, args = op.parse_args(argv)
+    options, args = parse_options(op, argv, completer)
 
     if options.all:
         run_all = True
@@ -319,6 +326,7 @@ def test(argv=None, completer=None, run_all=False):
 # These should perhaps be internationalised at a later date.
 build.help = "download and build the ampify zero dependencies"
 deploy.help = "deploy an instance to remote host(s)"
+hub.help = "interact with amphub"
 init.help = "initialise a new amp instance"
 run.help = "run the components for an amp instance"
 test.help = "run the ampify zero test suite"
@@ -330,6 +338,7 @@ test.help = "run the ampify zero test suite"
 COMMANDS = {
     'build': build,
     'deploy': deploy,
+    'hub': hub,
     'init': init,
     'run': run,
     'test': test
@@ -348,7 +357,10 @@ AUTOCOMPLETE_COMMANDS['help'] = lambda completer: (
 
 def make_autocompleter(command):
     def wrapper(completer):
-        parser = command(completer=completer)
+        try:
+            parser = command(completer=completer)
+        except CompletionResult, passback:
+            parser = passback.result
         if isinstance(parser, tuple):
             parser, completer = parser
         return autocomplete(parser, completer)
