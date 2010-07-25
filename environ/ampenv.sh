@@ -38,9 +38,7 @@ if [ "x$0" == "x$BASH_SOURCE" ]; then
 	echo
 	echo "Usage:"
 	echo
-	echo "    $ source $__FILE"
-	echo
-	echo "You might want to add it to your login .bashrc/profile/etc."
+	echo "    source $__FILE"
 	echo
 	exit
 fi
@@ -59,12 +57,6 @@ if [ $_BASH_MAJOR_VERSION -le 2 ]; then
 	echo "ERROR: You need to be running Bash 3.0+"
 	return 1
 fi
-
-# ------------------------------------------------------------------------------
-# try to figure out if we are inside an interactive shell or not
-# ------------------------------------------------------------------------------
-
-test "$PS1" && _INTERACTIVE_SHELL=true;
 
 # ------------------------------------------------------------------------------
 # try to determine the absolute path of the enclosing startup + root directory
@@ -167,54 +159,9 @@ esac
 export NACL_ROOT=$AMPIFY_LOCAL/third_party/nativeclient
 
 # ------------------------------------------------------------------------------
-# define our bash completion function
-# ------------------------------------------------------------------------------
-
-# $1 -- application
-# $2 -- current word
-# $3 -- previous word
-# $COMP_CWORD -- the index of the current word
-# $COMP_WORDS -- array of words
-# --commands # --sub-commands # context-specific commands
-
-_have ampnode &&
-_ampnode_completion() {
-	if [ "x$2" != "x" ]; then
-		COMPREPLY=( $( $1 --list-options | grep "^$2" ) )
-	else
-		COMPREPLY=( $( $1 --list-options ) )
-	fi
-	return 0
-}
-
-# ------------------------------------------------------------------------------
-# set us up the bash completion!
-# ------------------------------------------------------------------------------
-
-if [ "x$_INTERACTIVE_SHELL" == "xtrue" ]; then
-
-	# first, turn on the extended globbing and programmable completion
-	shopt -s extglob progcomp
-
-	# register completers
-	complete -o default -F _ampnode_completion ampnode
-	complete -o default -F _ampnode_completion ampbuild
-
-	# and finally, register files with specific commands
-	complete -f -X '!*.nodule' install-nodule
-	complete -f -X '!*.go' 5g 6g 8g
-	complete -f -X '!*.5' 5l
-	complete -f -X '!*.6' 6l
-	complete -f -X '!*.8' 8l
-
-	# '!*.@([Pp][Rr][Gg]|[Cc][Ll][Pp])' harbour gharbour hbpp
-
-fi
-
-# ------------------------------------------------------------------------------
 # clean up after ourselves
 # ------------------------------------------------------------------------------
 
 unset _OS_NAME _OS_ARCH _OS_ARCH_64 _OS_ARCH_386
 unset _BASH_VERSION _BASH_MAJOR_VERSION _BASH_MINOR_VERSION
-unset _INTERACTIVE_SHELL _have
+unset _have
