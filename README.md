@@ -10,11 +10,10 @@ release, `Ampify Zero`, for the end of this year — [see the planfile].
 
 **Getting Started**
 
-    $ source environ/ampenv.sh
-    $ git update
-    $ ./configure
     $ make
-    $ less doc/running-ampify-zero.txt
+    $ amp init kickass
+    $ amp run kickass
+    $ open https://localhost:8040
 
 **Resources**
 

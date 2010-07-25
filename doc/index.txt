@@ -19,55 +19,30 @@ release, ``Ampify Zero``, for the end of this year -- `see the planfile
 Get Started With Ampify Development
 -----------------------------------
 
-You need to have `Git <http://git-scm.com/>`_, a Unix-like OS, a recent Python
-2.x and general dev tools (gcc, make, etc.) installed.
+You need to have `Git <http://git-scm.com/>`_, a Unix-like OS, a Bash shell, a
+recent Python 2.x and general dev tools (gcc, make, etc.) installed.
 
 .. syntax:: bash
 
   $ git clone https://github.com/tav/ampify.git # (1)
   $ cd ampify
-  $ source environ/ampenv.sh                    # (2)
-  $ git update                                  # (3)
-  $ ./configure                                 # (4)
-  $ make                                        # (5)
-  $ less doc/running-ampify-zero.txt            # (6)
+  $ make                                        # (2)
+  $ amp init kickass                            # (3)
+  $ amp run kickass                             # (4)
+  $ open https://localhost:8040                 # (5)
 
 1. Clone the repository. You need to have Git 1.7+ in order to use the smart
    HTTP protocol.
 
-2. The ``ampenv.sh`` script currently only works on bash shells where it sets up
-   Ampify related environment variables like ``$AMPIFY_ROOT``, ``$PATH``, &c.
-
-3. The new ``git update`` command will now be accessible and you should use it
-   to keep the repository updated from now on. It takes care of both pulling and
-   keeping git submodules updated. This only works with recent versions of Git
-   -- otherwise you'd need to init/update the submodules yourself:
-
-   .. syntax:: bash
-
-     $ git submodule update --init
-
-4. The ``configure`` step verifies that you have the necessary base
-   dependencies. You can give it a ``--prefix`` parameter, but that's currently
-   meaningless as all "installations" are self-contained within the
-   ``environ/local`` sub-directory that will be automatically created.
-
-5. Running ``make`` is currently equivalent to ``make zero`` which builds
-   various dependencies like Node.js, compiles CoffeeScript/Sass files and
-   minifies the resulting JavaScript/CSS files.
+2. Running ``make`` builds various dependencies like Keyspace, Node.js, compiles
+   CoffeeScript/Sass files and minifies the resulting JavaScript/CSS files. All
+   builds are self-contained within the ``environ/local`` sub-directory that
+   will be automatically created.
 
    You can run ``make clean`` to remove everything except the built
    dependencies, which you can also remove using the full ``make distclean``. Be
    sure to re-run ``make`` after you do a git pull or update -- this will keep
    the generated files up-to-date.
-
-   Behind the scenes, ``make`` calls the ``waf`` build system. If the colours
-   are not agreeable to you, you can disable them by setting the ``NOCOLOR``
-   environment variable before calling ``make``, e.g.
-
-   .. syntax:: bash
-
-     $ NOCOLOR=1 make
 
    Please note that running ``make`` for the first time currently takes around
    20 minutes, so you might want to grab something to drink and do something
@@ -75,7 +50,7 @@ You need to have `Git <http://git-scm.com/>`_, a Unix-like OS, a recent Python
    <http://xkcd.com/>`_ -- with an eye on your terminal for any errors that
    might occur.
 
-6. This last step points you to the `Running Ampify Zero
+3. This last step points you to the `Running Ampify Zero
    <running-ampify-zero.html>`_ document. As it states, Ampify Zero doesn't work
    yet, but it goes into detail of how an instance is meant to be setup and run.
 
