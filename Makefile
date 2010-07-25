@@ -5,13 +5,13 @@
 # some konstants
 # ------------------------------------------------------------------------------
 
-WAF := environ/waf --jobs=1
+AMP := environ/amp
 
 # ------------------------------------------------------------------------------
 # we declare our phonies so they stop telling us that targets are up-to-date
 # ------------------------------------------------------------------------------
 
-.PHONY: all benchmark build clean debug dist distclean docs install test zero
+.PHONY: all build clean debug distclean docs test zero
 
 # ------------------------------------------------------------------------------
 # our rules, starting with the default
@@ -20,33 +20,24 @@ WAF := environ/waf --jobs=1
 all: zero
 	@touch .latest
 
-benchmark:
-	@$(WAF) benchmark
-
 build:
-	@$(WAF) build
+	@$(AMP) build
 
 clean:
-	@$(WAF) uninstall --zero --force
-	@$(WAF) clean --zero --force
+	rm -f src/instance/www/*.css
 
 debug:
-	@$(WAF) build --debug
-
-dist:
-	@$(WAF) dist
+	@$(AMP) build --debug
 
 distclean: clean
-	@$(WAF) distclean --force
+	rm -f .install.data
+	rm -rf environ/local
 
-docs:
-	@$(WAF) docs
-
-install:
-	@$(WAF) install
+docs: build
+	@cd doc
+	@yatiblog
 
 test:
-	@$(WAF) test
+	@$(AMP) test
 
-zero:
-	@$(WAF) install --zero
+zero: build
