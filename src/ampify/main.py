@@ -2,6 +2,8 @@
 # Public Domain license that can be found in the root LICENSE file.
 
 import ampify
+import ampify.require
+
 import sys
 
 from optparse import OptionParser
@@ -11,33 +13,6 @@ from os.path import dirname, exists, join, realpath, split
 from pyutil.optcomplete import autocomplete, DirCompleter, ListCompleter
 from pyutil.env import run_command, CommandNotFound
 
-try:
-    from multiprocessing import cpu_count
-except ImportError:
-    cpu_count = lambda: 1
-
-# ------------------------------------------------------------------------------
-# Platform Detection
-# ------------------------------------------------------------------------------
-
-# Only certain UNIX-like platforms are currently supported. Most of the code is
-# easily portable to other platforms. But some dependencies like redis depend on
-# the POSIX APIs and may prove to be problematic.
-if sys.platform.startswith('darwin'):
-    PLATFORM = 'darwin'
-elif sys.platform.startswith('linux'):
-    PLATFORM = 'linux'
-elif sys.platform.startswith('freebsd'):
-    PLATFORM = 'freebsd'
-else:
-    sys.stderr.write(
-        "ERROR: Sorry, the %r operating system is not supported yet.\n"
-        % sys.platform
-        )
-    sys.exit(1)
-
-NUMBER_OF_CPUS = cpu_count()
-
 # ------------------------------------------------------------------------------
 # Constants
 # ------------------------------------------------------------------------------
@@ -45,24 +20,10 @@ NUMBER_OF_CPUS = cpu_count()
 AMPIFY_ROOT = dirname(dirname(dirname(realpath(__file__))))
 AMPIFY_ROOT_PARENT = dirname(AMPIFY_ROOT)
 
-AMPIFY_LOCAL = join(AMPIFY_ROOT, 'environ', 'local')
-AMPIFY_BIN = join(AMPIFY_LOCAL, 'bin')
-AMPIFY_INCLUDE = join(AMPIFY_LOCAL, 'include')
-AMPIFY_INFO = join(AMPIFY_LOCAL, 'share', 'info')
-AMPIFY_LIB = join(AMPIFY_LOCAL, 'lib')
-AMPIFY_RECEIPTS = join(AMPIFY_LOCAL, 'share', 'installed')
-AMPIFY_TMP = join(AMPIFY_LOCAL, 'tmp')
-AMPIFY_VAR = join(AMPIFY_LOCAL, 'var')
-
 ERRMSG_GIT_NAME_DETECTION = (
     "ERROR: Couldn't detect the instance name from the Git URL.\n"
-    "ERROR: Please provide an instance name parameter. Thanks!"
+    "ERROR: Please provide an instance name parameter. Thanks!\n"
     )
-
-if PLATFORM == 'freebsd':
-    MAKE = 'gmake'
-else:
-    MAKE = 'make'
 
 # ------------------------------------------------------------------------------
 # Exceptions
@@ -75,11 +36,6 @@ class CompletionResult(Exception):
 # ------------------------------------------------------------------------------
 # Utility Functions
 # ------------------------------------------------------------------------------
-
-def mkdir(path):
-    if not exists(path):
-        makedirs(path)
-        return 1
 
 def do(*cmd, **kwargs):
     if 'redirect_stdout' not in kwargs:
@@ -115,7 +71,7 @@ def normalise_instance_name(instance_name):
 def parse_options(parser, argv, completer=None, exit_if_no_args=False):
     if completer:
         raise CompletionResult(parser)
-    if argv == ['--help']:
+    if (argv == ['--help']) or (argv == ['-h']):
         parser.print_help()
         sys.exit(1)
     options, args = parser.parse_args(argv)
@@ -164,11 +120,11 @@ def main(argv=None, show_help=False):
             else:
                 show_help = True
         if command in ['-v', '--version', 'version']:
-            print 'ampify-%s' % ampify.__release__
+            print('amp version %s' % ampify.__release__)
             sys.exit()
 
     if show_help:
-        print usage
+        print(usage)
         sys.exit(1)
 
     if command in COMMANDS:
@@ -183,7 +139,7 @@ def main(argv=None, show_help=False):
             redirect_stderr=False
             )
     except CommandNotFound:
-        print "ERROR: Unknown command %r" % command
+        print("ERROR: Unknown command %r" % command)
         sys.exit(1)
 
     if retcode:
@@ -193,19 +149,25 @@ def main(argv=None, show_help=False):
 # Build Command
 # ------------------------------------------------------------------------------
 
-def build(argv=None, completer=None):
+def build(argv=None, completer=None, debug=False):
 
     op = OptionParser(usage="Usage: amp build [options]", add_help_option=False)
 
     op.add_option('-d', '--debug', dest='debug', action='store_true',
                   help="enable debug mode")
 
+    op.add_option('--role', dest='role', default='default',
+                  help="specify a non-default role to build")
+
     options, args = parse_options(op, argv, completer)
 
-    DEBUG = False
-
     if options.debug:
-        DEBUG = True
+        debug = True
+
+    from ampify.build import load_role, install_packages
+
+    load_role(options.role, debug)
+    install_packages(debug)
 
 # ------------------------------------------------------------------------------
 # Deploy Command
@@ -217,6 +179,9 @@ def deploy(argv=None, completer=None):
         usage="Usage: amp deploy <instance-name> [options]",
         add_help_option=False
         )
+
+    op.add_option('--test', dest='test', action='store_true', default=False,
+                  help="run tests before completing the switch")
 
     options, args = parse_options(op, argv, completer, True)
 
@@ -259,7 +224,7 @@ def init(argv=None, completer=None):
         else:
             instance_name = git_repo.split('/')[-1].rsplit('.', 1)[0]
             if not instance_name:
-                print ERRMSG_GIT_NAME_DETECTION
+                print(ERRMSG_GIT_NAME_DETECTION)
                 sys.exit(1)
     else:
         if args:
@@ -273,7 +238,7 @@ def init(argv=None, completer=None):
 
     if exists(instance_root):
         if not clobber:
-            print (
+            print(
                 "ERROR: A directory already exists at %s\n"
                 "ERROR: Use the --clobber parameter to overwrite the directory"
                 % instance_root
@@ -282,15 +247,15 @@ def init(argv=None, completer=None):
         chdir(instance_root)
         diff = do('git', 'diff', '--cached', '--name-only', redirect_stdout=1)
         if diff.strip():
-            print (
+            print(
                 "ERROR: You have a dirty working tree at %s\n"
                 "ERROR: Please either commit your changes or move your files.\n"
                 % instance_root
                 )
-            print "  These are the problematic files:"
+            print("  These are the problematic files:")
             print
             for filename in diff.strip().splitlines():
-                print "    %s" % filename
+                print("    %s" % filename)
             print
         first_run = 0
     else:
@@ -299,7 +264,7 @@ def init(argv=None, completer=None):
             sys.exit(2)
         makedirs(instance_root)
         print
-        print "Created", instance_root
+        print("Created %s" % instance_root)
         print
         chdir(instance_root)
         do('git', 'init')
@@ -314,7 +279,7 @@ def init(argv=None, completer=None):
     if diff.strip():
         do('git', 'commit', '-m', "Updated instance [amp].")
 
-    print DEBUG
+    print(DEBUG)
 
 # ------------------------------------------------------------------------------
 # Run Command
@@ -361,7 +326,7 @@ def test(argv=None, completer=None, run_all=False):
     if options.all:
         run_all = True
 
-    print "Running tests..."
+    print("Running tests...")
 
 # ------------------------------------------------------------------------------
 # Help Strings
@@ -409,8 +374,8 @@ def make_autocompleter(command):
     def wrapper(completer):
         try:
             parser = command(completer=completer)
-        except CompletionResult, passback:
-            parser = passback.result
+        except CompletionResult:
+            parser = sys.exc_info()[1].result
         if isinstance(parser, tuple):
             parser, completer = parser
         return autocomplete(parser, completer)
