@@ -8,7 +8,7 @@ from optparse import OptionParser
 from os import chdir, environ, makedirs, symlink
 from os.path import dirname, exists, join, realpath, split
 
-from pyutil.optcomplete import autocomplete, ListCompleter
+from pyutil.optcomplete import autocomplete, DirCompleter, ListCompleter
 from pyutil.env import run_command, CommandNotFound
 
 # ------------------------------------------------------------------------------
@@ -105,7 +105,7 @@ def main(argv=None, show_help=False):
 
     autocomplete(
         OptionParser(add_help_option=False),
-        ListCompleter(AUTOCOMPLETE_COMMANDS.keys() + ['version']),
+        ListCompleter(AUTOCOMPLETE_COMMANDS.keys()),
         subcommands=AUTOCOMPLETE_COMMANDS
         )
 
@@ -128,7 +128,7 @@ def main(argv=None, show_help=False):
 
     if show_help:
         print usage
-        sys.exit(2)
+        sys.exit(1)
 
     if command in COMMANDS:
         return COMMANDS[command](argv)
@@ -292,6 +292,9 @@ def run(argv=None, completer=None):
     op.add_option("--file", dest="filename",
                   help="Input file to read data from")
 
+    if completer:
+        return op, DirCompleter(AMPIFY_ROOT_PARENT)
+
     options, args = parse_options(op, argv, completer, True)
 
     DEBUG = False
@@ -323,7 +326,8 @@ def test(argv=None, completer=None, run_all=False):
 # Help Strings
 # ------------------------------------------------------------------------------
 
-# These should perhaps be internationalised at a later date.
+# These, along with other strings, should perhaps be internationalised at a
+# later date.
 build.help = "download and build the ampify zero dependencies"
 deploy.help = "deploy an instance to remote host(s)"
 hub.help = "interact with amphub"
@@ -351,9 +355,15 @@ COMMANDS = {
 AUTOCOMPLETE_COMMANDS = COMMANDS.copy()
 
 AUTOCOMPLETE_COMMANDS['help'] = lambda completer: (
-    OptionParser(usage="Usage: amp help <command>", add_help_option=False),
+    OptionParser(add_help_option=False),
     ListCompleter(COMMANDS.keys())
     )
+
+AUTOCOMPLETE_COMMANDS['version'] = lambda completer: (
+    OptionParser(add_help_option=False),
+    DirCompleter(AMPIFY_ROOT_PARENT)
+    )
+
 
 def make_autocompleter(command):
     def wrapper(completer):
@@ -375,4 +385,3 @@ for command in AUTOCOMPLETE_COMMANDS.values():
 
 if __name__ == '__main__':
     main()
-
