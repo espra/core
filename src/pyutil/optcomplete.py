@@ -1,3 +1,6 @@
+# Changes to this file by The Ampify Authors are according to the
+# Public Domain license that can be found in the root LICENSE file.
+
 #******************************************************************************\
 #* Copyright (c) 2003-2004, Martin Blais
 #* All rights reserved.
@@ -88,14 +91,15 @@ __author__ = "Martin Blais <blais@furius.ca>"
 ##      completion facility (*note Programmable Completion::).
 
 
-import sys, os
-from os.path import *
-import types
+import os
 import re
-
-from pprint import pprint, pformat
+import sys
+import types
 
 from optparse import OptionParser
+from os import listdir
+from os.path import *
+from pprint import pprint, pformat
 
 debugfn = None # for debugging only
 
@@ -117,8 +121,13 @@ class DirCompleter:
 
     """Completes by listing subdirectories only."""
 
+    def __init__(self, directory=None):
+        self.directory = directory
+
     def __call__(self, pwd, line, point, prefix, suffix):
-        return filter(isdir, os.listdir(pwd))
+        if self.directory:
+            pwd = self.directory
+        return [path for path in listdir(pwd) if isdir(join(pwd, path))]
 
 class RegexCompleter:
 
