@@ -11,6 +11,33 @@ from os.path import dirname, exists, join, realpath, split
 from pyutil.optcomplete import autocomplete, DirCompleter, ListCompleter
 from pyutil.env import run_command, CommandNotFound
 
+try:
+    from multiprocessing import cpu_count
+except ImportError:
+    cpu_count = lambda: 1
+
+# ------------------------------------------------------------------------------
+# Platform Detection
+# ------------------------------------------------------------------------------
+
+# Only certain UNIX-like platforms are currently supported. Most of the code is
+# easily portable to other platforms. But some dependencies like redis depend on
+# the POSIX APIs and may prove to be problematic.
+if sys.platform.startswith('darwin'):
+    PLATFORM = 'darwin'
+elif sys.platform.startswith('linux'):
+    PLATFORM = 'linux'
+elif sys.platform.startswith('freebsd'):
+    PLATFORM = 'freebsd'
+else:
+    sys.stderr.write(
+        "ERROR: Sorry, the %r operating system is not supported yet.\n"
+        % sys.platform
+        )
+    sys.exit(1)
+
+NUMBER_OF_CPUS = cpu_count()
+
 # ------------------------------------------------------------------------------
 # Constants
 # ------------------------------------------------------------------------------
@@ -18,10 +45,24 @@ from pyutil.env import run_command, CommandNotFound
 AMPIFY_ROOT = dirname(dirname(dirname(realpath(__file__))))
 AMPIFY_ROOT_PARENT = dirname(AMPIFY_ROOT)
 
+AMPIFY_LOCAL = join(AMPIFY_ROOT, 'environ', 'local')
+AMPIFY_BIN = join(AMPIFY_LOCAL, 'bin')
+AMPIFY_INCLUDE = join(AMPIFY_LOCAL, 'include')
+AMPIFY_INFO = join(AMPIFY_LOCAL, 'share', 'info')
+AMPIFY_LIB = join(AMPIFY_LOCAL, 'lib')
+AMPIFY_RECEIPTS = join(AMPIFY_LOCAL, 'share', 'installed')
+AMPIFY_TMP = join(AMPIFY_LOCAL, 'tmp')
+AMPIFY_VAR = join(AMPIFY_LOCAL, 'var')
+
 ERRMSG_GIT_NAME_DETECTION = (
     "ERROR: Couldn't detect the instance name from the Git URL.\n"
     "ERROR: Please provide an instance name parameter. Thanks!"
     )
+
+if PLATFORM == 'freebsd':
+    MAKE = 'gmake'
+else:
+    MAKE = 'make'
 
 # ------------------------------------------------------------------------------
 # Exceptions
@@ -363,7 +404,6 @@ AUTOCOMPLETE_COMMANDS['version'] = lambda completer: (
     OptionParser(add_help_option=False),
     DirCompleter(AMPIFY_ROOT_PARENT)
     )
-
 
 def make_autocompleter(command):
     def wrapper(completer):
