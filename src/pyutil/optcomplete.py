@@ -228,7 +228,7 @@ def autocomplete(parser,
 
     # If we are not requested for complete, simply return silently, let the code
     # caller complete. This is the normal path of execution.
-    if not os.environ.has_key('OPTPARSE_AUTO_COMPLETE'):
+    if 'OPTPARSE_AUTO_COMPLETE' not in os.environ:
         return
 
     # Set default completers.
@@ -355,7 +355,7 @@ def autocomplete(parser,
         completions = filter(lambda x: x.startswith(prefix), completions)
 
     # Print result.
-    print ' '.join(completions)
+    print(' '.join(completions))
 
     # Print debug output (if needed).  You can keep a shell with 'tail -f' to
     # the log file to monitor what is happening.
