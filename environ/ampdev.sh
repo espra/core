@@ -66,6 +66,10 @@ fi
 # extend the PATH
 # ------------------------------------------------------------------------------
 
+if [ "x$PATH" != "x" ]; then
+	export PRE_AMPDEV_PATH=$PATH
+fi
+
 export PATH=$AMPIFY_ROOT/environ:$AMPIFY_ROOT/src/codereview:$PATH
 
 # ------------------------------------------------------------------------------

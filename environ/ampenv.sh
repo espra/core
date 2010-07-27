@@ -94,32 +94,46 @@ function _have () {
 
 export AMPIFY_LOCAL=$AMPIFY_ROOT/environ/local
 
-if [ "x$PATH" != "x" ]; then
-	export PATH=$AMPIFY_ROOT/environ:$AMPIFY_LOCAL/bin:$AMPIFY_ROOT/src/codereview:$PATH
+if [ "x$PRE_AMPDEV_PATH" != "x" ]; then
+	export PRE_AMPENV_PATH=$PRE_AMPDEV_PATH
+	export PATH=$AMPIFY_ROOT/environ:$AMPIFY_LOCAL/bin:$AMPIFY_ROOT/src/codereview:$PRE_AMPDEV_PATH
 else
-	export PATH=$AMPIFY_ROOT/environ:$AMPIFY_LOCAL/bin:$AMPIFY_ROOT/src/codereview
+	if [ "x$PATH" != "x" ]; then
+		export PRE_AMPENV_PATH=$PATH
+		export PATH=$AMPIFY_ROOT/environ:$AMPIFY_LOCAL/bin:$AMPIFY_ROOT/src/codereview:$PATH
+	else
+		export PATH=$AMPIFY_ROOT/environ:$AMPIFY_LOCAL/bin:$AMPIFY_ROOT/src/codereview
+	fi
 fi
 
 case $_OS_NAME in
 	darwin)
-		export PATH=$AMPIFY_ROOT/environ/osx:$PATH;
+		if [ "x$DYLD_FALLBACK_LIBRARY_PATH" != "x" ]; then
+			export PRE_AMPENV_DYLD_FALLBACK_LIBRARY_PATH=$DYLD_FALLBACK_LIBRARY_PATH
+		fi
 		export DYLD_FALLBACK_LIBRARY_PATH=$AMPIFY_LOCAL/lib:$AMPIFY_LOCAL/freeswitch/lib:$DYLD_LIBRARY_PATH:$HOME/lib:/usr/local/lib:/lib:/usr/lib;;
 	linux)
-		export PATH=$AMPIFY_ROOT/environ/linux:$PATH;
+		if [ "x$LD_LIBRARY_PATH" != "x" ]; then
+			export PRE_AMPENV_LD_LIBRARY_PATH=$LD_LIBRARY_PATH
+		fi
 		export LD_LIBRARY_PATH=$AMPIFY_LOCAL/lib:$LD_LIBRARY_PATH;;
 	freebsd)
-		export PATH=$AMPIFY_ROOT/environ/freebsd:$PATH;
+		if [ "x$LD_LIBRARY_PATH" != "x" ]; then
+			export PRE_AMPENV_LD_LIBRARY_PATH=$LD_LIBRARY_PATH
+		fi
 		export LD_LIBRARY_PATH=$AMPIFY_LOCAL/lib:$LD_LIBRARY_PATH;;
 	*) echo "ERROR: Unknown system operating system: ${_OS_NAME}"
 esac
 	
 if [ "x$PYTHONPATH" != "x" ]; then
+	export PRE_AMPENV_PYTHONPATH=$PYTHONPATH
 	export PYTHONPATH=$AMPIFY_ROOT/src:$AMPIFY_ROOT/src/zero:$AMPIFY_ROOT/third_party/pylibs:$PYTHONPATH
 else
 	export PYTHONPATH=$AMPIFY_ROOT/src:$AMPIFY_ROOT/src/zero:$AMPIFY_ROOT/third_party/pylibs
 fi
 
 if [ "x$MANPATH" != "x" ]; then
+	export PRE_AMPENV_MANPATH=$MANPATH
 	export MANPATH=$AMPIFY_ROOT/doc/man:$AMPIFY_LOCAL/man:$MANPATH
 else
 	export MANPATH=$AMPIFY_ROOT/doc/man:$AMPIFY_LOCAL/man
