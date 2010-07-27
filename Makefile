@@ -30,8 +30,10 @@ debug:
 	@$(AMP) build --debug
 
 distclean: clean
-	rm -f .install.data
 	rm -rf environ/local
+	rm -rf environ/receipts
+	rm -rf src/build
+	rm -f src/ampify/*.so
 
 docs: build
 	@./environ/yatiblog doc
