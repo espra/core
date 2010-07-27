@@ -36,7 +36,7 @@ if [ "x$0" == "x$BASH_SOURCE" ]; then
 	echo
 	echo "    source $__FILE"
 	echo
-	echo "You might want to add the above to your login .bashrc/profile/etc."
+	echo "You might want to add the above line to your .bashrc or equivalent."
 	echo
 	exit
 fi
@@ -66,7 +66,7 @@ fi
 # extend the PATH
 # ------------------------------------------------------------------------------
 
-export PATH=$AMPIFY_ROOT/environ:$PATH
+export PATH=$AMPIFY_ROOT/environ:$AMPIFY_ROOT/src/codereview:$PATH
 
 # ------------------------------------------------------------------------------
 # try to figure out if we are inside an interactive shell or not
