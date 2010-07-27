@@ -13,7 +13,8 @@ from os.path import dirname, exists, join, realpath, split
 from pyutil.optcomplete import autocomplete, DirCompleter, ListCompleter
 from pyutil.env import run_command, CommandNotFound
 
-from ampify.build import ERROR, load_role, install_packages, log, error, exit
+from ampify.build import ERROR, log, error, exit, lock, unlock
+from ampify.build import load_role, install_packages
 
 # ------------------------------------------------------------------------------
 # Constants
@@ -129,23 +130,17 @@ def main(argv=None, show_help=False):
 # Build Command
 # ------------------------------------------------------------------------------
 
-def build(argv=None, completer=None, debug=False):
+def build(argv=None, completer=None):
 
     op = OptionParser(usage="Usage: amp build [options]", add_help_option=False)
-
-    op.add_option('-d', '--debug', dest='debug', action='store_true',
-                  help="enable debug mode")
 
     op.add_option('--role', dest='role', default='default',
                   help="specify a non-default role to build")
 
     options, args = parse_options(op, argv, completer)
 
-    if options.debug:
-        debug = True
-
-    load_role(options.role, debug)
-    install_packages(debug)
+    load_role(options.role)
+    install_packages()
 
 # ------------------------------------------------------------------------------
 # Deploy Command
@@ -260,7 +255,7 @@ def init(argv=None, completer=None):
 # Run Command
 # ------------------------------------------------------------------------------
 
-def run(argv=None, completer=None):
+def run(argv=None, completer=None, debug=False):
     
     op = OptionParser(
         usage="Usage: amp run <instance-name> [options] [stop|quit|restart]",
@@ -278,10 +273,8 @@ def run(argv=None, completer=None):
 
     options, args = parse_options(op, argv, completer, True)
 
-    DEBUG = False
-
     if options.debug:
-        DEBUG = True
+        debug = True
 
     instance_name, instance_root = normalise_instance_name(args[0])
 
