@@ -2,6 +2,7 @@
 
 .appengine_python_sdk
 .articlestore
+.build
 .build-lock
 .latest
 
