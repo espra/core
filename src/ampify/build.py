@@ -133,6 +133,24 @@ def rmdir(path, name=None):
                 name = path
             exit("ERROR: Couldn't remove the %s directory." % name)
 
+LOCKS = {}
+
+def lock(path):
+    LOCKS[path] = lock = open(path, 'w')
+    try:
+        from fcntl import flock, LOCK_EX, LOCK_NB
+    except ImportError:
+        exit("ERROR: Locking is not supported on this platform.")
+    try:
+        flock(lock.fileno(), LOCK_EX | LOCK_NB)
+    except IOError:
+        exit("ERROR: Another amp process is already running.")
+
+def unlock(path):
+    if path in LOCKS:
+        LOCKS[path].close()
+        del LOCKS[path]
+
 # ------------------------------------------------------------------------------
 # Constants
 # ------------------------------------------------------------------------------
@@ -183,6 +201,7 @@ else:
 RECIPES = {}
 BUILTINS = locals()
 
+BUILD_LOCK = join(ROOT, '.build-lock')
 RECIPES_INITIALISED = []
 VIRGIN_BUILD = not exists(join(LOCAL, 'bin', 'python'))
 
@@ -270,6 +289,46 @@ def load_role(role, debug=False):
     return ROLES.setdefault(role, packages)
 
 # ------------------------------------------------------------------------------
+# Version Checkers
+# ------------------------------------------------------------------------------
+
+def ensure_gcc_version(version=(4, 0)):
+    try:
+        ver = do(
+            'gcc', '-dumpversion', redirect_stdout=True, reterror=True
+            )
+        ver = tuple(map(int, ver[0].strip().split('.')))
+        if ver < version:
+            raise RuntimeError("Invalid version")
+    except:
+        exit('ERROR: GCC %s+ not found!' % '.'.join(map(str, version)))
+
+def ensure_git_version(version=(1, 7)):
+    try:
+        ver = do(
+            'git', '--version', redirect_stdout=True,
+            redirect_stderr=True, reterror=True
+            )
+        ver = ver[0].splitlines()[0].split()[-1]
+        ver = tuple(int(part) for part in ver.split('.'))
+        if ver < version:
+            raise RuntimeError("Invalid version")
+    except Exception:
+        exit('ERROR: Git %s+ not found!' % '.'.join(map(str, version)))
+
+def ensure_java_version(version=(1, 6), title='Java 6 runtime'):
+    try:
+        ver = do(
+            'java', '-version', redirect_stdout=True,
+            redirect_stderr=True, reterror=True
+            )
+        ver = ver[1].splitlines()[0].split()[-1][1:-1]
+        if not ver.startswith('.'.join(map(str, version))):
+            raise RuntimeError("Invalid version")
+    except Exception:
+        exit('ERROR: %s not found!' % title)
+
+# ------------------------------------------------------------------------------
 # Build Recipes Initialiser
 # ------------------------------------------------------------------------------
 
@@ -283,8 +342,6 @@ def init_build_recipes(debug=False):
 def install_package(package, debug=False):
     print "Install", package
     return
-
-    # git --version
     if package not in RECIPES:
         exit(
             "ERROR: Couldn't find a build recipe for the %s package."
@@ -292,12 +349,32 @@ def install_package(package, debug=False):
             )
 
 def install_packages(debug=False):
-    mkdir(BUILD_WORKING_DIRECTORY)
-    mkdir('/opt/ampify')
-    rmdir('/opt/ampify')
+    # Try getting a lock to avoid concurrent builds.
+    lock(BUILD_LOCK)
+    ensure_gcc_version()
+    ensure_git_version()
+    ensure_java_version()
+    for directory in [BUILD_WORKING_DIRECTORY, LOCAL, BIN, RECEIPTS, TMP]:
+        mkdir(directory)
     log('installing...')
+
+def get_ampify_env(environ):
+    new = {}
+    for key in environ:
+        if key.startswith('AMPIFY'):
+            new[key] = environ[key]
+    for var in [
+        'PATH', 'LD_LIBRARY_PATH',
+        'DYLD_FALLBACK_LIBRARY_PATH',
+        'MANPATH', 'PYTHONPATH'
+        ]:
+        pre_var = 'PRE_AMPENV_' + var
+        if pre_var in environ:
+            new[var] = environ[pre_var]
+    return new
 
 def build_base_and_reload(debug=False):
     load_role('base')
     install_packages()
-    execve(join(ENVIRON, 'amp'), sys.argv, {})
+    unlock(BUILD_LOCK)
+    execve(join(ENVIRON, 'amp'), sys.argv, get_ampify_env(environ))
