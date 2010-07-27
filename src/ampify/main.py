@@ -13,6 +13,8 @@ from os.path import dirname, exists, join, realpath, split
 from pyutil.optcomplete import autocomplete, DirCompleter, ListCompleter
 from pyutil.env import run_command, CommandNotFound
 
+from ampify.build import ERROR, load_role, install_packages, log, error, exit
+
 # ------------------------------------------------------------------------------
 # Constants
 # ------------------------------------------------------------------------------
@@ -21,8 +23,8 @@ AMPIFY_ROOT = dirname(dirname(dirname(realpath(__file__))))
 AMPIFY_ROOT_PARENT = dirname(AMPIFY_ROOT)
 
 ERRMSG_GIT_NAME_DETECTION = (
-    "ERROR: Couldn't detect the instance name from the Git URL.\n"
-    "ERROR: Please provide an instance name parameter. Thanks!\n"
+    "ERROR: Couldn't detect the instance name from the Git URL.\n          "
+    "Please provide an instance name parameter. Thanks!"
     )
 
 # ------------------------------------------------------------------------------
@@ -36,27 +38,6 @@ class CompletionResult(Exception):
 # ------------------------------------------------------------------------------
 # Utility Functions
 # ------------------------------------------------------------------------------
-
-def do(*cmd, **kwargs):
-    if 'redirect_stdout' not in kwargs:
-        kwargs['redirect_stdout'] = False
-    if 'redirect_stderr' not in kwargs:
-        kwargs['redirect_stderr'] = False
-    if 'exit_on_error' not in kwargs:
-        kwargs['exit_on_error'] = True
-    return run_command(cmd, **kwargs)
-
-def query(question, options='Y/n', default='Y', alter=1):
-    if alter:
-        if options:
-            question = "%s? [%s] " % (question, options)
-        else:
-            question = "%s? " % question
-    print
-    response = raw_input(question)
-    if not response:
-        return default
-    return response
 
 def relative_path(source, destination):
     pass
@@ -139,8 +120,7 @@ def main(argv=None, show_help=False):
             redirect_stderr=False
             )
     except CommandNotFound:
-        print("ERROR: Unknown command %r" % command)
-        sys.exit(1)
+        exit("ERROR: Unknown command %r" % command)
 
     if retcode:
         sys.exit(retcode)
@@ -163,8 +143,6 @@ def build(argv=None, completer=None, debug=False):
 
     if options.debug:
         debug = True
-
-    from ampify.build import load_role, install_packages
 
     load_role(options.role, debug)
     install_packages(debug)
@@ -224,8 +202,7 @@ def init(argv=None, completer=None):
         else:
             instance_name = git_repo.split('/')[-1].rsplit('.', 1)[0]
             if not instance_name:
-                print(ERRMSG_GIT_NAME_DETECTION)
-                sys.exit(1)
+                exit(ERRMSG_GIT_NAME_DETECTION)
     else:
         if args:
             instance_name = args[0]
@@ -238,24 +215,22 @@ def init(argv=None, completer=None):
 
     if exists(instance_root):
         if not clobber:
-            print(
-                "ERROR: A directory already exists at %s\n"
-                "ERROR: Use the --clobber parameter to overwrite the directory"
+            exit(
+                "ERROR: A directory already exists at %s\n          "
+                "Use the --clobber parameter to overwrite the directory"
                 % instance_root
                 )
-            sys.exit(1)
         chdir(instance_root)
         diff = do('git', 'diff', '--cached', '--name-only', redirect_stdout=1)
         if diff.strip():
-            print(
-                "ERROR: You have a dirty working tree at %s\n"
-                "ERROR: Please either commit your changes or move your files.\n"
+            error(
+                "ERROR: You have a dirty working tree at %s\n          "
+                "Please either commit your changes or move your files.\n"
                 % instance_root
                 )
-            print("  These are the problematic files:")
-            print
+            error("  These are the problematic files:")
             for filename in diff.strip().splitlines():
-                print("    %s" % filename)
+                log("    %s" % filename, ERROR)
             print
         first_run = 0
     else:
