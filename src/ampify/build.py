@@ -2,13 +2,16 @@
 # Public Domain license that can be found in the root LICENSE file.
 
 import os
+import re
 import sys
 
 from errno import EACCES, ENOENT
-from os import getcwd, environ, execve, makedirs
-from os.path import dirname, exists, expanduser, isdir, isfile, join, realpath
+from hashlib import sha256
+from os import getcwd, environ, execve, listdir, makedirs, remove
+from os.path import dirname, exists, expanduser, isabs, isdir, isfile, join, realpath
 from shutil import rmtree
 from thread import start_new_thread
+from urllib import urlopen
 
 try:
     from multiprocessing import cpu_count
@@ -89,6 +92,15 @@ def do(*cmd, **kwargs):
         kwargs['exit_on_error'] = True
     return run_command(cmd, **kwargs)
 
+#     if 'retcode' in kwargs:
+#         return run_command(*args, **kwargs)
+#     kwargs['retcode'] = 1
+#     result = run_command(*args, **kwargs)
+#     retcode = result[-1]
+#     if retcode and not Options.options.force:
+#         raise ValueError("Error running %s" % ' '.join(args[0]))
+#     return result[:-1]
+
 def query(question, options='Y/n', default='Y', alter=1):
     if alter:
         if options:
@@ -108,12 +120,12 @@ def sudo(*command, **kwargs):
     if response.lower().startswith('y'):
         return do('sudo', *command, **kwargs)
 
-def mkdir(path):
+def mkdir(path, sudo=False):
     if not isdir(path):
         try:
             makedirs(path)
         except OSError, e:
-            if e.errno == EACCES:
+            if (e.errno == EACCES) and sudo:
                 error("ERROR: Permission denied to create %s" % path)
                 done = sudo('mkdir', '-p', path, retcode=True)
                 if not done:
@@ -143,13 +155,36 @@ def lock(path):
         exit("ERROR: Locking is not supported on this platform.")
     try:
         flock(lock.fileno(), LOCK_EX | LOCK_NB)
-    except IOError:
+    except Exception:
         exit("ERROR: Another amp process is already running.")
 
 def unlock(path):
     if path in LOCKS:
         LOCKS[path].close()
         del LOCKS[path]
+
+# Collate the set of resources within the given ``directory``.
+def gather_local_filelisting(directory, gathered=None):
+    if gathered is None:
+        if not isdir(directory):
+            return set()
+        gathered = set()
+    for item in listdir(directory):
+        path = join(directory, item)
+        if isdir(path):
+            gathered.add(path + '/')
+            gather_local_filelisting(path, gathered)
+        else:
+            gathered.add(path)
+    return gathered
+
+# Strip the given ``prefix`` from the elements in the given ``listing`` set.
+def strip_prefix(listing, prefix):
+    new = set()
+    lead = len(prefix) + 1
+    for item in listing:
+        new.add(item[lead:])
+    return new
 
 # ------------------------------------------------------------------------------
 # Constants
@@ -160,18 +195,21 @@ ENVIRON = join(ROOT, 'environ')
 LOCAL = join(ENVIRON, 'local')
 BIN = join(LOCAL, 'bin')
 INCLUDE = join(LOCAL, 'include')
-INFO = join(LOCAL, 'share', 'info')
 LIB = join(LOCAL, 'lib')
-RECEIPTS = join(LOCAL, 'share', 'installed')
+SHARE = join(LOCAL, 'share')
+INFO = join(SHARE, 'info')
+MAN = join(SHARE, 'man')
+RECEIPTS = join(SHARE, 'installed')
 TMP = join(LOCAL, 'tmp')
 VAR = join(LOCAL, 'var')
 
-DISTFILES_URL = environ.get(
-    'AMPIFY_DISTFILES_URL',
+DISTFILES_URL_BASE = environ.get(
+    'AMPIFY_DISTFILES_URL_BASE',
     "http://cloud.github.com/downloads/tav/ampify/distfile."
     )
 
-# The HTTPS url -- which would be using S3 and not Amazon cloudfront would be:
+# Alternatively, could use the HTTPS URL -- note that this would be using S3 and
+# not Amazon CloudFront:
 # https://github.s3.amazonaws.com/downloads/tav/ampify/distfile.
 
 BUILD_WORKING_DIRECTORY = join(ROOT, '.build')
@@ -201,18 +239,11 @@ else:
 RECIPES = {}
 BUILTINS = locals()
 
+BASE_PACKAGES = set()
 BUILD_LOCK = join(ROOT, '.build-lock')
+PACKAGES = {}
 RECIPES_INITIALISED = []
 VIRGIN_BUILD = not exists(join(LOCAL, 'bin', 'python'))
-
-# DISTFILES_SERVER = (
-#     "http://cloud.github.com/downloads/tav/plexnet/distfile."
-#     "%(name)s-%(version)s.tar.bz2"
-#     )
-
-# ------------------------------------------------------------------------------
-#
-# ------------------------------------------------------------------------------
 
 # ------------------------------------------------------------------------------
 # JSON Support
@@ -221,22 +252,17 @@ VIRGIN_BUILD = not exists(join(LOCAL, 'bin', 'python'))
 # We implement super-basic JSON decoding support for older Pythons which don't
 # have a JSON module.
 if not decode_json:
-
-    import re
-
     JSON_ENV = {
         '__builtins__': None,
         'null': None,
         'true': True,
         'false': False
         }
-
     replace_string = re.compile(r'("(\\.|[^"\\])*")').sub
     match_json = re.compile(r'^[,:{}\[\]0-9.\-+Eaeflnr-u \n\r\t]+$').match
-
     def decode_json(json):
         if match_json(replace_string('', json)):
-            json = replace_string(lambda m: 'u' + m.group(1), json)
+            json = replace_string(lambda m: m.group(1), json)
             return eval(json.strip(' \t\r\n'), JSON_ENV, {})
         raise ValueError("Couldn't decode JSON input.")
 
@@ -244,8 +270,26 @@ if not decode_json:
 # Distfiles Downloader
 # ------------------------------------------------------------------------------
 
-def download_distfile(distfile):
-    pass
+# Download the given distfile and ensure it has a matching digest.
+def download_distfile(distfile, url, hash):
+    dest = join(BUILD_WORKING_DIRECTORY, distfile)
+    if isfile(dest):
+        log("Verifying existing %s" % distfile, PROGRESS)
+        distfile_file = open(dest, 'rb')
+        distfile_source = distfile_file.read()
+        distfile_file.close()
+        if sha256(distfile_source).hexdigest() == hash:
+            return
+        remove(dest)
+    log("Downloading %s" % distfile, PROGRESS)
+    distfile_obj = urlopen(url)
+    distfile_source = distfile_obj.read()
+    if sha256(distfile_source).hexdigest() != hash:
+        exit("ERROR: Got an invalid hash digest for %s" % distfile)
+    distfile_file = open(dest, 'wb')
+    distfile_file.write(distfile_source)
+    distfile_file.close()
+    distfile_obj.close()
 
 # ------------------------------------------------------------------------------
 # Instance Roles
@@ -253,14 +297,14 @@ def download_distfile(distfile):
 
 ROLES = {}
 
-def load_role(role, debug=False):
+def load_role(role):
 
-    init_build_recipes(debug)
+    init_build_recipes()
     if role in ROLES:
         return ROLES[role]
 
     if VIRGIN_BUILD and role != 'base':
-        build_base_and_reload(debug)
+        build_base_and_reload()
 
     for path in ROLES_PATH:
         role_file = join(path, role) + '.json'
@@ -277,16 +321,34 @@ def load_role(role, debug=False):
     role_data = role_file.read()
     role_file.close()
 
-    role_data = decode_json(role_data)
-    packages = set(role_data['packages'])
+    try:
+        role_data = decode_json(role_data)
+    except Exception:
+        exit("ERROR: Couldn't decode the JSON input: %s" % role_file.name)
 
+    packages = set(role_data['packages'])
     for package in packages:
         install_package(package)
 
     if 'requires' in role_data:
         packages.update(load_role(role_data['requires']))
 
+    if role == 'base':
+        for package in packages:
+            BASE_PACKAGES.update([package])
+            BASE_PACKAGES.update(get_dependencies(package))
+
     return ROLES.setdefault(role, packages)
+
+def get_dependencies(package, gathered=None):
+    if gathered is None:
+        gathered = set()
+    else:
+        gathered.add(package)
+    recipe = RECIPES[package][PACKAGES[package][0]]
+    for dep in recipe.get('requires', []):
+        get_dependencies(dep, gathered)
+    return gathered
 
 # ------------------------------------------------------------------------------
 # Version Checkers
@@ -300,7 +362,7 @@ def ensure_gcc_version(version=(4, 0)):
         ver = tuple(map(int, ver[0].strip().split('.')))
         if ver < version:
             raise RuntimeError("Invalid version")
-    except:
+    except Exception:
         exit('ERROR: GCC %s+ not found!' % '.'.join(map(str, version)))
 
 def ensure_git_version(version=(1, 7)):
@@ -332,31 +394,28 @@ def ensure_java_version(version=(1, 6), title='Java 6 runtime'):
 # Build Recipes Initialiser
 # ------------------------------------------------------------------------------
 
-def init_build_recipes(debug=False):
+def init_build_recipes():
     if RECIPES_INITIALISED:
         return
-    for recipe in BUILD_RECIPES:
-        execfile(recipe, BUILTINS)
-    RECIPES_INITIALISED.append(1)
-
-def install_package(package, debug=False):
-    print "Install", package
-    return
-    if package not in RECIPES:
-        exit(
-            "ERROR: Couldn't find a build recipe for the %s package."
-            % package
-            )
-
-def install_packages(debug=False):
     # Try getting a lock to avoid concurrent builds.
     lock(BUILD_LOCK)
-    ensure_gcc_version()
-    ensure_git_version()
-    ensure_java_version()
-    for directory in [BUILD_WORKING_DIRECTORY, LOCAL, BIN, RECEIPTS, TMP]:
-        mkdir(directory)
-    log('installing...')
+    for recipe in BUILD_RECIPES:
+        execfile(recipe, BUILTINS)
+    for package in list(RECIPES):
+        recipes = RECIPES[package]
+        versions = []
+        data = {}
+        for recipe in recipes:
+            version = recipe['version']
+            versions.append(version)
+            data[version] = recipe
+        RECIPES[package] = data
+        PACKAGES[package] = versions
+    RECIPES_INITIALISED.append(1)
+
+# ------------------------------------------------------------------------------
+# Env Manipulation
+# ------------------------------------------------------------------------------
 
 def get_ampify_env(environ):
     new = {}
@@ -373,7 +432,186 @@ def get_ampify_env(environ):
             new[var] = environ[pre_var]
     return new
 
-def build_base_and_reload(debug=False):
+# ------------------------------------------------------------------------------
+# Build Types
+# ------------------------------------------------------------------------------
+
+BASE_BUILD = {
+    'after': None,
+    'before': None,
+    'commands': None,
+    'distfile': "%(name)s-%(version)s.tar.bz2",
+    'env': None,
+    }
+
+def default_build_commands(info):
+    commands = []; add = commands.append
+    if info['config_command']:
+        add([info['config_command'] + info['config_flags']])
+    if info['separate_make_install']:
+        add([MAKE])
+    add([MAKE] + info['make_flags'])
+    return commands
+
+DEFAULT_BUILD = BASE_BUILD.copy()
+DEFAULT_BUILD.update({
+    'commands': default_build_commands,
+    'config_command': './configure',
+    'config_flags': ['--prefix=%s' % LOCAL],
+    'make_flags': ['install'],
+    'separate_make_install': False
+    })
+
+PYTHON_BUILD = BASE_BUILD.copy()
+PYTHON_BUILD.update({
+    'commands': [
+        [sys.executable, 'setup.py', 'build_ext', '-i']
+        ]
+    })
+
+def resource_build_commands(info):
+    return []
+
+RESOURCE_BUILD = BASE_BUILD.copy()
+RESOURCE_BUILD.update({
+    'commands': resource_build_commands,
+    'source': '',
+    'destination': '',
+    })
+
+JAVA_BUILD = BASE_BUILD.copy()
+JAVA_BUILD.update({
+    'distfile': '%(name)s-%(version)s.jar'
+    })
+
+BUILD_TYPES = {
+    'default': DEFAULT_BUILD,
+    'java': JAVA_BUILD,
+    'python': PYTHON_BUILD,
+    'resources': RESOURCE_BUILD,
+    }
+
+# ------------------------------------------------------------------------------
+# Core Install Functions
+# ------------------------------------------------------------------------------
+
+TO_INSTALL = {}
+
+# Check and load the build recipe for the given package name and add it to the
+# ``TO_INSTALL`` set.
+def install_package(package):
+    if package not in RECIPES:
+        exit(
+            "ERROR: Couldn't find a build recipe for the %s package."
+            % package
+            )
+    version = PACKAGES[package][0]
+    TO_INSTALL[package] = version
+    for dependency in RECIPES[package][version].get('requires', []):
+        install_package(dependency)
+
+# Uninstall the given list of packages in uninstall.
+def uninstall_packages(uninstall, installed):
+    for name, version in uninstall.iteritems():
+        log("Uninstalling %s %s" % (name, version))
+        installed_version = '%s-%s' % (name, version)
+        receipt_path = join(RECEIPTS, installed_version)
+        receipt = open(receipt_path, 'rb')
+        for path in receipt:
+            if isabs(path):
+                exit("ERROR: Got an absolute path in receipt %s" % receipt_path)
+            path = path.strip()
+            if not path:
+                continue
+            path = join(LOCAL, path)
+            if not exists(path):
+                continue
+            if isdir(path):
+                rmtree(path)
+            else:
+                os.remove(path)
+        receipt.close()
+        os.remove(receipt_path)
+        del installed[name]
+
+# Handle the actual installation/uninstallation of appropriate packages.
+def install_packages(types=BUILD_TYPES):
+
+    ensure_gcc_version()
+    ensure_git_version()
+    ensure_java_version()
+
+    for directory in [BUILD_WORKING_DIRECTORY, LOCAL, BIN, RECEIPTS, TMP]:
+        mkdir(directory)
+
+    # We assume the invariant that all packages only have one version installed.
+    installed = dict(f.rsplit('-', 1) for f in listdir(RECEIPTS))
+    uninstall = {}
+
+    def get_installed_dependencies(package, gathered=None):
+        if gathered is None:
+            gathered = set()
+        else:
+            gathered.add(package)
+        recipe = RECIPES[package][installed[package]]
+        for dep in recipe.get('requires', []):
+            get_installed_dependencies(dep, gathered)
+        return gathered
+
+    inverse_dependencies = {}
+    for package in installed:
+        if package in PACKAGES:
+            for dep in get_installed_dependencies(package):
+                if dep not in inverse_dependencies:
+                    inverse_dependencies[dep] = set()
+                inverse_dependencies[dep].add(package)
+
+    for package in TO_INSTALL:
+        if package in installed:
+            existing_version = installed[package]
+            if TO_INSTALL[package] != existing_version:
+                uninstall[package] = existing_version
+                for inv_dep in inverse_dependencies.get(package, []):
+                    uninstall[package] = installed[package]
+
+    # If a base package needs to be uninstalled, just nuke environ/local and
+    # rebuild everything from scratch.
+    for package in BASE_PACKAGES:
+        if package in uninstall:
+            rmdir(LOCAL)
+            unlock(BUILD_LOCK)
+            execve(join(ENVIRON, 'amp'), sys.argv, get_ampify_env(environ))
+    else:
+        uninstall_packages(uninstall, installed)
+
+    to_install = set(TO_INSTALL) - set(installed)
+
+    inverse_dependencies = {}
+    for package in to_install:
+        for dep in get_dependencies(package):
+            if dep in to_install:
+                if dep not in inverse_dependencies:
+                    inverse_dependencies[dep] = set()
+                inverse_dependencies[dep].add(package)
+
+    to_install_list = []
+    for package in to_install:
+        index = len(to_install_list)
+        for dep in inverse_dependencies.get(package, []):
+            try:
+                dep_index = to_install_list.index(dep)
+            except:
+                continue
+            else:
+                if dep_index < index:
+                    index = dep_index
+        to_install_list.insert(index, package)
+
+# ------------------------------------------------------------------------------
+# Virgin Build Handler
+# ------------------------------------------------------------------------------
+
+def build_base_and_reload():
     load_role('base')
     install_packages()
     unlock(BUILD_LOCK)
