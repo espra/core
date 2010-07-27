@@ -264,8 +264,8 @@ def load_role(role, debug=False):
     for package in packages:
         install_package(package)
 
-    if 'depends' in role_data:
-        packages.update(load_role(role_data['depends']))
+    if 'requires' in role_data:
+        packages.update(load_role(role_data['requires']))
 
     return ROLES.setdefault(role, packages)
 
