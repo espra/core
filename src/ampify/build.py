@@ -4,11 +4,14 @@
 import os
 import re
 import sys
+import tarfile
+import traceback
 
 from errno import EACCES, ENOENT
 from hashlib import sha256
-from os import getcwd, environ, execve, listdir, makedirs, remove
-from os.path import dirname, exists, expanduser, isabs, isdir, isfile, join, realpath
+from os import chdir, getcwd, environ, execve, listdir, makedirs, remove
+from os.path import dirname, exists, expanduser, isabs, isdir, isfile, islink
+from os.path import join, realpath
 from shutil import rmtree
 from thread import start_new_thread
 from urllib import urlopen
@@ -199,7 +202,7 @@ LIB = join(LOCAL, 'lib')
 SHARE = join(LOCAL, 'share')
 INFO = join(SHARE, 'info')
 MAN = join(SHARE, 'man')
-RECEIPTS = join(SHARE, 'installed')
+RECEIPTS = join(ENVIRON, 'receipts')
 TMP = join(LOCAL, 'tmp')
 VAR = join(LOCAL, 'var')
 
@@ -269,6 +272,8 @@ if not decode_json:
 # ------------------------------------------------------------------------------
 # Distfiles Downloader
 # ------------------------------------------------------------------------------
+#print '\n'.join(sorted(strip_prefix(gather_local_filelisting(LOCAL), LOCAL)))
+#sys.exit()
 
 # Download the given distfile and ensure it has a matching digest.
 def download_distfile(distfile, url, hash):
@@ -441,6 +446,7 @@ BASE_BUILD = {
     'before': None,
     'commands': None,
     'distfile': "%(name)s-%(version)s.tar.bz2",
+    'distfile_url_base': DISTFILES_URL_BASE,
     'env': None,
     }
 
@@ -517,6 +523,7 @@ def uninstall_packages(uninstall, installed):
         installed_version = '%s-%s' % (name, version)
         receipt_path = join(RECEIPTS, installed_version)
         receipt = open(receipt_path, 'rb')
+        directories = set()
         for path in receipt:
             if isabs(path):
                 exit("ERROR: Got an absolute path in receipt %s" % receipt_path)
@@ -524,12 +531,19 @@ def uninstall_packages(uninstall, installed):
             if not path:
                 continue
             path = join(LOCAL, path)
-            if not exists(path):
-                continue
+            print "PATH:", path
+            if not islink(path):
+                if not exists(path):
+                    continue
             if isdir(path):
-                rmtree(path)
+                directories.add(path)
             else:
+                print "Removing:", path
                 os.remove(path)
+        for path in reversed(sorted(directories)):
+            if not listdir(path):
+                print "Removing Direcotry:", path
+                rmtree(path)
         receipt.close()
         os.remove(receipt_path)
         del installed[name]
@@ -541,7 +555,9 @@ def install_packages(types=BUILD_TYPES):
     ensure_git_version()
     ensure_java_version()
 
-    for directory in [BUILD_WORKING_DIRECTORY, LOCAL, BIN, RECEIPTS, TMP]:
+    for directory in [
+        BUILD_WORKING_DIRECTORY, LOCAL, BIN, RECEIPTS, SHARE, TMP
+        ]:
         mkdir(directory)
 
     # We assume the invariant that all packages only have one version installed.
@@ -579,6 +595,7 @@ def install_packages(types=BUILD_TYPES):
     for package in BASE_PACKAGES:
         if package in uninstall:
             rmdir(LOCAL)
+            rmdir(RECEIPTS)
             unlock(BUILD_LOCK)
             execve(join(ENVIRON, 'amp'), sys.argv, get_ampify_env(environ))
     else:
@@ -606,6 +623,89 @@ def install_packages(types=BUILD_TYPES):
                 if dep_index < index:
                     index = dep_index
         to_install_list.insert(index, package)
+
+    def get_listing():
+        return strip_prefix(gather_local_filelisting(LOCAL), LOCAL)
+
+    current_filelisting = get_listing()
+
+    for package in to_install_list:
+
+        version = TO_INSTALL[package]
+        recipe = RECIPES[package][version]
+        build_type = recipe.get('type', 'default')
+        info = types[build_type].copy()
+        info.update(recipe)
+
+        log("Installing %s %s" % (package, version))
+
+        distfile = info['distfile'] % {'name': package, 'version': version}
+        if distfile:
+            url = info['distfile_url_base'] + distfile
+            download_distfile(distfile, url, info['hash'])
+
+        chdir(BUILD_WORKING_DIRECTORY)
+        if distfile and distfile.endswith('.tar.bz2'):
+            if isdir(package):
+                log("Removing previously unpacked %s distfile" % package,
+                    PROGRESS)
+                rmdir(package)
+            tar = tarfile.open(distfile, 'r:bz2')
+            log("Unpacking %s" % distfile, PROGRESS)
+            tar.extractall()
+            tar.close()
+            chdir(package)
+
+        if info['before']:
+            info['before']()
+
+        env = environ.copy()
+        if info['env']:
+            env.update(info['env'])
+
+        commands = info['commands']
+        if isinstance(commands, basestring):
+            commands = [commands]
+        elif callable(commands):
+            try:
+                commands = commands(info)
+            except Exception:
+                log("ERROR: Error calling build command for %s %s" %
+                    (package, version))
+                traceback.print_exc()
+                sys.exit(1)
+
+        if not isinstance(commands, (tuple,list)):
+            exit("ERROR: Invalid build commands for %s %s: %r" %
+                 (package, version, commands))
+
+        for command in commands:
+            log("Running: %s" % ' '.join(command), PROGRESS)
+            kwargs = dict(env=env)
+            try:
+                do(*command, **kwargs)
+            except SystemExit:
+                error("ERROR: Building %s %s failed" % (package, version))
+                sys.exit(1)
+
+        if info['after']:
+            info['after']()
+
+        log("Successfully Installed %s %s" % (package, version), SUCCESS)
+
+        new_filelisting = get_listing()
+        receipt_data = new_filelisting.difference(current_filelisting)
+        current_filelisting = new_filelisting
+
+        receipt = open(join(RECEIPTS, '%s-%s' % (package, version)), 'wb')
+        receipt.write('\n'.join(sorted(receipt_data)))
+        receipt.close()
+
+        chdir(BUILD_WORKING_DIRECTORY)
+        if distfile.endswith('.tar.bz2'):
+            rmdir(join(package))
+
+    chdir(CURRENT_DIRECTORY)
 
 # ------------------------------------------------------------------------------
 # Virgin Build Handler
