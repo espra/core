@@ -1,10 +1,14 @@
 # No Copyright (-) 2010 The Ampify Authors. This file is under the
 # Public Domain license that can be found in the root LICENSE file.
 
+import os
 import sys
 
+from errno import EACCES, ENOENT
 from os import getcwd, environ, execve, makedirs
 from os.path import dirname, exists, expanduser, isdir, isfile, join, realpath
+from shutil import rmtree
+from thread import start_new_thread
 
 try:
     from multiprocessing import cpu_count
@@ -15,6 +19,40 @@ try:
     from json import loads as decode_json
 except ImportError:
     decode_json = None
+
+from pyutil.env import run_command, CommandNotFound
+
+# ------------------------------------------------------------------------------
+# Print Functions
+# ------------------------------------------------------------------------------
+
+if os.name == 'posix' and not environ.get('AMPIFY_PLAIN'):
+    ACTION = '\x1b[34;01m>> '
+    INSTRUCTION = '\x1b[31;01m!! '
+    ERROR = '\x1b[31;01m!! '
+    NORMAL = '\x1b[0m'
+    PROGRESS = '\x1b[30;01m## '
+    SUCCESS = '\x1b[32;01m** '
+    TERMTITLE = '\x1b]2;%s\x07'
+else:
+    INSTRUCTION = ACTION = '>> '
+    ERROR = '!! '
+    NORMAL = ''
+    PROGRESS = '## '
+    SUCCESS = '** '
+    TERMTITLE = ''
+
+# Pretty print the given ``message`` in nice colours.
+def log(message, type=ACTION):
+    print type + message + NORMAL
+
+def error(message):
+    print ERROR + message + NORMAL
+    print ''
+
+def exit(message):
+    print ERROR + message + NORMAL
+    sys.exit(1)
 
 # ------------------------------------------------------------------------------
 # Platform Detection
@@ -31,11 +69,10 @@ elif sys.platform.startswith('linux'):
 elif sys.platform.startswith('freebsd'):
     PLATFORM = 'freebsd'
 else:
-    print (
+    exit(
         "ERROR: Sorry, the %r operating system is not supported yet."
         % sys.platform
         )
-    sys.exit(1)
 
 NUMBER_OF_CPUS = cpu_count()
 
@@ -43,10 +80,58 @@ NUMBER_OF_CPUS = cpu_count()
 # Utility Functions
 # ------------------------------------------------------------------------------
 
+def do(*cmd, **kwargs):
+    if 'redirect_stdout' not in kwargs:
+        kwargs['redirect_stdout'] = False
+    if 'redirect_stderr' not in kwargs:
+        kwargs['redirect_stderr'] = False
+    if 'exit_on_error' not in kwargs:
+        kwargs['exit_on_error'] = True
+    return run_command(cmd, **kwargs)
+
+def query(question, options='Y/n', default='Y', alter=1):
+    if alter:
+        if options:
+            question = "%s? [%s] " % (question, options)
+        else:
+            question = "%s? " % question
+    print
+    response = raw_input(question)
+    if not response:
+        return default
+    return response
+
+def sudo(*command, **kwargs):
+    response = query(
+        "\tsudo %s\n\nDo you want to run the above command" % ' '.join(command),
+        )
+    if response.lower().startswith('y'):
+        return do('sudo', *command, **kwargs)
+
 def mkdir(path):
     if not isdir(path):
-        makedirs(path)
+        try:
+            makedirs(path)
+        except OSError, e:
+            if e.errno == EACCES:
+                error("ERROR: Permission denied to create %s" % path)
+                done = sudo('mkdir', '-p', path, retcode=True)
+                if not done:
+                    raise e
+                return 1
+            raise
         return 1
+
+def rmdir(path, name=None):
+    try:
+        rmtree(path)
+    except IOError:
+        pass
+    except OSError, e:
+        if e.errno != ENOENT:
+            if not name:
+                name = path
+            exit("ERROR: Couldn't remove the %s directory." % name)
 
 # ------------------------------------------------------------------------------
 # Constants
@@ -107,6 +192,10 @@ VIRGIN_BUILD = not exists(join(LOCAL, 'bin', 'python'))
 #     )
 
 # ------------------------------------------------------------------------------
+#
+# ------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
 # JSON Support
 # ------------------------------------------------------------------------------
 
@@ -133,6 +222,13 @@ if not decode_json:
         raise ValueError("Couldn't decode JSON input.")
 
 # ------------------------------------------------------------------------------
+# Distfiles Downloader
+# ------------------------------------------------------------------------------
+
+def download_distfile(distfile):
+    pass
+
+# ------------------------------------------------------------------------------
 # Instance Roles
 # ------------------------------------------------------------------------------
 
@@ -152,10 +248,13 @@ def load_role(role, debug=False):
         if isfile(role_file):
             break
     else:
-        print "ERROR: Couldn't find a data file for the %r role." % role
-        sys.exit(1)
+        exit("ERROR: Couldn't find a data file for the %r role." % role)
 
-    role_file = open(role_file, 'rb')
+    try:
+        role_file = open(role_file, 'rb')
+    except IOError, error:
+        exit("ERROR: %s: %s" % (error[1], error.filename))
+
     role_data = role_file.read()
     role_file.close()
 
@@ -170,31 +269,33 @@ def load_role(role, debug=False):
 
     return ROLES.setdefault(role, packages)
 
-    try:
-        role_info_file = open(join_path(ROLES_DIRECTORY, '%s.role' % role), 'rb')
-    except IOError, error:
-        print_message("%s: %s" % (error[1], error.filename), ERROR)
-        sys.exit(1)
+# ------------------------------------------------------------------------------
+# Build Recipes Initialiser
+# ------------------------------------------------------------------------------
 
 def init_build_recipes(debug=False):
     if RECIPES_INITIALISED:
         return
     for recipe in BUILD_RECIPES:
         execfile(recipe, BUILTINS)
-    print RECIPES.keys()
     RECIPES_INITIALISED.append(1)
 
 def install_package(package, debug=False):
+    print "Install", package
+    return
+
+    # git --version
     if package not in RECIPES:
-        print (
+        exit(
             "ERROR: Couldn't find a build recipe for the %s package."
             % package
             )
-        sys.exit(1)
 
 def install_packages(debug=False):
     mkdir(BUILD_WORKING_DIRECTORY)
-    print 'installing...'
+    mkdir('/opt/ampify')
+    rmdir('/opt/ampify')
+    log('installing...')
 
 def build_base_and_reload(debug=False):
     load_role('base')
