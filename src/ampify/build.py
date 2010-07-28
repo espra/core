@@ -211,6 +211,11 @@ DISTFILES_URL_BASE = environ.get(
     "http://cloud.github.com/downloads/tav/ampify/distfile."
     )
 
+DISTFILES_URL_BASE = environ.get(
+    'AMPIFY_DISTFILES_URL_BASE',
+    "http://github.s3.amazonaws.com/downloads/tav/ampify/distfile."
+    )
+
 # Alternatively, could use the HTTPS URL -- note that this would be using S3 and
 # not Amazon CloudFront:
 # https://github.s3.amazonaws.com/downloads/tav/ampify/distfile.
@@ -450,10 +455,10 @@ BASE_BUILD = {
     'env': None,
     }
 
-def default_build_commands(info):
+def default_build_commands(package, info):
     commands = []; add = commands.append
     if info['config_command']:
-        add([info['config_command'] + info['config_flags']])
+        add([info['config_command']] + info['config_flags'])
     if info['separate_make_install']:
         add([MAKE])
     add([MAKE] + info['make_flags'])
@@ -475,7 +480,7 @@ PYTHON_BUILD.update({
         ]
     })
 
-def resource_build_commands(info):
+def resource_build_commands(package, info):
     return []
 
 RESOURCE_BUILD = BASE_BUILD.copy()
@@ -518,7 +523,7 @@ def install_package(package):
 
 # Uninstall the given list of packages in uninstall.
 def uninstall_packages(uninstall, installed):
-    for name, version in uninstall.iteritems():
+    for name, version in uninstall.items():
         log("Uninstalling %s %s" % (name, version))
         installed_version = '%s-%s' % (name, version)
         receipt_path = join(RECEIPTS, installed_version)
@@ -547,6 +552,13 @@ def uninstall_packages(uninstall, installed):
         receipt.close()
         os.remove(receipt_path)
         del installed[name]
+
+# A utility function to uninstall a single package.
+def uninstall_package(package):
+    installed = dict(f.rsplit('-', 1) for f in listdir(RECEIPTS))
+    if package in installed:
+        data = {package: installed[package]}
+        uninstall_packages(data, data)
 
 # Handle the actual installation/uninstallation of appropriate packages.
 def install_packages(types=BUILD_TYPES):
@@ -668,7 +680,7 @@ def install_packages(types=BUILD_TYPES):
             commands = [commands]
         elif callable(commands):
             try:
-                commands = commands(info)
+                commands = commands(package, info)
             except Exception:
                 log("ERROR: Error calling build command for %s %s" %
                     (package, version))
@@ -715,4 +727,6 @@ def build_base_and_reload():
     load_role('base')
     install_packages()
     unlock(BUILD_LOCK)
+    #uninstall_package('bzip2')
+    #sys.exit(1)
     execve(join(ENVIRON, 'amp'), sys.argv, get_ampify_env(environ))
