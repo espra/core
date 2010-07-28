@@ -1,0 +1,76 @@
+---
+layout: page
+license: Public Domain
+title: Distfiles
+---
+
+Distfiles
+=========
+
+Ampify makes use of a number of different open source libraries and platforms.
+Unfortunately, given the use of bleeding edge versions, it's not reasonable to
+expect users to have the required versions already installed on their systems.
+
+To resolve this issue, an ``amp build`` mechanism is provided to download and
+compile the various dependencies on demand. This document describes the manner
+in which the various package distfiles (source tarballs) are generated.
+
+The packages will generally be stripped of things like documentation and
+examples in order to minimise the bandwidth requirement. And in some cases, the
+packaged distfiles will have various patches to support functionality that we
+desire.
+
+**bsdiff**
+
+  The distfile is generated from the ``bsdiff 4.3`` version and has the
+  ``bspatch.c`` file patched with the following line:
+
+  .. syntax:: c
+
+    #include <sys/types.h>
+
+  The ``Makefile`` is also patched to skip the installation -- including that of
+  the man pages which have been removed.
+
+**bzip2**
+
+  The distfile is generated from the ``bzip2 1.0.5`` version and has the
+  ``Makefile`` patched to:
+
+  * Make symlinks appropriately.
+  * Use the ``1.0.5`` version number instead of ``1.0.4``.
+  * Generate a shared ``.dylib`` file on OS X.
+
+**readline**
+
+  The distfile is generated from the ``readline 6.1`` version and everything
+  except for the ``Makefile.in`` files are removed from the following
+  directories::
+
+    doc/
+    examples/
+
+  The ``Makefile.in`` files are patched to do nothing on ``make install``.
+
+**openssl**
+
+  The distfile is generated from the ``openssl 0.9.8o`` version and is patched
+  to support various TLS extensions:
+
+  * `False Start <https://tools.ietf.org/html/draft-bmoeller-tls-falsestart>`_
+
+  * `Snap Start <http://tools.ietf.org/html/draft-agl-tls-snapstart>`_
+
+  * `Next Protocol Negotiation
+    <http://tools.ietf.org/html/draft-agl-tls-nextprotoneg>`_
+
+**zlib**
+
+  The distfile is generated from the ``zlib 1.2.5`` version and is stripped of
+  the following directories::
+
+    contrib/
+    doc/
+    examples/
+    old/
+
