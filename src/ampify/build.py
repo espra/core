@@ -12,7 +12,7 @@ from hashlib import sha256
 from os import chdir, getcwd, environ, execve, listdir, makedirs, remove
 from os.path import dirname, exists, expanduser, isabs, isdir, isfile, islink
 from os.path import join, realpath
-from shutil import rmtree
+from shutil import copy, rmtree
 from thread import start_new_thread
 from urllib import urlopen
 
@@ -691,14 +691,20 @@ def install_packages(types=BUILD_TYPES):
             exit("ERROR: Invalid build commands for %s %s: %r" %
                  (package, version, commands))
 
-        for command in commands:
-            log("Running: %s" % ' '.join(command), PROGRESS)
-            kwargs = dict(env=env)
-            try:
-                do(*command, **kwargs)
-            except SystemExit:
-                error("ERROR: Building %s %s failed" % (package, version))
-                sys.exit(1)
+        try:
+            for command in commands:
+                if isinstance(command, list):
+                    log("Running: %s" % ' '.join(command), PROGRESS)
+                    kwargs = dict(env=env)
+                    do(*command, **kwargs)
+                else:
+                    command()
+        except Exception:
+            error("ERROR: Building %s %s failed" % (package, version))
+            traceback.print_exc()
+            sys.exit(1)
+        except SystemExit:
+            exit("ERROR: Building %s %s failed" % (package, version))
 
         if info['after']:
             info['after']()
@@ -727,6 +733,6 @@ def build_base_and_reload():
     load_role('base')
     install_packages()
     unlock(BUILD_LOCK)
-    #uninstall_package('bzip2')
+    #uninstall_package('openssl')
     #sys.exit(1)
     execve(join(ENVIRON, 'amp'), sys.argv, get_ampify_env(environ))
