@@ -282,30 +282,35 @@ if not decode_json:
 #sys.exit()
 
 DOWNLOAD_QUEUE = []
+DOWNLOAD_ERROR = []
+
+class DownloadError(Exception):
+    def __init__(self, msg):
+        self.msg = msg
 
 # Download the given distfile and ensure it has a matching digest. We try to
 # capture and exit on all errors to avoid them being silently ignored in a
 # separate thread.
 def _download_distfile(distfile, url, hash, dest):
     try:
-        distfile_obj = urlopen(url)
-        distfile_source = distfile_obj.read()
-    except Exception:
-        error("ERROR: Download %s" % distfile)
-        traceback.print_exc()
-        sys.exit(1)
-    if sha256(distfile_source).hexdigest() != hash:
-        exit("ERROR: Got an invalid hash digest for %s" % distfile)
-    try:
-        distfile_file = open(dest, 'wb')
-        distfile_file.write(distfile_source)
-        distfile_file.close()
-        distfile_obj.close()
-    except Exception:
-        error("ERROR: Writing %s" % distfile)
-        traceback.print_exc()
-        sys.exit(1)
-    DOWNLOAD_QUEUE.pop()
+        try:
+            distfile_obj = urlopen(url)
+            distfile_source = distfile_obj.read()
+        except Exception:
+            raise DownloadError("Failed to download %s" % distfile)
+        if sha256(distfile_source).hexdigest() != hash:
+            raise DownloadError("Got an invalid hash digest for %s" % distfile)
+        try:
+            distfile_file = open(dest, 'wb')
+            distfile_file.write(distfile_source)
+            distfile_file.close()
+            distfile_obj.close()
+        except Exception:
+            raise DownloadError("Writing %s" % distfile)
+        DOWNLOAD_QUEUE.pop()
+    except DownloadError, errmsg:
+        DOWNLOAD_QUEUE.pop()
+        DOWNLOAD_ERROR.append(errmsg)
 
 # Check if there's an existing valid download. If not, fire off a fresh download
 # in a separate thread if the ``fork`` parameter has been set.
@@ -697,6 +702,9 @@ def install_packages(types=BUILD_TYPES):
                 log("Waiting for %s to download" % current_queue[0], PROGRESS)
             while DOWNLOAD_QUEUE:
                 sleep(0.5)
+
+        if DOWNLOAD_ERROR:
+            exit("ERROR: %s" % DOWNLOAD_ERROR[0].msg)
 
         if idx < install_items:
             _, _, _, infoN, distfileN, urlN = install_data[idx+1]
