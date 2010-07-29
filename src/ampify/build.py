@@ -14,6 +14,7 @@ from os.path import dirname, exists, expanduser, isabs, isdir, isfile, islink
 from os.path import join, realpath
 from shutil import copy, rmtree
 from thread import start_new_thread
+from time import sleep
 from urllib import urlopen
 
 try:
@@ -26,7 +27,7 @@ try:
 except ImportError:
     decode_json = None
 
-from pyutil.env import run_command, CommandNotFound
+from pyutil.env import run_command
 
 # ------------------------------------------------------------------------------
 # Print Functions
@@ -280,8 +281,35 @@ if not decode_json:
 #print '\n'.join(sorted(strip_prefix(gather_local_filelisting(LOCAL), LOCAL)))
 #sys.exit()
 
-# Download the given distfile and ensure it has a matching digest.
-def download_distfile(distfile, url, hash):
+DOWNLOAD_QUEUE = []
+
+# Download the given distfile and ensure it has a matching digest. We try to
+# capture and exit on all errors to avoid them being silently ignored in a
+# separate thread.
+def _download_distfile(distfile, url, hash, dest):
+    try:
+        distfile_obj = urlopen(url)
+        distfile_source = distfile_obj.read()
+    except Exception:
+        error("ERROR: Download %s" % distfile)
+        traceback.print_exc()
+        sys.exit(1)
+    if sha256(distfile_source).hexdigest() != hash:
+        exit("ERROR: Got an invalid hash digest for %s" % distfile)
+    try:
+        distfile_file = open(dest, 'wb')
+        distfile_file.write(distfile_source)
+        distfile_file.close()
+        distfile_obj.close()
+    except Exception:
+        error("ERROR: Writing %s" % distfile)
+        traceback.print_exc()
+        sys.exit(1)
+    DOWNLOAD_QUEUE.pop()
+
+# Check if there's an existing valid download. If not, fire off a fresh download
+# in a separate thread if the ``fork`` parameter has been set.
+def download_distfile(distfile, url, hash, fork=False):
     dest = join(BUILD_WORKING_DIRECTORY, distfile)
     if isfile(dest):
         log("Verifying existing %s" % distfile, PROGRESS)
@@ -292,14 +320,11 @@ def download_distfile(distfile, url, hash):
             return
         remove(dest)
     log("Downloading %s" % distfile, PROGRESS)
-    distfile_obj = urlopen(url)
-    distfile_source = distfile_obj.read()
-    if sha256(distfile_source).hexdigest() != hash:
-        exit("ERROR: Got an invalid hash digest for %s" % distfile)
-    distfile_file = open(dest, 'wb')
-    distfile_file.write(distfile_source)
-    distfile_file.close()
-    distfile_obj.close()
+    DOWNLOAD_QUEUE.append(distfile)
+    if fork:
+        start_new_thread(_download_distfile, (distfile, url, hash, dest))
+    else:
+        _download_distfile(distfile, url, hash, dest)
 
 # ------------------------------------------------------------------------------
 # Instance Roles
@@ -640,8 +665,10 @@ def install_packages(types=BUILD_TYPES):
         return strip_prefix(gather_local_filelisting(LOCAL), LOCAL)
 
     current_filelisting = get_listing()
+    install_data = []
+    install_items = len(to_install_list) - 1
 
-    for package in to_install_list:
+    for idx, package in enumerate(to_install_list):
 
         version = TO_INSTALL[package]
         recipe = RECIPES[package][version]
@@ -649,12 +676,34 @@ def install_packages(types=BUILD_TYPES):
         info = types[build_type].copy()
         info.update(recipe)
 
-        log("Installing %s %s" % (package, version))
-
         distfile = info['distfile'] % {'name': package, 'version': version}
         if distfile:
             url = info['distfile_url_base'] + distfile
+        else:
+            url = ''
+
+        install_data.append((idx, package, version, info, distfile, url))
+
+    if install_data:
+        _, _, _, info, distfile, url = install_data[0]
+        if distfile:
             download_distfile(distfile, url, info['hash'])
+
+    for idx, package, version, info, distfile, url in install_data:
+
+        current_queue = DOWNLOAD_QUEUE[:]
+        if current_queue:
+            if idx:
+                log("Waiting for %s to download" % current_queue[0], PROGRESS)
+            while DOWNLOAD_QUEUE:
+                sleep(0.5)
+
+        if idx < install_items:
+            _, _, _, infoN, distfileN, urlN = install_data[idx+1]
+            if distfileN:
+                download_distfile(distfileN, urlN, infoN['hash'], fork=True)
+
+        log("Installing %s %s" % (package, version))
 
         chdir(BUILD_WORKING_DIRECTORY)
         if distfile and distfile.endswith('.tar.bz2'):
@@ -733,6 +782,10 @@ def build_base_and_reload():
     load_role('base')
     install_packages()
     unlock(BUILD_LOCK)
-    #uninstall_package('openssl')
-    #sys.exit(1)
+#     uninstall_package('openssl')
+#     uninstall_package('bzip2')
+#     uninstall_package('bsdiff')
+#     uninstall_package('readline')
+#     uninstall_package('zlib')
+#     sys.exit(1)
     execve(join(ENVIRON, 'amp'), sys.argv, get_ampify_env(environ))
