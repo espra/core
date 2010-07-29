@@ -693,12 +693,12 @@ def install_packages(types=BUILD_TYPES):
 
         try:
             for command in commands:
-                if isinstance(command, list):
+                if hasattr(command, '__call__'):
+                    command()
+                else:
                     log("Running: %s" % ' '.join(command), PROGRESS)
                     kwargs = dict(env=env)
                     do(*command, **kwargs)
-                else:
-                    command()
         except Exception:
             error("ERROR: Building %s %s failed" % (package, version))
             traceback.print_exc()
