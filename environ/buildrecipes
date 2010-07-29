@@ -1,0 +1,237 @@
+#! /usr/bin/env python
+
+# No Copyright (-) 2010 The Ampify Authors. This file is under the
+# Public Domain license that can be found in the root LICENSE file.
+
+"""Build recipes for Ampify Zero."""
+
+if NUMBER_OF_CPUS > 1:
+    PARALLEL = '-j%i' % NUMBER_OF_CPUS
+else:
+    PARALLEL = ''
+
+# ------------------------------------------------------------------------------
+# berkeleydb
+# ------------------------------------------------------------------------------
+
+RECIPES['berkeleydb'] = [{
+    'version': '4.8.26',
+    'hash': '00f34dffc0350a06ff03186ee71e7c47e2c60e4689dad1557c0b1f281296a9ed',
+    'before': lambda: chdir('build_unix'),
+    'after': lambda: rmdir(join(LOCAL, 'docs'), 'environ/local/docs'),
+    'config_command': '../dist/configure',
+    'config_flags': ['--enable-cxx', '--prefix', LOCAL],
+    }]
+
+# ------------------------------------------------------------------------------
+# bsdiff
+# ------------------------------------------------------------------------------
+
+def install_bsdiff():
+    copy('bsdiff', join(BIN, 'bsdiff'))
+    copy('bspatch', join(BIN, 'bspatch'))
+
+RECIPES['bsdiff'] = [{
+    'requires': ['bzip2'],
+    'version': '4.3',
+    'hash': '6f43c5246cdb60e58134144b72328918eb4a23c2a28880914f3431a76fbf657b',
+    'after': install_bsdiff,
+    'commands': [
+        [MAKE],
+        ]
+    }]
+
+# ------------------------------------------------------------------------------
+# bzip2
+# ------------------------------------------------------------------------------
+
+if PLATFORM == 'darwin':
+    BZIP2_MAKEFILE = 'Makefile-libbz2_dylib'
+else:
+    BZIP2_MAKEFILE = 'Makefile-libbz2_so'
+
+RECIPES['bzip2'] = [{
+    'version': '1.0.5',
+    'hash': '55ccfb2d9323cd758c2b87408e7f13082b792d1789a66c8a8e6063769de92657',
+    'commands': [
+        [MAKE, 'install', 'PREFIX=%s' % LOCAL],
+        [MAKE, 'clean'],
+        [MAKE, '-f', BZIP2_MAKEFILE, 'all', 'PREFIX=%s' % LOCAL]
+        ]
+    }]
+
+# ------------------------------------------------------------------------------
+# closure
+# ------------------------------------------------------------------------------
+
+RECIPES['closure'] = [{
+    'version': '2010-03-24',
+    'hash': '00f34dffc0350a06ff03186ee71e7c47e2c60e4689dad1557c0b1f281296a9ed',
+    'type': 'jar'
+    }]
+
+# ------------------------------------------------------------------------------
+# keyspace
+# ------------------------------------------------------------------------------
+
+def copy_keyspace_py_lib():
+    directory = join(getcwd(), 'bin', 'python')
+    pylibs = join(LOCAL, 'system', 'pylibs')
+    mkdir(pylibs)
+    for file in listdir(directory):
+        if file.endswith('.so') or file.endswith('.py'):
+            copy(join(python, file), join(pylibs, file))
+
+RECIPES['keyspace'] = [{
+    'version': '1.4.13',
+    'hash': '',
+    'after': copy_keyspace_py_lib,
+    'env': {
+        'PREFIX': LOCAL
+        },
+    'commands': [
+        [MAKE],
+        [MAKE, 'install'],
+        [MAKE, 'pythonlib']
+        ]
+    }]
+
+# ------------------------------------------------------------------------------
+# libevent
+# ------------------------------------------------------------------------------
+
+RECIPES['libevent'] = [{
+    'version': '1.4.13',
+    'hash': ''
+    }]
+
+# ------------------------------------------------------------------------------
+# nodejs
+# ------------------------------------------------------------------------------
+
+RECIPES['nodejs'] = [{
+    'version': '1.4.13',
+    'hash': ''
+    }]
+
+# ------------------------------------------------------------------------------
+# nginx
+# ------------------------------------------------------------------------------
+
+NGINX = join(LOCAL, 'share', 'nginx')
+NGINX_TMP = join(NGINX, 'tmp')
+
+RECIPES['nginx'] = [{
+    'requires': ['openssl', 'pcre', 'zlib'],
+    'version': '0.7.67',
+    'hash': '00f34dffc0350a06ff03186ee71e7c47e2c60e4689dad1557c0b1f281296a9ed',
+    'before': lambda: mkdir(NGINX_TMP),
+    'config_flags': [
+        '--with-http_stub_status_module',
+        '--prefix=%s' % NGINX,
+        '--sbin-path=%s' % join(BIN, 'nginx'),
+        '--conf-path=%s' % join(NGINX, 'etc', 'nginx.conf'),
+        '--pid-path=%s' % join(NGINX, 'var', 'nginx.pid'),
+        '--error-log-path=%s' % join(NGINX, 'var', 'error.log'),
+        '--http-log-path=%s' % join(NGINX, 'var', 'access.log'),
+        '--http-client-body-temp-path=%s' % join(NGINX_TMP, 'http_client'),
+        '--http-proxy-temp-path=%s' % join(NGINX_TMP, 'proxy'),
+        '--http-fastcgi-temp-path=%s' % join(NGINX_TMP, 'fastcgi'),
+        '--with-cc-opt=-I%s' % INCLUDE, '--with-ld-opt=-L%s' % LIB,
+        '--with-ipv6', '--with-http_ssl_module'
+        ]
+    }]
+
+# ------------------------------------------------------------------------------
+# openssl
+# ------------------------------------------------------------------------------
+
+RECIPES['openssl'] = [{
+    'requires': ['zlib'],
+    'version': '0.9.8o',
+    'hash': '7c8639905b7122f07378d6079eeeebd7ff0a27f126aba6fd00a8ac98a583f263',
+    'commands': [
+        ['./config', 'shared', 'no-idea', 'no-krb5', 'no-mdc2', 'zlib',
+         '--prefix=%s' % LOCAL, '--openssldir=%s' % join(SHARE, 'ssl'),
+         '-L%s' % LIB, '-I%s' % INCLUDE],
+        [MAKE, 'depend'],
+        [MAKE],
+        [MAKE, 'install']
+        ]
+    }]
+
+# ------------------------------------------------------------------------------
+# pcre
+# ------------------------------------------------------------------------------
+
+RECIPES['pcre'] = [{
+    'requires': ['zlib'],
+    'version': '8.10',
+    'hash': ''
+    }]
+
+# ------------------------------------------------------------------------------
+# python
+# ------------------------------------------------------------------------------
+
+CPPFLAGS = "-I%s" % INCLUDE
+LDFLAGS = "-L%s" % LIB
+
+RECIPES['python'] = [{
+    'requires': ['bzip2', 'openssl', 'readline', 'zlib'],
+    'version': '2.7',
+    'hash': '',
+    'config_flags': [
+        '--enable-unicode=ucs2', '--enable-ipv6', '--prefix=%s' % LOCAL
+        ],
+    'env': {
+        'CPPFLAGS': CPPFLAGS,
+        'LDFLAGS': LDFLAGS
+        }
+    }]
+
+# ------------------------------------------------------------------------------
+# readline
+# ------------------------------------------------------------------------------
+
+RECIPES['readline'] = [{
+    'version': '6.1',
+    'hash': '336f955389fb3a91915e845d8e0919e5191af61c52d827d0e95e728a44a16ec4',
+    'config_flags': [
+        '--infodir=%s' % join(LOCAL, 'share', 'info'), '--prefix=%s' % LOCAL
+        ]
+    }]
+
+# ------------------------------------------------------------------------------
+# redis
+# ------------------------------------------------------------------------------
+
+RECIPES['redis'] = [{
+    'version': '',
+    'hash': '',
+    'after': lambda: copy(join(getcwd(), 'redis-server'), join(BIN, 'redis')),
+    'commands': [
+        [MAKE]
+        ]
+    }]
+
+# ------------------------------------------------------------------------------
+# yuicompressor
+# ------------------------------------------------------------------------------
+
+RECIPES['yuicompressor'] = [{
+    'version': '2.4.2',
+    'hash': '1289ef00c770d9559a826542ff30a2197891915ef973ea9c7cdc0be613f6a108',
+    'type': 'jar'
+    }]
+
+# ------------------------------------------------------------------------------
+# zlib
+# ------------------------------------------------------------------------------
+
+RECIPES['zlib'] = [{
+    'version': '1.2.5',
+    'hash': 'cbd4d0d617e901470cbe60bc483fdb95122de8baf8b08d96e3c8928ae483f1ca',
+    'config_flags': ['--shared'],
+    'make_flags': ['install', 'prefix=%s' % LOCAL]
+    }]
