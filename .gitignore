@@ -10,6 +10,7 @@ build
 
 doc/website/*.html
 environ/local
+environ/receipts
 
 src/amp/ampnode/ampnode
 src/instance/*.css
