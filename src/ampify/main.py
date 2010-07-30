@@ -9,12 +9,15 @@ import sys
 from optparse import OptionParser
 from os import chdir, environ, makedirs, symlink
 from os.path import dirname, exists, join, realpath, split
+from urllib import urlopen
 
 from pyutil.optcomplete import autocomplete, DirCompleter, ListCompleter
 from pyutil.env import run_command, CommandNotFound
 
-from ampify.build import ERROR, log, error, exit, lock, unlock
-from ampify.build import load_role, install_packages
+from ampify import settings
+from ampify.build import ERROR, PROGRESS, SUCCESS
+from ampify.build import do, error, exit, log, lock, unlock
+from ampify.build import decode_json, load_role, install_packages
 
 # ------------------------------------------------------------------------------
 # Constants
@@ -143,6 +146,32 @@ def build(argv=None, completer=None):
     install_packages()
 
 # ------------------------------------------------------------------------------
+# Check Command
+# ------------------------------------------------------------------------------
+
+def check(argv=None, completer=None):
+
+    op = OptionParser(usage="Usage: amp check", add_help_option=False)
+    options, args = parse_options(op, argv, completer)
+
+    log("Checking the current revision id for your code.", PROGRESS)
+    revision_id = do(
+        'git', 'show', '--pretty=oneline', '--summary', redirect_stdout=True
+        ).split()[0]
+
+    log("Checking the latest commits on GitHub.", PROGRESS)
+    commit_info = urlopen(
+        'http://github.com/api/v2/json/commits/list/tav/ampify/master'
+        ).read()
+
+    latest_revision_id = decode_json(commit_info)['commits'][0]['id']
+
+    if revision_id != latest_revision_id:
+        exit("A new version is available. Please run `git pull`.")
+
+    log("Your checkout is up-to-date.", SUCCESS)
+
+# ------------------------------------------------------------------------------
 # Deploy Command
 # ------------------------------------------------------------------------------
 
@@ -255,7 +284,7 @@ def init(argv=None, completer=None):
 # Run Command
 # ------------------------------------------------------------------------------
 
-def run(argv=None, completer=None, debug=False):
+def run(argv=None, completer=None):
     
     op = OptionParser(
         usage="Usage: amp run <instance-name> [options] [stop|quit|restart]",
@@ -274,7 +303,7 @@ def run(argv=None, completer=None, debug=False):
     options, args = parse_options(op, argv, completer, True)
 
     if options.debug:
-        debug = True
+        settings.debug = True
 
     instance_name, instance_root = normalise_instance_name(args[0])
 
@@ -303,6 +332,7 @@ def test(argv=None, completer=None, run_all=False):
 # These, along with other strings, should perhaps be internationalised at a
 # later date.
 build.help = "download and build the ampify zero dependencies"
+check.help = "check if the current checkout is up-to-date"
 deploy.help = "deploy an instance to remote host(s)"
 hub.help = "interact with amphub"
 init.help = "initialise a new amp instance"
@@ -315,6 +345,7 @@ test.help = "run the ampify zero test suite"
 
 COMMANDS = {
     'build': build,
+    'check': check,
     'deploy': deploy,
     'hub': hub,
     'init': init,
