@@ -52,6 +52,7 @@ src/tentapp/updated.py
 *.la
 *.lo
 *.o
+*.out
 *.pyc
 *.pyo
 *.so
