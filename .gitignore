@@ -13,6 +13,7 @@ environ/local
 environ/receipts
 
 src/amp/ampnode/ampnode
+src/amp/hubproxy/hubproxy
 src/instance/*.css
 src/instance/fabfile.py
 src/instance/www/*.css
