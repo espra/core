@@ -27,7 +27,7 @@ func TestCPUCount(t *testing.T) {
 		t.Errorf("Couldn't parse the output from Python:\n%v", err)
 		return
 	}
-	if (cpus != expected) {
+	if cpus != expected {
 		t.Errorf("Got mis-matched CPU Counts: %d vs. %d", cpus, expected)
 	}
 }

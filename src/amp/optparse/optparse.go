@@ -25,18 +25,18 @@ type option struct {
 }
 
 type OptionParser struct {
-	Usage           string
-	Version         string
-	ParseHelp       bool
-	ParseVersion    bool
-	Autocomplete    bool
-	options         []*option
-	short2options   map[string]*option
-	shortflags      []string
-	long2options    map[string]*option
-	longflags       []string
-	helpAdded       bool
-	versionAdded    bool
+	Usage         string
+	Version       string
+	ParseHelp     bool
+	ParseVersion  bool
+	Autocomplete  bool
+	options       []*option
+	short2options map[string]*option
+	shortflags    []string
+	long2options  map[string]*option
+	longflags     []string
+	helpAdded     bool
+	versionAdded  bool
 }
 
 func (opt *option) String() (output string) {
@@ -58,8 +58,8 @@ func (opt *option) String() (output string) {
 	if length >= 19 {
 		output += "\n                    "
 	} else {
-		padding := make([]byte, 20 - length)
-		for i, _ := range(padding) {
+		padding := make([]byte, 20-length)
+		for i, _ := range padding {
 			padding[i] = 32
 		}
 		output += string(padding)
@@ -96,7 +96,7 @@ func (op *OptionParser) Default(flags []string, usage string, displayDest bool, 
 	if displayDest {
 		if len(destSlice) > 0 {
 			opt.dest = destSlice[0]
- 		} else {
+		} else {
 			if opt.longflag != "" {
 				opt.dest = strings.ToUpper(strings.TrimLeft(opt.longflag, "-"))
 			} else {
@@ -106,13 +106,13 @@ func (op *OptionParser) Default(flags []string, usage string, displayDest bool, 
 	}
 	length := len(op.options)
 	if cap(op.options) == length {
-        temp := make([]*option, length, 2 * (length + 1))
-        for idx, item := range op.options {
-            temp[idx] = item
-        }
-        op.options = temp
+		temp := make([]*option, length, 2*(length+1))
+		for idx, item := range op.options {
+			temp[idx] = item
+		}
+		op.options = temp
 	}
-	op.options = op.options[0:length+1]
+	op.options = op.options[0 : length+1]
 	op.options[length] = opt
 	return
 }
@@ -177,7 +177,7 @@ func (op *OptionParser) Parse(args []string) (remainder []string) {
 
 		prefix := ""
 		if compWord > 0 {
-			if compWord < len(compWordsList)  {
+			if compWord < len(compWordsList) {
 				prefix = compWordsList[compWord]
 			}
 		}
@@ -190,7 +190,7 @@ func (op *OptionParser) Parse(args []string) (remainder []string) {
 		// Pass to the shell completion if the previous word was a flag
 		// expecting some parameter.
 		if (compWord - 1) > 0 {
-			prev := compWordsList[compWord - 1]
+			prev := compWordsList[compWord-1]
 			if strings.HasPrefix(prev, "--") {
 				opt, ok := op.long2options[prev]
 				if ok {
@@ -209,13 +209,13 @@ func (op *OptionParser) Parse(args []string) (remainder []string) {
 		}
 
 		completions := make([]string, 0)
-		for flag, _ := range(op.long2options) {
+		for flag, _ := range op.long2options {
 			if strings.HasPrefix(flag, prefix) {
 				slice.AppendString(&completions, flag)
 			}
 		}
 
-		for flag, _ := range(op.short2options) {
+		for flag, _ := range op.short2options {
 			if strings.HasPrefix(flag, prefix) {
 				slice.AppendString(&completions, flag)
 			}
@@ -325,6 +325,6 @@ func Parser(usage string, version ...string) (op *OptionParser) {
 		op.Version = verSlice[0]
 	} else {
 		op.ParseVersion = false
- 	}
+	}
 	return op
 }

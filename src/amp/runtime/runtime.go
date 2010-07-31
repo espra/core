@@ -22,7 +22,7 @@ const Platform = syscall.OS
 
 var (
 	AmpifyRoot string
-	CPUCount int
+	CPUCount   int
 )
 
 // The ``runtime.GetCPUCount`` function tries to detect the number of CPUs on
@@ -41,7 +41,7 @@ func GetCPUCount() (count int) {
 		if err != nil {
 			return 1
 		}
-	// Linux systems provide introspection via ``/proc/cpuinfo``.
+		// Linux systems provide introspection via ``/proc/cpuinfo``.
 	} else if Platform == "linux" {
 		output, err := command.GetOutput([]string{"/bin/cat", "/proc/cpuinfo"})
 		if err != nil {
@@ -60,29 +60,27 @@ func GetCPUCount() (count int) {
 	return count
 }
 
-// A utility function ``runtime.Init`` is provided which will set Go's internal
-// ``GOMAXPROCS`` to the number of CPUs detected.
+// A utility ``runtime.Init`` function is provided which will set Go's internal
+// ``GOMAXPROCS`` to the number of CPUs detected and exit with an error message
+// if the ``$AMPIFY_ROOT`` environment variable hasn't been set.
 func Init() {
+
 	runtime.GOMAXPROCS(CPUCount)
+
+	AmpifyRoot = os.Getenv("AMPIFY_ROOT")
+	if AmpifyRoot == "" {
+		fmt.Print(
+			"ERROR: The AMPIFY_ROOT environment variable hasn't been set.\n")
+		os.Exit(1)
+	}
+
 }
 
 // -----------------------------------------------------------------------------
 // Package Initialiser
 // -----------------------------------------------------------------------------
 
+// Set the ``runtime.CPUCount`` variable to the number of CPUs detected.
 func init() {
-
-	// First set the ``runtime.CPUCount`` variable to the number of CPUs
-	// detected.
 	CPUCount = GetCPUCount()
-
-	// See if the ``$AMPIFY_ROOT`` environment variable has been set, if not
-	// exit the application with an error message.
-	AmpifyRoot = os.Getenv("AMPIFY_ROOT")
-	if AmpifyRoot == "" {
-		fmt.Printf(
-			"ERROR: The AMPIFY_ROOT environment variable hasn't been set.\n")
-		os.Exit(1)
-	}
-
 }

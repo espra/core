@@ -32,7 +32,7 @@ func TestFlags(t *testing.T) {
 	host := opts.String([]string{"--host"}, "localhost", "specify the host to bind to")
 
 	args := opts.Parse([]string{"testapp", "-p", "8040", "--host", "asktav.com"})
-	
+
 	if len(args) >= 1 {
 		t.Error("Got unexpected arguments back.\n")
 	}

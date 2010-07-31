@@ -9,12 +9,12 @@ package slice
 func AppendString(slice *[]string, s string) {
 	length := len(*slice)
 	if cap(*slice) == length {
-		temp := make([]string, length, 2 * (length + 1))
+		temp := make([]string, length, 2*(length+1))
 		for idx, item := range *slice {
 			temp[idx] = item
 		}
 		*slice = temp
 	}
-	*slice = (*slice)[0:length+1]
+	*slice = (*slice)[0 : length+1]
 	(*slice)[length] = s
 }
