@@ -98,9 +98,9 @@ func (op *OptionParser) Default(flags []string, usage string, displayDest bool, 
 			opt.dest = destSlice[0]
  		} else {
 			if opt.longflag != "" {
-				opt.dest = strings.ToUpper(opt.longflag)
+				opt.dest = strings.ToUpper(strings.TrimLeft(opt.longflag, "-"))
 			} else {
-				opt.dest = strings.ToUpper(opt.shortflag)
+				opt.dest = strings.ToUpper(strings.TrimLeft(opt.shortflag, "-"))
 			}
 		}
 	}
