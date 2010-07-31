@@ -3,10 +3,12 @@
 
 PACKAGES=\
 	command\
+	optparse\
 	runtime\
 
 NOBENCH=\
 	command\
+	optparse\
 
 NOTEST=\
 	command\
