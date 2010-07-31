@@ -5,6 +5,6 @@ include $(GOROOT)/src/Make.$(GOARCH)
 
 TARG=ampnode
 GOFILES=\
-	main.go\
+	ampnode.go\
 
 include $(GOROOT)/src/Make.cmd
