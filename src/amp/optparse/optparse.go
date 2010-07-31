@@ -42,16 +42,16 @@ type OptionParser struct {
 func (opt *option) String() (output string) {
 	output = "  "
 	if opt.shortflag != "" {
-		output += "-" + opt.shortflag
+		output += opt.shortflag
 		if opt.longflag != "" {
 			output += ", "
 		}
 	}
 	if opt.longflag != "" {
-		output += "--" + opt.longflag
+		output += opt.longflag
 	}
 	if opt.dest != "" {
-		output += "=" + opt.dest
+		output += " " + opt.dest
 	}
 
 	length := len(output)
@@ -72,15 +72,15 @@ func (opt *option) String() (output string) {
 func (op *OptionParser) computeFlags(flags []string, opt *option) (shortflag, longflag string) {
 	for _, flag := range flags {
 		if strings.HasPrefix(flag, "--") {
-			longflag = strings.TrimLeft(flag, "-")
+			longflag = flag
 			op.long2options[longflag] = opt
 			slice.AppendString(&op.longflags, longflag)
 		} else if strings.HasPrefix(flag, "-") {
-			shortflag = strings.TrimLeft(flag, "-")
+			shortflag = flag
 			op.short2options[shortflag] = opt
 			slice.AppendString(&op.shortflags, shortflag)
 		} else {
-			longflag = strings.TrimLeft(flag, "-")
+			longflag = flag
 			op.long2options[longflag] = opt
 			slice.AppendString(&op.longflags, longflag)
 		}
@@ -106,7 +106,7 @@ func (op *OptionParser) Default(flags []string, usage string, displayDest bool, 
 	}
 	length := len(op.options)
 	if cap(op.options) == length {
-        temp := make([]*option, length, (2 * length) + 1)
+        temp := make([]*option, length, 2 * (length + 1))
         for idx, item := range op.options {
             temp[idx] = item
         }
@@ -150,13 +150,88 @@ func (op *OptionParser) Parse(args []string) (remainder []string) {
 	}
 
 	argLength := len(args) - 1
+
+	// Command-line auto-completion support.
+	autocomplete := os.Getenv("OPTPARSE_AUTO_COMPLETE")
+	if autocomplete != "" {
+
+		compWords := os.Getenv("COMP_WORDS")
+		if compWords == "" {
+			// zsh's bashcompinit does not pass COMP_WORDS, replace with
+			// COMP_LINE for now...
+			compWords = os.Getenv("COMP_LINE")
+			if compWords == "" {
+				os.Exit(1)
+			}
+		}
+		compWordsList := strings.Split(compWords, " ", -1)
+		compLine := os.Getenv("COMP_LINE")
+		compPoint, err := strconv.Atoi(os.Getenv("COMP_POINT"))
+		if err != nil {
+			os.Exit(1)
+		}
+		compWord, err := strconv.Atoi(os.Getenv("COMP_CWORD"))
+		if err != nil {
+			os.Exit(1)
+		}
+
+		prefix := ""
+		if compWord > 0 {
+			if compWord < len(compWordsList)  {
+				prefix = compWordsList[compWord]
+			}
+		}
+
+		// At some point in the future, make autocompletion customisable per
+		// option flag and, at that point, make use of these variables.
+		_ = compLine
+		_ = compPoint
+
+		// Pass to the shell completion if the previous word was a flag
+		// expecting some parameter.
+		if (compWord - 1) > 0 {
+			prev := compWordsList[compWord - 1]
+			if strings.HasPrefix(prev, "--") {
+				opt, ok := op.long2options[prev]
+				if ok {
+					if opt.dest != "" {
+						os.Exit(1)
+					}
+				}
+			} else if strings.HasPrefix(prev, "-") {
+				opt, ok := op.short2options[prev]
+				if ok {
+					if opt.dest != "" {
+						os.Exit(1)
+					}
+				}
+			}
+		}
+
+		completions := make([]string, 0)
+		for flag, _ := range(op.long2options) {
+			if strings.HasPrefix(flag, prefix) {
+				slice.AppendString(&completions, flag)
+			}
+		}
+
+		for flag, _ := range(op.short2options) {
+			if strings.HasPrefix(flag, prefix) {
+				slice.AppendString(&completions, flag)
+			}
+		}
+
+		fmt.Print(strings.Join(completions, " "))
+		os.Exit(1)
+
+	}
+
 	if argLength == 0 {
 		return
 	}
 
 	var opt *option
 	var ok bool
-	var flag string
 
 	idx := 1
 
@@ -164,14 +239,12 @@ func (op *OptionParser) Parse(args []string) (remainder []string) {
 		arg := args[idx]
 		noOpt := true
 		if strings.HasPrefix(arg, "--") {
-			flag = strings.TrimLeft(arg, "-")
-			opt, ok = op.long2options[flag]
+			opt, ok = op.long2options[arg]
 			if ok {
 				noOpt = false
 			}
 		} else if strings.HasPrefix(arg, "-") {
-			flag = strings.TrimLeft(arg, "-")
-			opt, ok = op.short2options[flag]
+			opt, ok = op.short2options[arg]
 			if ok {
 				noOpt = false
 			}
@@ -197,10 +270,10 @@ func (op *OptionParser) Parse(args []string) (remainder []string) {
 			}
 		}
 		if opt.valueType == "bool" {
-			if opt.longflag == "help" && op.ParseHelp {
+			if opt.longflag == "--help" && op.ParseHelp {
 				op.PrintUsage()
 				os.Exit(1)
-			} else if opt.longflag == "version" && op.ParseVersion {
+			} else if opt.longflag == "--version" && op.ParseVersion {
 				fmt.Printf("%s\n", op.Version)
 				os.Exit(0)
 			}
