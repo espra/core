@@ -40,7 +40,7 @@ Quickstart
   And then, assuming you'd chosen the default port settings, point your browser
   at:
 
-  * https://localhost:8040
+  * https://localhost:9040
 
   Tada!
 
@@ -152,7 +152,7 @@ Running Your Instance
   And, assuming that you'd chosen the default port settings, you should now be
   able to point your browser at the following URL and login:
 
-  * https://localhost:8040
+  * https://localhost:9040
 
   The various log, pid and related files for these processes will be within the
   ``amprun_root_directory`` setting as specified in your ``amprun.yaml`` file
@@ -246,7 +246,7 @@ Server/Cloud Deployment
 
   It will then communicate to the various ``username@hosts/ips`` that you've
   specified in your ``deployment.yaml`` file. This will happen over SSH, so you
-  need to SSH running on your machines and have the respective SSH keys.
+  need SSH running on your machines and have the respective SSH keys.
 
   You can limit deployment to specific hosts with:
  
