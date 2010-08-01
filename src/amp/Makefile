@@ -5,13 +5,16 @@ PACKAGES=\
 	command\
 	optparse\
 	runtime\
+	slice\
 
 NOBENCH=\
 	command\
 	optparse\
+	slice\
 
 NOTEST=\
 	command\
+	slice\
 
 ifeq ($(shell uname),FreeBSD)
 make=gmake
@@ -76,3 +79,4 @@ test: test.dirs
 # ------------------------------------------------------------------------------
 
 runtime.install: command.install
+optparse.install: slice.install
