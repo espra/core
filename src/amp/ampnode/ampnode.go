@@ -3,8 +3,10 @@
 
 package main
 
-import "amp/runtime"
-import "fmt"
+import (
+	"amp/runtime"
+	"fmt"
+)
 
 func main() {
 

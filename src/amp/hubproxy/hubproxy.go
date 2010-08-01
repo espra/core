@@ -6,10 +6,12 @@
 // it doesn't support HTTPS requests on custom domains yet.
 package main
 
-import "amp/runtime"
-import "amp/optparse"
-import "fmt"
-import "os"
+import (
+	"amp/runtime"
+	"amp/optparse"
+	"fmt"
+	"os"
+)
 
 func main() {
 
@@ -27,7 +29,8 @@ func main() {
 		}
 	}
 
-	// Run the hubproxy on multiple processors if possible.
+	// Initialise the Ampify runtime -- which will run hubproxy on multiple
+	// processors if possible.
 	runtime.Init()
 	fmt.Printf("Running hubproxy with %d CPUs on %s:%d\n", runtime.CPUCount, *host, *port)
 
