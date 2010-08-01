@@ -10,6 +10,7 @@ import (
 	"amp/runtime"
 	"amp/optparse"
 	"bufio"
+	"crypto/tls"
 	"fmt"
 	"http"
 	"io/ioutil"
@@ -28,6 +29,13 @@ type Proxy struct{}
 
 func (proxy *Proxy) ServeHTTP(conn *http.Conn, req *http.Request) {
 
+	// FIXME
+	// We need to replace the net.Dial below with tls.Dial at some point.
+	// Right now, it throws a "record overflow" error which needs to be
+	// investigated and fixed.
+
+	_ = tls.Dial
+
 	// Open a connection to the Hub.
 	hub, err := net.Dial("tcp", "", remoteAddr)
 	if err != nil {
@@ -36,6 +44,8 @@ func (proxy *Proxy) ServeHTTP(conn *http.Conn, req *http.Request) {
 		}
 		return
 	}
+
+	defer hub.Close()
 
 	// Modify the request Host: header.
 	req.Host = remoteHost
@@ -46,7 +56,7 @@ func (proxy *Proxy) ServeHTTP(conn *http.Conn, req *http.Request) {
 		if debugMode {
 			fmt.Printf("Error writing to the hub: %v\n", err)
 		}
-		hub.Close()
+		return
 	}
 
 	// Parse the response from the Hub.
@@ -55,7 +65,6 @@ func (proxy *Proxy) ServeHTTP(conn *http.Conn, req *http.Request) {
 		if debugMode {
 			fmt.Printf("Error parsing response from the hub: %v\n", err)
 		}
-		hub.Close()
 		return
 	}
 
@@ -71,13 +80,11 @@ func (proxy *Proxy) ServeHTTP(conn *http.Conn, req *http.Request) {
 			fmt.Printf("Error reading response from the hub: %v\n", err)
 		}
 		resp.Body.Close()
-		hub.Close()
 		return
 	}
 
 	// Write the response body back to the initial connection.
 	resp.Body.Close()
-	hub.Close()
 	conn.WriteHeader(resp.StatusCode)
 	conn.Write(body)
 
