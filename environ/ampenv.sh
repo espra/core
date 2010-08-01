@@ -40,6 +40,8 @@ if [ "x$0" == "x$BASH_SOURCE" ]; then
 	echo
 	echo "    source $__FILE"
 	echo
+	echo "You might want to add the above line to your .bashrc or equivalent."
+	echo
 	exit
 fi
 
@@ -64,11 +66,11 @@ fi
 
 cd "$(dirname $BASH_SOURCE)" || return $?
 
-export AMPIFY_STARTUP_DIRECTORY=`pwd -P 2> /dev/null` || return $?
+export AMPIFY_ENVIRON_DIRECTORY=`pwd -P 2> /dev/null` || return $?
 
 cd $OLDPWD || return $?
 
-export AMPIFY_ROOT=$(dirname $AMPIFY_STARTUP_DIRECTORY)
+export AMPIFY_ROOT=$(dirname $AMPIFY_ENVIRON_DIRECTORY)
 
 # ------------------------------------------------------------------------------
 # exit if $AMPIFY_ROOT is not set
@@ -94,9 +96,8 @@ function _have () {
 
 export AMPIFY_LOCAL=$AMPIFY_ROOT/environ/local
 
-if [ "x$PRE_AMPDEV_PATH" != "x" ]; then
-	export PRE_AMPENV_PATH=$PRE_AMPDEV_PATH
-	export PATH=$AMPIFY_ROOT/environ:$AMPIFY_LOCAL/bin:$AMPIFY_ROOT/src/codereview:$PRE_AMPDEV_PATH
+if [ "x$PRE_AMPENV_PATH" != "x" ]; then
+	export PATH=$AMPIFY_ROOT/environ:$AMPIFY_LOCAL/bin:$AMPIFY_ROOT/src/codereview:$PRE_AMPENV_PATH
 else
 	if [ "x$PATH" != "x" ]; then
 		export PRE_AMPENV_PATH=$PATH
@@ -108,35 +109,62 @@ fi
 
 case $_OS_NAME in
 	darwin)
-		if [ "x$DYLD_FALLBACK_LIBRARY_PATH" != "x" ]; then
-			export PRE_AMPENV_DYLD_FALLBACK_LIBRARY_PATH=$DYLD_FALLBACK_LIBRARY_PATH
+		if [ "x$PRE_AMPENV_DYLD_LIBRARY_PATH" != "x" ]; then
+			export DYLD_FALLBACK_LIBRARY_PATH=$AMPIFY_LOCAL/lib:$AMPIFY_LOCAL/freeswitch/lib:$PRE_AMPENV_DYLD_LIBRARY_PATH:/usr/local/lib:/usr/lib
+		else
+			export PRE_AMPENV_DYLD_LIBRARY_PATH=$DYLD_LIBRARY_PATH
+			if [ "x$DYLD_LIBRARY_PATH" != "x" ]; then
+				export DYLD_FALLBACK_LIBRARY_PATH=$AMPIFY_LOCAL/lib:$AMPIFY_LOCAL/freeswitch/lib:$DYLD_LIBRARY_PATH:/usr/local/lib:/usr/lib
+			else
+				export DYLD_FALLBACK_LIBRARY_PATH=$AMPIFY_LOCAL/lib:$AMPIFY_LOCAL/freeswitch/lib:/usr/local/lib:/usr/lib
+			fi
 		fi
-		export DYLD_FALLBACK_LIBRARY_PATH=$AMPIFY_LOCAL/lib:$AMPIFY_LOCAL/freeswitch/lib:$DYLD_LIBRARY_PATH:$HOME/lib:/usr/local/lib:/lib:/usr/lib;;
+		export DYLD_LIBRARY_PATH=/this/path/should/not/exist;;
 	linux)
-		if [ "x$LD_LIBRARY_PATH" != "x" ]; then
-			export PRE_AMPENV_LD_LIBRARY_PATH=$LD_LIBRARY_PATH
-		fi
-		export LD_LIBRARY_PATH=$AMPIFY_LOCAL/lib:$LD_LIBRARY_PATH;;
+		if [ "x$PRE_AMPENV_LD_LIBRARY_PATH" != "x" ]; then
+			export LD_LIBRARY_PATH=$AMPIFY_LOCAL/lib:$PRE_AMPENV_LD_LIBRARY_PATH
+		else
+			if [ "x$LD_LIBRARY_PATH" != "x" ]; then
+				export PRE_AMPENV_LD_LIBRARY_PATH=$LD_LIBRARY_PATH
+				export LD_LIBRARY_PATH=$AMPIFY_LOCAL/lib:$LD_LIBRARY_PATH
+			else
+				export LD_LIBRARY_PATH=$AMPIFY_LOCAL/lib
+			fi
+		fi;;
 	freebsd)
-		if [ "x$LD_LIBRARY_PATH" != "x" ]; then
-			export PRE_AMPENV_LD_LIBRARY_PATH=$LD_LIBRARY_PATH
-		fi
-		export LD_LIBRARY_PATH=$AMPIFY_LOCAL/lib:$LD_LIBRARY_PATH;;
+		if [ "x$PRE_AMPENV_LD_LIBRARY_PATH" != "x" ]; then
+			export LD_LIBRARY_PATH=$AMPIFY_LOCAL/lib:$PRE_AMPENV_LD_LIBRARY_PATH
+		else
+			if [ "x$LD_LIBRARY_PATH" != "x" ]; then
+				export PRE_AMPENV_LD_LIBRARY_PATH=$LD_LIBRARY_PATH
+				export LD_LIBRARY_PATH=$AMPIFY_LOCAL/lib:$LD_LIBRARY_PATH
+			else
+				export LD_LIBRARY_PATH=$AMPIFY_LOCAL/lib
+			fi
+		fi;;
 	*) echo "ERROR: Unknown system operating system: ${_OS_NAME}"
 esac
 	
-if [ "x$PYTHONPATH" != "x" ]; then
-	export PRE_AMPENV_PYTHONPATH=$PYTHONPATH
-	export PYTHONPATH=$AMPIFY_ROOT/src:$AMPIFY_ROOT/src/zero:$AMPIFY_ROOT/third_party/pylibs:$PYTHONPATH
+if [ "x$PRE_AMPENV_PYTHONPATH" != "x" ]; then
+	export PYTHONPATH=$AMPIFY_ROOT/src:$AMPIFY_ROOT/third_party/pylibs:$PRE_AMPENV_PYTHONPATH
 else
-	export PYTHONPATH=$AMPIFY_ROOT/src:$AMPIFY_ROOT/src/zero:$AMPIFY_ROOT/third_party/pylibs
+	if [ "x$PYTHONPATH" != "x" ]; then
+		export PRE_AMPENV_PYTHONPATH=$PYTHONPATH
+		export PYTHONPATH=$AMPIFY_ROOT/src:$AMPIFY_ROOT/third_party/pylibs:$PYTHONPATH
+	else
+		export PYTHONPATH=$AMPIFY_ROOT/src:$AMPIFY_ROOT/third_party/pylibs
+	fi
 fi
 
-if [ "x$MANPATH" != "x" ]; then
-	export PRE_AMPENV_MANPATH=$MANPATH
-	export MANPATH=$AMPIFY_ROOT/doc/man:$AMPIFY_LOCAL/man:$MANPATH
+if [ "x$PRE_AMPENV_MANPATH" != "x" ]; then
+	export MANPATH=$AMPIFY_ROOT/doc/man:$AMPIFY_LOCAL/share/man:$PRE_AMPENV_MANPATH
 else
-	export MANPATH=$AMPIFY_ROOT/doc/man:$AMPIFY_LOCAL/man
+	if [ "x$MANPATH" != "x" ]; then
+		export PRE_AMPENV_MANPATH=$MANPATH
+		export MANPATH=$AMPIFY_ROOT/doc/man:$AMPIFY_LOCAL/share/man:$MANPATH
+	else
+		export MANPATH=$AMPIFY_ROOT/doc/man:$AMPIFY_LOCAL/share/man:
+	fi
 fi
 
 # ------------------------------------------------------------------------------
@@ -173,9 +201,48 @@ esac
 export NACL_ROOT=$AMPIFY_LOCAL/third_party/nativeclient
 
 # ------------------------------------------------------------------------------
+# try to figure out if we are inside an interactive shell or not
+# ------------------------------------------------------------------------------
+
+test "$PS1" && _INTERACTIVE_SHELL=true;
+
+# ------------------------------------------------------------------------------
+# the auto-completer for optcomplete used by the amp runner
+# ------------------------------------------------------------------------------
+
+_amp_completion() {
+	COMPREPLY=( $( \
+	COMP_LINE=$COMP_LINE  COMP_POINT=$COMP_POINT \
+	COMP_WORDS="${COMP_WORDS[*]}"  COMP_CWORD=$COMP_CWORD \
+	OPTPARSE_AUTO_COMPLETE=1 $1 ) )
+}
+
+# ------------------------------------------------------------------------------
+# set us up the bash completion!
+# ------------------------------------------------------------------------------
+
+if [ "x$_INTERACTIVE_SHELL" == "xtrue" ]; then
+
+	# first, turn on the extended globbing and programmable completion
+	shopt -s extglob progcomp
+
+	# register completers
+	complete -o default -F _amp_completion amp
+	complete -o default -F _amp_completion ampnode
+	complete -o default -F _amp_completion hubproxy
+
+	# and finally, register files with specific commands
+	complete -f -X '!*.go' 5g 6g 8g
+	complete -f -X '!*.5' 5l
+	complete -f -X '!*.6' 6l
+	complete -f -X '!*.8' 8l
+
+fi
+
+# ------------------------------------------------------------------------------
 # clean up after ourselves
 # ------------------------------------------------------------------------------
 
 unset _OS_NAME _OS_ARCH _OS_ARCH_64 _OS_ARCH_386
 unset _BASH_VERSION _BASH_MAJOR_VERSION _BASH_MINOR_VERSION
-unset _have
+unset _have _INTERACTIVE_SHELL
