@@ -9,10 +9,9 @@ package main
 import (
 	"amp/runtime"
 	"amp/optparse"
-	"bufio"
 	"fmt"
 	"http"
-	"io/ioutil"
+	"io"
 	"net"
 	"os"
 )
@@ -37,6 +36,8 @@ func (proxy *Proxy) ServeHTTP(conn *http.Conn, req *http.Request) {
 		return
 	}
 
+	defer hub.Close()
+
 	// Modify the request Host: header.
 	req.Host = remoteHost
 
@@ -46,40 +47,21 @@ func (proxy *Proxy) ServeHTTP(conn *http.Conn, req *http.Request) {
 		if debugMode {
 			fmt.Printf("Error writing to the hub: %v\n", err)
 		}
-		hub.Close()
-	}
-
-	// Parse the response from the Hub.
-	resp, err := http.ReadResponse(bufio.NewReader(hub), req.Method)
-	if err != nil {
-		if debugMode {
-			fmt.Printf("Error parsing response from the hub: %v\n", err)
-		}
-		hub.Close()
 		return
 	}
 
-	// Set the received headers back to the initial connection.
-	for k, v := range resp.Header {
-		conn.SetHeader(k, v)
-	}
-
-	// Read the full response body.
-	body, err := ioutil.ReadAll(resp.Body)
+	// Hijack the initial connection.
+	rwc, _, err := conn.Hijack()
 	if err != nil {
 		if debugMode {
-			fmt.Printf("Error reading response from the hub: %v\n", err)
+			fmt.Printf("Error hijacking the initial connection: %v\n", err)
 		}
-		resp.Body.Close()
-		hub.Close()
 		return
 	}
 
-	// Write the response body back to the initial connection.
-	resp.Body.Close()
-	hub.Close()
-	conn.WriteHeader(resp.StatusCode)
-	conn.Write(body)
+	// Copy over the response.
+	io.Copy(rwc, hub)
+	rwc.Close()
 
 }
 
