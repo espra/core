@@ -14,44 +14,42 @@ const (
 	// Change the ``hashTableFactor`` to anything from 13 all the way up to 23.
 	// A larger factor leads to better compression ratios at the cost of speed,
 	// and vice-versa.
-	hashTableFactor = 16
-	hashTableSize   = 1 << hashTableFactor
-	maxLiteralRef   = 1 << 5
-	maxOffset       = 1 << 13
-	maxRef          = (1 << 8) + (1 << 3)
+	hashTableFactor uint32 = 16
+	hashTableSize uint32   = 1 << hashTableFactor
+	maxLiteral uint32      = 1 << 5
+	maxOffset uint32       = 1 << 13
+	maxRef uint32          = (1 << 8) + (1 << 3)
 )
 
 
 func Compress(input []byte) (output []byte, outputSize int, err os.Error) {
 
-	inputSize := len(input)
+	var inputSize int32 = int32(len(input))
+
 	if inputSize <= 4 {
 		return nil, 0, err
 	}
 
 	output = make([]byte, inputSize)
-	hashTable := make([]byte, hashTableSize)
+	hashTable := make([]int64, hashTableSize)
 
-	var hval, idx, ref uint32
+	var hSlot, offset, reference int64
+	var hVal, iIdx, oIdx uint32 
+	var literal int32
 
-	literal := 0
-	ref = 0
-	inputPos := 0
-	outputPos := 1
-	hval = (uint32(input[0]) << 8) | uint32(input[1])
+	hVal = uint32((((input[0]) << 8) | input[1]))
 
-	for inputPos < (inputSize - 2) {
+	for iIdx < uint32(inputSize - 2) {
 
-		hval = (hval << 8) | uint32(input[2])
-		idx = ((hval >> (24 - hashTableFactor)) - (hval * 5)) & (hashTableSize - 1)
-		ref = hashTable[idx]
-		hashTable[idx] = inputPos
-		offset := inputPos - backref - 1
+		hVal = (hVal << 8) | uint32(input[iIdx + 2])
+		hSlot =	int64((hVal ^ (hVal << 5)) >> uint32(((24 - hashTableFactor)) - uint32(hSlot) * 5) & (hashTableSize - 1))
+		reference = hashTable[hSlot]
+		hashTable[hSlot] = int64(iIdx)
+		offset = int64(iIdx) - reference - 1
 
-		if (ref < inputPos) && (offset < maxOffset) && (inputPos + 4 < inputSize) && (ref > 0) && (ref == input[inputPos]) {
-
-			length := 2
-			maxLength := inputSize - inputPos - length
+		if ((reference > 0) && (uint32(offset) < maxOffset) && (int32(iIdx + 4) < inputSize) && (input[reference + 0] == input[iIdx + 0]) && (input[reference + 1] == input[iIdx + 1]) && (input[reference + 2] == input[iIdx + 2])) {
+			var length uint32 = 2
+			var maxLength uint32 = uint32(inputSize) - iIdx - length
 
 			if maxLength > maxRef {
 				maxLength = maxRef
@@ -59,15 +57,12 @@ func Compress(input []byte) (output []byte, outputSize int, err os.Error) {
 				maxLength = maxLength
 			}
 
-			if (outputPos + 4) >= inputSize {
-				if (outputPos - !literal + 4) >= inputSize {
-					return nil, 0, err
-				}
+			if (int32(oIdx) + literal + 4) >= inputSize {
+				return nil, 0, err
 			}
 
-			output[-literal - 1] = literal - 1
-			outputPos  -= !literal
-
+			output[-literal - 1] = byte(literal - 1)
+			// oIdx -= !uint32(literal)
 		}
 
 	}
