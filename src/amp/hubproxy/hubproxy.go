@@ -22,22 +22,14 @@ var (
 	debugMode  bool
 	remoteAddr string
 	remoteHost string
-	remoteURL  string
 )
 
 type Proxy struct{}
 
 func (proxy *Proxy) ServeHTTP(conn *http.Conn, req *http.Request) {
 
-	// FIXME
-	// We need to replace the net.Dial below with tls.Dial at some point.
-	// Right now, it throws a "record overflow" error which needs to be
-	// investigated and fixed.
-
-	_ = tls.Dial
-
 	// Open a connection to the Hub.
-	hub, err := net.Dial("tcp", "", remoteAddr)
+	hub, err := tls.Dial("tcp", "", remoteAddr)
 	if err != nil {
 		if debugMode {
 			fmt.Printf("Couldn't connect to remote %s: %v\n", remoteHost, err)
@@ -122,8 +114,7 @@ func main() {
 
 	debugMode = *debug
 	remoteHost = *remote
-	remoteAddr = *remote + ":80"
-	remoteURL = "http://" + remoteAddr
+	remoteAddr = *remote + ":443"
 	addr := fmt.Sprintf("%s:%d", *host, *port)
 
 	listener, err := net.Listen("tcp", addr)
