@@ -3,10 +3,12 @@
 
 PACKAGES=\
 	command\
+	optparse\
 	runtime\
 
 NOBENCH=\
 	command\
+	optparse\
 
 NOTEST=\
 	command\
@@ -54,15 +56,18 @@ bench: bench.dirs
 
 clean: clean.dirs
 	@cd ampnode && $(make) clean
+	@cd hubproxy && $(make) clean
 
 distclean: nuke
 
 nuke: nuke.dirs
 	@echo rm -rf $(QUOTED_GOROOT)/pkg/amp
 	@cd ampnode && $(make) nuke
+	@cd hubproxy && $(make) nuke
 
 install: install.dirs
 	@cd ampnode && $(make) install
+	@cd hubproxy && $(make) install
 
 test: test.dirs
 

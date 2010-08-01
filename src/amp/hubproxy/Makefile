@@ -3,8 +3,8 @@
 
 include $(GOROOT)/src/Make.$(GOARCH)
 
-TARG=ampnode
+TARG=hubproxy
 GOFILES=\
-	ampnode.go\
+	hubproxy.go\
 
 include $(GOROOT)/src/Make.cmd

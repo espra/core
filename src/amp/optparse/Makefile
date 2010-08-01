@@ -3,8 +3,8 @@
 
 include $(GOROOT)/src/Make.$(GOARCH)
 
-TARG=ampnode
+TARG=amp/optparse
 GOFILES=\
-	ampnode.go\
+        optparse.go\
 
-include $(GOROOT)/src/Make.cmd
+include $(GOROOT)/src/Make.pkg
