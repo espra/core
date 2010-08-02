@@ -113,7 +113,6 @@ for submodule in needs_update:
                 print
         sys.exit(retcode)
 
-
 if needs_attention:
     for submodule in needs_attention:
         print

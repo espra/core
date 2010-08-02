@@ -11,13 +11,13 @@ AMP := environ/amp
 # we declare our phonies so they stop telling us that targets are up-to-date
 # ------------------------------------------------------------------------------
 
-.PHONY: all build clean debug distclean docs test zero
+.PHONY: all build clean debug distclean docs nuke test update
 
 # ------------------------------------------------------------------------------
 # our rules, starting with the default
 # ------------------------------------------------------------------------------
 
-all: zero
+all: update build
 	@touch .latest
 
 build:
@@ -35,10 +35,19 @@ distclean: clean
 	rm -rf src/build
 	rm -f src/ampify/*.so
 
-docs: build
+docs:
+	@test -d third_party/pylibs || \
+		(echo "ERROR: You need to checkout the third_party/pylibs submodule !!" \
+			&& exit 1)
 	@./environ/yatiblog doc
+
+nuke: distclean
+	rm -rf .build
+	rm -f .build-lock
+	rm -rf .sass-cache
 
 test:
 	@$(AMP) test
 
-zero: build
+update:
+	@./environ/git-update
