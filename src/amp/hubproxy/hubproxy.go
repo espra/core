@@ -10,6 +10,7 @@ import (
 	"amp/runtime"
 	"amp/optparse"
 	"bufio"
+	"crypto/tls"
 	"fmt"
 	"http"
 	"io/ioutil"
@@ -21,7 +22,6 @@ var (
 	debugMode  bool
 	remoteAddr string
 	remoteHost string
-	remoteURL  string
 )
 
 type Proxy struct{}
@@ -29,13 +29,15 @@ type Proxy struct{}
 func (proxy *Proxy) ServeHTTP(conn *http.Conn, req *http.Request) {
 
 	// Open a connection to the Hub.
-	hub, err := net.Dial("tcp", "", remoteAddr)
+	hub, err := tls.Dial("tcp", "", remoteAddr)
 	if err != nil {
 		if debugMode {
 			fmt.Printf("Couldn't connect to remote %s: %v\n", remoteHost, err)
 		}
 		return
 	}
+
+	defer hub.Close()
 
 	// Modify the request Host: header.
 	req.Host = remoteHost
@@ -46,7 +48,7 @@ func (proxy *Proxy) ServeHTTP(conn *http.Conn, req *http.Request) {
 		if debugMode {
 			fmt.Printf("Error writing to the hub: %v\n", err)
 		}
-		hub.Close()
+		return
 	}
 
 	// Parse the response from the Hub.
@@ -55,7 +57,6 @@ func (proxy *Proxy) ServeHTTP(conn *http.Conn, req *http.Request) {
 		if debugMode {
 			fmt.Printf("Error parsing response from the hub: %v\n", err)
 		}
-		hub.Close()
 		return
 	}
 
@@ -71,13 +72,11 @@ func (proxy *Proxy) ServeHTTP(conn *http.Conn, req *http.Request) {
 			fmt.Printf("Error reading response from the hub: %v\n", err)
 		}
 		resp.Body.Close()
-		hub.Close()
 		return
 	}
 
 	// Write the response body back to the initial connection.
 	resp.Body.Close()
-	hub.Close()
 	conn.WriteHeader(resp.StatusCode)
 	conn.Write(body)
 
@@ -115,8 +114,7 @@ func main() {
 
 	debugMode = *debug
 	remoteHost = *remote
-	remoteAddr = *remote + ":80"
-	remoteURL = "http://" + remoteAddr
+	remoteAddr = *remote + ":443"
 	addr := fmt.Sprintf("%s:%d", *host, *port)
 
 	listener, err := net.Listen("tcp", addr)

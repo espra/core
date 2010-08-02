@@ -4,7 +4,7 @@
 # Public Domain license that can be found in the root LICENSE file.
 
 python -c "from datetime import datetime as d, timedelta as t; \
-           left = d(2010, 7, 21, 05, 0, 0) + t(days=40) - d.now(); \
+           left = d(2010, 7, 23, 23, 59, 0) + t(days=40) - d.now(); \
            print left + d.now(); \
            days, left = left.days, left.seconds; \
            left, seconds = divmod(left, 60); \
@@ -56,19 +56,19 @@ Admin
 Installation
 ============
 
-✗ configure
+✓ configure
 ✗ make
-✗ redpill: init
-✗ redpill: config
+✓ redpill: init
+✓ redpill: config
 ✗ redpill: packages
 ✗ redpill: distribution
-✗ redpill: install
-✗ redpill: uninstall
+✓ redpill: install
+✓ redpill: uninstall
 ✗ redpill: daemon
 
 ✗ package: base dependencies
-✗ package: zlib
-✗ package: bz2
+✓ package: zlib
+✓ package: bz2
 ✗ package: readline
 ✗ package: libevent
 ✗ package: libjpeg
@@ -78,7 +78,7 @@ Installation
 ✗ package: libxml2
 ✗ package: libxslt
 ✗ package: redis
-# package: go
+✗ package: go
 ✗ package: berkeleydb
 ✗ package: keyspace
 ✗ package: coffeescript
@@ -87,15 +87,21 @@ Installation
 ✗ package: pcre
 ✗ package: nginx
 ✗ package: openssl
-✗ package: git
+# package: git
 ✗ package: python
 ✗ package: python imaging library
-✗ package: cython
+✓ package: cython
 ✗ package: gevent
 ✗ package: lxml
-✗ package: sass
+✓ package: sass
 ✗ package: python-packages
 
+# coffeescript -> js generation
+# sass generation
+# js lib compilation
+# minification
+
+✓ amp command-line auto completion
 ✗ amp config handling
 ✗ amp init
 ✗ amp hub registration: host
@@ -109,7 +115,7 @@ Installation
 ✗ pre/post deploy scripts
 
 ✗ detect node on local subnet from teredo IP
-✗ rendezvous support
+✓ rendezvous support
 ✗ rendezvous announce
 
 ===========
@@ -399,7 +405,7 @@ Ampify Core
 ✗ ampnode main()
 ✗ ampnode command line arguments handler
 
-✓ lzf compression
+✗ lzf compression
 ✗ lzf compression: dictionary-support
 
 ✗ mail service
@@ -692,10 +698,10 @@ Ampify Core
 ✗ javascript ucd -- part 2
 ✗ javascript unicode normalisation
 ✗ javascript case-folding normalisation
-✓ python ucd -- part 1
-✓ python ucd -- part 2
-✗ python unicode normalisation
-✗ python case-folding normalisation
+✗ go ucd -- part 1
+✗ go ucd -- part 2
+✗ go unicode normalisation
+✗ go case-folding normalisation
 ✗ link normalisation
 
 ✗ to encoding/search
@@ -975,7 +981,7 @@ Ampify Core
 ✗ redis configuration
 ✗ redis nodule
 ✗ redis manager
-✓ redis client library
+✗ redis client library
 
 ✗ keyspace configuration
 ✗ keyspace nodule
@@ -1111,5 +1117,17 @@ Ampify Core
 ✗ public status app
 ✗ public status app access verification
 ✗ public status app charts
+
+# liquid democracy
+# amp test
+# amp creds exchange
+# usage tips
+# virtual users, e.g. britney-spears, appa, etc.
+
+# charts
+# optparse
+# base32
+# hubproxy
+# predictions
 
 EOF

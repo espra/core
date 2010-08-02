@@ -27,18 +27,18 @@ recent Python 2.x and general dev tools (gcc, make, etc.) installed.
   $ git clone https://github.com/tav/ampify.git # (1)
   $ cd ampify
   $ make                                        # (2)
-  $ source environ/ampdev.sh                    # (3)
+  $ source environ/ampenv.sh                    # (3)
   $ amp init kickass                            # (4)
   $ amp run kickass                             # (5)
-  $ open https://localhost:8040                 # (6)
+  $ open https://localhost:9040                 # (6)
 
 1. Clone the repository. You need to have Git 1.7+ in order to use the smart
    HTTP protocol.
 
-2. Running ``make`` builds various dependencies like Keyspace, Node.js, compiles
-   CoffeeScript/Sass files and minifies the resulting JavaScript/CSS files. All
-   builds are self-contained within the ``environ/local`` sub-directory that
-   will be automatically created.
+2. Running ``make`` updates the submodules, builds various dependencies like
+   Keyspace and Node.js, compiles CoffeeScript/Sass files and minifies the
+   resulting JavaScript/CSS files. All builds are self-contained within the
+   ``environ/local`` sub-directory that will be automatically created.
 
    You can run ``make clean`` to remove everything except the built
    dependencies, which you can also remove using the full ``make distclean``. Be
@@ -51,8 +51,8 @@ recent Python 2.x and general dev tools (gcc, make, etc.) installed.
    <http://xkcd.com/>`_ -- with an eye on your terminal for any errors that
    might occur.
 
-3. The ``ampdev.sh`` script adds command line auto-completion support on bash
-   shells and extends your ``$PATH`` to include the ``environ`` directory. As a
+3. The ``ampenv.sh`` script adds command line auto-completion support on bash
+   shells and extends a number of environment variables like ``$PATH``. As a
    result, a number of new commands will now be available to you -- including
    the core ``amp`` command.
 
@@ -62,11 +62,11 @@ recent Python 2.x and general dev tools (gcc, make, etc.) installed.
 
    .. syntax:: bash
 
-     source /home/tav/ampify/environ/ampdev.sh
+     source /home/tav/ampify/environ/ampenv.sh
 
-4. This last step points you to the `Running Ampify Zero
-   <running-ampify-zero.html>`_ document. As it states, Ampify Zero doesn't work
-   yet, but it goes into detail of how an instance is meant to be setup and run.
+4. You should read the `Running Ampify Zero <running-ampify-zero.html>`_
+   document for these last steps. As it states, Ampify Zero doesn't work yet,
+   but it goes into detail of how an instance is meant to be setup and run.
 
    You first initialise an instance using the ``amp`` utility script. This asks
    you a few questions and generates the appropriate files in a sibling
