@@ -64,16 +64,7 @@ func GetCPUCount() (count int) {
 // ``GOMAXPROCS`` to the number of CPUs detected and exit with an error message
 // if the ``$AMPIFY_ROOT`` environment variable hasn't been set.
 func Init() {
-
 	runtime.GOMAXPROCS(CPUCount)
-
-	AmpifyRoot = os.Getenv("AMPIFY_ROOT")
-	if AmpifyRoot == "" {
-		fmt.Print(
-			"ERROR: The AMPIFY_ROOT environment variable hasn't been set.\n")
-		os.Exit(1)
-	}
-
 }
 
 // -----------------------------------------------------------------------------
@@ -83,4 +74,10 @@ func Init() {
 // Set the ``runtime.CPUCount`` variable to the number of CPUs detected.
 func init() {
 	CPUCount = GetCPUCount()
+	AmpifyRoot = os.Getenv("AMPIFY_ROOT")
+	if AmpifyRoot == "" {
+		fmt.Print(
+			"ERROR: The AMPIFY_ROOT environment variable hasn't been set.\n")
+		os.Exit(1)
+	}
 }
