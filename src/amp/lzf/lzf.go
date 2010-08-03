@@ -14,64 +14,115 @@ const (
 	// Change the ``hashTableFactor`` to anything from 13 all the way up to 23.
 	// A larger factor leads to better compression ratios at the cost of speed,
 	// and vice-versa.
-	hashTableFactor = 16
-	hashTableSize   = 1 << hashTableFactor
-	maxLiteralRef   = 1 << 5
-	maxOffset       = 1 << 13
-	maxRef          = (1 << 8) + (1 << 3)
+	hashTableFactor uint32 = 16
+	hashTableSize uint32   = 1 << hashTableFactor
+	maxLiteral uint32      = 1 << 5
+	maxOffset uint32       = 1 << 13
+	maxRef uint32          = (1 << 8) + (1 << 3)
 )
 
 
+func FRST(inArray []byte, inPtr uint32) uint32 {
+	return uint32((((inArray[inPtr]) << 8) | inArray[inPtr + 1]))
+}
+
+func NEXT(hValue uint32, inArray []byte, inPtr uint32) uint32 {
+	return uint32((((hValue) << 8) | inArray[inPtr + 2]))
+}
+
 func Compress(input []byte) (output []byte, outputSize int, err os.Error) {
 
-	inputSize := len(input)
+	var inputSize int32 = int32(len(input))
+
 	if inputSize <= 4 {
 		return nil, 0, err
 	}
 
 	output = make([]byte, inputSize)
-	hashTable := make([]byte, hashTableSize)
+	hashTable := make([]int64, hashTableSize)
 
-	var hval, idx, ref uint32
+	var offset, reference int64
+	var hSlot, hVal, iIdx, length, maxLength, oIdx uint32 
+	var literal int32
 
-	literal := 0
-	ref = 0
-	inputPos := 0
-	outputPos := 1
-	hval = (uint32(input[0]) << 8) | uint32(input[1])
+	// hVal = uint32((((input[0]) << 8) | input[1]))
+	// hVal = uint32((((input[iIdx]) << 8) | input[iIdx + 1]))
+	hVal = FRST(input, iIdx)
 
-	for inputPos < (inputSize - 2) {
+	for {
+		if iIdx < uint32(inputSize - 2) {
 
-		hval = (hval << 8) | uint32(input[2])
-		idx = ((hval >> (24 - hashTableFactor)) - (hval * 5)) & (hashTableSize - 1)
-		ref = hashTable[idx]
-		hashTable[idx] = inputPos
-		offset := inputPos - backref - 1
+			// hVal = (hVal << 8) | uint32(input[iIdx + 2])
+			hVal = NEXT(hVal, input, iIdx)
+			hSlot =	(hVal ^ (hVal << 5)) >> uint32(((24 - hashTableFactor)) - uint32(hSlot) * 5) & (hashTableSize - 1)
+			reference = hashTable[hSlot]
+			hashTable[hSlot] = int64(iIdx)
+			offset = int64(iIdx) - reference - 1
 
-		if (ref < inputPos) && (offset < maxOffset) && (inputPos + 4 < inputSize) && (ref > 0) && (ref == input[inputPos]) {
+			if (reference > 0) && (uint32(offset) < maxOffset) && (int32(iIdx + 4) < inputSize) && (input[reference + 0] == input[iIdx + 0]) && (input[reference + 1] == input[iIdx + 1]) && (input[reference + 2] == input[iIdx + 2]) {
+				length = 2
+				maxLength = uint32(inputSize) - iIdx - length
 
-			length := 2
-			maxLength := inputSize - inputPos - length
+				if maxLength > maxRef {
+					maxLength = maxRef
+				} else {
+					maxLength = maxLength
+				}
 
-			if maxLength > maxRef {
-				maxLength = maxRef
-			} else {
-				maxLength = maxLength
-			}
-
-			if (outputPos + 4) >= inputSize {
-				if (outputPos - !literal + 4) >= inputSize {
+				if (oIdx + uint32(literal + 4)) >= uint32(inputSize) {
 					return nil, 0, err
 				}
+				
+				for ;; {
+					length++
+					if length < maxLength && input[uint32(reference) + length] == input[iIdx + uint32(literal)] {
+						continue
+					} else {
+						break
+					}
+				}
+
+				if literal != 0 {
+					output[oIdx] = byte(literal - 1)
+					oIdx++
+					literal = -literal
+
+					for ;; {
+						output[oIdx] = input[iIdx + uint32(literal)]
+						oIdx++
+						literal++
+
+						if literal != 0 {
+							continue
+						} else {
+							break
+						}
+					}
+				}
+
+				length += 2
+				iIdx++
+
+				if length < 7 {
+					output[oIdx] = byte(uint32(offset >> 8) + (length << 5))
+					oIdx++
+				} else {
+					output[oIdx] = byte((offset >> 8) + (7 << 5))
+					oIdx++
+					output[oIdx] = byte(length - 7)
+					oIdx++
+				}
+
+				output[oIdx] = byte(offset)
+				oIdx++
+
+				iIdx += length - 1
+				hVal = FRST(input, iIdx)
+
 			}
 
-			output[-literal - 1] = literal - 1
-			outputPos  -= !literal
-
 		}
-
 	}
-
 	return
 }
 
