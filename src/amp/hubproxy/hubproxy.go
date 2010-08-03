@@ -9,6 +9,7 @@ package main
 import (
 	"amp/runtime"
 	"amp/optparse"
+	"amp/tlsconf"
 	"bufio"
 	"crypto/tls"
 	"fmt"
@@ -29,7 +30,7 @@ type Proxy struct{}
 func (proxy *Proxy) ServeHTTP(conn *http.Conn, req *http.Request) {
 
 	// Open a connection to the Hub.
-	hub, err := tls.Dial("tcp", "", remoteAddr)
+	hubconn, err := net.Dial("tcp", "", remoteAddr)
 	if err != nil {
 		if debugMode {
 			fmt.Printf("Couldn't connect to remote %s: %v\n", remoteHost, err)
@@ -37,6 +38,7 @@ func (proxy *Proxy) ServeHTTP(conn *http.Conn, req *http.Request) {
 		return
 	}
 
+	hub := tls.Client(hubconn, tlsconf.Config)
 	defer hub.Close()
 
 	// Modify the request Host: header.
@@ -111,6 +113,9 @@ func main() {
 	// Initialise the Ampify runtime -- which will run hubproxy on multiple
 	// processors if possible.
 	runtime.Init()
+
+	// Initialise the TLS config.
+	tlsconf.Init()
 
 	debugMode = *debug
 	remoteHost = *remote
