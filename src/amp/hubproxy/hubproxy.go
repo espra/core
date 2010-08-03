@@ -94,7 +94,7 @@ func main() {
 	host := opts.String([]string{"--host"}, "localhost",
 		"the host to bind to")
 
-	remote := opts.String([]string{"-r", "--remote"}, "trustmap.appspot.com",
+	remote := opts.String([]string{"-r", "--remote"}, "ampcentral.appspot.com",
 		"the remote host to connect to [default: ampcentral.appspot.com]")
 
 	debug := opts.Bool([]string{"--debug"}, false,
