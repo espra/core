@@ -6,15 +6,18 @@ PACKAGES=\
 	optparse\
 	runtime\
 	slice\
+	tlsconf\
 
 NOBENCH=\
 	command\
 	optparse\
 	slice\
+	tlsconf\
 
 NOTEST=\
 	command\
 	slice\
+	tlsconf\
 
 ifeq ($(shell uname),FreeBSD)
 make=gmake
