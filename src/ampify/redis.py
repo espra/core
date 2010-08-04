@@ -61,8 +61,11 @@ class Redis(object):
     _in_progress = 0
     _opened = 0
 
-    def __init__(self, host='', port=6379):
-        self._addr = addr = (host, port)
+    def __init__(self, host='', port=6379, unix_socket=''):
+        if unix_socket:
+            self._addr = addr = unix_socket
+        else:
+            self._addr = addr = (host, port)
         if addr not in self._global_cxns:
             self._cxns = self._global_cxns[addr] = set()
         else:
@@ -157,12 +160,18 @@ class Redis(object):
                 cxn = self._cxn = cxns.pop()
             else:
                 Redis._open_cxns += 1
+                addr = self._addr
                 try:
-                    sock = socket.socket(
-                        socket.AF_INET, socket.SOCK_STREAM
-                    )
-                    sock.setsockopt(socket.SOL_TCP, socket.TCP_NODELAY, 1)
-                    sock.connect(self._addr)
+                    if isinstance(addr, str):
+                        sock = socket.socket(
+                            socket.AF_UNIX, socket.SOCK_STREAM
+                        )
+                    else:
+                        sock = socket.socket(
+                            socket.AF_INET, socket.SOCK_STREAM
+                        )
+                        sock.setsockopt(socket.SOL_TCP, socket.TCP_NODELAY, 1)
+                    sock.connect(addr)
                     cxn = IOStream(sock)
                     cxn.queue = deque()
                     cxn._discarded = 0
@@ -312,7 +321,10 @@ if __name__ == '__main__':
 
     from adisp import process
 
-    redis = Redis()
+    def constructor():
+        return Redis(unix_socket='/tmp/redis.sock')
+
+    redis = constructor()
     def handle_get(result):
         print "GOT:", result
 
@@ -324,7 +336,7 @@ if __name__ == '__main__':
 
     @process
     def test_set(i):
-        redis = Redis()
+        redis = constructor()
         x = yield redis.send_request('set', 'foo', i)
         yield redis.multi()
         x = yield redis.set('foo', i)
@@ -352,14 +364,14 @@ if __name__ == '__main__':
 
     @process
     def test_get():
-        redis = Redis()
+        redis = constructor()
         result = yield redis.send_request('get', 'foo')
         print "Got:", result
 
     def test_monitor():
         def handle_monitor_line(line):
             print "mon", line
-        redis = Redis()
+        redis = constructor()
         redis.monitor()(handle_monitor_line)
 
     test_monitor()
@@ -379,7 +391,7 @@ if __name__ == '__main__':
     def on_event(result):
         print "GOT!!", result
 
-    r = Redis()
+    r = constructor()
     r.blpop('hmz')(callback=on_event)
 
     Loop.start()
