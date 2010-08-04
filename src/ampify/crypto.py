@@ -35,7 +35,7 @@ def create_encoded_mac(value, key, hmac=HMAC, hasher=sha384):
     """Return a base64-encoded MAC."""
 
     digest = hmac(key, value, hasher).digest()
-    return b64encode(digest, '-_')
+    return b64encode(digest, '-_').rstrip('=')
 
 
 def create_tamper_proof_string(
