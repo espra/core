@@ -7,7 +7,7 @@ import socket
 from collections import deque
 from time import time
 
-from ampify.async import wrap_method
+from pyutil.async import wrap_method
 
 from tornado.ioloop import IOLoop
 from tornado.iostream import IOStream
