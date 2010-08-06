@@ -1,0 +1,109 @@
+/* No Copyright (-) 2010 The Ampify Authors. This file is under the */
+/* Public Domain license that can be found in the root LICENSE file. */
+
+body {
+	font-family: "HelveticaNeue-Light", "Helvetica Neue Light", "Helvetica Neue", sans-serif;
+	font-weight: 300;
+	margin: 0;
+	padding: 0;
+}
+
+h1, h2, h3, h4, h5, h6 {
+	font-family: "Yanone Kaffeesatz", Georgia, serif;
+}
+
+input.largetext {
+	border: 2px solid #cacaca;
+	-moz-border-radius: 5px;
+	-webkit-border-radius: 5px;
+	border-radius: 5px;
+	font-size: 2em;
+	padding: 0.5em;
+	width: 600px;
+}
+
+input.largesubmit {
+	margin-top: 20px;
+	font-size: 20px;
+}
+
+label {
+	cursor: pointer;
+}
+
+label.largelabel {
+	display: block;
+	font-family: "Yanone Kaffeesatz", sans-serif;
+	font-size: 3em;
+	margin: 0.5em 0 0.5em 1.5em;
+}
+
+label.largelabel-top {
+	margin-top: 0;
+}
+
+#content {
+	margin: 1em auto;
+	padding: 1em;
+	width: 900px;
+}
+
+#header {
+	background-color: #dfd;
+	border-bottom: 1px solid #afa;
+	border-bottom: 1px solid #dedede;
+	padding: 0.2em 1em 0.4em 1.2em;
+}
+
+#nav {
+	margin-top: 10px;
+	font-size: 1.2em;
+	float: right;
+}
+
+#nav a {
+	color: #000;
+	text-decoration: underline;
+}
+
+#nav a:hover {
+	text-decoration: none;
+}
+
+#info {
+	border: 1px solid #cacaca;
+	-moz-border-radius: 5px;
+	-webkit-border-radius: 5px;
+	border-radius: 5px;
+	/* -webkit-box-shadow: 0px 0px 7px #cacaca; */
+}
+
+.center {
+	text-align: center;
+}
+
+.errmsg {
+	background-color: #fafec4;
+	background-color: #fce1cb;
+	color: #000;
+	font-size: 2em;
+	margin-bottom: 20px;
+	padding: 8px;
+	text-align: center;
+}
+
+.head {
+	font-family: "Lobster", serif;
+	font-size: 36px;
+	/* text-shadow: 4px 4px 4px #aaa; */
+}
+
+.head a {
+	text-decoration: none;
+	color: #000;
+}
+
+.headtick {
+	font-size: 54px;
+	vertical-align: sub;
+}

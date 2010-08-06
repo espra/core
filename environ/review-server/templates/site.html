@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>git review{% if title %} :: {{ title }}{% end %}</title>
+		<link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Lobster|Inconsolata|Droid+Serif|Yanone+Kaffeesatz:300" />
+		<link rel="stylesheet" type="text/css" href="{{ static_url('site.css') }}" />
+		<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+	</head>
+	<body>
+		<div id="header">
+			<div id="nav">
+				<a href="/">Home</a> &nbsp;·&nbsp;
+				{% if not current_user %}
+				<a href="/login">Login</a>
+				{% end %}
+				{% if current_user %}
+				<a href="/logout">Logout</a>
+				{% end %}
+			</div>
+			<span class="head"><a href="/" title="git review home"><span class="headtick">✓</span> git review</a></span>
+		</div>
+		<div id="content">
+			{% if errmsg %}
+			<div class="errmsg">{{ errmsg }}</div>
+			{% end %}
+			{{ content }}
+		</div>
+		<div id="footer">
+		</div>
+	</body>
+</html>

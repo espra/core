@@ -12,6 +12,12 @@ doc/website/*.html
 environ/local
 environ/receipts
 
+environ/review-server/setup.py
+environ/review-server/simplejson
+environ/review-server/tornado
+environ/review-server/var
+environ/review-server/yaml
+
 src/amp/ampnode/ampnode
 src/amp/hubproxy/hubproxy
 src/instance/*.css

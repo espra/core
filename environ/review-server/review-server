@@ -1,0 +1,280 @@
+#! /usr/bin/env python
+
+# No Copyright (-) 2010 The Ampify Authors. This file is under the
+# Public Domain license that can be found in the root LICENSE file.
+
+"""Git review server."""
+
+import sys
+
+from optparse import OptionParser
+from os import getcwd
+from os.path import isdir, isfile, join, realpath
+from urllib import quote, urlencode, urlopen
+
+from tornado.httpserver import HTTPServer
+from tornado.web import Application, HTTPError, RequestHandler
+from tornado.web import asynchronous, authenticated
+from tornado.ioloop import IOLoop
+
+from pyutil.redis import Redis, set_max_connections
+from simplejson import loads as decode_json
+from yaml import safe_load as decode_yaml
+
+# ------------------------------------------------------------------------------
+# Settings
+# ------------------------------------------------------------------------------
+
+settings = dict(
+    cookie_secret='insecure',
+    debug=False,
+    login_url='/login',
+    port=8090,
+    repos=None,
+    static_path='static',
+    template_path='templates',
+    var_path='var',
+    xsrf_cookies=False
+    )
+
+# ------------------------------------------------------------------------------
+# Utility Functions
+# ------------------------------------------------------------------------------
+
+def get_github_user_info(login, token, keys=['email', 'gravatar_id', 'name']):
+    info = dict(login=login, token=token)
+    url = "http://github.com/api/v2/json/user/show/%s?%s" % (
+        quote(login), urlencode(info)
+        )
+    try:
+        data = decode_json(urlopen(url).read())['user']
+    except Exception:
+        return
+    if 'plan' not in data:
+        return
+    for key in keys:
+        if key in data:
+            info[key] = data[key]
+    return info
+
+# ------------------------------------------------------------------------------
+# Cache
+# ------------------------------------------------------------------------------
+
+Blank = object()
+
+class CachingDict(dict):
+    """A dict that acts as a cache and discards its LRU items."""
+
+    __slots__ = '_cache_size', '_garbage_collector', '_buffer_size', 'itersort'
+
+    def __init__(
+        self, cache_size=1000, buffer_size=None, garbage_collector=None, *args,
+        **kwargs
+        ):
+
+        self._cache_size = cache_size
+        self._garbage_collector = garbage_collector
+        self._buffer_size = buffer_size or cache_size / 2
+
+        for key, value in args:
+            self.__setitem__(key, value)
+
+        for key, value in kwargs.iteritems():
+            self.__setitem__(key, value)
+
+    def __setitem__(self, key, value):
+        excess = len(self) - self._cache_size - self._buffer_size + 1
+        if excess > 0:
+            garbage_collector = self._garbage_collector
+            # time against : heapq.nsmallest()
+            excess = sorted(self.itersort())[:excess + self._buffer_size]
+            for ex_value, ex_key in excess:
+                if garbage_collector:
+                    garbage_collector(ex_key, ex_value)
+                del self[ex_key]
+
+        return dict.__setitem__(self, key, [0, value])
+
+    def __getitem__(self, key):
+        if key in self:
+            access = dict.__getitem__(self, key)
+            access[0] += 1
+            return access[1]
+
+        raise KeyError(key)
+
+    def itersort(self):
+        getitem = dict.__getitem__
+        for key in self:
+            yield getitem(self, key), key
+
+    def get(self, key, default=None):
+        if key in self:
+            return self.__getitem__(key)
+
+        return default
+
+    def pop(self, key, default=Blank):
+
+        if key in self:
+            value = dict.__getitem__(self, key)[1]
+            del self[key]
+            return value
+
+        if default is not Blank:
+            return default
+
+        raise KeyError(key)
+
+
+    def setdefault(self, key, default):
+        if key in self:
+            return self.__getitem__(key)
+
+        self.__setitem__(key, default)
+        return default
+
+    def itervalues(self):
+        getitem = self.__getitem__
+        for key in self:
+            yield getitem(key)
+
+    def values(self):
+        return list(self.itervalues())
+
+    def iteritems(self):
+        getitem = self.__getitem__
+        for key in self:
+            yield key, getitem(key)
+
+    def items(self):
+        return list(self.iteritems())
+
+    def set_cache_size(self, cache_size):
+
+        if not isinstance(cache_size, (int, long)):
+            raise ValueError("Cache size must be an integer.")
+
+        self._cache_size = cache_size
+
+    def get_cache_byte_size(self):
+        getitem = self.__getitem__
+        return sum(len(str(getitem(key))) for key in self)
+
+# ------------------------------------------------------------------------------
+# Handlers
+# ------------------------------------------------------------------------------
+
+class BaseHandler(RequestHandler):
+
+    title = None
+
+    def display(self, template, **kwargs):
+        if 'errmsg' not in kwargs:
+            kwargs['errmsg'] = None
+        if template:
+            content = self.render_string(template + '.html', **kwargs)
+        else:
+            content = ''
+        self.render('site.html', content=content, title=self.title, **kwargs)
+
+class MainHandler(BaseHandler):
+
+    def get(self):
+        if not settings['repos']:
+            self.display(None, errmsg='No repositories configured.')
+            return
+        self.display('home')
+
+class LoginHandler(BaseHandler):
+
+    title = 'login'
+
+    def get_current_user(self):
+        return 'tav'
+
+    def get(self):
+        self.display('login')
+
+    @asynchronous
+    def post(self):
+        login = self.get_argument('login', "")
+        token = self.get_argument('token', "")
+        info = get_github_user_info(login, token)
+        if not info:
+            self.display('login', errmsg="Invalid Login.")
+            return
+        self.set_secure_cookie('login', login)
+
+    def on_get_user_info(self):
+        self.finish()
+
+class LogoutHandler(BaseHandler):
+
+    def get(self):
+        self.clear_cookie('login')
+        return_to = self.get_argument('return_to', '')
+        if return_to:
+            self.redirect(return_to)
+        else:
+            self.redirect('/')
+
+# ------------------------------------------------------------------------------
+# Main Runner
+# ------------------------------------------------------------------------------
+
+def main(argv=None):
+
+    argv = argv or sys.argv[1:]
+    op = OptionParser(
+        usage="Usage: %prog [review-server.yaml]", version="0.1"
+        )
+
+    op.add_option('--debug', action='store_true', help="enable debug mode")
+    options, args = op.parse_args(argv)
+
+    if args:
+
+        config_path = args[0]
+        config_file = open(config_path, 'rb')
+        config_data = config_file.read()
+        config_file.close()
+
+        config = decode_yaml(config_data)
+        if not config:
+            print "ERROR: Couldn't find any config data in %s" % config_path
+            sys.exit(1)
+
+    else:
+        config = {}
+
+    settings.update(config)
+    cwd = realpath(getcwd())
+
+    if options.debug:
+        settings['debug'] = True
+
+    for key in ['static_path', 'template_path', 'var_path']:
+        path = join(cwd, settings[key])
+        if not isdir(path):
+            print "ERROR: Please create the %s: %s" % (key, path)
+            sys.exit(1)
+        settings[key] = path
+
+    application = Application([
+        (r"/logout", LogoutHandler),
+        (r"/login", LoginHandler),
+        (r"/", MainHandler),
+    ], **settings)
+
+    http_server = HTTPServer(application)
+    http_server.listen(settings['port'])
+    IOLoop.instance().start()
+
+# ------------------------------------------------------------------------------
+# Self Runner
+# ------------------------------------------------------------------------------
+
+if __name__ == '__main__':
+    main()
