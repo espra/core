@@ -6,6 +6,7 @@ import ampify.require
 
 import sys
 
+from doctest import ELLIPSIS, testmod
 from optparse import OptionParser
 from os import chdir, environ, makedirs, symlink
 from os.path import dirname, exists, join, realpath, split
@@ -16,7 +17,7 @@ from optcomplete import make_autocompleter, parse_options
 from pyutil.env import run_command, CommandNotFound
 
 from ampify import settings
-from ampify.build import ERROR, PROGRESS, SUCCESS
+from ampify.build import ERROR, PROGRESS, SUCCESS, MAKE
 from ampify.build import do, error, exit, log, lock, unlock
 from ampify.build import decode_json, load_role, install_packages
 
@@ -292,6 +293,11 @@ def run(argv=None, completer=None):
 # Test Command
 # ------------------------------------------------------------------------------
 
+PYTHON_TEST_MODULES = [
+    'pyutil.exception',
+    'pyutil.rst'
+    ]
+
 def test(argv=None, completer=None, run_all=False):
 
     op = OptionParser(usage="Usage: amp test [options]", add_help_option=False)
@@ -299,12 +305,45 @@ def test(argv=None, completer=None, run_all=False):
     op.add_option('-a', '--all', dest='all', action='store_true',
                   help="run the comprehensive test suite")
 
-    options, args = parse_options(op, argv, completer)
+    op.add_option('-v', '--verbose', dest='verbose', action='store_true',
+                  default=False, help="enable verbose mode")
 
+    testers = ['python', 'go']
+    if completer:
+        return op, ListCompleter(testers)
+
+    options, args = parse_options(op, argv, completer)
+    if not args:
+        args = testers
+
+    args = set(args)
     if options.all:
         run_all = True
 
-    print("Running tests...")
+    if 'python' in args:
+        py_tests(PYTHON_TEST_MODULES, verbose=options.verbose)
+
+    if 'go' in args:
+        go_tests()
+
+def go_tests():
+    go_root = join(AMPIFY_ROOT, 'src', 'amp')
+    chdir(go_root)
+    _, retval = run_command(
+        [MAKE, 'nuke', 'install', 'test'], retcode=True, redirect_stderr=False,
+        redirect_stdout=False
+        )
+    if retval:
+        sys.exit(retval)
+
+def py_tests(modules, verbose):
+    failed = 0
+    for module in modules:
+        module = __import__(module, fromlist=[''])
+        fail, _ = testmod(module, optionflags=ELLIPSIS, verbose=verbose)
+        failed += fail
+    if failed:
+        sys.exit(1)
 
 # ------------------------------------------------------------------------------
 # Help Strings
