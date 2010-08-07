@@ -329,8 +329,9 @@ def test(argv=None, completer=None, run_all=False):
 def go_tests():
     go_root = join(AMPIFY_ROOT, 'src', 'amp')
     chdir(go_root)
+    run_command([MAKE, 'nuke'])
     _, retval = run_command(
-        [MAKE, 'nuke', 'install', 'test'], retcode=True, redirect_stderr=False,
+        [MAKE, 'install', 'test'], retcode=True, redirect_stderr=False,
         redirect_stdout=False
         )
     if retval:
