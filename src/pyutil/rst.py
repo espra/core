@@ -146,7 +146,7 @@ variety of languages.
 
   >>> print render_rst(text)
   <p>This is some text</p>
-  <div class="syntax"><pre>...<span class="k">lambda</span>...</pre></div>
+  <div class="syntax python"><pre>...<span class="k">lambda</span>...</pre></div>
 
 """
 
@@ -940,9 +940,9 @@ def render_rst(
 
     if with_props:
         if format == 'html':
-            props.setdefault('title', visitor.title and visitor.title[0] or u'')
+            props.setdefault(u'title', visitor.title and visitor.title[0] or u'')
             props.setdefault(
-                'subtitle', visitor.subtitle and visitor.subtitle[0] or u''
+                u'subtitle', visitor.subtitle and visitor.subtitle[0] or u''
                 )
         return output, props
 
