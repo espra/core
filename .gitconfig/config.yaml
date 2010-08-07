@@ -1,12 +1,11 @@
 # No Copyright (-) 2010 The Ampify Authors. This file is under the
 # Public Domain license that can be found in the root LICENSE file.
 
-breakpad_url: http://ampcode.appspot.com/.breakpad
+review_server: http://localhost:8090
 cc: ampify@googlegroups.com
-default_git_branch: master
-pre_review_push: default
-pre_review_submit: default
-server: codereview.appspot.com
-tree_status_url: http://ampcode.appspot.com/.status
-user_config_url: http://ampcode.appspot.com/.user.cfg
-watchlist: .watchlist
+default_branch: master
+
+slave:
+- ['init', './environ/amp', 'build']
+- ['py-tests', './environ/amp', 'test', 'python']
+- ['go-tests', './environ/amp', 'test', 'go']

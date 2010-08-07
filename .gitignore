@@ -12,8 +12,10 @@ doc/website/*.html
 environ/local
 environ/receipts
 
+environ/review-server/review-server.yaml
 environ/review-server/setup.py
 environ/review-server/simplejson
+environ/review-server/static/github.png
 environ/review-server/tornado
 environ/review-server/var
 environ/review-server/yaml
