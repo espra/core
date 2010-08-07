@@ -1,6 +1,7 @@
 # No Copyright (-) 2010 The Ampify Authors. This file is under the
 # Public Domain license that can be found in the root LICENSE file.
 
+repo_id: ampify
 review_server: http://localhost:8090
 cc: ampify@googlegroups.com
 default_branch: master
