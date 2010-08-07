@@ -5,15 +5,26 @@
 
 """A git-command to support slave builds from a git review server."""
 
+import atexit
 import pylibs
+import os
 import sys
 
-from os.path import isfile, join
-from time import sleep
+from hashlib import sha1
+from optparse import OptionParser
+from os import chdir
+from os.path import isdir, isfile, join, realpath
+from shutil import rmtree
+from time import ctime, sleep, time
+from traceback import print_exc
+from urllib import quote, urlencode, urlopen
 
 from daemon import Daemon
+from optcomplete import ListCompleter, autocomplete
+from pyutil.exception import html_format_exception
 from pyutil.scm import is_git, SCMConfig
 from pyutil.env import run_command
+from simplejson import dumps as encode_json
 from yaml import safe_load as decode_yaml
 
 # ------------------------------------------------------------------------------
@@ -22,19 +33,165 @@ from yaml import safe_load as decode_yaml
 
 class Slave(Daemon):
 
-    def run(self):
-        pause = 0
-        while 1:
-            print "Checking... "
-            if 0:
-                print "Doing..."
-                pause = 0
+    debug = False
+    log_file = None
+    sleep_factor = 0
+
+    def set_values(
+        self, repo_id, root, config_path, server, slave_id, slave_token, uname
+        ):
+        self.repo_id = repo_id
+        self.root = root
+        self.config_path = config_path
+        self.server = server
+        self.slave_id = slave_id
+        self.slave_token = slave_token
+        self.uname = uname
+        self.build_url = server + '/new-build'
+
+    def log(self, msg):
+        if self.debug:
+            print msg
+
+    def error(self):
+        log_file = self.log_file
+        if log_file:
+            log_file.write('# ERROR: ' + ctime() + '\n\n')
+            print_exc(file=log_file)
+            log_file.write('\n')
+            log_file.flush()
+        else:
+            print
+            print_exc()
+            print
+
+    def git(self, *args, **kwargs):
+        args = ['git'] + list(args)
+        if self.debug:
+            kwargs['reterror'] = True
+            kwargs['log'] = True
+            if 'retcode' in kwargs:
+                stdout, stderr, error = run_command(args, **kwargs)
             else:
-                duration = 0.5 * (1.79 ** pause)
-                print "Sleeping for", duration
+                stdout, stderr = run_command(args, **kwargs)
+            if stdout:
+                self.log(stdout)
+            if stderr:
+                self.log(stderr)
+            if 'retcode' in kwargs:
+                return stdout, error
+            return stdout
+        return run_command(args, **kwargs)
+
+    def run(self):
+        remote = repo = revision = None
+        new_build_url = self.get_new_build_url()
+        chdir(self.root)
+        while 1:
+            if self.debug:
+                self.log("=> Checking for things to do")
+            try:
+                server = urlopen(new_build_url)
+                remote, repo, revision = server.read().split('/')
+                server.close()
+            except Exception:
+                remote = repo = revision = None
+                self.sleep_more(2)
+                self.error()
+            if remote and repo and revision:
+                results = {}
+                try:
+                    results['forced'] = self.setup_repo(remote, repo, revision)
+                    self.execute_build(results)
+                except Exception:
+                    tb = '<br />'.join(html_format_exception())
+                    if self.debug:
+                        self.log("=> Error running build:")
+                    self.error()
+                    results = {'traceback': tb}
+                    remote = None
+                try:
+                    self.send_results(remote, repo, revision, results)
+                except Exception:
+                    if self.debug:
+                        self.log("=> Error sending results:")
+                    self.error()
+                    remote = None
+            if not remote:
+                duration = 1.6 * (1.79 ** self.sleep_factor)
+                if self.debug:
+                    self.log("=> Sleeping for %.1f seconds" % duration)
                 sleep(duration)
-                if pause < 7:
-                    pause += 1
+                self.sleep_more()
+
+    def get_new_build_url(self):
+        return (
+            self.build_url + '?' +
+            urlencode(dict(uname=self.uname, repo_id=self.repo_id))
+            )
+
+    def setup_repo(self, remote, repo, revision, forced_clean=0):
+        if not self.git('config', 'remote.%s.url' % remote):
+            self.git(
+                'remote', 'add', remote,
+                'https://github.com/%s/%s.git' % (quote(remote), quote(repo))
+                )
+        if self.debug:
+            self.log("=> Fetching revisions for %s/%s" % (remote, repo))
+        self.git('remote', 'update', '--prune', remote)
+        self.git('clean', '-fd')
+        for path in self.git('status', '--porcelain').splitlines():
+            if path.startswith('??'):
+                path = path.split('??', 1)[1].strip()
+                if isdir(path):
+                    rmtree(path)
+        _, error = self.git('checkout', revision, retcode=True)
+        if error:
+            self.git('clean', '-fdx')
+            self.git('submodule', 'clean', 'foreach', 'git clean -fdx')
+            self.git('checkout', revision)
+            forced_clean = 1
+        self.git('submodule', 'update', '--init')
+        return forced_clean
+
+    def execute_build(self, results):
+        commands = self.get_build_commands()
+        executed = results['executed'] = []
+        for spec in commands:
+            name = spec[0]
+            command = spec[1:]
+            if not command:
+                continue
+            start = time()
+            stdout, stderr, error = run_command(
+                command, retcode=True, reterror=True
+                )
+            duration = time() - start
+            results[name + '|time'] = duration
+            if error:
+                results[name + '|stdout'] = stdout
+                if stderr:
+                    results[name + '|stderr'] = stderr
+            executed.append(name)
+        self.sleep_factor = 0
+
+    def get_build_commands(self):
+        if not isfile(self.config_path):
+            raise RuntimeError("ERROR: Couldn't find %s" % self.config_path)
+        config_file = open(self.config_path, 'rb')
+        config = decode_yaml(config_file.read())
+        config_file.close()
+        return config['slave']
+
+    def send_results(self, remote, repo, revision, results):
+        server = urlopen(
+            self.build_url, urlencode({'data': encode_json(results)})
+            )
+        server.read()
+        server.close()
+
+    def sleep_more(self, n=1):
+        self.sleep_factor = min(self.sleep_factor + n, 5)
 
 # ------------------------------------------------------------------------------
 # Main Runner
@@ -43,32 +200,40 @@ class Slave(Daemon):
 def main():
 
     argv = sys.argv[1:]
-    if argv:
-        print_help = False
-        command = argv[0]
-        if command in ['-h', '--help', 'help']:
-            print_help = True
-        elif command not in ['start', 'stop', 'restart']:
-            print_help = True
-        if print_help:
-            print "Usage: git slave [command]"
-            print
-            print "Commands:"
-            print
-            print "   start     start the slave daemon"
-            print "   stop      stop the slave daemon"
-            print "   restart   restart the slave daemon"
-            print
-            sys.exit(1)
-    else:
-        command = 'run'
+    command = argv[0] if argv else ''
+    print_help = False
+
+    commands = ['start', 'stop', 'restart', 'run']
+    autocomplete(OptionParser(add_help_option=False), ListCompleter(commands))
+
+    if command in ['-h', '--help', 'help']:
+        print_help = True
+    elif command not in commands:
+        print_help = True
+
+    if print_help:
+        print "Usage: git slave [command]"
+        print
+        print "Commands:"
+        print
+        print "   run       run the slave in the foreground"
+        print "   start     start the slave daemon"
+        print "   stop      stop the slave daemon"
+        print "   restart   restart the slave daemon"
+        print
+        sys.exit(1)
 
     if not is_git():
         print "ERROR: Not inside a git repository."
         sys.exit(1)
 
+    if run_command(['git', 'status', '--porcelain']):
+        print "ERROR: This is not a fresh git repository clone."
+        print "ERROR: Please commit your changes and untracked files."
+        #sys.exit(1)
+
     git = SCMConfig('git')
-    root = git.root
+    root = realpath(git.root)
 
     config_path = join(root, '.gitconfig', 'config.yaml')
     if not isfile(config_path):
@@ -81,10 +246,10 @@ def main():
 
     review_server = config['review_server']
 
-    id = git.get('slave.id')
+    slave_id = git.get('slave.id')
     token = git.get('slave.token')
 
-    if not id:
+    if not slave_id:
         print "ERROR: You need to set the Slave ID, e.g."
         print
         print "    git config slave.id 41ed"
@@ -96,21 +261,44 @@ def main():
         print "    git config slave.token 86f7e437faa5a7fce15d1ddcb9eaeae4"
         print
 
-    if not (id and token):
+    if not (slave_id and token):
         print "You can get a Slave ID and Token from:"
         print
-        print "    %s/slave-create" % review_server
+        print "    %s/new-slave" % review_server
         print
         sys.exit(1)
 
-    slave = Slave('/tmp/slave-foo.pid')
+    if os.name == 'posix':
+        uname = run_command(['uname', '-mrs'])
+        if not len(uname.split()) == 3:
+            print "ERROR: Couldn't detect the platform accurately."
+            print "ERROR: Please file a bug report -- %r" % uname
+            sys.exit(1)
+    else:
+        print "ERROR: Sorry, the %s platform isn't supported yet." % os.name
+        sys.exit(1)
+
+    repo_id = config['repo_id']
+    var_prefix = '/tmp/git-slave-%s-%s'  % (repo_id, sha1(root).hexdigest()[:8])
+
+    slave = Slave('%s.pid' % var_prefix)
+    slave.set_values(
+        repo_id, root, config_path, review_server, slave_id, token, uname
+        )
 
     if command == 'run':
+        slave.debug = True
         slave.run()
-    elif command == 'start':
-        slave.start()
+        return
     elif command == 'stop':
         slave.stop()
+        return
+
+    slave.log_file = open('%s.log' % var_prefix, 'wb')
+    atexit.register(lambda: slave.log_file.close())
+
+    if command == 'start':
+        slave.start()
     elif command == 'restart':
         slave.restart()
 
