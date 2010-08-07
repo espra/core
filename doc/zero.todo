@@ -3,6 +3,11 @@
 # No Copyright (-) 2010 The Ampify Authors. This file is under the
 # Public Domain license that can be found in the root LICENSE file.
 
+if [ "x$1" == "xignored" ]; then
+	grep "^#" $0 | grep -v "bin/sh" | grep -v "No Copyright" | grep -v LICENSE
+	exit
+fi
+
 python -c "from datetime import datetime as d, timedelta as t; \
            left = d(2010, 7, 23, 23, 59, 0) + t(days=40) - d.now(); \
            print left + d.now(); \
@@ -69,37 +74,36 @@ Installation
 ✗ package: base dependencies
 ✓ package: zlib
 ✓ package: bz2
-✗ package: readline
-✗ package: libevent
-✗ package: libjpeg
-✗ package: libpng
+✓ package: readline
 ✗ package: libnatpmp
 ✗ package: miniupnc
-✗ package: libxml2
-✗ package: libxslt
 ✗ package: redis
 ✗ package: go
-✗ package: berkeleydb
-✗ package: keyspace
+✗ package: nodejs
 ✗ package: coffeescript
 ✗ package: qrencode
-✗ package: freetype
 ✗ package: pcre
 ✗ package: nginx
-✗ package: openssl
-# package: git
+✓ package: openssl
 ✗ package: python
-✗ package: python imaging library
 ✓ package: cython
-✗ package: gevent
-✗ package: lxml
 ✓ package: sass
 ✗ package: python-packages
 
-# coffeescript -> js generation
-# sass generation
-# js lib compilation
-# minification
+# package: freetype
+# package: libjpeg
+# package: libpng
+# package: python imaging library
+# package: libevent
+# package: libxml2
+# package: libxslt
+# package: berkeleydb
+# package: keyspace
+# package: lxml
+# package: git
+# package: gevent
+
+✗ coffeescript/sass -> js lib/css generation -> minification
 
 ✓ amp command-line auto completion
 ✗ amp config handling
@@ -418,9 +422,10 @@ Ampify Core
 ✗ urlfetch service: naaga
 ✗ urlfetch service: headers
 ✗ iana-reserved ips
-✗ ssl cert verification
+# ssl cert verification
 
 ✗ images service
+✗ images service: resize/rotate
 ✗ images service: nodule
 ✗ images service: caller
 ✗ images service: naaga
@@ -509,11 +514,6 @@ Ampify Core
 ✗ file transfer: range get
 ✗ file transfer: upload
 
-✗ tls support
-✗ tls cert loading
-✗ tls connection
-✗ tls server init
-
 ✗ request handling
 ✗ http request parser
 ✗ https request handler
@@ -530,21 +530,26 @@ Ampify Core
 ✗ amptp framing 2
 ✗ amptp framing 3
 
-# amptp congestion control
-# amptp congestion control 2
-# amptp congestion control 3
-# amptp secure connection
-# amptp secure connection 2
-# amptp secure connection 3
+✗ amptp congestion control
+✗ amptp congestion control 2
+✗ amptp congestion control 3
+✗ amptp secure connection
+✗ amptp secure connection 2
+✗ amptp secure connection 3
 ✗ amptp recall connection
 ✗ amptp ping
 ✗ amptp auto-compression
 
-✗ openvpn setup
-✗ openvpn multihome updater script
+# openvpn setup
+# openvpn multihome updater script
 
-✗ ssl cert generate
-✗ ssl cert sign
+# tls support
+# tls connection
+# tls server init
+
+✗ cert generate
+✗ cert sign
+✗ cert loading
 
 ✗ dmca support
 ✗ dmca service
@@ -660,6 +665,8 @@ Ampify Core
 ✗ datastore service: query / planner
 ✗ datastore service: replicate
 ✗ datastore service: keyspace
+✗ datastore service: paxos
+✗ datastore service: lease
 ✗ datastore service: log
 ✗ datastore service: transaction
 ✗ datastore service: transaction keyspace handler
@@ -983,9 +990,10 @@ Ampify Core
 ✗ redis manager
 ✗ redis client library
 
-✗ keyspace configuration
+# keyspace configuration
+# keyspace proxy
+✗ keyspace service
 ✗ keyspace nodule
-✗ keyspace proxy
 ✗ keyspace client
 
 ✗ redis-keyspace partitioner
@@ -1090,11 +1098,11 @@ Ampify Core
 ✗ quota usage logger
 ✗ quota usage view
 
-✗ async s3 client
-✗ logs saver to s3
-✗ logs saver to redis
-✗ datastore saver to s3
-✗ datastore restore from s3
+# async s3 client
+# logs saver to s3
+# logs saver to redis
+# datastore saver to s3
+# datastore restore from s3
 
 ✗ log store view
 ✗ log store configuration
@@ -1118,16 +1126,18 @@ Ampify Core
 ✗ public status app access verification
 ✗ public status app charts
 
-# liquid democracy
-# amp test
-# amp creds exchange
-# usage tips
-# virtual users, e.g. britney-spears, appa, etc.
+✗ liquid democracy
+✗ amp test
+✗ amp creds exchange
+✗ usage tips
+✗ virtual users, e.g. britney-spears, appa, etc.
 
-# charts
-# optparse
-# base32
-# hubproxy
-# predictions
+✓ optparse
+✓ hubproxy
+
+✗ charts
+✗ base32
+✗ predictions
+✗ blacklist ip/networks
 
 EOF
