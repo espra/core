@@ -1,0 +1,193 @@
+#! /usr/bin/env python
+
+# No Copyright (-) 2010 The Ampify Authors. This file is under the
+# Public Domain license that can be found in the root LICENSE file.
+
+"""A git-command to support git reviews."""
+
+import pylibs
+import sys
+
+from optparse import OptionParser
+
+from optcomplete import autocomplete, ListCompleter
+from optcomplete import make_autocompleter, parse_options
+from pyutil.env import exit, run_command
+from pyutil.scm import is_git, SCMConfig
+from yaml import safe_load as decode_yaml
+
+# ------------------------------------------------------------------------------
+# Utility Functions
+# ------------------------------------------------------------------------------
+
+def get_git_info():
+
+    git = SCMConfig('git')
+    login = git.get('github.user')
+    token = git.get('github.token')
+
+    if not login:
+        print "ERROR: You need to set your GitHub username, e.g."
+        print
+        print "    git config --global github.user tav"
+        print
+
+    if not token:
+        print "ERROR: You need to set your GitHub API token, e.g."
+        print
+        print "    git config --global github.token 86f7e437faa5a7fce15d1ddcb9eaeae4"
+        print
+        print "You can find your API Token in the Account Admin section at:"
+        print
+        print "    https://github.com/account"
+        print
+
+    if not (login and token):
+        sys.exit(1)
+
+    return login, token, git.root
+
+# ------------------------------------------------------------------------------
+# Main Runner
+# ------------------------------------------------------------------------------
+
+def main(argv=None, show_help=False):
+
+    argv = argv or sys.argv[1:]
+
+    sys.argv[0] = 'git review'
+    version = '0.1'
+
+    usage = ("""Usage: git review <command> [options]
+    \nCommands:
+    \n%s
+    version  show the version number and exit
+    \nIf no commands are given, `git review check` is run.
+    \nSee `git review help <command>` for more info on a specific command.""" %
+    '\n'.join("    %-8s %s" % (cmd, COMMANDS[cmd].help) for cmd in sorted(COMMANDS))
+    )
+
+    autocomplete(
+        OptionParser(add_help_option=False),
+        ListCompleter(AUTOCOMPLETE_COMMANDS.keys()),
+        subcommands=AUTOCOMPLETE_COMMANDS
+        )
+
+    if not argv:
+        command = 'check'
+    else:
+        command = argv[0]
+        argv = argv[1:]
+        if command in ['-h', '--help']:
+            show_help = True
+        elif command == 'help':
+            if argv:
+                command = argv[0]
+                argv = ['--help']
+            else:
+                show_help = True
+        if command in ['-v', '--version', 'version']:
+            print('git-review version %s' % version)
+            sys.exit()
+
+    if show_help:
+        print(usage)
+        sys.exit(1)
+
+    if not is_git():
+        print "ERROR: Not inside a git repository."
+        sys.exit()
+
+    if command in COMMANDS:
+        return COMMANDS[command](argv)
+
+    exit("ERROR: Unknown git review command %r" % command)
+
+# ------------------------------------------------------------------------------
+# Apply Command
+# ------------------------------------------------------------------------------
+
+def apply(argv=None, completer=None):
+
+    op = OptionParser(
+        usage="Usage: git review apply <review-id> [options]",
+        add_help_option=False
+        )
+
+    options, args = parse_options(op, argv, completer, True)
+
+# ------------------------------------------------------------------------------
+# Check Command
+# ------------------------------------------------------------------------------
+
+def check(argv=None, completer=None):
+
+    op = OptionParser(
+        usage="Usage: git review check [options]",
+        add_help_option=False
+        )
+
+    options, args = parse_options(op, argv, completer, False)
+
+# ------------------------------------------------------------------------------
+# Submit Command
+# ------------------------------------------------------------------------------
+
+def submit(argv=None, completer=None):
+
+    op = OptionParser(
+        usage="Usage: git review submit [options]",
+        add_help_option=False
+        )
+
+    op.add_option('-m', dest='msg', default="",
+                  help="use the message as the title for the review item")
+
+    options, args = parse_options(op, argv, completer, False)
+    login, token, root = get_git_info()
+
+# ------------------------------------------------------------------------------
+# Help Strings
+# ------------------------------------------------------------------------------
+
+# These, along with other strings, should perhaps be internationalised at a
+# later date.
+apply.help = "fetch and apply a review changeset"
+check.help = "run the automated review checks for this repository"
+submit.help = "submit the current branch for review"
+
+# ------------------------------------------------------------------------------
+# Command Mapping
+# ------------------------------------------------------------------------------
+
+COMMANDS = {
+    'apply': apply,
+    'check': check,
+    'submit': submit
+    }
+
+# ------------------------------------------------------------------------------
+# Command Autocompletion
+# ------------------------------------------------------------------------------
+
+AUTOCOMPLETE_COMMANDS = COMMANDS.copy()
+
+AUTOCOMPLETE_COMMANDS['help'] = lambda completer: (
+    OptionParser(add_help_option=False),
+    ListCompleter(COMMANDS.keys())
+    )
+
+AUTOCOMPLETE_COMMANDS['version'] = lambda completer: (
+    OptionParser(add_help_option=False),
+    DirCompleter(AMPIFY_ROOT_PARENT)
+    )
+
+for command in AUTOCOMPLETE_COMMANDS.values():
+    command.autocomplete = make_autocompleter(command)
+
+# ------------------------------------------------------------------------------
+# Self Runner
+# ------------------------------------------------------------------------------
+
+if __name__ == '__main__':
+    main()

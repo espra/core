@@ -1,0 +1,122 @@
+#! /usr/bin/env python
+
+# No Copyright (-) 2010 The Ampify Authors. This file is under the
+# Public Domain license that can be found in the root LICENSE file.
+
+"""A git-command to support slave builds from a git review server."""
+
+import pylibs
+import sys
+
+from os.path import isfile, join
+from time import sleep
+
+from daemon import Daemon
+from pyutil.scm import is_git, SCMConfig
+from pyutil.env import run_command
+from yaml import safe_load as decode_yaml
+
+# ------------------------------------------------------------------------------
+# Daemon
+# ------------------------------------------------------------------------------
+
+class Slave(Daemon):
+
+    def run(self):
+        pause = 0
+        while 1:
+            print "Checking... "
+            if 0:
+                print "Doing..."
+                pause = 0
+            else:
+                duration = 0.5 * (1.79 ** pause)
+                print "Sleeping for", duration
+                sleep(duration)
+                if pause < 7:
+                    pause += 1
+
+# ------------------------------------------------------------------------------
+# Main Runner
+# ------------------------------------------------------------------------------
+
+def main():
+
+    argv = sys.argv[1:]
+    if argv:
+        print_help = False
+        command = argv[0]
+        if command in ['-h', '--help', 'help']:
+            print_help = True
+        elif command not in ['start', 'stop', 'restart']:
+            print_help = True
+        if print_help:
+            print "Usage: git slave [command]"
+            print
+            print "Commands:"
+            print
+            print "   start     start the slave daemon"
+            print "   stop      stop the slave daemon"
+            print "   restart   restart the slave daemon"
+            print
+            sys.exit(1)
+    else:
+        command = 'run'
+
+    if not is_git():
+        print "ERROR: Not inside a git repository."
+        sys.exit(1)
+
+    git = SCMConfig('git')
+    root = git.root
+
+    config_path = join(root, '.gitconfig', 'config.yaml')
+    if not isfile(config_path):
+        print "ERROR: Couldn't find %s" % config_path
+        sys.exit(1)
+
+    config_file = open(config_path, 'rb')
+    config = decode_yaml(config_file.read())
+    config_file.close()
+
+    review_server = config['review_server']
+
+    id = git.get('slave.id')
+    token = git.get('slave.token')
+
+    if not id:
+        print "ERROR: You need to set the Slave ID, e.g."
+        print
+        print "    git config slave.id 41ed"
+        print
+
+    if not token:
+        print "ERROR: You need to set the Slave Token, e.g."
+        print
+        print "    git config slave.token 86f7e437faa5a7fce15d1ddcb9eaeae4"
+        print
+
+    if not (id and token):
+        print "You can get a Slave ID and Token from:"
+        print
+        print "    %s/slave-create" % review_server
+        print
+        sys.exit(1)
+
+    slave = Slave('/tmp/slave-foo.pid')
+
+    if command == 'run':
+        slave.run()
+    elif command == 'start':
+        slave.start()
+    elif command == 'stop':
+        slave.stop()
+    elif command == 'restart':
+        slave.restart()
+
+# ------------------------------------------------------------------------------
+# Self Runner
+# ------------------------------------------------------------------------------
+
+if __name__ == '__main__':
+    main()
