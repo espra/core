@@ -229,6 +229,7 @@ if [ "x$_INTERACTIVE_SHELL" == "xtrue" ]; then
 	# register completers
 	complete -o default -F _amp_completion amp
 	complete -o default -F _amp_completion ampnode
+	complete -o default -F _amp_completion git-review
 	complete -o default -F _amp_completion hubproxy
 
 	# and finally, register files with specific commands
