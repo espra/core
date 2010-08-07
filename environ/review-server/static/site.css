@@ -4,12 +4,27 @@
 body {
 	font-family: "HelveticaNeue-Light", "Helvetica Neue Light", "Helvetica Neue", sans-serif;
 	font-weight: 300;
+	font-size: 1.2em;
 	margin: 0;
 	padding: 0;
 }
 
+a {
+	color: #282;
+	text-decoration: underline;
+}
+
+a:hover {
+	text-decoration: none;
+}
+
 h1, h2, h3, h4, h5, h6 {
 	font-family: "Yanone Kaffeesatz", Georgia, serif;
+	margin-bottom: 10px;
+}
+
+h1.top {
+	margin-top: 0px;
 }
 
 input.largetext {
@@ -40,6 +55,16 @@ label.largelabel {
 
 label.largelabel-top {
 	margin-top: 0;
+}
+
+li {
+	padding-top: 10px;
+}
+
+ul {
+	margin-top: 0;
+	padding-top: 0;
+	list-style-type: circle;
 }
 
 #content {
@@ -106,4 +131,12 @@ label.largelabel-top {
 .headtick {
 	font-size: 54px;
 	vertical-align: sub;
+}
+
+.float-right {
+	float: right;
+}
+
+.absmiddle {
+	vertical-align: middle;
 }
