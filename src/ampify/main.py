@@ -11,7 +11,8 @@ from os import chdir, environ, makedirs, symlink
 from os.path import dirname, exists, join, realpath, split
 from urllib import urlopen
 
-from pyutil.optcomplete import autocomplete, DirCompleter, ListCompleter
+from optcomplete import autocomplete, DirCompleter, ListCompleter
+from optcomplete import make_autocompleter, parse_options
 from pyutil.env import run_command, CommandNotFound
 
 from ampify import settings
@@ -32,14 +33,6 @@ ERRMSG_GIT_NAME_DETECTION = (
     )
 
 # ------------------------------------------------------------------------------
-# Exceptions
-# ------------------------------------------------------------------------------
-
-class CompletionResult(Exception):
-    def __init__(self, result):
-        self.result = result
-
-# ------------------------------------------------------------------------------
 # Utility Functions
 # ------------------------------------------------------------------------------
 
@@ -52,18 +45,6 @@ def normalise_instance_name(instance_name):
     instance_name = split(realpath(instance_name))[-1]
     instance_root = join(AMPIFY_ROOT_PARENT, instance_name)
     return instance_name, instance_root
-
-def parse_options(parser, argv, completer=None, exit_if_no_args=False):
-    if completer:
-        raise CompletionResult(parser)
-    if (argv == ['--help']) or (argv == ['-h']):
-        parser.print_help()
-        sys.exit(1)
-    options, args = parser.parse_args(argv)
-    if exit_if_no_args and not args:
-        parser.print_help()
-        sys.exit(1)
-    return options, args
 
 # ------------------------------------------------------------------------------
 # Main Runner
@@ -295,7 +276,7 @@ def run(argv=None, completer=None):
                   help="enable debug mode")
 
     op.add_option("--file", dest="filename",
-                  help="Input file to read data from")
+                  help="input file to read data from")
 
     if completer:
         return op, DirCompleter(AMPIFY_ROOT_PARENT)
@@ -332,8 +313,8 @@ def test(argv=None, completer=None, run_all=False):
 # These, along with other strings, should perhaps be internationalised at a
 # later date.
 build.help = "download and build the ampify zero dependencies"
-check.help = "check if the current checkout is up-to-date"
-deploy.help = "deploy an instance to remote host(s)"
+check.help = "check if your checkout is up-to-date"
+deploy.help = "deploy an instance to remote hosts"
 hub.help = "interact with amphub"
 init.help = "initialise a new amp instance"
 run.help = "run the components for an amp instance"
@@ -368,17 +349,6 @@ AUTOCOMPLETE_COMMANDS['version'] = lambda completer: (
     OptionParser(add_help_option=False),
     DirCompleter(AMPIFY_ROOT_PARENT)
     )
-
-def make_autocompleter(command):
-    def wrapper(completer):
-        try:
-            parser = command(completer=completer)
-        except CompletionResult:
-            parser = sys.exc_info()[1].result
-        if isinstance(parser, tuple):
-            parser, completer = parser
-        return autocomplete(parser, completer)
-    return wrapper
 
 for command in AUTOCOMPLETE_COMMANDS.values():
     command.autocomplete = make_autocompleter(command)
