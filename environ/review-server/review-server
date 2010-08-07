@@ -8,7 +8,7 @@
 import sys
 
 from optparse import OptionParser
-from os import getcwd
+from os import chdir, environ, getcwd
 from os.path import isdir, isfile, join, realpath
 from urllib import quote, urlencode, urlopen
 
@@ -17,6 +17,7 @@ from tornado.web import Application, HTTPError, RequestHandler
 from tornado.web import asynchronous, authenticated
 from tornado.ioloop import IOLoop
 
+from pyutil.env import run_command
 from pyutil.redis import Redis, set_max_connections
 from simplejson import loads as decode_json
 from yaml import safe_load as decode_yaml
@@ -36,6 +37,9 @@ settings = dict(
     var_path='var',
     xsrf_cookies=False
     )
+
+repos = {}
+repo_paths = {}
 
 # ------------------------------------------------------------------------------
 # Utility Functions
@@ -182,10 +186,26 @@ class BaseHandler(RequestHandler):
 class MainHandler(BaseHandler):
 
     def get(self):
-        if not settings['repos']:
+        if not repos:
             self.display(None, errmsg='No repositories configured.')
             return
-        self.display('home')
+        self.display('home', repos=repos)
+
+
+class NewBuildHandler(BaseHandler):
+
+    def get(self):
+        from random import random
+        uname = self.get_argument('uname')
+        repo_id = self.get_argument('repo_id')
+        self.set_header('Content-Type', 'text/plain')
+        if random() > 0.5:
+            self.write('tav/ampify/master')
+        else:
+            self.write('//')
+
+    def post(self):
+        print decode_json(self.get_argument('data'))
 
 class LoginHandler(BaseHandler):
 
@@ -262,7 +282,27 @@ def main(argv=None):
             sys.exit(1)
         settings[key] = path
 
+    repo_home = settings['repo_home'] = join(settings['var_path'], 'repos')
+    if not isdir(repo_home):
+        print "ERROR: Please create %s" % repo_home
+        sys.exit(1)
+
+    chdir(repo_home)
+
+    _repos = settings['repos']
+    if _repos:
+        for repo in _repos.keys():
+            github = repos[repo] = tuple(_repos[repo])
+            repo_path = join(repo_home, repo)
+            if not isdir(repo_path):
+                run_command(
+                    ['git', 'clone', 'https://github.com/%s/%s.git' % github],
+                    env=environ, cwd=repo_home, log=True
+                    )
+            repo_paths[repo] = repo_path
+
     application = Application([
+        (r"/new-build", NewBuildHandler),
         (r"/logout", LogoutHandler),
         (r"/login", LoginHandler),
         (r"/", MainHandler),
@@ -270,6 +310,8 @@ def main(argv=None):
 
     http_server = HTTPServer(application)
     http_server.listen(settings['port'])
+
+    print "The git review server is listening on port %d ..." % settings['port']
     IOLoop.instance().start()
 
 # ------------------------------------------------------------------------------
