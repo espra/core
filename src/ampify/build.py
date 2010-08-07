@@ -245,6 +245,9 @@ if PLATFORM == 'freebsd':
 else:
     MAKE = 'make'
 
+CPPFLAGS = "-I%s" % INCLUDE
+LDFLAGS = "-L%s" % LIB
+
 RECIPES = {}
 BUILTINS = locals()
 
@@ -754,7 +757,9 @@ def install_packages(types=BUILD_TYPES):
                     command()
                 else:
                     log("Running: %s" % ' '.join(command), PROGRESS)
-                    kwargs = dict(env=env)
+                    cmd_env = {'CPPFLAGS': CPPFLAGS, 'LDFLAGS': LDFLAGS}
+                    cmd_env.update(env)
+                    kwargs = dict(env=cmd_env)
                     do(*command, **kwargs)
         except Exception:
             error("ERROR: Building %s %s failed" % (package, version))
@@ -792,8 +797,8 @@ def build_base_and_reload():
     unlock(BUILD_LOCK)
 #     uninstall_package('openssl')
 #     uninstall_package('bzip2')
-#     uninstall_package('bsdiff')
+#    uninstall_package('bsdiff')
+#    sys.exit(1)
 #     uninstall_package('readline')
 #     uninstall_package('zlib')
-#     sys.exit(1)
     execve(join(ENVIRON, 'amp'), sys.argv, get_ampify_env(environ))
