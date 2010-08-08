@@ -4,12 +4,12 @@
 
   section_data = [
       ('Home', 'http://ampify.it', True, True),
-      ('Source Code', 'http://github.com/tav/ampify', True, True),
-      ('Bug Tracker', 'http://githubissues.heroku.com/#tav/ampify', True, True),
+      ('Source Code', 'http://github.com/espians/ampify', True, True),
+      ('Bug Tracker', 'http://githubissues.heroku.com/#espians/ampify', True, True),
       ('Mailing List', 'http://groups.google.com/group/ampify', True, True),
       ('IRC Logs', 'http://irclogs.ampify.it', True, True),
       # ('Espra Stream', 'http://espra.com/zero/#ampify', True, True),
-      # ('Wiki', 'http://wiki.github.com/tav/ampify/', False, False),
+      # ('Wiki', 'http://wiki.github.com/espians/ampify/', False, False),
       # ('Download', 'http://ampify.it/download.html', False, False),
       # ('Changelog', 'http://ampify.it/changelog.html', False, False),
       ]
@@ -51,7 +51,7 @@
 	<div id="menu-follow">
 		<div><a href="http://www.facebook.com/Espians" title="Join Espians on Facebook"><img src="http://static.ampify.it/icon.facebook.gif" alt="Join Espians on Facebook" width="15px" height="15px" /></a></div>
 		<div><a href="http://twitter.com/tav" title="Follow @tav on Twitter"><img src="http://static.ampify.it/icon.twitter.gif" alt="Follow @tav on Twitter" width="14px" height="14px" /></a></div>
-		<div><a href="http://github.com/tav/ampify" title="Fork Ampify on GitHub"><img src="http://static.ampify.it/icon.github.png" alt="Fork Ampify on GitHub" width="15px" height="15px" /></a></div>
+		<div><a href="http://github.com/espians/ampify" title="Fork Ampify on GitHub"><img src="http://static.ampify.it/icon.github.png" alt="Fork Ampify on GitHub" width="15px" height="15px" /></a></div>
 		<div><a href="http://feeds.feedburner.com/ampify" title="Subscribe to the RSS Feed"><img src="http://static.ampify.it/icon.rss.png" alt="Subscribe to the RSS Feed" width="14px" height="14px" /></a></div>
 	</div>
 	<div id="logo"><a href="http://ampify.it"><img src="http://static1.ampify.it/logo.ampify.smallerstill.png" alt="Ampify" width="250px" height="56px" /></a></div>
