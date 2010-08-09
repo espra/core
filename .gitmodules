@@ -10,3 +10,9 @@
 [submodule "third_party/pylibs"]
 	path = third_party/pylibs
 	url = https://github.com/espians/pylibs.git
+[submodule "third_party/rubylibs"]
+	path = third_party/rubylibs
+	url = https://github.com/espians/rubylibs.git
+[submodule "third_party/jslibs"]
+	path = third_party/jslibs
+	url = https://github.com/espians/jslibs.git
