@@ -5,16 +5,19 @@
 
 """Git review server."""
 
+import logging
 import sys
 
 from optparse import OptionParser
 from os import chdir, environ, getcwd
 from os.path import isdir, isfile, join, realpath
+from Queue import Queue
+from thread import start_new_thread
 from urllib import quote, urlencode, urlopen
 
 from tornado.httpserver import HTTPServer
 from tornado.web import Application, HTTPError, RequestHandler
-from tornado.web import asynchronous, authenticated
+from tornado.web import authenticated
 from tornado.ioloop import IOLoop
 
 from pyutil.env import run_command
@@ -35,16 +38,112 @@ settings = dict(
     static_path='static',
     template_path='templates',
     var_path='var',
+    workers=2,
     xsrf_cookies=False
     )
+
+Loop = IOLoop.instance()
 
 repos = {}
 repo_paths = {}
 
 # ------------------------------------------------------------------------------
-# Utility Functions
+# Threaded Workers
 # ------------------------------------------------------------------------------
 
+QUEUE = Queue()
+EVENTS = {}
+
+def threaded_worker_dispatcher(queue, error_logger=None):
+    while 1:
+        marker, worker, args, kwargs = queue.get()
+        try:
+            response = worker(*args, **kwargs)
+        except Exception, error:
+            EVENTS[marker] = (1, error)
+        else:
+            EVENTS[marker] = (0, response)
+
+class Worker(object):
+
+    def __init__(self, callback, errback, func, args, kwargs):
+        self.callback = callback
+        self.errback = errback
+        self.marker = marker = id(self)
+        QUEUE.put((marker, func, args, kwargs))
+        Loop.add_callback(self.respond)
+
+    def respond(self):
+        marker = self.marker
+        if marker not in EVENTS:
+            Loop.add_callback(self.respond)
+            return
+        error, response = EVENTS.pop(marker)
+        if error:
+            self.errback(response)
+        else:
+            self.callback(response)
+
+def worker(func):
+    def wrapper(*args, **kwargs):
+        def __wrapper(callback, errback):
+            return Worker(callback, errback, func, args, kwargs)
+        __wrapper.__name__ = func.__name__
+        return __wrapper
+    wrapper.__name__ = func.__name__
+    return wrapper
+
+# ------------------------------------------------------------------------------
+# Async Support
+# ------------------------------------------------------------------------------
+
+class TornadoWebDispatcher(object):
+    """An async process dispatcher for tornado web handler methods."""
+
+    cb = None
+
+    def __init__(self, gen, handler):
+        self.gen = gen
+        self.handler = handler
+        self.callback(None)
+
+    def callback(self, arg=None, errback=None):
+        try:
+            if self.cb:
+                self.cb(callback=self.callback, errback=self.errback)
+                self.cb = None
+                return
+            if errback:
+                self.cb = self.gen.throw(arg)
+            else:
+                self.cb = self.gen.send(arg)
+            Loop.add_callback(self.callback)
+        except StopIteration:
+            self.cb = None
+            if not self.handler._finished:
+                self.handler.finish()
+        except Exception, error:
+            self.cb = None
+            if self.handler._headers_written:
+                logging.error('Exception after headers written', exc_info=True)
+            else:
+                self.handler._handle_request_exception(error)
+
+    def errback(self, arg):
+        self.callback(arg, errback=1)
+
+def async(method):
+    def wrapper(handler, *args, **kwargs):
+        handler._auto_finish = 0
+        TornadoWebDispatcher(method(handler, *args, **kwargs), handler)
+    wrapper.__name__ = method.__name__
+    return wrapper
+
+# ------------------------------------------------------------------------------
+# Worker Functions
+# ------------------------------------------------------------------------------
+
+@worker
 def get_github_user_info(login, token, keys=['email', 'gravatar_id', 'name']):
     info = dict(login=login, token=token)
     url = "http://github.com/api/v2/json/user/show/%s?%s" % (
@@ -217,15 +316,19 @@ class LoginHandler(BaseHandler):
     def get(self):
         self.display('login')
 
-    @asynchronous
+    @async
     def post(self):
         login = self.get_argument('login', "")
         token = self.get_argument('token', "")
-        info = get_github_user_info(login, token)
+        info = yield get_github_user_info(login, token)
         if not info:
             self.display('login', errmsg="Invalid Login.")
             return
-        self.set_secure_cookie('login', login)
+        # self.set_secure_cookie('login', login)
+        self.display(
+            'login',
+            errmsg='<img src="http://www.gravatar.com/avatar/%s" />' % info['gravatar_id']
+            )
 
     def on_get_user_info(self):
         self.finish()
@@ -311,8 +414,11 @@ def main(argv=None):
     http_server = HTTPServer(application)
     http_server.listen(settings['port'])
 
+    for i in range(settings['workers']):
+        start_new_thread(threaded_worker_dispatcher, (QUEUE,))
+
     print "The git review server is listening on port %d ..." % settings['port']
-    IOLoop.instance().start()
+    Loop.start()
 
 # ------------------------------------------------------------------------------
 # Self Runner
