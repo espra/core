@@ -27,7 +27,11 @@ func FRST(inArray []byte, inPtr uint32) uint32 {
 }
 
 func NEXT(hValue uint32, inArray []byte, inPtr uint32) uint32 {
-	return uint32((((hValue) << 8) | inArray[inPtr + 2]))
+	return (((hValue) << 8) | uint32(inArray[inPtr + 2]))
+}
+
+func IDX(hValue uint32) uint32 {
+	return uint32((hValue ^ (hValue << 5)) >> uint32(((24 - hashTableFactor)) - uint32(hValue) * 5) & (hashTableSize - 1))
 }
 
 func Compress(input []byte) (output []byte, outputSize int, err os.Error) {
@@ -49,80 +53,103 @@ func Compress(input []byte) (output []byte, outputSize int, err os.Error) {
 	// hVal = uint32((((input[iIdx]) << 8) | input[iIdx + 1]))
 	hVal = FRST(input, iIdx)
 
-	for {
-		if iIdx < uint32(inputSize - 2) {
+	for iIdx < uint32(inputSize - 2) {
+		// hVal = (hVal << 8) | uint32(input[iIdx + 2])
+		hVal = NEXT(hVal, input, iIdx)
+		// hSlot = (hVal ^ (hVal << 5)) >> uint32(((24 - hashTableFactor)) - uint32(hVal) * 5) & (hashTableSize - 1)
+		hSlot =	IDX(hVal)
+		reference = hashTable[hSlot]
+		hashTable[hSlot] = int64(iIdx)
+		offset = int64(iIdx) - reference - 1
 
-			// hVal = (hVal << 8) | uint32(input[iIdx + 2])
-			hVal = NEXT(hVal, input, iIdx)
-			hSlot =	(hVal ^ (hVal << 5)) >> uint32(((24 - hashTableFactor)) - uint32(hSlot) * 5) & (hashTableSize - 1)
-			reference = hashTable[hSlot]
-			hashTable[hSlot] = int64(iIdx)
-			offset = int64(iIdx) - reference - 1
+		if (reference > 0) && (uint32(offset) < maxOffset) && (int32(iIdx + 4) < inputSize) && (input[reference + 0] == input[iIdx + 0]) && (input[reference + 1] == input[iIdx + 1]) && (input[reference + 2] == input[iIdx + 2]) {
+			length = 2
+			maxLength = uint32(inputSize) - iIdx - length
 
-			if (reference > 0) && (uint32(offset) < maxOffset) && (int32(iIdx + 4) < inputSize) && (input[reference + 0] == input[iIdx + 0]) && (input[reference + 1] == input[iIdx + 1]) && (input[reference + 2] == input[iIdx + 2]) {
-				length = 2
-				maxLength = uint32(inputSize) - iIdx - length
+			if maxLength > maxRef {
+				maxLength = maxRef
+			} 
 
-				if maxLength > maxRef {
-					maxLength = maxRef
+			if (oIdx + uint32(literal + 4)) >= uint32(inputSize) {
+				return nil, 0, err
+			}
+
+			for {
+				length++
+				if length < maxLength && input[uint32(reference) + length] == input[iIdx + uint32(literal)] {
+					continue
 				} else {
-					maxLength = maxLength
+					break
 				}
+			}
 
-				if (oIdx + uint32(literal + 4)) >= uint32(inputSize) {
-					return nil, 0, err
-				}
-				
-				for ;; {
-					length++
-					if length < maxLength && input[uint32(reference) + length] == input[iIdx + uint32(literal)] {
+			if literal != 0 {
+				output[oIdx] = byte(literal - 1)
+				oIdx++
+				literal = -literal
+
+				for {
+					output[oIdx] = input[iIdx + uint32(literal)]
+					oIdx++
+					literal++
+
+					if literal != 0 {
 						continue
 					} else {
 						break
 					}
 				}
-
-				if literal != 0 {
-					output[oIdx] = byte(literal - 1)
-					oIdx++
-					literal = -literal
-
-					for ;; {
-						output[oIdx] = input[iIdx + uint32(literal)]
-						oIdx++
-						literal++
-
-						if literal != 0 {
-							continue
-						} else {
-							break
-						}
-					}
-				}
-
-				length += 2
-				iIdx++
-
-				if length < 7 {
-					output[oIdx] = byte(uint32(offset >> 8) + (length << 5))
-					oIdx++
-				} else {
-					output[oIdx] = byte((offset >> 8) + (7 << 5))
-					oIdx++
-					output[oIdx] = byte(length - 7)
-					oIdx++
-				}
-
-				output[oIdx] = byte(offset)
-				oIdx++
-
-				iIdx += length - 1
-				hVal = FRST(input, iIdx)
-
 			}
 
+			length += 2
+			iIdx++
+
+			if length < 7 {
+				output[oIdx] = byte(uint32(offset >> 8) + (length << 5))
+				oIdx++
+			} else {
+				output[oIdx] = byte((offset >> 8) + (7 << 5))
+				oIdx++
+				output[oIdx] = byte(length - 7)
+				oIdx++
+			}
+
+			output[oIdx] = byte(offset)
+			oIdx++
+
+			iIdx += length - 1
+			hVal = FRST(input, iIdx)
+
+			hVal = NEXT(hVal, input, iIdx)
+			hashTable[IDX(hVal)] = int64(iIdx)
+			iIdx++
+
+			hVal = NEXT(hVal, input, iIdx)
+			hashTable[IDX(hVal)] = int64(iIdx)
+			iIdx++
+			continue
 		}
+		
+		if iIdx == uint32(inputSize) {
+			break
+		}
+ 
+		literal++
+		iIdx++
+
+		if literal == maxLiteral {
+			if oIdx + 1 + maxLength >= inputSize {
+				return nil, 0, err
+			}
+
+			output[oIdx] = byte(maxLiteral - 1)
+			oIdx++
+			literal = -literal
+			
+			for 
 	}
+	
+
 	return
 }
 
