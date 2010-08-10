@@ -2,9 +2,12 @@
 # Public Domain license that can be found in the root LICENSE file.
 
 repo_id: ampify
+upstream_repo: https://github.com/tav/ampify.git
+upstream_branch: master
+review_repo: https://github.com/gitreview/ampify.git
 review_server: http://localhost:8090
 cc: ampify@googlegroups.com
-default_branch: master
+watchlist: on
 
 slave:
 - ['init', './environ/amp', 'build']
