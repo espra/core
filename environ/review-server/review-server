@@ -38,7 +38,6 @@ settings = dict(
     static_path='static',
     template_path='templates',
     var_path='var',
-    workers=2,
     xsrf_cookies=False
     )
 
@@ -51,7 +50,8 @@ repo_paths = {}
 # Threaded Workers
 # ------------------------------------------------------------------------------
 
-QUEUE = Queue()
+MAIN_QUEUE = Queue()
+GIT_QUEUE = Queue()
 EVENTS = {}
 
 def threaded_worker_dispatcher(queue, error_logger=None):
@@ -66,11 +66,11 @@ def threaded_worker_dispatcher(queue, error_logger=None):
 
 class Worker(object):
 
-    def __init__(self, callback, errback, func, args, kwargs):
+    def __init__(self, queue, callback, errback, func, args, kwargs:
         self.callback = callback
         self.errback = errback
         self.marker = marker = id(self)
-        QUEUE.put((marker, func, args, kwargs))
+        queue.put((marker, func, args, kwargs))
         Loop.add_callback(self.respond)
 
     def respond(self):
@@ -84,14 +84,16 @@ class Worker(object):
         else:
             self.callback(response)
 
-def worker(func):
-    def wrapper(*args, **kwargs):
-        def __wrapper(callback, errback):
-            return Worker(callback, errback, func, args, kwargs)
-        __wrapper.__name__ = func.__name__
-        return __wrapper
-    wrapper.__name__ = func.__name__
-    return wrapper
+def worker(queue):
+    def __worker(func):
+        def wrapper(*args, **kwargs):
+            def __wrapper(callback, errback):
+                return Worker(queue, callback, errback, func, args, kwargs)
+            __wrapper.__name__ = func.__name__
+            return __wrapper
+        wrapper.__name__ = func.__name__
+        return wrapper
+    return __worker
 
 # ------------------------------------------------------------------------------
 # Async Support
@@ -143,7 +145,7 @@ def async(method):
 # Worker Functions
 # ------------------------------------------------------------------------------
 
-@worker
+@worker(MAIN_QUEUE)
 def get_github_user_info(login, token, keys=['email', 'gravatar_id', 'name']):
     info = dict(login=login, token=token)
     url = "http://github.com/api/v2/json/user/show/%s?%s" % (
@@ -167,7 +169,7 @@ def get_github_user_info(login, token, keys=['email', 'gravatar_id', 'name']):
 Blank = object()
 
 class CachingDict(dict):
-    """A dict that acts as a cache and discards its LRU items."""
+    """A caching dict that discards its least frequently used items."""
 
     __slots__ = '_cache_size', '_garbage_collector', '_buffer_size', 'itersort'
 
@@ -414,8 +416,8 @@ def main(argv=None):
     http_server = HTTPServer(application)
     http_server.listen(settings['port'])
 
-    for i in range(settings['workers']):
-        start_new_thread(threaded_worker_dispatcher, (QUEUE,))
+    for queue in [MAIN_QUEUE, GIT_QUEUE]:
+        start_new_thread(threaded_worker_dispatcher, (queue,))
 
     print "The git review server is listening on port %d ..." % settings['port']
     Loop.start()
