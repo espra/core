@@ -15,11 +15,12 @@ from urllib import urlopen
 from optcomplete import autocomplete, DirCompleter, ListCompleter
 from optcomplete import make_autocompleter, parse_options
 from pyutil.env import run_command, CommandNotFound
+from simplejson import loads as decode_json
 
 from ampify import settings
 from ampify.build import ERROR, PROGRESS, SUCCESS, MAKE
 from ampify.build import do, error, exit, log, lock, unlock
-from ampify.build import decode_json, load_role, install_packages
+from ampify.build import load_role, install_packages
 
 # ------------------------------------------------------------------------------
 # Constants

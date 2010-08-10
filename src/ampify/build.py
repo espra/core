@@ -8,7 +8,7 @@ import tarfile
 import traceback
 
 from errno import EACCES, ENOENT
-from hashlib import sha256
+from hashlib import sha1, sha256
 from os import chdir, getcwd, environ, execve, listdir, makedirs, remove
 from os.path import dirname, exists, expanduser, isabs, isdir, isfile, islink
 from os.path import join, realpath
@@ -22,12 +22,8 @@ try:
 except ImportError:
     cpu_count = lambda: 1
 
-try:
-    from json import loads as decode_json
-except ImportError:
-    decode_json = None
-
 from pyutil.env import run_command
+from yaml import safe_load as decode_yaml
 
 # ------------------------------------------------------------------------------
 # Print Functions
@@ -221,7 +217,9 @@ DISTFILES_URL_BASE = environ.get(
 # not Amazon CloudFront:
 # https://github.s3.amazonaws.com/downloads/tav/ampify/distfile.
 
-BUILD_WORKING_DIRECTORY = join(ROOT, '.build')
+BUILD_WORKING_DIRECTORY = '/tmp/amp-build-%s' % sha1(ROOT).hexdigest()[:8]
+BUILD_LOCK = BUILD_WORKING_DIRECTORY + '.lock'
+
 BUILD_RECIPES = [path for path in environ.get(
     'AMPIFY_BUILD_RECIPES', join(ENVIRON, 'buildrecipes')
     ).split(':') if isfile(path)]
@@ -252,37 +250,13 @@ RECIPES = {}
 BUILTINS = locals()
 
 BASE_PACKAGES = set()
-BUILD_LOCK = join(ROOT, '.build-lock')
 PACKAGES = {}
 RECIPES_INITIALISED = []
 VIRGIN_BUILD = not exists(join(LOCAL, 'bin', 'python'))
 
 # ------------------------------------------------------------------------------
-# JSON Support
-# ------------------------------------------------------------------------------
-
-# We implement super-basic JSON decoding support for older Pythons which don't
-# have a JSON module.
-if not decode_json:
-    JSON_ENV = {
-        '__builtins__': None,
-        'null': None,
-        'true': True,
-        'false': False
-        }
-    replace_string = re.compile(r'("(\\.|[^"\\])*")').sub
-    match_json = re.compile(r'^[,:{}\[\]0-9.\-+Eaeflnr-u \n\r\t]+$').match
-    def decode_json(json):
-        if match_json(replace_string('', json)):
-            json = replace_string(lambda m: m.group(1), json)
-            return eval(json.strip(' \t\r\n'), JSON_ENV, {})
-        raise ValueError("Couldn't decode JSON input.")
-
-# ------------------------------------------------------------------------------
 # Distfiles Downloader
 # ------------------------------------------------------------------------------
-#print '\n'.join(sorted(strip_prefix(gather_local_filelisting(LOCAL), LOCAL)))
-#sys.exit()
 
 DOWNLOAD_QUEUE = []
 DOWNLOAD_ERROR = []
@@ -350,7 +324,7 @@ def load_role(role):
         build_base_and_reload()
 
     for path in ROLES_PATH:
-        role_file = join(path, role) + '.json'
+        role_file = join(path, role) + '.yaml'
         if isfile(role_file):
             break
     else:
@@ -365,7 +339,7 @@ def load_role(role):
     role_file.close()
 
     try:
-        role_data = decode_json(role_data)
+        role_data = decode_yaml(role_data)
     except Exception:
         exit("ERROR: Couldn't decode the JSON input: %s" % role_file.name)
 
