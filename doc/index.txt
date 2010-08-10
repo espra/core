@@ -24,13 +24,13 @@ recent Python 2.x and general dev tools (gcc, make, etc.) installed.
 
 .. syntax:: bash
 
-  $ git clone https://github.com/espians/ampify.git # (1)
+  $ git clone https://github.com/tav/ampify.git  # (1)
   $ cd ampify
-  $ make                                            # (2)
-  $ source environ/ampenv.sh                        # (3)
-  $ amp init kickass                                # (4)
-  $ amp run kickass                                 # (5)
-  $ open https://localhost:9040                     # (6)
+  $ make                                         # (2)
+  $ source environ/ampenv.sh                     # (3)
+  $ amp init kickass                             # (4)
+  $ amp run kickass                              # (5)
+  $ open https://localhost:9040                  # (6)
 
 1. Clone the repository. You need to have Git 1.7+ in order to use the smart
    HTTP protocol.
@@ -126,13 +126,13 @@ Get Involved
 * Sign up to GitHub if you don't have an `account
   <https://github.com/signup/free>`_ — it takes just a minute! You can then
   `fork <http://help.github.com/forking/>`_ the `ampify repository
-  <http://github.com/espians/ampify>`_ and send `pull requests
+  <http://github.com/tav/ampify>`_ and send `pull requests
   <http://github.com/guides/pull-requests>`_ with any changes you might have.
 
 .. syntax:: bash
 
   $ git clone git@github.com:yourUsername/ampify.git
-  $ git remote add upstream https://github.com/espians/ampify.git
+  $ git remote add upstream https://github.com/tav/ampify.git
 
 * Read the `getting started with git
   <http://www.espians.com/getting-started-with-git.html>`_ guide for Ampify

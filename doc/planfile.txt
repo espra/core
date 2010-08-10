@@ -1842,20 +1842,20 @@ Admin
       A repository has been setup on GitHub for the reasons outlined in our
       "`getting started with git
       <http://www.espians.com/getting-started-with-git.html#why-git>`_" article.
-      It can be found at `github.com/espians/ampify
-      <http://github.com/espians/ampify>`_.
+      It can be found at `github.com/tav/ampify
+      <http://github.com/tav/ampify>`_.
 
       To clone the repo:
 
       .. syntax:: bash
 
-        $ git clone https://github.com/espians/ampify.git
+        $ git clone https://github.com/tav/ampify.git
 
       Those who've got write access should instead:
 
       .. syntax:: bash
 
-        $ git clone git@github.com:espians/ampify.git
+        $ git clone git@github.com:tav/ampify.git
 
       Ask Tav if you'd like write access.
 
