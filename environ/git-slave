@@ -17,7 +17,7 @@ from os.path import isdir, isfile, join, realpath
 from shutil import rmtree
 from time import ctime, sleep, time
 from traceback import print_exc
-from urllib import quote, urlencode, urlopen
+from urllib import urlencode, urlopen
 
 from daemon import Daemon
 from optcomplete import ListCompleter, autocomplete
@@ -84,7 +84,7 @@ class Slave(Daemon):
         return run_command(args, **kwargs)
 
     def run(self):
-        remote = repo = revision = None
+        revision = None
         new_build_url = self.get_new_build_url()
         chdir(self.root)
         while 1:
@@ -92,16 +92,17 @@ class Slave(Daemon):
                 self.log("=> Checking for things to do")
             try:
                 server = urlopen(new_build_url)
-                remote, repo, revision = server.read().split('/')
+                revision = server.read()
+                revision = 'master'
                 server.close()
             except Exception:
-                remote = repo = revision = None
+                revision = None
                 self.sleep_more(2)
                 self.error()
-            if remote and repo and revision:
+            if revision:
                 results = {}
                 try:
-                    results['forced'] = self.setup_repo(remote, repo, revision)
+                    self.setup_repo(revision)
                     self.execute_build(results)
                 except Exception:
                     tb = '<br />'.join(html_format_exception())
@@ -109,15 +110,15 @@ class Slave(Daemon):
                         self.log("=> Error running build:")
                     self.error()
                     results = {'traceback': tb}
-                    remote = None
+                    revision = None
                 try:
-                    self.send_results(remote, repo, revision, results)
+                    self.send_results(revision, results)
                 except Exception:
                     if self.debug:
                         self.log("=> Error sending results:")
                     self.error()
-                    remote = None
-            if not remote:
+                    revision = None
+            if not revision:
                 duration = 1.6 * (1.79 ** self.sleep_factor)
                 if self.debug:
                     self.log("=> Sleeping for %.1f seconds" % duration)
@@ -130,29 +131,20 @@ class Slave(Daemon):
             urlencode(dict(uname=self.uname, repo_id=self.repo_id))
             )
 
-    def setup_repo(self, remote, repo, revision, forced_clean=0):
-        if not self.git('config', 'remote.%s.url' % remote):
-            self.git(
-                'remote', 'add', remote,
-                'https://github.com/%s/%s.git' % (quote(remote), quote(repo))
-                )
+    def setup_repo(self, revision):
         if self.debug:
-            self.log("=> Fetching revisions for %s/%s" % (remote, repo))
-        self.git('remote', 'update', '--prune', remote)
-        self.git('clean', '-fd')
+            self.log("=> Fetching remote updates")
+        self.git('remote', 'update', '--prune')
+        self.git('clean', '-fdx')
+        self.git('reset', '--hard')
         for path in self.git('status', '--porcelain').splitlines():
             if path.startswith('??'):
                 path = path.split('??', 1)[1].strip()
                 if isdir(path):
                     rmtree(path)
-        _, error = self.git('checkout', revision, retcode=True)
-        if error:
-            self.git('clean', '-fdx')
-            self.git('submodule', 'clean', 'foreach', 'git clean -fdx')
-            self.git('checkout', revision)
-            forced_clean = 1
+        self.git('submodule', 'foreach', 'git clean -fdx')
+        self.git('checkout', revision)
         self.git('submodule', 'update', '--init')
-        return forced_clean
 
     def execute_build(self, results):
         commands = self.get_build_commands()
@@ -183,10 +175,15 @@ class Slave(Daemon):
         config_file.close()
         return config['slave']
 
-    def send_results(self, remote, repo, revision, results):
-        server = urlopen(
-            self.build_url, urlencode({'data': encode_json(results)})
-            )
+    def send_results(self, revision, results):
+        response = {
+            'data': encode_json(results),
+            'revision': revision,
+            'repo': self.repo_id,
+            'slave': self.slave_id,
+            'token': self.slave_token
+            }
+        server = urlopen(self.build_url, urlencode(response))
         server.read()
         server.close()
 
