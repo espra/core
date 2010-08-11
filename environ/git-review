@@ -9,6 +9,8 @@ import pylibs
 import sys
 
 from optparse import OptionParser
+from os.path import join
+from urllib import urlencode, urlopen
 
 from optcomplete import autocomplete, ListCompleter
 from optcomplete import make_autocompleter, parse_options
@@ -17,8 +19,49 @@ from pyutil.scm import is_git, SCMConfig
 from yaml import safe_load as decode_yaml
 
 # ------------------------------------------------------------------------------
+# Settings
+# ------------------------------------------------------------------------------
+
+CONFIG = {}
+
+# ------------------------------------------------------------------------------
 # Utility Functions
 # ------------------------------------------------------------------------------
+
+def git(*args, **kwargs):
+    if 'exit_on_error' not in kwargs:
+        kwargs['exit_on_error'] = True
+    if kwargs.pop('out', None):
+        kwargs['redirect_stdout'] = False
+        kwargs['redirect_stderr'] = False
+        kwargs['retcode'] = True
+    return run_command(['git'] + list(args), **kwargs)
+
+def setup_remote(name, config_value=None):
+    if not git('config', 'remote.%s.url' % name, exit_on_error=False):
+        if not config_value:
+            config_value = '%s_repo' % name
+        url = CONFIG[config_value]
+        print "=> Setting the %r remote: %s" % (name, url)
+        git('remote', 'add', name, url)
+
+def parse_config(root):
+    config_path = join(root, '.gitreview', 'config.yaml')
+    config_file = open(config_path)
+    config_data = config_file.read()
+    config_file.close()
+    config = decode_yaml(config_data)
+    if config:
+        CONFIG.update(config)
+
+def valid_review_id(id, valid=set('abcdefghijklmnopqrstuvwxyz0123456789-_')):
+    id = id.lower()
+    if id.startswith('-') or id.startswith('_'):
+        return
+    for char in id:
+        if char not in valid:
+            return
+    return id
 
 def get_git_info():
 
@@ -87,7 +130,7 @@ def main(argv=None, show_help=False):
             else:
                 show_help = True
         if command in ['-v', '--version', 'version']:
-            print('git-review version %s' % version)
+            print('git-review %s' % version)
             sys.exit()
 
     if show_help:
@@ -145,6 +188,103 @@ def submit(argv=None, completer=None):
 
     options, args = parse_options(op, argv, completer, False)
     login, token, root = get_git_info()
+    parse_config(root)
+    setup_remote('upstream')
+
+    for branch in git('branch').splitlines():
+        if branch.startswith('*'):
+            current_branch = branch.split('*', 1)[1].strip()
+            break
+    else:
+        print "ERROR: Couldn't detect the current git branch."
+        sys.exit(1)
+
+    if current_branch == 'master':
+        print "ERROR: You can't submit a master branch for review."
+        sys.exit(1)
+
+    HEAD = git('rev-parse', 'HEAD').strip()
+
+    sys.stdout.write("=> ")
+    sys.stdout.flush()
+    git('remote', 'update', 'upstream', out=True)
+
+    upstream_master = 'upstream/%s' % CONFIG['upstream_branch']
+    upstream_revision = git('rev-parse', upstream_master).strip()
+
+    base_revision = git('merge-base', HEAD, upstream_revision).strip()
+    if base_revision == HEAD:
+        print "ERROR: All the changes have already been merged upstream."
+        sys.exit()
+
+    for branch in git('branch', '--contains', upstream_revision):
+        if branch.startswith('*'):
+            rebase = False
+            break
+    else:
+        rebase = True
+
+    if rebase:
+        print
+        print "The upstream/master has changed. You need to rebase."
+        print
+        response = raw_input("Hit enter to run `git rebase -i` [Y/n] ")
+        if response.startswith('n'):
+            sys.exit(1)
+        print
+        git('rebase', '-i', upstream_revision, out=True)
+        print
+        HEAD = git('rev-parse', 'HEAD').strip()
+
+    print "=> Generating patch"
+    patch = git('format-patch', upstream_revision, '--stdout')
+
+    if not patch.strip():
+        print "ERROR: Generated patch is empty. Nothing to send!"
+        sys.exit(1)
+
+    print "=> Sending patch to the review-server"
+    review_server = CONFIG['review_server']
+    server = urlopen(review_server + '/review', urlencode({
+        'id': current_branch,
+        'revision': HEAD,
+        'patch': patch,
+        'login': login,
+        'token': token,
+        'message': options.msg,
+        'upstream': upstream_revision
+        }))
+
+    path = server.read()
+    server.close()
+
+    if path.startswith('OK '):
+        path = path.split('OK ', 1)[1].strip()
+        print "=> You can see the review at:"
+        print
+        print "        %s/review/%s" % (review_server, path)
+        print
+    else:
+        print "ERROR: %s" % path
+        sys.exit(1)
+
+# ------------------------------------------------------------------------------
+# Update Command
+# ------------------------------------------------------------------------------
+
+def update(argv=None, completer=None):
+
+    op = OptionParser(usage="Usage: git review update", add_help_option=False)
+    parse_options(op, argv, completer, False)
+    parse_config(SCMConfig('git').root)
+
+    for remote, cfg in [
+        ('upstream', 'upstream_repo'), ('gitreview', 'review_repo')
+        ]:
+        setup_remote(remote, cfg)
+        sys.stdout.write("=> ")
+        sys.stdout.flush()
+        git('remote', 'update', remote, out=True)
 
 # ------------------------------------------------------------------------------
 # Help Strings
@@ -155,6 +295,7 @@ def submit(argv=None, completer=None):
 apply.help = "fetch and apply a review changeset"
 check.help = "run the automated review checks for this repository"
 submit.help = "submit the current branch for review"
+update.help = "add the upstream/gitserver remotes and update them"
 
 # ------------------------------------------------------------------------------
 # Command Mapping
@@ -163,7 +304,8 @@ submit.help = "submit the current branch for review"
 COMMANDS = {
     'apply': apply,
     'check': check,
-    'submit': submit
+    'submit': submit,
+    'update': update
     }
 
 # ------------------------------------------------------------------------------
