@@ -93,7 +93,6 @@ class Slave(Daemon):
             try:
                 server = urlopen(new_build_url)
                 revision = server.read()
-                revision = 'master'
                 server.close()
             except Exception:
                 revision = None
@@ -154,6 +153,8 @@ class Slave(Daemon):
             command = spec[1:]
             if not command:
                 continue
+            if self.debug:
+                self.log("=> Executing command: %r" % command)
             start = time()
             stdout, stderr, error = run_command(
                 command, retcode=True, reterror=True
