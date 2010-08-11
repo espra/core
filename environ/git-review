@@ -10,6 +10,7 @@ import sys
 
 from optparse import OptionParser
 from os.path import join
+from time import time
 from urllib import urlencode, urlopen
 
 from optcomplete import autocomplete, ListCompleter
@@ -37,13 +38,16 @@ def git(*args, **kwargs):
         kwargs['retcode'] = True
     return run_command(['git'] + list(args), **kwargs)
 
-def setup_remote(name, config_value=None):
+def setup_remote(name):
     if not git('config', 'remote.%s.url' % name, exit_on_error=False):
-        if not config_value:
-            config_value = '%s_repo' % name
-        url = CONFIG[config_value]
+        url = CONFIG['%s_repo' % name]
         print "=> Setting the %r remote: %s" % (name, url)
         git('remote', 'add', name, url)
+
+def update_remote(name):
+    sys.stdout.write("=> ")
+    sys.stdout.flush()
+    git('remote', 'update', name, '--prune', out=True)
 
 def parse_config(root):
     config_path = join(root, '.gitreview', 'config.yaml')
@@ -54,14 +58,26 @@ def parse_config(root):
     if config:
         CONFIG.update(config)
 
-def valid_review_id(id, valid=set('abcdefghijklmnopqrstuvwxyz0123456789-_')):
-    id = id.lower()
-    if id.startswith('-') or id.startswith('_'):
-        return
-    for char in id:
-        if char not in valid:
-            return
-    return id
+def exit_if_dirty():
+    if git('diff-index', 'HEAD'):
+        print "ERROR: You have a dirty tree."
+        print "ERROR: Please stash your changes or commit them locally first."
+        sys.exit(1)
+
+def get_review_ids():
+    return [
+        branch[10:]
+        for branch in [b.strip() for b in git('branch', '-r').splitlines()]
+        if branch.startswith('gitreview/') and branch.count('/') == 3
+        ]
+
+def get_current_branch():
+    for branch in git('branch').splitlines():
+        if branch.startswith('*'):
+            return branch.split('*', 1)[1].strip()
+    else:
+        print "ERROR: Couldn't detect the current git branch."
+        sys.exit(1)
 
 def get_git_info():
 
@@ -153,11 +169,61 @@ def main(argv=None, show_help=False):
 def apply(argv=None, completer=None):
 
     op = OptionParser(
-        usage="Usage: git review apply <review-id> [options]",
+        usage="Usage: git review apply <review-id>",
         add_help_option=False
         )
 
+    review_ids = get_review_ids()
+    if completer:
+        return op, ListCompleter(review_ids)
+
+    parse_config(SCMConfig('git').root)
     options, args = parse_options(op, argv, completer, True)
+
+    current_branch = get_current_branch()
+    if current_branch == '(no branch)':
+        print "ERROR: You need to be on a git branch -- ideally 'master'."
+        sys.exit(1)
+
+    exit_if_dirty()
+    setup_remote('gitreview'); update_remote('gitreview')
+    setup_remote('upstream'); update_remote('upstream')
+
+    review_ids = get_review_ids()
+    id = args[0]
+    if id not in review_ids:
+        print "ERROR: Could not find the %r review" % id
+        sys.exit(1)
+
+    gitreview_id = 'gitreview/' + id
+    upstream_master = 'upstream/' + CONFIG['default_branch']
+    upstream_revision = git('rev-parse', upstream_master).strip()
+    review_revision = git('rev-parse', gitreview_id).strip()
+    HEAD = git('rev-parse', 'HEAD').strip()
+
+    base_revision = git('merge-base', HEAD, review_revision).strip()
+    if base_revision == review_revision:
+        print "=> Nothing to apply. Everything has already been merged."
+        sys.exit()
+
+    base_revision = git('merge-base', HEAD, upstream_revision).strip()
+    if base_revision != upstream_revision:
+        print "=> Creating temporary branch to rebase upstream/master changes."
+        tmp_branch = 'tmp-%s-%x' % (id.split('/')[1], time())
+        git('checkout', '-b', tmp_branch, gitreview_id, out=True)
+        print "=> Rebasing upstream/master changes."
+        git('rebase', '-i', 'upstream/master', out=True)
+        print "=> Switching back to the initial branch."
+        git('checkout', current_branch, out=True)
+        print "=> Merging the review changeset."
+        git('merge', tmp_branch, out=True)
+        print "=> Removing the temporary branch."
+        git('branch', '-D', tmp_branch)
+    else:
+        print "=> Merging the review changeset."
+        git('merge', gitreview_id, out=True)
+
+    print "=> Review changeset %r successfully applied!" % id
 
 # ------------------------------------------------------------------------------
 # Check Command
@@ -171,6 +237,8 @@ def check(argv=None, completer=None):
         )
 
     options, args = parse_options(op, argv, completer, False)
+
+    exit_if_dirty()
 
 # ------------------------------------------------------------------------------
 # Submit Command
@@ -187,34 +255,28 @@ def submit(argv=None, completer=None):
                   help="use the message as the title for the review item")
 
     options, args = parse_options(op, argv, completer, False)
+
+    exit_if_dirty()
     login, token, root = get_git_info()
     parse_config(root)
+
     setup_remote('upstream')
+    update_remote('upstream')
 
-    for branch in git('branch').splitlines():
-        if branch.startswith('*'):
-            current_branch = branch.split('*', 1)[1].strip()
-            break
-    else:
-        print "ERROR: Couldn't detect the current git branch."
-        sys.exit(1)
-
+    current_branch = get_current_branch()
     if current_branch == 'master':
         print "ERROR: You can't submit a master branch for review."
         sys.exit(1)
 
     HEAD = git('rev-parse', 'HEAD').strip()
 
-    sys.stdout.write("=> ")
-    sys.stdout.flush()
-    git('remote', 'update', 'upstream', out=True)
-
-    upstream_master = 'upstream/%s' % CONFIG['upstream_branch']
+    upstream_master = 'upstream/%s' % CONFIG['default_branch']
     upstream_revision = git('rev-parse', upstream_master).strip()
 
     base_revision = git('merge-base', HEAD, upstream_revision).strip()
     if base_revision == HEAD:
         print "ERROR: All the changes have already been merged upstream."
+        print "ERROR: There is nothing to submit."
         sys.exit()
 
     for branch in git('branch', '--contains', upstream_revision):
@@ -278,13 +340,9 @@ def update(argv=None, completer=None):
     parse_options(op, argv, completer, False)
     parse_config(SCMConfig('git').root)
 
-    for remote, cfg in [
-        ('upstream', 'upstream_repo'), ('gitreview', 'review_repo')
-        ]:
-        setup_remote(remote, cfg)
-        sys.stdout.write("=> ")
-        sys.stdout.flush()
-        git('remote', 'update', remote, out=True)
+    for remote in ['upstream', 'gitreview']:
+        setup_remote(remote)
+        update_remote(remote)
 
 # ------------------------------------------------------------------------------
 # Help Strings
