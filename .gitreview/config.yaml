@@ -3,13 +3,13 @@
 
 repo_id: ampify
 upstream_repo: https://github.com/tav/ampify.git
-upstream_branch: master
-review_repo: https://github.com/gitreview/ampify.git
+gitreview_repo: https://github.com/gitreview/ampify.git
+default_branch: master
 review_server: http://localhost:8090
 cc: ampify@googlegroups.com
 watchlist: on
 
 slave:
-- ['init', './environ/amp', 'build']
+- ['build', './environ/amp', 'build']
 - ['py-tests', './environ/amp', 'test', 'python']
 - ['go-tests', './environ/amp', 'test', 'go']
