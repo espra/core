@@ -97,13 +97,13 @@ function _have () {
 export AMPIFY_LOCAL=$AMPIFY_ROOT/environ/local
 
 if [ "x$PRE_AMPENV_PATH" != "x" ]; then
-	export PATH=$AMPIFY_ROOT/environ:$AMPIFY_LOCAL/bin:$AMPIFY_ROOT/src/codereview:$PRE_AMPENV_PATH
+	export PATH=$AMPIFY_ROOT/environ:$AMPIFY_LOCAL/bin:$PRE_AMPENV_PATH
 else
 	if [ "x$PATH" != "x" ]; then
 		export PRE_AMPENV_PATH=$PATH
-		export PATH=$AMPIFY_ROOT/environ:$AMPIFY_LOCAL/bin:$AMPIFY_ROOT/src/codereview:$PATH
+		export PATH=$AMPIFY_ROOT/environ:$AMPIFY_LOCAL/bin:$PATH
 	else
-		export PATH=$AMPIFY_ROOT/environ:$AMPIFY_LOCAL/bin:$AMPIFY_ROOT/src/codereview
+		export PATH=$AMPIFY_ROOT/environ:$AMPIFY_LOCAL/bin
 	fi
 fi
 
