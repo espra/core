@@ -20,6 +20,7 @@ from optcomplete import autocomplete, ListCompleter
 from optcomplete import make_autocompleter, parse_options
 from pyutil.env import exit, run_command
 from pyutil.scm import is_git, SCMConfig
+from simplejson import dumps as encode_json
 from yaml import safe_load as decode_yaml
 
 # ------------------------------------------------------------------------------
@@ -41,6 +42,14 @@ def git(*args, **kwargs):
         kwargs['retcode'] = True
     return run_command(['git'] + list(args), **kwargs)
 
+def git_rebase(revision):
+    _, retcode = run_command(
+        ['git', 'rebase', '-i', revision],
+        redirect_stderr=False, redirect_stdout=False, retcode=True
+        )
+    if retcode:
+        sys.exit(1)
+
 def setup_remote(name):
     if not git('config', 'remote.%s.url' % name, exit_on_error=False):
         url = CONFIG['%s_repo' % name]
@@ -60,6 +69,30 @@ def parse_config(root):
     config = decode_yaml(config_data)
     if config:
         CONFIG.update(config)
+
+def get_watchers(diff, root):
+    watchlist_path = join(root, '.gitreview', 'watchlist.yaml')
+    watchlist_file = open(watchlist_path)
+    watchlist_data = watchlist_file.read()
+    watchlist_file.close()
+    watchlist_spec = decode_yaml(watchlist_data)
+    pathsets = watchlist_spec['pathsets']
+    matches = {}
+    for pathset in pathsets:
+        matches[pathset] = set()
+    for i in range(0, len(diff), 2):
+        path = diff[i+1]
+        for pathset in pathsets:
+            match = matches[pathset]
+            for pattern in pathsets[pathset]:
+                if fnmatch(path, pattern):
+                    match.add(path)
+    watchlists = watchlist_spec['watchlists']
+    watchers = set()
+    for pathset in matches:
+        if matches[pathset] and pathset in watchlists:
+            watchers.update(watchlists[pathset])
+    return watchers
 
 def exit_if_dirty():
     if git('diff-index', 'HEAD'):
@@ -88,9 +121,6 @@ def get_ref_list(root):
                         ref = ref[1:]
                     append(ref)
     return refs
-
-# print get_ref_list('/Users/tav/silo/ampify')
-# sys.exit()
 
 def get_current_branch():
     branch = git('symbolic-ref', 'HEAD', '-q', exit_on_error=False)
@@ -358,11 +388,14 @@ def apply(argv=None, completer=None):
 
     base_revision = git('merge-base', HEAD, upstream_revision).strip()
     if base_revision != upstream_revision:
-        print "=> Creating temporary branch to rebase upstream/master changes."
+        print (
+            "=> Creating temporary branch to rebase %s changes."
+            % upstream_master
+            )
         tmp_branch = 'tmp-%s-%x' % (id.split('/')[1], time())
         git('checkout', '-b', tmp_branch, gitreview_id, out=True)
-        print "=> Rebasing upstream/master changes."
-        git('rebase', '-i', 'upstream/master', out=True)
+        print "=> Rebasing %s changes." % upstream_master
+        git_rebase(upstream_master)
         print "=> Switching back to the initial branch."
         git('checkout', current_branch, out=True)
         print "=> Merging the review changeset."
@@ -412,6 +445,9 @@ def submit(argv=None, completer=None):
 
     op.add_option('-m', dest='msg', default="",
                   help="use the message as the title for the review item")
+
+    op.add_option('--cc', action='append', dest='reviewer',
+                  help="the email address for an additional reviewer")
 
     op.add_option('--skip-checks', action='store_true', dest='skip_checks',
                   help="skip the automatic git review checks")
@@ -463,22 +499,35 @@ def submit(argv=None, completer=None):
 
     if rebase:
         print
-        print "The upstream/master has changed. You need to rebase."
+        print "The %s has changed. You need to rebase." % upstream_master
         print
         response = raw_input("Hit enter to run `git rebase -i` [Y/n] ")
         if response.startswith('n'):
             sys.exit(1)
         print
-        git('rebase', '-i', upstream_revision, out=True)
+        git_rebase(upstream_revision)
         print
         HEAD = git('rev-parse', 'HEAD').strip()
 
+    diff = git(
+        'diff', upstream_revision, '--name-status', '-z',
+        exit_on_error=True
+        ).strip().split('\x00')[:-1]
+
     if not options.skip_checks:
-        diff = git(
-            'diff', upstream_revision, '--name-status', '-z',
-            exit_on_error=True
-            ).strip().split('\x00')[:-1]
         run_review_checks(diff, root)
+
+    if CONFIG['watchlist']:
+        default_reviewers = CONFIG.get('cc', None)
+        if default_reviewers:
+            if not isinstance(default_reviewers, list):
+                default_reviewers = [default_reviewers]
+        reviewers = get_watchers(diff, root)
+        reviewers.update(default_reviewers)
+        reviewers = list(reviewers)
+        reviewers = encode_json(reviewers)
+    else:
+        reviewers = ''
 
     print "=> Generating patch"
     patch = git('format-patch', upstream_revision, '--stdout')
@@ -496,6 +545,7 @@ def submit(argv=None, completer=None):
         'login': login,
         'token': token,
         'message': options.msg,
+        'cc': reviewers,
         'upstream': upstream_revision
         }))
 
@@ -561,7 +611,7 @@ AUTOCOMPLETE_COMMANDS['help'] = lambda completer: (
 
 AUTOCOMPLETE_COMMANDS['version'] = lambda completer: (
     OptionParser(add_help_option=False),
-    DirCompleter(AMPIFY_ROOT_PARENT)
+    ListCompleter([])
     )
 
 for command in AUTOCOMPLETE_COMMANDS.values():
