@@ -48,7 +48,7 @@ def git_rebase(revision):
         redirect_stderr=False, redirect_stdout=False, retcode=True
         )
     if retcode:
-        sys.exit(1)
+        sys.exit(retcode)
 
 def setup_remote(name):
     if not git('config', 'remote.%s.url' % name, exit_on_error=False):

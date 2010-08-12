@@ -47,7 +47,7 @@ class Slave(Daemon):
         self.slave_id = slave_id
         self.slave_token = slave_token
         self.uname = uname
-        self.build_url = server + '/new-build'
+        self.build_url = server + '/build'
 
     def log(self, msg):
         if self.debug:
@@ -233,7 +233,7 @@ def main():
     git = SCMConfig('git')
     root = realpath(git.root)
 
-    config_path = join(root, '.gitconfig', 'config.yaml')
+    config_path = join(root, '.gitreview', 'config.yaml')
     if not isfile(config_path):
         print "ERROR: Couldn't find %s" % config_path
         sys.exit(1)
@@ -262,7 +262,7 @@ def main():
     if not (slave_id and token):
         print "You can get a Slave ID and Token from:"
         print
-        print "    %s/new-slave" % review_server
+        print "    %s/slave" % review_server
         print
         sys.exit(1)
 
