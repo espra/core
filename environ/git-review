@@ -9,6 +9,7 @@ import pylibs
 import sys
 
 from optparse import OptionParser
+from os import chdir
 from os.path import join
 from time import time
 from urllib import urlencode, urlopen
@@ -72,12 +73,11 @@ def get_review_ids():
         ]
 
 def get_current_branch():
-    for branch in git('branch').splitlines():
-        if branch.startswith('*'):
-            return branch.split('*', 1)[1].strip()
-    else:
-        print "ERROR: Couldn't detect the current git branch."
-        sys.exit(1)
+    branch = git('symbolic-ref', 'HEAD', '-q', exit_on_error=False)
+    if branch and branch.startswith('refs/heads/'):
+        return branch.replace('refs/heads/', '', 1).strip()
+    print "ERROR: Couldn't detect the current git branch."
+    sys.exit(1)
 
 def get_git_info():
 
@@ -105,6 +105,14 @@ def get_git_info():
         sys.exit(1)
 
     return login, token, git.root
+
+def valid_review_id(id, valid=set('abcdefghijklmnopqrstuvwxyz0123456789-_')):
+    if id.startswith('-') or id.startswith('_'):
+        return
+    for char in id:
+        if char not in valid:
+            return
+    return id
 
 # ------------------------------------------------------------------------------
 # Main Runner
@@ -177,9 +185,11 @@ def apply(argv=None, completer=None):
     if completer:
         return op, ListCompleter(review_ids)
 
-    parse_config(SCMConfig('git').root)
+    root = SCMConfig('git').root
+    parse_config(root)
     options, args = parse_options(op, argv, completer, True)
 
+    chdir(root)
     current_branch = get_current_branch()
     if current_branch == '(no branch)':
         print "ERROR: You need to be on a git branch -- ideally 'master'."
@@ -203,7 +213,7 @@ def apply(argv=None, completer=None):
 
     base_revision = git('merge-base', HEAD, review_revision).strip()
     if base_revision == review_revision:
-        print "=> Nothing to apply. Everything has already been merged."
+        print "=> Nothing to apply -- %r has already been merged." % id
         sys.exit()
 
     base_revision = git('merge-base', HEAD, upstream_revision).strip()
@@ -247,7 +257,7 @@ def check(argv=None, completer=None):
 def submit(argv=None, completer=None):
 
     op = OptionParser(
-        usage="Usage: git review submit [options]",
+        usage="Usage: git review submit [<branch>] [options]",
         add_help_option=False
         )
 
@@ -258,15 +268,28 @@ def submit(argv=None, completer=None):
 
     exit_if_dirty()
     login, token, root = get_git_info()
-    parse_config(root)
-
-    setup_remote('upstream')
-    update_remote('upstream')
 
     current_branch = get_current_branch()
-    if current_branch == 'master':
+    if args:
+        review_branch = args[0]
+    else:
+        review_branch = current_branch
+
+    if not valid_review_id(review_branch):
+        print "ERROR: Invalid review branch name %r" % review_branch
+        sys.exit(1)
+
+    if review_branch != current_branch:
+        git('checkout', '-q', review_branch, out=True)
+
+    if review_branch == 'master':
         print "ERROR: You can't submit a master branch for review."
         sys.exit(1)
+
+    parse_config(root)
+    chdir(root)
+    setup_remote('upstream')
+    update_remote('upstream')
 
     HEAD = git('rev-parse', 'HEAD').strip()
 
@@ -308,7 +331,7 @@ def submit(argv=None, completer=None):
     print "=> Sending patch to the review-server"
     review_server = CONFIG['review_server']
     server = urlopen(review_server + '/review', urlencode({
-        'id': current_branch,
+        'id': review_branch,
         'revision': HEAD,
         'patch': patch,
         'login': login,
