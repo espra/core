@@ -3,49 +3,30 @@
 # No Copyright (-) 2010 The Ampify Authors. This file is under the
 # Public Domain license that can be found in the root LICENSE file.
 
-def JSLint(input_api, output_api):
-
-    files = [
-        f.AbsoluteLocalPath() for f in input_api.AffectedSourceFiles(
-            lambda x: x.AbsoluteLocalPath().endswith('.js')
-            )
-        ]
-
-    results = []; out = results.append
+@checker(include=['*.js'])
+def jslint(changelist, files):
+    """JSLinting %s failed.\n\n"""
 
     for filename in files:
-        process = input_api.subprocess.Popen(
-            ['nodelint.js', filename],
-            stdin=input_api.subprocess.PIPE,
-            stdout=input_api.subprocess.PIPE,
-            stderr=input_api.subprocess.PIPE
-            )
-        stdout, stderr = process.communicate()
-        if process.returncode:
-            out(output_api.PresubmitPromptWarning(
-                "JSLinting '%s' failed:" % filename,
-                long_text="%s" % stdout
-                ))
+        stdout, stderr, retcode = run('nodelint', filename)
+        if retcode:
+            changelist.error(filename, stderr)
 
-    return results
+@checker(exclude=BINARY_FILES)
+def stray_whitespace(changelist, files):
+    """The following lines in %s have trailing whitespace:\n\n\t"""
 
-
-def CheckChange(input_api, output_api, commit):
-    results = []
-    results += input_api.canned_checks.CheckChangeHasNoStrayWhitespace(
-        input_api, output_api
-        )
-    results += input_api.canned_checks.CheckChangeHasDescription(
-        input_api, output_api
-        )
-    results.extend(JSLint(input_api, output_api))
-    return results
-
-
-def CheckChangeOnUpload(input_api, output_api):
-    return CheckChange(input_api, output_api, False)
-
-
-def CheckChangeOnCommit(input_api, output_api):
-    return CheckChange(input_api, output_api, True)
-
+    for filename in files:
+        file = open(filename, 'rb')
+        stray_lines = []
+        line_number = 0
+        for line in file.readlines():
+            if not line:
+                continue
+            line = line[:-1]
+            line_number += 1
+            if line != line.rstrip():
+                stray_lines.append(line_number)
+        if stray_lines:
+            changelist.error(filename, '\n\t'.join(map(str, stray_lines)))
+        file.close()
