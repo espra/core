@@ -1,24 +1,19 @@
 # No Copyright (-) 2010 The Ampify Authors. This file is under the
 # Public Domain license that can be found in the root LICENSE file.
 
-# Watchlist Rules
-# http://dev.chromium.org/developers/contributing-code/watchlists
+pathsets:
+  all:
+    - "*"
+  documentation:
+    - "doc/*"
+    - AUTHORS
+    - LICENSE
+    - README.md
+  go-code:
+    - "*.go"
 
-{
-
-	'WATCHLIST_DEFINITIONS': {
-		'jsutil': {
-			'filepath': '^jsutil'
-		}
-		'self': {
-			'filepath': r'^\.watchlist'
-		}
-	},
-
-	'WATCHLISTS': {
-		'jsutil': [
-			'asktav@gmail.com'
-			]
-	}
-
-}
+watchlists:
+  all:
+    - tav@espians.com
+  go-code:
+    - mamading@gmail.com
