@@ -365,15 +365,15 @@ def apply(argv=None, completer=None):
 def check(argv=None, completer=None):
 
     op = OptionParser(
-        usage="Usage: git review check [options]", add_help_option=False
+        usage="Usage: git review check [<base-revision>]", add_help_option=False
         )
-
-    op.add_option('--base', dest='revision', default='HEAD',
-                  help="the base revision to diff against [default: HEAD]")
 
     options, args = parse_options(op, argv, completer, False)
 
-    base = options.revision
+    base = 'HEAD'
+    if args:
+        base = args[0]
+
     diff = git(
         'diff', base, '--name-status', '--cached', '-z', exit_on_error=True
         ).strip().split('\x00')[:-1]
