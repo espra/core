@@ -10,7 +10,7 @@ import sys
 
 from fnmatch import fnmatch
 from optparse import OptionParser
-from os import chdir
+from os import chdir, walk
 from os.path import join, realpath
 from time import time
 from traceback import print_exc
@@ -73,6 +73,24 @@ def get_review_ids():
         for branch in [b.strip() for b in git('branch', '-r').splitlines()]
         if branch.startswith('gitreview/') and branch.count('/') == 3
         ]
+
+def get_ref_list(root):
+    refs = ['HEAD', 'FETCH_HEAD', 'ORIG_HEAD']
+    append = refs.append
+    for path in ['heads', 'remotes', 'tags']:
+        path = join(root, '.git', 'refs', path)
+        for dirpath, _, filenames in walk(path):
+            if filenames:
+                prefix = dirpath.replace(path, '', 1)
+                for filename in filenames:
+                    ref = "%s/%s" % (prefix, filename)
+                    if ref.startswith('/'):
+                        ref = ref[1:]
+                    append(ref)
+    return refs
+
+# print get_ref_list('/Users/tav/silo/ampify')
+# sys.exit()
 
 def get_current_branch():
     branch = git('symbolic-ref', 'HEAD', '-q', exit_on_error=False)
@@ -152,14 +170,13 @@ def create_changelist(diff):
         changes[action].append(path)
     return changelist
 
-def run_review_checks(diff):
+def run_review_checks(diff, root):
 
     changelist = create_changelist(diff)
     if not changelist.changes:
         print "=> No changes found -- exiting."
         sys.exit()
 
-    root = realpath(git('rev-parse', '--show-cdup').strip())
     chdir(root)
 
     hooks = git('ls-files', '*revhook').strip().splitlines()
@@ -368,17 +385,19 @@ def check(argv=None, completer=None):
         usage="Usage: git review check [<base-revision>]", add_help_option=False
         )
 
+    root = realpath(git('rev-parse', '--show-cdup').strip())
+
+    if completer:
+        return op, ListCompleter(get_ref_list(root))
+
     options, args = parse_options(op, argv, completer, False)
 
-    base = 'HEAD'
-    if args:
-        base = args[0]
-
     diff = git(
-        'diff', base, '--name-status', '--cached', '-z', exit_on_error=True
+        'diff', args and args[0] or 'HEAD', '--name-status', '--cached', '-z',
+        exit_on_error=True
         ).strip().split('\x00')[:-1]
 
-    run_review_checks(diff)
+    run_review_checks(diff, root)
 
 # ------------------------------------------------------------------------------
 # Submit Command
@@ -456,10 +475,10 @@ def submit(argv=None, completer=None):
 
     if not options.skip_checks:
         diff = git(
-            'diff', upstream_revision, '--name-status', '--cached', '-z',
+            'diff', upstream_revision, '--name-status', '-z',
             exit_on_error=True
             ).strip().split('\x00')[:-1]
-        run_review_checks(diff)
+        run_review_checks(diff, root)
 
     print "=> Generating patch"
     patch = git('format-patch', upstream_revision, '--stdout')
