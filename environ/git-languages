@@ -14,7 +14,7 @@
 import pylibs
 import sys
 
-from decimal import Context, Decimal, setcontext, ROUND_HALF_UP
+from decimal import Decimal, ROUND_HALF_UP
 from os.path import splitext
 from os import lstat
 from stat import ST_SIZE, S_ISLNK
@@ -55,10 +55,7 @@ def merge(ext1, ext2, d):
 merge('h', 'c', files)
 merge('awk', 'sh', files)
 
-
 if not sys.argv[1:]:
-    ctx = Context(prec=2, rounding=ROUND_HALF_UP)
-    setcontext(ctx)
     meta = 0
     totals = {}
     for ext in files:
@@ -68,7 +65,8 @@ if not sys.argv[1:]:
             meta += total
     for ext in sorted(totals, key=lambda x: totals[x]):
         weight_f = float(totals[ext] * 100) / meta
-        weight = Decimal(totals[ext] * 100) / meta
+        weight = Decimal(totals[ext] * 100) / Decimal(meta)
+        weight = weight.quantize(Decimal('10'), ROUND_HALF_UP)
         print "%8s    %-9s %.2f\t%d" % (ext, totals[ext], weight_f, weight)
     sys.exit()
 
