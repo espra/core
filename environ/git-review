@@ -529,14 +529,14 @@ def submit(argv=None, completer=None):
     else:
         reviewers = ''
 
-    print "=> Generating patch"
+    print "=> Generating patch."
     patch = git('format-patch', upstream_revision, '--stdout')
 
     if not patch.strip():
         print "ERROR: Generated patch is empty. Nothing to send!"
         sys.exit(1)
 
-    print "=> Sending patch to the review-server"
+    print "=> Sending patch to the review-server."
     review_server = CONFIG['review_server']
     server = urlopen(review_server + '/review', urlencode({
         'id': review_branch,
