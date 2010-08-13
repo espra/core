@@ -9,9 +9,10 @@ import logging
 import sys
 
 from optparse import OptionParser
-from os import chdir, environ, getcwd
-from os.path import isdir, isfile, join, realpath
+from os import chdir, close, environ, getcwd, remove, write
+from os.path import dirname, isdir, isfile, join, realpath
 from Queue import Queue
+from tempfile import mkstemp
 from thread import start_new_thread
 from urllib import quote, urlencode, urlopen
 
@@ -20,6 +21,7 @@ from tornado.web import Application, HTTPError, RequestHandler
 from tornado.web import authenticated
 from tornado.ioloop import IOLoop
 
+from pyutil.async import Dispatcher as AsyncDispatcher
 from pyutil.env import run_command
 from pyutil.redis import Redis, set_max_connections
 from simplejson import loads as decode_json
@@ -66,7 +68,7 @@ def threaded_worker_dispatcher(queue, error_logger=None):
 
 class Worker(object):
 
-    def __init__(self, queue, callback, errback, func, args, kwargs:
+    def __init__(self, queue, callback, errback, func, args, kwargs):
         self.callback = callback
         self.errback = errback
         self.marker = marker = id(self)
@@ -141,9 +143,46 @@ def async(method):
     wrapper.__name__ = method.__name__
     return wrapper
 
+def auth(async=False):
+    def wrapper(method):
+        def __wrapper(handler, *args, **kwargs):
+            handler._auto_finish = 0
+            TornadoWebDispatcher(
+                authenticate(async, method, handler, *args, **kwargs), handler
+                )
+        __wrapper.__name__ = method.__name__
+        return __wrapper
+    return wrapper
+
+def authenticate(async, method, handler, *args, **kwargs):
+    login = handler.get_argument('login', '')
+    if login:
+        token = handler.get_argument('token', '')
+        if login in USERS:
+            if USERS[login]['token'] != token:
+                raise HTTPError(403)
+        info = yield get_github_user_info(login, token)
+        if not info:
+            raise HTTPError(403)
+    else:
+        login = handler.get_secure_cookie('login')
+        if not login:
+            self.redirect('/login')
+            return
+    if async:
+        gen = method(handler, *args, **kwargs)
+        resp = None
+        # @@ this pipelining doesn't support catching exceptions downstream
+        while 1:
+            resp = yield gen.send(resp)
+    else:
+        method(handler, *args, **kwargs)
+
 # ------------------------------------------------------------------------------
 # Worker Functions
 # ------------------------------------------------------------------------------
+
+USERS = {}
 
 @worker(MAIN_QUEUE)
 def get_github_user_info(login, token, keys=['email', 'gravatar_id', 'name']):
@@ -160,7 +199,38 @@ def get_github_user_info(login, token, keys=['email', 'gravatar_id', 'name']):
     for key in keys:
         if key in data:
             info[key] = data[key]
+    del info['login']
+    USERS[login] = info
     return info
+
+@worker(GIT_QUEUE)
+def apply_patch(repo, review_id, upstream, patch_file):
+    chdir(repo_paths[repo])
+    git('remote', 'update', 'upstream')
+    git('checkout', '-b', review_id, upstream)
+    git('am', patch_file)
+    git('push', 'origin', review_id)
+
+# ------------------------------------------------------------------------------
+# Utility Functions
+# ------------------------------------------------------------------------------
+
+def git(*args, **kwargs):
+    if kwargs.pop('out', None):
+        if 'exit_on_error' not in kwargs:
+            kwargs['exit_on_error'] = True
+        kwargs['redirect_stdout'] = False
+        kwargs['redirect_stderr'] = False
+        kwargs['retcode'] = True
+    return run_command(['git'] + list(args), **kwargs)
+
+def valid_review_id(id, valid=set('abcdefghijklmnopqrstuvwxyz0123456789-_')):
+    if id.startswith('-') or id.startswith('_'):
+        return
+    for char in id:
+        if char not in valid:
+            return
+    return id
 
 # ------------------------------------------------------------------------------
 # Cache
@@ -232,7 +302,6 @@ class CachingDict(dict):
 
         raise KeyError(key)
 
-
     def setdefault(self, key, default):
         if key in self:
             return self.__getitem__(key)
@@ -268,12 +337,24 @@ class CachingDict(dict):
         return sum(len(str(getitem(key))) for key in self)
 
 # ------------------------------------------------------------------------------
+# Git-related Functions
+# ------------------------------------------------------------------------------
+
+def update_repo(name):
+    chdir(repo_paths[name])
+    git('remote', 'update')
+    git('push', 'origin', 'upstream/master:master')
+
+# ------------------------------------------------------------------------------
 # Handlers
 # ------------------------------------------------------------------------------
 
 class BaseHandler(RequestHandler):
 
     title = None
+
+    def get_current_user(self):
+        return self.get_secure_cookie('login')
 
     def display(self, template, **kwargs):
         if 'errmsg' not in kwargs:
@@ -292,8 +373,7 @@ class MainHandler(BaseHandler):
             return
         self.display('home', repos=repos)
 
-
-class NewBuildHandler(BaseHandler):
+class BuildHandler(BaseHandler):
 
     def get(self):
         from random import random
@@ -308,17 +388,67 @@ class NewBuildHandler(BaseHandler):
     def post(self):
         print decode_json(self.get_argument('data'))
 
+class ReviewHandler(BaseHandler):
+
+    def get(self):
+        from random import random
+        uname = self.get_argument('uname')
+        repo_id = self.get_argument('repo_id')
+        self.set_header('Content-Type', 'text/plain')
+        if random() > 0.5:
+            self.write('tav/ampify/master')
+        else:
+            self.write('//')
+
+    @auth(async=True)
+    def post(self):
+
+        get = self.get_argument
+        id = get('id')
+        if not valid_review_id(id):
+            self.write("Invalid characters in the review id: %s" % id)
+
+        login = get('login')
+        repo = get('repo')
+        patch = get('patch')
+        upstream = get('upstream')
+        message = get('message', '')
+        revision = get('revision')
+
+        cc = get('cc', '')
+        if cc:
+            cc = decode_json(cc)
+        else:
+            cc = []
+
+        login_id_prefix = '%s/%s' % (login, id)
+        issue_number = 1
+        review_id = '%s/%s/%s' % (login, id, issue_number)
+
+        # existing_review_id = yield db.get(revision)
+        # if existing_review_id:
+        #     self.write(
+        #         "This revision has already been submitted for review as %s."
+        #         % existing_review_id
+        #     )
+        #     return
+
+        fd, patch_file = mkstemp('review-patch-')
+        write(fd, patch)
+        close(fd)
+
+        yield apply_patch(repo, review_id, upstream, patch_file)
+
+        self.write('OK %s' % review_id)
+        remove(patch_file)
+
 class LoginHandler(BaseHandler):
 
     title = 'login'
 
-    def get_current_user(self):
-        return 'tav'
-
     def get(self):
         self.display('login')
 
-    @async
     def post(self):
         login = self.get_argument('login', "")
         token = self.get_argument('token', "")
@@ -326,14 +456,11 @@ class LoginHandler(BaseHandler):
         if not info:
             self.display('login', errmsg="Invalid Login.")
             return
-        # self.set_secure_cookie('login', login)
+        self.set_secure_cookie('login', login)
         self.display(
             'login',
             errmsg='<img src="http://www.gravatar.com/avatar/%s" />' % info['gravatar_id']
             )
-
-    def on_get_user_info(self):
-        self.finish()
 
 class LogoutHandler(BaseHandler):
 
@@ -357,6 +484,7 @@ def main(argv=None):
         )
 
     op.add_option('--debug', action='store_true', help="enable debug mode")
+    op.add_option('--dev', action='store_true', help="enable dev mode")
     options, args = op.parse_args(argv)
 
     if args:
@@ -377,8 +505,9 @@ def main(argv=None):
     settings.update(config)
     cwd = realpath(getcwd())
 
-    if options.debug:
+    if options.debug or options.dev:
         settings['debug'] = True
+        cwd = dirname(realpath(__file__)) # to support autoreload
 
     for key in ['static_path', 'template_path', 'var_path']:
         path = join(cwd, settings[key])
@@ -392,22 +521,29 @@ def main(argv=None):
         print "ERROR: Please create %s" % repo_home
         sys.exit(1)
 
-    chdir(repo_home)
+    github_account = settings['github_account']
 
     _repos = settings['repos']
     if _repos:
-        for repo in _repos.keys():
-            github = repos[repo] = tuple(_repos[repo])
-            repo_path = join(repo_home, repo)
+        for repo in _repos:
+            repos[repo] = tuple(_repos[repo])
+            repo_paths[repo] = repo_path = join(repo_home, repo)
+            if options.dev:
+                continue
+            chdir(repo_home)
             if not isdir(repo_path):
-                run_command(
-                    ['git', 'clone', 'https://github.com/%s/%s.git' % github],
-                    env=environ, cwd=repo_home, log=True
-                    )
-            repo_paths[repo] = repo_path
+                review_url = 'git@github.com:%s/%s.git' % (github_account, repo)
+                git('clone', review_url, out=True)
+            chdir(repo_path)
+            if not git('config', 'remote.upstream.url', exit_on_error=False):
+                upstream_url = 'https://github.com/%s/%s.git' % repos[repo]
+                git('remote', 'add', 'upstream', upstream_url)
+            git('remote', 'update', out=True)
+            git('push', 'origin', 'upstream/master:master', out=True)
 
     application = Application([
-        (r"/new-build", NewBuildHandler),
+        (r"/review", ReviewHandler),
+        (r"/build", BuildHandler),
         (r"/logout", LogoutHandler),
         (r"/login", LoginHandler),
         (r"/", MainHandler),
