@@ -546,6 +546,7 @@ def submit(argv=None, completer=None):
         'token': token,
         'message': options.msg,
         'cc': reviewers,
+        'repo': CONFIG['repo_id'],
         'upstream': upstream_revision
         }))
 
