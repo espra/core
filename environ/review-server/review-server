@@ -337,6 +337,18 @@ def get_patch(repo, rev1, rev2):
     chdir(repo_paths[repo])
     git('diff', rev1, rev2)
 
+@worker(GIT_QUEUE)
+def get_new_commits(repo):
+    chdir(repo_paths[repo])
+    git('remote', 'update', '-p', 'upstream', raise_error=True)
+    git('push', 'origin', 'upstream/master:master', raise_error=True)
+    return filter(None, git(
+        'log', '--format="%H"', '%s...upstream/master' % LATEST[2],
+        raise_error=True
+        ).splitlines())
+
+#%H %P %an %ae %t %cn %ce %ct %n %x01 %f %s
+
 # ------------------------------------------------------------------------------
 # Utility Functions
 # ------------------------------------------------------------------------------
@@ -385,25 +397,31 @@ def update_repo(name):
 
 class BaseHandler(RequestHandler):
 
+    cache = None
     title = None
 
     def get_current_user(self):
         return self.get_secure_cookie('login')
 
     def is_admin_user(self):
-        return self.get_secure_cookie('login') in settings['admins']
+        return self.current_user in settings['admins']
 
     def display(self, template, **kwargs):
         if 'errmsg' not in kwargs:
             kwargs['errmsg'] = None
-        kwargs['is_admin'] = self.get_current_user() in settings['admins']
+        kwargs['is_admin'] = self.is_admin_user()
         if template:
             content = self.render_string(template + '.html', **kwargs)
         else:
             content = ''
         self.render('site.html', content=content, title=self.title, **kwargs)
 
-class MainHandler(BaseHandler):
+class RootHandler(BaseHandler):
+
+    def get(self):
+        self.redirect('/activity')
+
+class ActivityHandler(BaseHandler):
 
     def get(self):
         if not repos:
@@ -531,7 +549,7 @@ class SlaveHandler(BaseHandler):
     title = 'slave'
 
     def get(self, slave_id):
-        auth_user = self.get_current_user()
+        auth_user = self.current_user
         show_token = self.is_admin_user() # or ...
         slave_token = '086a83c7fce5ca77aa30acbe608eb02d6468'
         self.display(
@@ -543,6 +561,15 @@ class SlaveHandler(BaseHandler):
 
     def post(self, slave_id):
         self.redirect('/slave/%s' % slave_id)
+
+class PostReceiveHandler(BaseHandler):
+
+    @async
+    def post(self):
+        commits = yield get_new_commits(self.get_argument('repo'))
+        self.write('OK')
+
+    get = post
 
 # ------------------------------------------------------------------------------
 # Main Runner
@@ -620,11 +647,15 @@ def main(argv=None):
         (r"/login", LoginHandler),
         (r"/slave/([0-9]+)", SlaveHandler),
         (r"/slaves", SlavesHandler),
-        (r"/", MainHandler),
+        (r"/activity", ActivityHandler),
+        (r"/post-receive", PostReceiveHandler),
+        (r"/", RootHandler),
     ], **settings)
 
     http_server = HTTPServer(application)
     http_server.listen(settings['port'])
+
+    set_max_connections(40)
 
     global cache, db
 

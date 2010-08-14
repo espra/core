@@ -1,4 +1,4 @@
-<form action="/login" method="post">
+<form action="/login" method="post" id="form">
 	<label for="login" class="largelabel largelabel-top">Github Username</label>
 	<div class="center">
 		<input class="largetext" type="text" id="login" name="login" value="" />
@@ -7,10 +7,12 @@
 	<div class="center">
 		<input class="largetext" type="text" id="token" name="token" value="" />
 	</div>
-	<div class="center">
-		<input class="largesubmit" type="submit" name="submit" value=" Login " />
+	<div style="margin: 40px 400px;">
+		<input type="submit" style="margin: -9000px" />
+		<a class="button" id="submit"><span>Login</span></a>
 	</div>
 </form>
 <script>
 document.getElementById('login').focus();
+$('#submit').click(function () { $('#form').submit(); } );
 </script>

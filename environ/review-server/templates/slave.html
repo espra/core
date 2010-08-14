@@ -1,9 +1,9 @@
 {% if show_token %}
-<form action="/slave/{{slave_id}}" method="post">
-	<div class="center"><input type="submit" name="submit" value=" Reset slave token " /></div>
+<form action="/slave/{{slave_id}}" method="post" id="form">
+	<a id="submit" class="button"><span>Reset Slave Token</span></a>
 </form>
 {% end %}
-<h1>Git Slave</h1>
+<h1><a href="/slaves">Git Slaves</a> &middot; Slave {{slave_id}}</h1>
 <blockquote><table cellspacing="0px" width="100%">
 <tr class="header">
 	<td>ID</td><td>Token</td><td>Owner</td><td>Jobs Done</td><td>Last Seen</td>
@@ -17,3 +17,6 @@
 </tr>
 </table></blockquote>
 <h1>Recent Jobs</h1>
+<script>
+$('#submit').click(function () { $('#form').submit(); } );
+</script>

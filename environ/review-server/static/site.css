@@ -18,6 +18,36 @@ a:hover {
 	text-decoration: none;
 }
 
+a.button {
+	background: transparent url('/static/bg_button_a.gif') no-repeat scroll top right;
+	color: #444;
+	display: block;
+	float: right;
+	font: normal 12px arial, sans-serif;
+	height: 24px;
+	margin-right: 6px;
+	padding-right: 18px;
+	text-decoration: none;
+}
+
+a.button:active {
+    background-position: bottom right;
+    color: #000;
+    outline: none;
+}
+
+a.button span {
+	background: transparent url('/static/bg_button_span.gif') no-repeat;
+	display: block;
+	line-height: 14px;
+	padding: 5px 0 5px 18px;
+}
+
+a.button:active span {
+    background-position: bottom left;
+    padding: 6px 0 4px 18px;
+}
+
 h1, h2, h3, h4, h5, h6 {
 	font-family: "Yanone Kaffeesatz", Georgia, serif;
 	margin-bottom: 10px;
@@ -67,15 +97,25 @@ td {
 	border-top: 1px solid #afa;
 }
 
-tr.header {
-	font-weight: bold;
-}
-
 tr.header td {
 	background-color: #dfd;
 	border-bottom: 0px solid #afa;
+	font-weight: bold;
 	padding: 7px;
 	white-space: nowrap;
+}
+
+tr.header-small td {
+	background-color: #dfd;
+	font-size: 0.8em;
+	font-weight: bold;
+	border-bottom: 0px solid #afa;
+	padding: 7px;
+	white-space: nowrap;
+}
+
+tr.middle td {
+	vertical-align: middle;
 }
 
 ul {
@@ -128,6 +168,10 @@ ul {
 	text-align: center;
 }
 
+.clear {
+	clear: both;
+}
+
 .errmsg {
 	background-color: #fafec4;
 	background-color: #fce1cb;
@@ -136,6 +180,10 @@ ul {
 	margin-bottom: 20px;
 	padding: 8px;
 	text-align: center;
+}
+
+.fail {
+	color: #822;
 }
 
 .head {
@@ -161,3 +209,4 @@ ul {
 .small {
 	font-size: 0.4em;
 }
+

@@ -1,0 +1,24 @@
+{% if current_user %}
+<form action="/slaves" method="post" id="form">
+	<a href="" id="submit" class="button"><span>Create A New Slave</span></a>
+</form>
+{% end %}
+<h1>Git Slaves</h1>
+<blockquote><table cellspacing="0px" width="100%">
+<tr class="header">
+	<td>ID</td><td>Owner</td><td>Recent Platform</td><td>Current Job</td><td>Done</td><td>Last Seen</td>
+</tr>
+{% for slave in slaves %}
+<tr>
+	<td><a href="/slave/{{slave[0]}}">{{ slave[0] }}</a></td>
+	<td>{{ escape(slave[1]) }}</td>
+	<td>{{ escape(slave[2]) }}</td>
+	<td>{{ escape(slave[3]) }}</td>
+	<td>{{ slave[5] }}</td>
+	<td>{{ escape(slave[4]) }}</td>
+</tr>
+{% end %}
+</table></blockquote>
+<script>
+$('#submit').click(function () { $('#form').submit(); } );
+</script>
