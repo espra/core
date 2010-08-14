@@ -61,9 +61,9 @@ cache = None
 Blank = object()
 
 class CachingDict(dict):
-    """A caching dict that discards its least frequently used items."""
+    """A caching dict that discards its least recently used items."""
 
-    __slots__ = '_cache_size', '_garbage_collector', '_buffer_size', 'itersort'
+    __slots__ = '_cache_size', '_garbage_collector', '_buffer_size', 'itersort', '_clock'
 
     def __init__(
         self, cache_size=1000, buffer_size=None, garbage_collector=None, *args,
@@ -73,6 +73,7 @@ class CachingDict(dict):
         self._cache_size = cache_size
         self._garbage_collector = garbage_collector
         self._buffer_size = buffer_size or cache_size / 2
+        self._clock = 0
 
         for key, value in args:
             self.__setitem__(key, value)
@@ -91,12 +92,14 @@ class CachingDict(dict):
                     garbage_collector(ex_key, ex_value)
                 del self[ex_key]
 
-        return dict.__setitem__(self, key, [0, value])
+        self._clock += 1
+        return dict.__setitem__(self, key, [self._clock, value])
 
     def __getitem__(self, key):
         if key in self:
             access = dict.__getitem__(self, key)
-            access[0] += 1
+            self._clock += 1
+            access[0] = self._clock
             return access[1]
 
         raise KeyError(key)
