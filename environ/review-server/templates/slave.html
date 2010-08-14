@@ -1,0 +1,19 @@
+{% if show_token %}
+<form action="/slave/{{slave_id}}" method="post">
+	<div class="center"><input type="submit" name="submit" value=" Reset slave token " /></div>
+</form>
+{% end %}
+<h1>Git Slave</h1>
+<blockquote><table cellspacing="0px" width="100%">
+<tr class="header">
+	<td>ID</td><td>Token</td><td>Owner</td><td>Jobs Done</td><td>Last Seen</td>
+</tr>
+<tr>
+	<td>{{slave_id}}</td>
+	<td>{% if show_token %}{{slave_token}}{% else %}-{% end %}</td>
+	<td>tav</td>
+	<td>49</td>
+	<td>4 hours and 52 minutes ago</td>
+</tr>
+</table></blockquote>
+<h1>Recent Jobs</h1>

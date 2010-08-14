@@ -1,18 +1,16 @@
-<div>
-	<form action="/login" method="post">
-		<label for="login" class="largelabel largelabel-top">Github Username</label>
-		<div class="center">
-			<input class="largetext" type="text" id="login" name="login" value="" />
-		</div>
-		<label for="token" class="largelabel">API Token</label>
-		<div class="center">
-			<input class="largetext" type="text" id="token" name="token" value="" />
-		</div>
-		<div class="center">
-			<input class="largesubmit" type="submit" name="submit" value=" Login " />
-		</div>
-	</form>
-</div>
+<form action="/login" method="post">
+	<label for="login" class="largelabel largelabel-top">Github Username</label>
+	<div class="center">
+		<input class="largetext" type="text" id="login" name="login" value="" />
+	</div>
+	<label for="token" class="largelabel">API Token &nbsp; <span class="small">[<a href="https://github.com/account" target="_blank">Find it under the GitHub Account Admin section</a>]</span></label>
+	<div class="center">
+		<input class="largetext" type="text" id="token" name="token" value="" />
+	</div>
+	<div class="center">
+		<input class="largesubmit" type="submit" name="submit" value=" Login " />
+	</div>
+</form>
 <script>
 document.getElementById('login').focus();
 </script>

@@ -1,6 +1,18 @@
-<h1 class="top">Pending Reviews</h1>
+<h1>Pending Reviews</h1>
 
-<h1 class="top"><img class="float-right" src="{{ static_url('github.png') }}" width="60px" height="60px" /> GitHub Repositories</h1>
+<blockquote><table cellspacing="0px" width="100%">
+<tr class="header">
+	<td>Submitter</td><td>Comments</td>
+</tr>
+<tr>
+	<td>tav</td>
+	<td>2</td>
+</tr>
+</table></blockquote>
+
+<h1>Recent Builds</h1>
+
+<h1><img class="float-right" src="{{ static_url('github.png') }}" width="60px" height="60px" /> GitHub Repositories</h1>
 <ul>
 {% for repo in sorted(repos) %}
 	<li><a href="{{'http://github.com/%s/%s' % repos[repo]}}">{{repos[repo][1]}}</a></li>

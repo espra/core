@@ -8,10 +8,12 @@
 import logging
 import sys
 
+from binascii import hexlify
 from optparse import OptionParser
-from os import chdir, close, environ, getcwd, remove, write
+from os import chdir, close, environ, getcwd, remove, urandom, write
 from os.path import dirname, isdir, isfile, join, realpath
 from Queue import Queue
+from shutil import rmtree
 from tempfile import mkstemp
 from thread import start_new_thread
 from urllib import quote, urlencode, urlopen
@@ -21,10 +23,9 @@ from tornado.web import Application, HTTPError, RequestHandler
 from tornado.web import authenticated
 from tornado.ioloop import IOLoop
 
-from pyutil.async import Dispatcher as AsyncDispatcher
 from pyutil.env import run_command
 from pyutil.redis import Redis, set_max_connections
-from simplejson import loads as decode_json
+from simplejson import loads as decode_json, dumps as encode_json
 from yaml import safe_load as decode_yaml
 
 # ------------------------------------------------------------------------------
@@ -36,6 +37,8 @@ settings = dict(
     debug=False,
     login_url='/login',
     port=8090,
+    redis_cache='/tmp/review-server-cache.sock',
+    redis_db='/tmp/review-server-db.sock',
     repos=None,
     static_path='static',
     template_path='templates',
@@ -47,6 +50,113 @@ Loop = IOLoop.instance()
 
 repos = {}
 repo_paths = {}
+
+db = None
+cache = None
+
+# ------------------------------------------------------------------------------
+# Cache
+# ------------------------------------------------------------------------------
+
+Blank = object()
+
+class CachingDict(dict):
+    """A caching dict that discards its least frequently used items."""
+
+    __slots__ = '_cache_size', '_garbage_collector', '_buffer_size', 'itersort'
+
+    def __init__(
+        self, cache_size=1000, buffer_size=None, garbage_collector=None, *args,
+        **kwargs
+        ):
+
+        self._cache_size = cache_size
+        self._garbage_collector = garbage_collector
+        self._buffer_size = buffer_size or cache_size / 2
+
+        for key, value in args:
+            self.__setitem__(key, value)
+
+        for key, value in kwargs.iteritems():
+            self.__setitem__(key, value)
+
+    def __setitem__(self, key, value):
+        excess = len(self) - self._cache_size - self._buffer_size + 1
+        if excess > 0:
+            garbage_collector = self._garbage_collector
+            # @@ time against : heapq.nsmallest()
+            excess = sorted(self.itersort())[:excess + self._buffer_size]
+            for ex_value, ex_key in excess:
+                if garbage_collector:
+                    garbage_collector(ex_key, ex_value)
+                del self[ex_key]
+
+        return dict.__setitem__(self, key, [0, value])
+
+    def __getitem__(self, key):
+        if key in self:
+            access = dict.__getitem__(self, key)
+            access[0] += 1
+            return access[1]
+
+        raise KeyError(key)
+
+    def itersort(self):
+        getitem = dict.__getitem__
+        for key in self:
+            yield getitem(self, key), key
+
+    def get(self, key, default=None):
+        if key in self:
+            return self.__getitem__(key)
+
+        return default
+
+    def pop(self, key, default=Blank):
+
+        if key in self:
+            value = dict.__getitem__(self, key)[1]
+            del self[key]
+            return value
+
+        if default is not Blank:
+            return default
+
+        raise KeyError(key)
+
+    def setdefault(self, key, default):
+        if key in self:
+            return self.__getitem__(key)
+
+        self.__setitem__(key, default)
+        return default
+
+    def itervalues(self):
+        getitem = self.__getitem__
+        for key in self:
+            yield getitem(key)
+
+    def values(self):
+        return list(self.itervalues())
+
+    def iteritems(self):
+        getitem = self.__getitem__
+        for key in self:
+            yield key, getitem(key)
+
+    def items(self):
+        return list(self.iteritems())
+
+    def set_cache_size(self, cache_size):
+
+        if not isinstance(cache_size, (int, long)):
+            raise ValueError("Cache size must be an integer.")
+
+        self._cache_size = cache_size
+
+    def get_cache_byte_size(self):
+        getitem = self.__getitem__
+        return sum(len(str(getitem(key))) for key in self)
 
 # ------------------------------------------------------------------------------
 # Threaded Workers
@@ -159,11 +269,13 @@ def authenticate(async, method, handler, *args, **kwargs):
     if login:
         token = handler.get_argument('token', '')
         if login in USERS:
-            if USERS[login]['token'] != token:
+            if USERS[login] != token:
                 raise HTTPError(403)
         info = yield get_github_user_info(login, token)
         if not info:
             raise HTTPError(403)
+        redis = db()
+        yield redis.set('login|%s' % login, encode_json(info))
     else:
         login = handler.get_secure_cookie('login')
         if not login:
@@ -182,7 +294,7 @@ def authenticate(async, method, handler, *args, **kwargs):
 # Worker Functions
 # ------------------------------------------------------------------------------
 
-USERS = {}
+USERS = CachingDict()
 
 @worker(MAIN_QUEUE)
 def get_github_user_info(login, token, keys=['email', 'gravatar_id', 'name']):
@@ -200,22 +312,48 @@ def get_github_user_info(login, token, keys=['email', 'gravatar_id', 'name']):
         if key in data:
             info[key] = data[key]
     del info['login']
-    USERS[login] = info
+    USERS[login] = token
     return info
 
 @worker(GIT_QUEUE)
 def apply_patch(repo, review_id, upstream, patch_file):
     chdir(repo_paths[repo])
-    git('remote', 'update', 'upstream')
-    git('checkout', '-b', review_id, upstream)
-    git('am', patch_file)
-    git('push', 'origin', review_id)
+    git('remote', 'update', '-p', 'upstream', raise_error=True)
+    git('am', '--abort')
+    git('rebase', '--abort')
+    git('clean', '-fdx', raise_error=True)
+    git('reset', '--hard', 'HEAD', raise_error=True)
+    for path in git('status', '--porcelain', raise_error=True).splitlines():
+        if path.startswith('??'):
+            path = path.split('??', 1)[1].strip()
+            if isdir(path):
+                rmtree(path)
+    git('checkout', '-b', review_id, upstream, raise_error=True)
+    git('am', patch_file, raise_error=True)
+    git('push', 'origin', 'upstream/master:master', review_id, raise_error=True)
+
+@worker(GIT_QUEUE)
+def get_patch(repo, rev1, rev2):
+    chdir(repo_paths[repo])
+    git('diff', rev1, rev2)
 
 # ------------------------------------------------------------------------------
 # Utility Functions
 # ------------------------------------------------------------------------------
 
 def git(*args, **kwargs):
+    if kwargs.pop('raise_error', None):
+        kwargs['retcode'] = True
+        kwargs['reterror'] = True
+        args = ['git'] + list(args)
+        logging.error("Running: %s" % ' '.join(args))
+        stdout, stderr, retcode = run_command(args, **kwargs)
+        if retcode:
+            raise RuntimeError(
+                "Error running %s cwd=%s\n\n%s\n%s"
+                % (' '.join(args), getcwd(), stdout, stderr)
+                )
+        return stdout
     if kwargs.pop('out', None):
         if 'exit_on_error' not in kwargs:
             kwargs['exit_on_error'] = True
@@ -233,116 +371,12 @@ def valid_review_id(id, valid=set('abcdefghijklmnopqrstuvwxyz0123456789-_')):
     return id
 
 # ------------------------------------------------------------------------------
-# Cache
-# ------------------------------------------------------------------------------
-
-Blank = object()
-
-class CachingDict(dict):
-    """A caching dict that discards its least frequently used items."""
-
-    __slots__ = '_cache_size', '_garbage_collector', '_buffer_size', 'itersort'
-
-    def __init__(
-        self, cache_size=1000, buffer_size=None, garbage_collector=None, *args,
-        **kwargs
-        ):
-
-        self._cache_size = cache_size
-        self._garbage_collector = garbage_collector
-        self._buffer_size = buffer_size or cache_size / 2
-
-        for key, value in args:
-            self.__setitem__(key, value)
-
-        for key, value in kwargs.iteritems():
-            self.__setitem__(key, value)
-
-    def __setitem__(self, key, value):
-        excess = len(self) - self._cache_size - self._buffer_size + 1
-        if excess > 0:
-            garbage_collector = self._garbage_collector
-            # time against : heapq.nsmallest()
-            excess = sorted(self.itersort())[:excess + self._buffer_size]
-            for ex_value, ex_key in excess:
-                if garbage_collector:
-                    garbage_collector(ex_key, ex_value)
-                del self[ex_key]
-
-        return dict.__setitem__(self, key, [0, value])
-
-    def __getitem__(self, key):
-        if key in self:
-            access = dict.__getitem__(self, key)
-            access[0] += 1
-            return access[1]
-
-        raise KeyError(key)
-
-    def itersort(self):
-        getitem = dict.__getitem__
-        for key in self:
-            yield getitem(self, key), key
-
-    def get(self, key, default=None):
-        if key in self:
-            return self.__getitem__(key)
-
-        return default
-
-    def pop(self, key, default=Blank):
-
-        if key in self:
-            value = dict.__getitem__(self, key)[1]
-            del self[key]
-            return value
-
-        if default is not Blank:
-            return default
-
-        raise KeyError(key)
-
-    def setdefault(self, key, default):
-        if key in self:
-            return self.__getitem__(key)
-
-        self.__setitem__(key, default)
-        return default
-
-    def itervalues(self):
-        getitem = self.__getitem__
-        for key in self:
-            yield getitem(key)
-
-    def values(self):
-        return list(self.itervalues())
-
-    def iteritems(self):
-        getitem = self.__getitem__
-        for key in self:
-            yield key, getitem(key)
-
-    def items(self):
-        return list(self.iteritems())
-
-    def set_cache_size(self, cache_size):
-
-        if not isinstance(cache_size, (int, long)):
-            raise ValueError("Cache size must be an integer.")
-
-        self._cache_size = cache_size
-
-    def get_cache_byte_size(self):
-        getitem = self.__getitem__
-        return sum(len(str(getitem(key))) for key in self)
-
-# ------------------------------------------------------------------------------
 # Git-related Functions
 # ------------------------------------------------------------------------------
 
 def update_repo(name):
     chdir(repo_paths[name])
-    git('remote', 'update')
+    git('remote', 'update', '-p')
     git('push', 'origin', 'upstream/master:master')
 
 # ------------------------------------------------------------------------------
@@ -356,9 +390,13 @@ class BaseHandler(RequestHandler):
     def get_current_user(self):
         return self.get_secure_cookie('login')
 
+    def is_admin_user(self):
+        return self.get_secure_cookie('login') in settings['admins']
+
     def display(self, template, **kwargs):
         if 'errmsg' not in kwargs:
             kwargs['errmsg'] = None
+        kwargs['is_admin'] = self.get_current_user() in settings['admins']
         if template:
             content = self.render_string(template + '.html', **kwargs)
         else:
@@ -422,7 +460,7 @@ class ReviewHandler(BaseHandler):
             cc = []
 
         login_id_prefix = '%s/%s' % (login, id)
-        issue_number = 1
+        issue_number = 2
         review_id = '%s/%s/%s' % (login, id, issue_number)
 
         # existing_review_id = yield db.get(revision)
@@ -433,14 +471,14 @@ class ReviewHandler(BaseHandler):
         #     )
         #     return
 
-        fd, patch_file = mkstemp('review-patch-')
-        write(fd, patch)
+        fd, patch_file = mkstemp('-review-patch')
+        write(fd, patch.encode('utf-8'))
         close(fd)
 
         yield apply_patch(repo, review_id, upstream, patch_file)
 
         self.write('OK %s' % review_id)
-        remove(patch_file)
+        #remove(patch_file)
 
 class LoginHandler(BaseHandler):
 
@@ -449,6 +487,7 @@ class LoginHandler(BaseHandler):
     def get(self):
         self.display('login')
 
+    @async
     def post(self):
         login = self.get_argument('login', "")
         token = self.get_argument('token', "")
@@ -456,11 +495,11 @@ class LoginHandler(BaseHandler):
         if not info:
             self.display('login', errmsg="Invalid Login.")
             return
+        redis = db()
+        yield redis.set('login|%s' % login, encode_json(info))
         self.set_secure_cookie('login', login)
-        self.display(
-            'login',
-            errmsg='<img src="http://www.gravatar.com/avatar/%s" />' % info['gravatar_id']
-            )
+        self.redirect('/')
+        #errmsg='<img src="http://www.gravatar.com/avatar/%s" />' % info['gravatar_id']
 
 class LogoutHandler(BaseHandler):
 
@@ -471,6 +510,39 @@ class LogoutHandler(BaseHandler):
             self.redirect(return_to)
         else:
             self.redirect('/')
+
+class SlavesHandler(BaseHandler):
+
+    title = 'slaves'
+
+    @async
+    def get(self):
+        self.display('slaves', slaves=[
+            ['1', 'tav', 'Darwin 9.8.0 i386', '-', '2 hours and 41 minutes ago', 49],
+            ['2', 'oierw', 'Linux 2.6.32-bpo.5-amd64 x86_64', '24 minutes ago', '-', 29]
+            ], platforms=settings['platforms'])
+
+    @auth(async=True)
+    def post(self):
+        self.display('slave-created')
+
+class SlaveHandler(BaseHandler):
+
+    title = 'slave'
+
+    def get(self, slave_id):
+        auth_user = self.get_current_user()
+        show_token = self.is_admin_user() # or ...
+        slave_token = '086a83c7fce5ca77aa30acbe608eb02d6468'
+        self.display(
+            'slave',
+            slave_id=slave_id,
+            slave_token=slave_token,
+            show_token=show_token
+            )
+
+    def post(self, slave_id):
+        self.redirect('/slave/%s' % slave_id)
 
 # ------------------------------------------------------------------------------
 # Main Runner
@@ -538,7 +610,7 @@ def main(argv=None):
             if not git('config', 'remote.upstream.url', exit_on_error=False):
                 upstream_url = 'https://github.com/%s/%s.git' % repos[repo]
                 git('remote', 'add', 'upstream', upstream_url)
-            git('remote', 'update', out=True)
+            git('remote', 'update', '-p', out=True)
             git('push', 'origin', 'upstream/master:master', out=True)
 
     application = Application([
@@ -546,11 +618,24 @@ def main(argv=None):
         (r"/build", BuildHandler),
         (r"/logout", LogoutHandler),
         (r"/login", LoginHandler),
+        (r"/slave/([0-9]+)", SlaveHandler),
+        (r"/slaves", SlavesHandler),
         (r"/", MainHandler),
     ], **settings)
 
     http_server = HTTPServer(application)
     http_server.listen(settings['port'])
+
+    global cache, db
+
+    def cache_init(ipc=settings['redis_cache']):
+        return Redis(unix_socket=ipc)
+
+    def db_init(ipc=settings['redis_db']):
+        return Redis(unix_socket=ipc)
+
+    cache = cache_init
+    db = db_init
 
     for queue in [MAIN_QUEUE, GIT_QUEUE]:
         start_new_thread(threaded_worker_dispatcher, (queue,))

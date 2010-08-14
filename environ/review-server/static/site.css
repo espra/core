@@ -4,7 +4,7 @@
 body {
 	font-family: "HelveticaNeue-Light", "Helvetica Neue Light", "Helvetica Neue", sans-serif;
 	font-weight: 300;
-	font-size: 1.2em;
+	font-size: 1em;
 	margin: 0;
 	padding: 0;
 }
@@ -23,7 +23,7 @@ h1, h2, h3, h4, h5, h6 {
 	margin-bottom: 10px;
 }
 
-h1.top {
+h1 {
 	margin-top: 0px;
 }
 
@@ -59,6 +59,23 @@ label.largelabel-top {
 
 li {
 	padding-top: 10px;
+}
+
+td {
+	padding: 7px;
+	vertical-align: top;
+	border-top: 1px solid #afa;
+}
+
+tr.header {
+	font-weight: bold;
+}
+
+tr.header td {
+	background-color: #dfd;
+	border-bottom: 0px solid #afa;
+	padding: 7px;
+	white-space: nowrap;
 }
 
 ul {
@@ -103,6 +120,10 @@ ul {
 	/* -webkit-box-shadow: 0px 0px 7px #cacaca; */
 }
 
+.absmiddle {
+	vertical-align: middle;
+}
+
 .center {
 	text-align: center;
 }
@@ -137,6 +158,6 @@ ul {
 	float: right;
 }
 
-.absmiddle {
-	vertical-align: middle;
+.small {
+	font-size: 0.4em;
 }

@@ -10,11 +10,14 @@
 		<div id="header">
 			<div id="nav">
 				<a href="/">Home</a> &nbsp;·&nbsp;
+				<a href="/reviews">Reviews</a> &nbsp;·&nbsp;
+				<a href="/builds">Builds</a> &nbsp;·&nbsp;
+				<a href="/slaves">Slaves</a> &nbsp;·&nbsp;
 				{% if not current_user %}
 				<a href="/login">Login</a>
 				{% end %}
 				{% if current_user %}
-				<a href="/logout">Logout</a>
+				<a href="/logout">Logout {{ escape(current_user) }}</a>
 				{% end %}
 			</div>
 			<span class="head"><a href="/" title="git review home"><span class="headtick">✓</span> git review</a></span>
