@@ -8,6 +8,7 @@
 import logging
 import sys
 
+from base64 import urlsafe_b64encode
 from binascii import hexlify
 from optparse import OptionParser
 from os import chdir, close, environ, getcwd, remove, urandom, write
@@ -16,17 +17,39 @@ from Queue import Queue
 from shutil import rmtree
 from tempfile import mkstemp
 from thread import start_new_thread
+from time import sleep
 from urllib import quote, urlencode, urlopen
 
 from tornado.httpserver import HTTPServer
 from tornado.web import Application, HTTPError, RequestHandler
-from tornado.web import authenticated
 from tornado.ioloop import IOLoop
 
+from pyutil.crypto import create_tamper_proof_string
 from pyutil.env import run_command
 from pyutil.redis import Redis, set_max_connections
 from simplejson import loads as decode_json, dumps as encode_json
 from yaml import safe_load as decode_yaml
+
+# ------------------------------------------------------------------------------
+# Import Path
+# ------------------------------------------------------------------------------
+
+AMPIFY_ROOT = dirname(dirname(dirname(realpath(__file__))))
+APP_ENGINE_SDK_PATH = join(AMPIFY_ROOT, '.appengine_python_sdk')
+
+sys.path.insert(0, APP_ENGINE_SDK_PATH)
+sys.path.insert(0, join(APP_ENGINE_SDK_PATH, 'lib', 'webob'))
+
+from google.appengine.api import apiproxy_stub_map
+from google.appengine.tools.appengine_rpc import HttpRpcServer
+from google.appengine.ext import db
+from google.appengine.ext.remote_api.remote_api_stub import (
+    GetSourceName, GetUserAgent, RemoteDatastoreStub, RemoteStub
+    )
+
+class NonAuthHttpRpcServer(HttpRpcServer):
+    def _DevAppServerAuthenticate(self):
+        pass
 
 # ------------------------------------------------------------------------------
 # Settings
@@ -37,8 +60,7 @@ settings = dict(
     debug=False,
     login_url='/login',
     port=8090,
-    redis_cache='/tmp/review-server-cache.sock',
-    redis_db='/tmp/review-server-db.sock',
+    redis_socket_file='/tmp/review-server-cache.sock',
     repos=None,
     static_path='static',
     template_path='templates',
@@ -51,7 +73,6 @@ Loop = IOLoop.instance()
 repos = {}
 repo_paths = {}
 
-db = None
 cache = None
 
 # ------------------------------------------------------------------------------
@@ -165,8 +186,10 @@ class CachingDict(dict):
 # Threaded Workers
 # ------------------------------------------------------------------------------
 
-MAIN_QUEUE = Queue()
+URL_QUEUE = Queue()
 GIT_QUEUE = Queue()
+GAE_QUEUE = Queue()
+
 EVENTS = {}
 
 def threaded_worker_dispatcher(queue, error_logger=None):
@@ -282,7 +305,7 @@ def authenticate(async, method, handler, *args, **kwargs):
     else:
         login = handler.get_secure_cookie('login')
         if not login:
-            self.redirect('/login')
+            handler.redirect('/login')
             return
     if async:
         gen = method(handler, *args, **kwargs)
@@ -299,7 +322,7 @@ def authenticate(async, method, handler, *args, **kwargs):
 
 USERS = CachingDict()
 
-@worker(MAIN_QUEUE)
+@worker(URL_QUEUE)
 def get_github_user_info(login, token, keys=['email', 'gravatar_id', 'name']):
     info = dict(login=login, token=token)
     url = "http://github.com/api/v2/json/user/show/%s?%s" % (
@@ -317,6 +340,50 @@ def get_github_user_info(login, token, keys=['email', 'gravatar_id', 'name']):
     del info['login']
     USERS[login] = token
     return info
+
+GAE_SERVICES = [
+    'capability_service',
+    'images',
+    'mail',
+    'memcache',
+    'taskqueue',
+    'urlfetch',
+    'xmpp'
+]
+
+def _init_appengine(app_id, host, remote_key, secure, services=GAE_SERVICES):
+
+    verifier = urlsafe_b64encode(urandom(24))
+    mac = create_tamper_proof_string(
+        'remote', verifier, duration=None, key=remote_key
+        )
+
+    path = '/.remote/%s' % mac
+    environ['APPLICATION_ID'] = app_id
+
+    server = NonAuthHttpRpcServer(
+        host, None, GetUserAgent(), GetSourceName(), debug_data=False,
+        secure=secure
+        )
+
+    apiproxy_stub_map.apiproxy = apiproxy_stub_map.APIProxyStubMap()
+    datastore_stub = RemoteDatastoreStub(server, path)
+    apiproxy_stub_map.apiproxy.RegisterStub('datastore_v3', datastore_stub)
+
+    stub = RemoteStub(server, path)
+    for service in services:
+        apiproxy_stub_map.apiproxy.RegisterStub(service, stub)
+
+def init_appengine(*args, **kwargs):
+    marker = id(init_appengine)
+    GAE_QUEUE.put((marker, _init_appengine, args, kwargs))
+    while 1:
+        if marker in EVENTS:
+            break
+        sleep(0.4)
+    error, response = EVENTS.pop(marker)
+    if error:
+        raise response
 
 @worker(GIT_QUEUE)
 def apply_patch(repo, review_id, upstream, patch_file):
@@ -384,6 +451,14 @@ def valid_review_id(id, valid=set('abcdefghijklmnopqrstuvwxyz0123456789-_')):
         if char not in valid:
             return
     return id
+
+# ------------------------------------------------------------------------------
+# Datastore Models
+# ------------------------------------------------------------------------------
+
+class Foo(db.Model):
+
+    bar = db.StringProperty()
 
 # ------------------------------------------------------------------------------
 # Git-related Functions
@@ -658,22 +733,23 @@ def main(argv=None):
     http_server = HTTPServer(application)
     http_server.listen(settings['port'])
 
-    set_max_connections(40)
+    set_max_connections(50)
 
-    global cache, db
-
-    def cache_init(ipc=settings['redis_cache']):
+    def cache_init(ipc=settings['redis_socket_file']):
         return Redis(unix_socket=ipc)
 
-    def db_init(ipc=settings['redis_db']):
-        return Redis(unix_socket=ipc)
-
+    global cache
     cache = cache_init
-    db = db_init
 
-    for queue in [MAIN_QUEUE, GIT_QUEUE]:
+    for queue in [URL_QUEUE, GIT_QUEUE, GAE_QUEUE]:
         start_new_thread(threaded_worker_dispatcher, (queue,))
 
+    init_appengine(
+        settings['gae_app_id'], settings['gae_host'],
+        settings['gae_remote_key'], settings['gae_secure']
+        )
+
+    print Foo.all().get()
     print "The git review server is listening on port %d ..." % settings['port']
     Loop.start()
 
