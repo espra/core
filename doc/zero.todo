@@ -33,18 +33,6 @@ grep "^[✓✗]" $TODO_FILE | wc -l
 
 cat >> /dev/null << EOF
 
-=======
-40 Days
-=======
-
-* develop ampify zero
-* create espra video draft
-* up-to-date documentation
-* learn spanish
-* exercise/yoga: develop a 6-pack
-* learn linear algebra
-* learn bioengineering
-
 =====
 Admin
 =====
@@ -87,8 +75,10 @@ Installation
 ✓ package: openssl
 ✗ package: python
 ✓ package: cython
-✓ package: sass
+✗ package: sass
 ✗ package: python-packages
+✗ package: berkeleydb
+✗ package: keyspace
 
 # package: freetype
 # package: libjpeg
@@ -97,8 +87,6 @@ Installation
 # package: libevent
 # package: libxml2
 # package: libxslt
-# package: berkeleydb
-# package: keyspace
 # package: lxml
 # package: git
 # package: gevent
@@ -1030,19 +1018,19 @@ Ampify Core
 ✗ web hooks post handler
 ✗ memcache invalidation handler
 
-✗ github integration
-✗ github key generation
+# github integration
+# github key generation
 
-✗ git review
-✗ git review init
-✗ git review: builtins
+✓ git review
+✓ git review init
+✓ git review: builtins
 ✗ git review: github cross repository compare
 ✗ git review: diff view
 ✗ git review: comment
-✗ git review: test runner
-✗ git review: build slave
+✓ git review: test runner
+✓ git review: build slave
 ✗ git review: try bot
-✗ git review: watchlist
+✓ git review: watchlist
 ✗ git review: view
 
 ✗ google calendar integration: in
