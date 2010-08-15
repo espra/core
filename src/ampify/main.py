@@ -88,7 +88,7 @@ def main(argv=None, show_help=False):
             else:
                 show_help = True
         if command in ['-v', '--version', 'version']:
-            print('amp version %s' % ampify.__release__)
+            print('amp %s' % ampify.__release__)
             sys.exit()
 
     if show_help:
