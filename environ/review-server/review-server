@@ -506,10 +506,11 @@ def reset_slave_token(slave_id, user, is_admin):
 # Datastore Models
 # ------------------------------------------------------------------------------
 
-class B(db.Model):
-    slave = db.IntegerProperty(name='s')
+class B(db.Model): # normal id
     repo = db.ByteStringProperty(name='r')
+    slave = db.IntegerProperty(name='s')
     version = db.StringProperty(name='v')
+    build_platform = db.StringProperty(name='b')
     uname = db.StringProperty(name='u')
     executed = db.StringListProperty(name='e')
     payload = db.TextProperty(name='p') # timings and failures
@@ -521,67 +522,77 @@ Build = B
 class C(db.Model):
     user = db.StringProperty(name='u')
     date = db.DateTimeProperty(name='d', auto_now_add=True)
+    text = db.TextProperty(name='t')
+    version = db.StringProperty(name='v')
+    line = db.ByteStringProperty(name='l', default='')
+    file = db.StringProperty(name='f', default='')
 
 Comment = C
 
-class G(db.Model):
+class G(db.Model): # id = <repo>:<git-revision>
     author = db.StringProperty(name='a')
     author_email = db.StringProperty(name='b')
     committer = db.StringProperty(name='c')
     committer_email = db.StringProperty(name='e')
     committed_timestamp = db.DateTimeProperty(name='t')
-    subject = db.TextProperty(name='s')
     repo = db.ByteStringProperty(name='r')
-    version = db.ByteStringProperty(name='v')
-    passed_unames = db.StringListProperty(name='p')
-    failed_unames = db.StringListProperty(name='f')
+    subject = db.TextProperty(name='s')
+    needed_builds = db.StringListProperty(name='n')
+    payload = db.TextProperty(name='p') # success/failure
     has_failure = db.BooleanProperty(name='h', default=False)
     user = db.StringProperty(name='u') # #unknown
     date = db.DateTimeProperty(name='d', auto_now_add=True)
+    modified = db.DateTimeProperty(name='m', auto_now=True)
 
 Commit = G
 
-class P(db.Model):
+class P(db.Model): # normal id; parent = Commit or Review
     slave = db.IntegerProperty(name='s')
-    job = db.StringProperty(name='j')
+    version = db.StringProperty(name='v')
+    build_platform = db.StringProperty(name='b')
     date = db.DateTimeProperty(name='d', auto_now_add=True)
 
 PendingJob = P
 
-class Q(db.Model):
-    review = db.ByteStringProperty(name='r')
-    counter = db.IntegerProperty(name='c', default=0)
+class Q(db.Model): # id = <repo>:<user>:<issue>
+    cc = db.StringListProperty(name='c')
+    latest = db.IntegerProperty(name='l', default=0)
 
-ReviewCounter = Q
+ReviewBase = Q
 
 class R(db.Model):
     subject = db.TextProperty(name='s')
     repo = db.ByteStringProperty(name='r')
-    version = db.IntegerProperty(name='v')
-    passed_unames = db.StringListProperty(name='p')
-    failed_unames = db.StringListProperty(name='f')
+    upstream_revision = db.ByteStringProperty(name='i')
+    stage = db.ByteStringProperty(name='g', default='pending')
+    test_authorised_by = db.StringProperty(name='t')
+    approve_reject_by = db.StringProperty(name='a')
+    needed_builds = db.StringListProperty(name='n')
+    payload = db.TextProperty(name='p') # success/failure
     has_failure = db.BooleanProperty(name='h', default=False)
     user = db.StringProperty(name='u')
     date = db.DateTimeProperty(name='d', auto_now_add=True)
+    modified = db.DateTimeProperty(name='m', auto_now=True)
 
 Review = R
 
-class S(db.Model):
+class S(db.Model): # normal id
     disabled = db.BooleanProperty(name='d', default=False)
-    token = db.ByteStringProperty(name='t')
-    owner = db.StringProperty(name='o')
-    last_seen = db.DateTimeProperty(name='l')
-    recent_platform = db.StringProperty(name='r')
     jobs_done = db.IntegerProperty(name='j', default=0)
+    last_seen = db.DateTimeProperty(name='l')
+    owner = db.StringProperty(name='o')
+    recent_platform = db.StringProperty(name='r')
+    token = db.ByteStringProperty(name='t')
 
 Slave = S
 
-class U(db.Model):
+class U(db.Model): # key = github username
     name = db.StringProperty(name='n')
-    gravatar = db.ByteStringProperty(name='g')
     emails = db.StringListProperty(name='e')
-    token = db.ByteStringProperty(name='t')
+    gravatar = db.ByteStringProperty(name='g')
     last_seen = db.DateTimeProperty(name='l', auto_now=True)
+    token = db.ByteStringProperty(name='t')
+    date = db.DateTimeProperty(name='d', auto_now_add=True)
 
 User = U
 
