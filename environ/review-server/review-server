@@ -10,6 +10,7 @@ import sys
 
 from base64 import urlsafe_b64encode
 from binascii import hexlify
+from hmac2 import HMAC
 from optparse import OptionParser
 from os import chdir, close, environ, getcwd, remove, urandom, write
 from os.path import dirname, isdir, isfile, join, realpath
@@ -24,10 +25,10 @@ from tornado.httpserver import HTTPServer
 from tornado.web import Application, HTTPError, RequestHandler
 from tornado.ioloop import IOLoop
 
-from pyutil.crypto import create_tamper_proof_string
+from pyutil.crypto import create_tamper_proof_string, secure_string_comparison
 from pyutil.env import run_command
 from pyutil.redis import Redis, set_max_connections
-from simplejson import loads as decode_json, dumps as encode_json
+from simplejson import loads as decode_json
 from yaml import safe_load as decode_yaml
 
 # ------------------------------------------------------------------------------
@@ -279,34 +280,51 @@ def async(method):
     wrapper.__name__ = method.__name__
     return wrapper
 
-def auth(async=False):
+# ------------------------------------------------------------------------------
+# Auth Support
+# ------------------------------------------------------------------------------
+
+def auth(async=False, cookie=True, xsrf=False):
     def wrapper(method):
         def __wrapper(handler, *args, **kwargs):
             handler._auto_finish = 0
             TornadoWebDispatcher(
-                authenticate(async, method, handler, *args, **kwargs), handler
+                authenticate(
+                    async, method, handler, cookie, xsrf, *args, **kwargs
+                    ),
+                handler
                 )
         __wrapper.__name__ = method.__name__
         return __wrapper
     return wrapper
 
-def authenticate(async, method, handler, *args, **kwargs):
+def authenticate(async, method, handler, cookie, xsrf, *args, **kwargs):
     login = handler.get_argument('login', '')
     if login:
         token = handler.get_argument('token', '')
         if login in USERS:
-            if USERS[login] != token:
+            if not secure_string_comparison(USERS[login], token):
                 raise HTTPError(403)
         info = yield get_github_user_info(login, token)
         if not info:
             raise HTTPError(403)
-        redis = db()
-        yield redis.set('login|%s' % login, encode_json(info))
-    else:
+        yield update_user(login, info)
+        USERS[login] = token
+    elif cookie:
         login = handler.get_secure_cookie('login')
         if not login:
             handler.redirect('/login')
             return
+    else:
+        raise HTTPError(403)
+    if xsrf:
+        xsrf_token = handler.get_argument('xsrf_token', '')
+        if not xsrf_token:
+            raise HTTPError(403)
+        if login not in XSRF:
+            XSRF[login] = HMAC(settings['xsrf_secret'], login).hexdigest()
+        if not secure_string_comparison(XSRF[login], xsrf_token):
+            raise HTTPError(403)
     if async:
         gen = method(handler, *args, **kwargs)
         resp = None
@@ -317,10 +335,49 @@ def authenticate(async, method, handler, *args, **kwargs):
         method(handler, *args, **kwargs)
 
 # ------------------------------------------------------------------------------
+# Utility Functions
+# ------------------------------------------------------------------------------
+
+def git(*args, **kwargs):
+    if kwargs.pop('raise_error', None):
+        kwargs['retcode'] = True
+        kwargs['reterror'] = True
+        args = ['git'] + list(args)
+        logging.error("Running: %s" % ' '.join(args))
+        stdout, stderr, retcode = run_command(args, **kwargs)
+        if retcode:
+            raise RuntimeError(
+                "Error running %s cwd=%s\n\n%s\n%s"
+                % (' '.join(args), getcwd(), stdout, stderr)
+                )
+        return stdout
+    if kwargs.pop('out', None):
+        if 'exit_on_error' not in kwargs:
+            kwargs['exit_on_error'] = True
+        kwargs['redirect_stdout'] = False
+        kwargs['redirect_stderr'] = False
+        kwargs['retcode'] = True
+    return run_command(['git'] + list(args), **kwargs)
+
+def valid_review_id(id, valid=set('abcdefghijklmnopqrstuvwxyz0123456789-_')):
+    if id.startswith('-') or id.startswith('_'):
+        return
+    for char in id:
+        if char not in valid:
+            return
+    return id
+
+def update_repo(name):
+    chdir(repo_paths[name])
+    git('remote', 'update', '-p')
+    git('push', 'origin', 'upstream/master:master')
+
+# ------------------------------------------------------------------------------
 # Worker Functions
 # ------------------------------------------------------------------------------
 
 USERS = CachingDict()
+XSRF = CachingDict()
 
 @worker(URL_QUEUE)
 def get_github_user_info(login, token, keys=['email', 'gravatar_id', 'name']):
@@ -337,8 +394,6 @@ def get_github_user_info(login, token, keys=['email', 'gravatar_id', 'name']):
     for key in keys:
         if key in data:
             info[key] = data[key]
-    del info['login']
-    USERS[login] = token
     return info
 
 GAE_SERVICES = [
@@ -419,55 +474,116 @@ def get_new_commits(repo):
 
 #%H %P %an %ae %t %cn %ce %ct %n %x01 %f %s
 
-# ------------------------------------------------------------------------------
-# Utility Functions
-# ------------------------------------------------------------------------------
+@worker(GAE_QUEUE)
+def update_user(login, info):
+    user = User.get_or_insert(login)
+    user.token = str(info['token'])
+    user.gravatar = info['gravatar_id']
+    user.name = info.get('name', '')
+    user.emails = [info['email']]
+    user.put()
 
-def git(*args, **kwargs):
-    if kwargs.pop('raise_error', None):
-        kwargs['retcode'] = True
-        kwargs['reterror'] = True
-        args = ['git'] + list(args)
-        logging.error("Running: %s" % ' '.join(args))
-        stdout, stderr, retcode = run_command(args, **kwargs)
-        if retcode:
-            raise RuntimeError(
-                "Error running %s cwd=%s\n\n%s\n%s"
-                % (' '.join(args), getcwd(), stdout, stderr)
-                )
-        return stdout
-    if kwargs.pop('out', None):
-        if 'exit_on_error' not in kwargs:
-            kwargs['exit_on_error'] = True
-        kwargs['redirect_stdout'] = False
-        kwargs['redirect_stderr'] = False
-        kwargs['retcode'] = True
-    return run_command(['git'] + list(args), **kwargs)
+@worker(GAE_QUEUE)
+def create_slave(owner):
+    slave = Slave()
+    slave.owner = owner
+    slave.token = hexlify(urandom(18))
+    slave.put()
+    return slave.key().id()
 
-def valid_review_id(id, valid=set('abcdefghijklmnopqrstuvwxyz0123456789-_')):
-    if id.startswith('-') or id.startswith('_'):
+@worker(GAE_QUEUE)
+def reset_slave_token(slave_id, user, is_admin):
+    slave = Slave.get_by_id(int(slave_id))
+    if not slave:
         return
-    for char in id:
-        if char not in valid:
-            return
-    return id
+    if is_admin or user == slave.owner:
+        slave.token = hexlify(urandom(18))
+        slave.put()
+        return 1
+    return 2
 
 # ------------------------------------------------------------------------------
 # Datastore Models
 # ------------------------------------------------------------------------------
 
-class Foo(db.Model):
+class B(db.Model):
+    slave = db.IntegerProperty(name='s')
+    repo = db.ByteStringProperty(name='r')
+    version = db.StringProperty(name='v')
+    uname = db.StringProperty(name='u')
+    executed = db.StringListProperty(name='e')
+    payload = db.TextProperty(name='p') # timings and failures
+    has_failure = db.BooleanProperty(name='h', default=False)
+    date = db.DateTimeProperty(name='d', auto_now_add=True)
 
-    bar = db.StringProperty()
+Build = B
 
-# ------------------------------------------------------------------------------
-# Git-related Functions
-# ------------------------------------------------------------------------------
+class C(db.Model):
+    user = db.StringProperty(name='u')
+    date = db.DateTimeProperty(name='d', auto_now_add=True)
 
-def update_repo(name):
-    chdir(repo_paths[name])
-    git('remote', 'update', '-p')
-    git('push', 'origin', 'upstream/master:master')
+Comment = C
+
+class G(db.Model):
+    author = db.StringProperty(name='a')
+    author_email = db.StringProperty(name='b')
+    committer = db.StringProperty(name='c')
+    committer_email = db.StringProperty(name='e')
+    committed_timestamp = db.DateTimeProperty(name='t')
+    subject = db.TextProperty(name='s')
+    repo = db.ByteStringProperty(name='r')
+    version = db.ByteStringProperty(name='v')
+    passed_unames = db.StringListProperty(name='p')
+    failed_unames = db.StringListProperty(name='f')
+    has_failure = db.BooleanProperty(name='h', default=False)
+    user = db.StringProperty(name='u') # #unknown
+    date = db.DateTimeProperty(name='d', auto_now_add=True)
+
+Commit = G
+
+class P(db.Model):
+    slave = db.IntegerProperty(name='s')
+    job = db.StringProperty(name='j')
+    date = db.DateTimeProperty(name='d', auto_now_add=True)
+
+PendingJob = P
+
+class Q(db.Model):
+    review = db.ByteStringProperty(name='r')
+    counter = db.IntegerProperty(name='c', default=0)
+
+ReviewCounter = Q
+
+class R(db.Model):
+    subject = db.TextProperty(name='s')
+    repo = db.ByteStringProperty(name='r')
+    version = db.IntegerProperty(name='v')
+    passed_unames = db.StringListProperty(name='p')
+    failed_unames = db.StringListProperty(name='f')
+    has_failure = db.BooleanProperty(name='h', default=False)
+    user = db.StringProperty(name='u')
+    date = db.DateTimeProperty(name='d', auto_now_add=True)
+
+Review = R
+
+class S(db.Model):
+    disabled = db.BooleanProperty(name='d', default=False)
+    token = db.ByteStringProperty(name='t')
+    owner = db.StringProperty(name='o')
+    last_seen = db.DateTimeProperty(name='l')
+    recent_platform = db.StringProperty(name='r')
+    jobs_done = db.IntegerProperty(name='j', default=0)
+
+Slave = S
+
+class U(db.Model):
+    name = db.StringProperty(name='n')
+    gravatar = db.ByteStringProperty(name='g')
+    emails = db.StringListProperty(name='e')
+    token = db.ByteStringProperty(name='t')
+    last_seen = db.DateTimeProperty(name='l', auto_now=True)
+
+User = U
 
 # ------------------------------------------------------------------------------
 # Handlers
@@ -488,6 +604,13 @@ class BaseHandler(RequestHandler):
         if 'errmsg' not in kwargs:
             kwargs['errmsg'] = None
         kwargs['is_admin'] = self.is_admin_user()
+        user = self.current_user
+        if user:
+            if user not in XSRF:
+                XSRF[user] = HMAC(settings['xsrf_secret'], user).hexdigest()
+            kwargs['xsrf_token'] = XSRF[user]
+        else:
+            kwargs['xsrf_token'] = None
         if template:
             content = self.render_string(template + '.html', **kwargs)
         else:
@@ -591,11 +714,10 @@ class LoginHandler(BaseHandler):
         if not info:
             self.display('login', errmsg="Invalid Login.")
             return
-        redis = db()
-        yield redis.set('login|%s' % login, encode_json(info))
+        yield update_user(login, info)
+        USERS[login] = token
         self.set_secure_cookie('login', login)
         self.redirect('/')
-        #errmsg='<img src="http://www.gravatar.com/avatar/%s" />' % info['gravatar_id']
 
 class LogoutHandler(BaseHandler):
 
@@ -618,9 +740,11 @@ class SlavesHandler(BaseHandler):
             ['2', 'oierw', 'Linux 2.6.32-bpo.5-amd64 x86_64', '24 minutes ago', '-', 29]
             ], platforms=settings['platforms'])
 
-    @auth(async=True)
+    @auth(async=True, xsrf=True)
     def post(self):
-        self.display('slave-created')
+        slave_id = yield create_slave(self.current_user)
+        invalidate_cache('slaves')
+        self.redirect('/slave/%s' % slave_id)
 
 class SlaveHandler(BaseHandler):
 
@@ -637,7 +761,19 @@ class SlaveHandler(BaseHandler):
             show_token=show_token
             )
 
+    @auth(async=True, xsrf=True)
     def post(self, slave_id):
+        retcode = yield reset_slave_token(
+            slave_id, self.current_user, self.is_admin_user()
+            )
+        if not retcode:
+            self.display(
+                None, errmsg="Couldn't find a record for slave %s." % slave_id
+                )
+            return
+        if retcode == 2:
+            self.display(None, errmsg="You're not the owner of this slave.")
+            return
         self.redirect('/slave/%s' % slave_id)
 
 class PostReceiveHandler(BaseHandler):
@@ -656,35 +792,29 @@ class PostReceiveHandler(BaseHandler):
 def main(argv=None):
 
     argv = argv or sys.argv[1:]
-    op = OptionParser(
-        usage="Usage: %prog [review-server.yaml]", version="0.1"
-        )
+    op = OptionParser(usage="Usage: %prog [config.yaml]", version="0.1")
 
-    op.add_option('--debug', action='store_true', help="enable debug mode")
     op.add_option('--dev', action='store_true', help="enable dev mode")
     options, args = op.parse_args(argv)
 
     if args:
-
         config_path = args[0]
         config_file = open(config_path, 'rb')
         config_data = config_file.read()
         config_file.close()
-
         config = decode_yaml(config_data)
         if not config:
             print "ERROR: Couldn't find any config data in %s" % config_path
             sys.exit(1)
-
     else:
         config = {}
 
     settings.update(config)
     cwd = realpath(getcwd())
 
-    if options.debug or options.dev:
+    if options.dev:
         settings['debug'] = True
-        cwd = dirname(realpath(__file__)) # to support autoreload
+        cwd = dirname(realpath(__file__)) # @@ to support autoreload
 
     for key in ['static_path', 'template_path', 'var_path']:
         path = join(cwd, settings[key])
@@ -744,12 +874,12 @@ def main(argv=None):
     for queue in [URL_QUEUE, GIT_QUEUE, GAE_QUEUE]:
         start_new_thread(threaded_worker_dispatcher, (queue,))
 
+    print "Connecting to App Engine Server at", settings['gae_host']
     init_appengine(
         settings['gae_app_id'], settings['gae_host'],
         settings['gae_remote_key'], settings['gae_secure']
         )
 
-    print Foo.all().get()
     print "The git review server is listening on port %d ..." % settings['port']
     Loop.start()
 
@@ -759,3 +889,5 @@ def main(argv=None):
 
 if __name__ == '__main__':
     main()
+
+# <img src="http://www.gravatar.com/avatar/%s" />
