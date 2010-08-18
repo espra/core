@@ -535,14 +535,22 @@ def get_slave(slave_id, next=None, n=101):
     return slave, builds, more
 
 @worker(GAE_QUEUE)
-def reset_slave_token(slave_id, user, is_admin):
+def reset_slave_token(action, slave_id, user, is_admin):
+    if action not in ['status', 'reset']:
+        raise ValueError("Unknown action: %s" % action)
     slave = Slave.get_by_id(int(slave_id))
     if not slave:
         return
-    if is_admin or user == slave.owner:
-        slave.token = hexlify(urandom(18))
-        slave.put()
-        return 1
+    if action == 'reset':
+        if is_admin or user == slave.owner:
+            slave.token = hexlify(urandom(18))
+            slave.put()
+            return 1
+    if action == 'status':
+        if is_admin:
+            slave.disabled = not slave.disabled
+            slave.put()
+            return 1
     return 2
 
 # ------------------------------------------------------------------------------
@@ -830,7 +838,8 @@ class SlaveHandler(BaseHandler):
 
     @async
     def get(self, slave_id):
-        slave_data = yield get_slave(slave_id)
+        next = self.get_argument('next', '')
+        slave_data = yield get_slave(slave_id, next)
         if not slave_data:
             self.errmsg("No records found for slave %s" % slave_id)
             return
@@ -843,14 +852,15 @@ class SlaveHandler(BaseHandler):
 
     @auth(async=True, xsrf=True)
     def post(self, slave_id):
+        action = self.get_argument('action', '')
         retcode = yield reset_slave_token(
-            slave_id, self.current_user, self.is_admin_user()
+            action, slave_id, self.current_user, self.is_admin_user()
             )
         if not retcode:
             self.errmsg("Couldn't find a record for slave %s." % slave_id)
             return
         if retcode == 2:
-            self.errmsg("You're not the owner of this slave.")
+            self.errmsg("You're not authorised for this action.")
             return
         self.redirect('/slave/%s' % slave_id)
 

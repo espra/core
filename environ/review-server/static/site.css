@@ -176,6 +176,10 @@ ul {
 	clear: both;
 }
 
+.disabled {
+	color: #6f6f6f;
+}
+
 .errmsg {
 	background-color: #fafec4;
 	background-color: #fce1cb;
