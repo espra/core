@@ -1,22 +1,45 @@
 {% if show_token %}
 <form action="/slave/{{slave_id}}" method="post" id="form">
+	{% if xsrf_token %}
+	<input type="hidden" name="xsrf_token" value="{{xsrf_token}}" />
+	{% end %}
 	<a id="submit" class="button"><span>Reset Slave Token</span></a>
 </form>
 {% end %}
 <h1><a href="/slaves">Git Slaves</a> &middot; Slave {{slave_id}}</h1>
 <blockquote><table cellspacing="0px" width="100%">
 <tr class="header">
-	<td>ID</td><td>Token</td><td>Owner</td><td>Jobs Done</td><td>Last Seen</td>
+	<td>ID</td><td>Token</td><td>Owner</td><td>Working</td><td>Done</td><td>Last Seen</td>
 </tr>
 <tr>
 	<td>{{slave_id}}</td>
-	<td>{% if show_token %}{{slave_token}}{% else %}-{% end %}</td>
-	<td>tav</td>
-	<td>49</td>
-	<td>4 hours and 52 minutes ago</td>
+	<td>{% if show_token %}<code>{{slave.token}}</code>{% else %}-{% end %}</td>
+	<td>{{escape(slave.owner)}}</td>
+	<td>{% if slave.working %}✓{% else %}✗{% end %}</td>
+	<td>{{ slave.jobs_done }}</td>
+	<td>{% if slave.last_seen %}<span class="timestamp">{{ slave.last_seen.strftime('%s') }}</span>{% else %}-{% end %}</td>
 </tr>
 </table></blockquote>
-<h1>Recent Jobs</h1>
+{% if builds %}
+<h1>Recent Builds</h1>
+<blockquote><table cellspacing="0px" width="100%">
+<tr class="header">
+	<td>ID</td><td>Repo</td><td>Platform</td><td>Success</td><td>When</td>
+</tr>
+{% for build in builds %}
+<tr>
+	<td><a href="/build/{{build.key().id()}}">{{build.key().id()}}</a></td>
+	<td>{{escape(build.repo)}}</td>
+	<td>{{escape(build.uname)}}</td>
+	<td>{% if build.has_failure %}✗{% else %}✓{% end %}</td>
+	<td><span class="timestamp">{{ build.date.strftime('%s') }}</span></td>
+</tr>
+{% end %}
+</table></blockquote>
+{% end %}
+{% if more %}
+<a class="button" href="/slave/{{slave_id}}?next={{more}}"><span>Next &rarr;</span></a>
+{% end %}
 <script>
 $('#submit').click(function () { $('#form').submit(); } );
 </script>

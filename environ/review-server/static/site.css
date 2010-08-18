@@ -48,6 +48,10 @@ a.button:active span {
     padding: 6px 0 4px 18px;
 }
 
+code, pre {
+	font-family: "Inconsolata", Monaco, monospace;
+}
+
 h1, h2, h3, h4, h5, h6 {
 	font-family: "Yanone Kaffeesatz", Georgia, serif;
 	margin-bottom: 10px;
