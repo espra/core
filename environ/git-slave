@@ -92,8 +92,12 @@ class Slave(Daemon):
                 self.log("=> Checking for things to do")
             try:
                 server = urlopen(new_build_url)
-                revision = server.read()
+                response = server.read()
                 server.close()
+                if response.startswith('OK '):
+                    revision = response[3:]
+                else:
+                    raise ValueError(response)
             except Exception:
                 revision = None
                 self.sleep_more(2)
@@ -126,8 +130,11 @@ class Slave(Daemon):
 
     def get_new_build_url(self):
         return (
-            self.build_url + '?' +
-            urlencode(dict(uname=self.uname, repo_id=self.repo_id))
+            self.server + '/job?' +
+            urlencode(dict(
+                uname=self.uname, repo=self.repo_id, slave_id=self.slave_id,
+                token=self.slave_token
+                ))
             )
 
     def setup_repo(self, revision):
@@ -181,11 +188,14 @@ class Slave(Daemon):
             'data': encode_json(results),
             'revision': revision,
             'repo': self.repo_id,
-            'slave': self.slave_id,
-            'token': self.slave_token
+            'slave_id': self.slave_id,
+            'token': self.slave_token,
+            'uname': self.uname
             }
         server = urlopen(self.build_url, urlencode(response))
-        server.read()
+        server_response = server.read()
+        if not server_response.startswith('OK '):
+            self.sleep_more(2)
         server.close()
 
     def sleep_more(self, n=1):
@@ -250,7 +260,7 @@ def main():
     if not slave_id:
         print "ERROR: You need to set the Slave ID, e.g."
         print
-        print "    git config slave.id 41ed"
+        print "    git config slave.id 42"
         print
 
     if not token:

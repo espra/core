@@ -180,10 +180,6 @@ ul {
 	clear: both;
 }
 
-.disabled {
-	color: #afafaf;
-}
-
 .errmsg {
 	background-color: #fafec4;
 	background-color: #fce1cb;
@@ -212,6 +208,10 @@ ul {
 .headtick {
 	font-size: 54px;
 	vertical-align: sub;
+}
+
+.inactive {
+	color: #afafaf;
 }
 
 .float-right {

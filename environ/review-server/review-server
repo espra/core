@@ -10,6 +10,7 @@ import sys
 
 from base64 import urlsafe_b64encode
 from binascii import hexlify
+from datetime import datetime, timedelta
 from hmac2 import HMAC
 from optparse import OptionParser
 from os import chdir, close, environ, getcwd, remove, urandom, write
@@ -550,6 +551,92 @@ def reset_slave_token(action, slave_id, user, is_admin):
             return 1
     return 2
 
+@worker(GAE_QUEUE)
+def get_slave_job(repo, slave_id, token, uname, span=timedelta(seconds=1800)):
+    slave = Slave.get_by_id(slave_id)
+    if (not slave) or (not secure_string_comparison(slave.token, token)):
+        raise ValueError("Couldn't verify slave %s" % slave_id)
+    if slave.disabled:
+        raise ValueError("Slave %s has been disabled." % slave_id)
+    slave.last_seen = datetime.utcnow()
+    slave.recent_platform = uname
+    platform = uname2platforms.get(uname)
+    if not platform:
+        slave.put()
+        return
+    prune = PendingJob.all().filter('d <=', datetime.utcnow() - span).fetch(100)
+    if prune:
+        db.run_in_transaction(prune_pending_jobs, [ob.key() for ob in prune])
+    review = Review.all().filter('n =', platform).filter('r =', repo).get()
+    commit = Commit.all().filter('n =', platform).filter('r =', repo).get()
+    if review and commit:
+        if review.date >= commit.date:
+            parent = review
+        else:
+            parent = commit
+    elif review:
+        parent = review
+        type = 'review'
+    elif commit:
+        parent = commit
+        type = 'commit'
+    else:
+        slave.put()
+        return
+    result = []
+    parent_key = parent.key()
+    db.run_in_transaction(create_job, parent_key, result, slave_id, platform)
+    slave.working = True
+    slave.put()
+    if not result:
+        return
+    if type == 'commit':
+        return parent_key.name().split(':')[1]
+    review = parent_key.parent().name().split(':')
+    return "%s/%s/%s" % (review[1], review[2], parent_key.id())
+
+def prune_pending_jobs(keys):
+    jobs = db.get(keys)
+    parent_keys = [key.parent() for key in keys]
+    parents = db.get(parent_keys)
+    to_save = []; save = to_save.append
+    for i in range(len(jobs)):
+        platform = jobs[i].build_platform
+        parent = parents[i]
+        if (platform not in parent.passed_builds) or \
+           (platform not in parent.failed_builds) or \
+           (platform not in parent.needed_builds):
+            parent.needed_builds.append(platform)
+            save(parent_keys[i])
+    db.delete(keys)
+    db.put(to_save)
+
+def create_job(key, result, slave_id, platform):
+    parent = db.get(key)
+    if platform not in parent.needed_builds:
+        return
+    parent.needed_builds.remove(platform)
+    job = PendingJob(parent=parent)
+    job.slave = slave_id
+    job.build_platform = platform
+    db.put([parent, job])
+    result.append(1)
+
+@worker(GAE_QUEUE)
+def create_build(
+    slave_id, token, repo, revision, uname, platform, payload, traceback,
+    has_failure
+    ):
+    if '/' in revision:
+        user, issue, id = revision.split('/')
+        id = int(id)
+        parent = db.Key.from_path('Q', '%s:%s:%s' % (repo, user, issue))
+        target = db.get(db.Key.from_path('R', id, parent=parent))
+    else:
+        target = Commit.get_by_key_name('%s:%s' % (repo, revision))
+    if not target:
+        raise ValueError("Unknown revision %r for %s" % (revision, repo))
+
 # ------------------------------------------------------------------------------
 # Datastore Models
 # ------------------------------------------------------------------------------
@@ -568,7 +655,6 @@ class B(db.Model): # normal id
     build_platform = db.StringProperty(name='b')
     uname = db.StringProperty(name='u')
     executed = db.StringListProperty(name='e')
-    payload = db.TextProperty(name='p') # timings and failures
     has_failure = db.BooleanProperty(name='h', default=False)
     date = db.DateTimeProperty(name='d', auto_now_add=True)
 
@@ -584,6 +670,13 @@ class C(db.Model): # normal id; parent = Review
 
 Comment = C
 
+class D(db.Model): # normal id; parent = Build
+    traceback = db.BooleanProperty(name='e', default=False)
+    payload = db.TextProperty('p')
+    timings = db.StringListProperty(name='t', indexed=False)
+
+BuildData = D
+
 class G(db.Model): # id = <repo>:<git-revision>
     author = db.StringProperty(name='a')
     author_email = db.StringProperty(name='b')
@@ -593,7 +686,8 @@ class G(db.Model): # id = <repo>:<git-revision>
     repo = db.ByteStringProperty(name='r')
     subject = db.TextProperty(name='s')
     needed_builds = db.StringListProperty(name='n')
-    payload = db.TextProperty(name='p') # success/failure
+    passed_builds = db.StringListProperty(name='p', indexed=False)
+    failed_builds = db.StringListProperty(name='f', indexed=False)
     has_failure = db.BooleanProperty(name='h', default=False)
     user = db.StringProperty(name='u') # #unknown
     date = db.DateTimeProperty(name='d', auto_now_add=True)
@@ -603,7 +697,6 @@ Commit = G
 
 class P(db.Model): # normal id; parent = Commit or Review
     slave = db.IntegerProperty(name='s')
-    version = db.StringProperty(name='v')
     build_platform = db.StringProperty(name='b')
     date = db.DateTimeProperty(name='d', auto_now_add=True)
 
@@ -621,7 +714,8 @@ class R(db.Model): # id = incrementing integer; parent = ReviewBase
     upstream_revision = db.ByteStringProperty(name='i')
     stage = db.ByteStringProperty(name='g', default='pending')
     needed_builds = db.StringListProperty(name='n')
-    payload = db.TextProperty(name='p') # success/failure
+    passed_builds = db.StringListProperty(name='p', indexed=False)
+    failed_builds = db.StringListProperty(name='f', indexed=False)
     has_failure = db.BooleanProperty(name='h', default=False)
     user = db.StringProperty(name='u')
     date = db.DateTimeProperty(name='d', auto_now_add=True)
@@ -704,24 +798,6 @@ class ActivityHandler(BaseHandler):
 class DashboardHandler(BaseHandler):
     pass
 
-class BuildHandler(BaseHandler):
-
-    def get(self):
-        from random import random
-        uname = self.get_argument('uname')
-        repo_id = self.get_argument('repo_id')
-        self.set_header('Content-Type', 'text/plain')
-        if random() > 0.5:
-            self.write('tav/ampify/master')
-        else:
-            self.write('//')
-
-    def post(self):
-        print decode_json(self.get_argument('data'))
-
-class BuildsHandler(BaseHandler):
-    pass
-
 class ReviewHandler(BaseHandler):
 
     def get(self):
@@ -778,6 +854,81 @@ class ReviewHandler(BaseHandler):
 
 class ReviewsHandler(BaseHandler):
     pass
+
+class BuildsHandler(BaseHandler):
+    pass
+
+class BuildHandler(BaseHandler):
+
+    @async
+    def post(self, has_failure=0):
+        get = self.get_argument
+        revision = get('revision')
+        uname = get('uname')
+        repo = get('repo')
+        slave_id = get('slave_id')
+        token = get('token')
+        data = get('data')
+        try:
+            slave_id = int(slave_id)
+        except Exception:
+            self.write("Invalid slave id: %r" % get('slave'))
+            return
+        try:
+            data = decode_json(data)
+        except Exception, err:
+            self.write("Error decoding build data: %s" % err)
+            return
+        if 'traceback' in data:
+            traceback = 1
+            payload = data['traceback']
+        else:
+            traceback = 0
+            executed = data['executed']
+            stderr = []; add_stderr = stderr.append
+            stdout = []; add_stdout = stdout.append
+            timings = []; add_timing = timings.append
+            payload = [stderr, stdout]
+            for item in executed:
+                add_timing(data['%s|time' % item])
+                add_stderr(data.get('%s|stderr' % item, None))
+                out = data.get('%s|stdout' % item, None)
+                add_stdout(out)
+                if out:
+                    has_failure = 1
+        platform = uname2platforms.get(uname)
+        build = yield create_build(
+            slave_id, token, repo, revision, uname, platform, payload,
+            traceback, has_failure
+            )
+        self.write('OK %s' % build)
+
+class JobHandler(BaseHandler):
+
+    @async
+    def get(self):
+        self.set_header('Content-Type', 'text/plain')
+        get = self.get_argument
+        uname = get('uname')
+        repo = get('repo')
+        slave_id = get('slave_id')
+        token = get('token')
+        try:
+            slave_id = int(slave_id)
+        except Exception:
+            self.write("Invalid slave id: %r" % get('slave'))
+            return
+        try:
+            job = yield get_slave_job(repo, slave_id, token, uname)
+        except ValueError, err:
+            self.write(repr(err))
+            return
+        job = '5cf2644cf3131f797275c6f8e3a3ca0814f96261'
+        self.write('OK ')
+        if job:
+            self.write(job)
+        else:
+            self.write('')
 
 class ChartsHandler(BaseHandler):
     pass
@@ -940,6 +1091,7 @@ def main(argv=None):
         (r"/review", ReviewHandler),
         (r"/builds", BuildsHandler),
         (r"/build", BuildHandler),
+        (r"/job", JobHandler),
         (r"/logout", LogoutHandler),
         (r"/login", LoginHandler),
         (r"/slave/([0-9]+)", SlaveHandler),

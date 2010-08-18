@@ -17,10 +17,10 @@
 	<td>{{slave_id}}</td>
 	<td>{% if show_token %}<code>{{slave.token}}</code>{% else %}-{% end %}</td>
 	<td>{{escape(slave.owner)}}</td>
-	<td>{% if slave.working %}✓{% else %}✗{% end %}</td>
+	<td>{% if slave.working %}✓{% else %}<span class="inactive">✗</span>{% end %}</td>
 	<td>{{ slave.jobs_done }}</td>
 	<td>{% if slave.last_seen %}<span class="timestamp">{{ slave.last_seen.strftime('%s') }}</span>{% else %}-{% end %}</td>
-	<td>{% if slave.disabled %}<span class="disabled">disabled</span>{% else %}<span class="active">active</span>{% end %}</td>
+	<td>{% if slave.disabled %}<span class="inactive">disabled</span>{% else %}<span class="active">active</span>{% end %}</td>
 </tr>
 </table></blockquote>
 {% if builds %}
