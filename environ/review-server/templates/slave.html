@@ -23,19 +23,30 @@
 	<td>{% if slave.disabled %}<span class="inactive">disabled</span>{% else %}<span class="active">active</span>{% end %}</td>
 </tr>
 </table></blockquote>
+{% if pending %}
+<blockquote>
+<br/>
+Working on:
+<ul>
+<br/>
+<li><code>{{ escape((':'.join(pending.key().parent().to_path()[1:]))) }}</code> &mdash; {{ escape(pending.build_platform) }}</li>
+</ul>
+</blockquote>
+{% end %}
 {% if builds %}
-<h1>Recent Builds</h1>
+<h2>Recent Builds</h2>
 <blockquote><table cellspacing="0px" width="100%">
 <tr class="header">
-	<td>ID</td><td>Repo</td><td>Platform</td><td>Success</td><td>When</td>
+	<td>ID</td><td>Repo</td><td>Revision</td><td>Platform</td><td>Status</td><td>When</td>
 </tr>
 {% for build in builds %}
 <tr>
 	<td><a href="/build/{{build.key().id()}}">{{build.key().id()}}</a></td>
 	<td>{{escape(build.repo)}}</td>
+	<td>{% if '/' in build.version %}{{escape(build.version)}}{% else %}<code>{{escape(build.version[:10])}}{% end %}</code></td>
 	<td>{{escape(build.uname)}}</td>
 	<td>{% if build.has_failure %}✗{% else %}✓{% end %}</td>
-	<td><span class="timestamp">{{ build.date.strftime('%s') }}</span></td>
+	<td><span class="timestamp">{{ build.d.strftime('%s') }}</span></td>
 </tr>
 {% end %}
 </table></blockquote>

@@ -23,13 +23,14 @@ from time import sleep
 from urllib import quote, urlencode, urlopen
 
 from tornado.httpserver import HTTPServer
+from tornado.options import enable_pretty_logging
 from tornado.web import Application, HTTPError, RequestHandler
 from tornado.ioloop import IOLoop
 
 from pyutil.crypto import create_tamper_proof_string, secure_string_comparison
 from pyutil.env import run_command
 from pyutil.redis import Redis, set_max_connections
-from simplejson import loads as decode_json
+from simplejson import loads as decode_json, dumps as encode_json
 from yaml import safe_load as decode_yaml
 
 # ------------------------------------------------------------------------------
@@ -347,7 +348,7 @@ def git(*args, **kwargs):
         kwargs['retcode'] = True
         kwargs['reterror'] = True
         args = ['git'] + list(args)
-        logging.error("Running: %s" % ' '.join(args))
+        logging.info("Running: %s" % ' '.join(args))
         stdout, stderr, retcode = run_command(args, **kwargs)
         if retcode:
             raise RuntimeError(
@@ -382,6 +383,7 @@ def update_repo(name):
 
 USERS = CachingDict()
 XSRF = CachingDict()
+EMAILS = CachingDict()
 
 @worker(URL_QUEUE)
 def get_github_user_info(login, token, keys=['email', 'gravatar_id', 'name']):
@@ -466,17 +468,46 @@ def get_patch(repo, rev1, rev2):
     chdir(repo_paths[repo])
     git('diff', rev1, rev2)
 
-@worker(GIT_QUEUE)
-def get_new_commits(repo):
+def _get_new_commits(repo, start):
     chdir(repo_paths[repo])
     git('remote', 'update', '-p', 'upstream', raise_error=True)
     git('push', 'origin', 'upstream/master:master', raise_error=True)
-    return filter(None, git(
-        'log', '--format="%H"', '%s...upstream/master' % LATEST[2],
-        raise_error=True
-        ).splitlines())
+    return [commit.splitlines() for commit in git(
+        'log', '--format=%H%n%an%n%ae%n%at%n%cn%n%ce%n%ct%n%s',
+        '-z', '--no-color', '%s...upstream/master' % start, raise_error=True
+        ).split('\x00')]
 
-#%H %P %an %ae %t %cn %ce %ct %n %x01 %f %s
+get_new_commits = worker(GIT_QUEUE)(_get_new_commits)
+
+def _create_commits(repo, data):
+    commits = []; new_commit = commits.append
+    for (rev, an, ae, at, cn, ce, ct, subject) in data:
+        commit = Commit(key_name='%s:%s' % (repo, rev))
+        commit.author = an
+        commit.author_email = ae
+        commit.committer = cn
+        commit.committer_email = ce
+        commit.committed_timestamp = datetime.fromtimestamp(int(ct))
+        commit.repo = repo
+        commit.subject = subject
+        if ae:
+            if ae in EMAILS:
+                commit.user = EMAILS[ae]
+            else:
+                user = User.all().filter('e =', ae).get()
+                if user:
+                    user = user.key().name()
+                    EMAILS[ae] = user
+                    commit.user = user
+                else:
+                    commit.user = '#'
+        else:
+            commit.user = '#'
+        commit.needed_builds = platforms
+        new_commit(commit)
+    db.put(commits)
+
+create_commits = worker(GAE_QUEUE)(_create_commits)
 
 @worker(GAE_QUEUE)
 def update_user(login, info):
@@ -518,19 +549,20 @@ def get_slave(slave_id, next=None, n=101):
         return
     more = False
     if next:
-        next = float(next)
-        builds = Build.all().filter('slave =', slave_id).filter(
-            'date >=', next
-            ).order('-date').fetch(n)
+        next = datetime.fromtimestamp(int(next) + 1)
+        builds = Build.all().filter('s =', slave_id).filter(
+            'd <=', next
+            ).order('-d').fetch(n)
     else:
-        builds = Build.all().filter('slave =', slave_id).order('-date').fetch(n)
+        builds = Build.all().filter('s =', slave_id).order('-d').fetch(n)
     if not builds:
         builds = []
     else:
         if len(builds) == n:
-            more = builds[-1].date.strftime('%s')
+            more = builds[-1].d.strftime('%s')
         builds = builds[:n-1]
-    return slave, builds, more
+    pending = PendingJob.all().filter('s =', slave_id).get()
+    return slave, builds, pending, more
 
 @worker(GAE_QUEUE)
 def reset_slave_token(action, slave_id, user, is_admin):
@@ -552,25 +584,28 @@ def reset_slave_token(action, slave_id, user, is_admin):
     return 2
 
 @worker(GAE_QUEUE)
-def get_slave_job(repo, slave_id, token, uname, span=timedelta(seconds=1800)):
+def get_slave_job(repo, slave_id, token, uname, span=timedelta(seconds=1)):
     slave = Slave.get_by_id(slave_id)
     if (not slave) or (not secure_string_comparison(slave.token, token)):
         raise ValueError("Couldn't verify slave %s" % slave_id)
     if slave.disabled:
         raise ValueError("Slave %s has been disabled." % slave_id)
-    slave.last_seen = datetime.utcnow()
+    slave.last_seen = datetime.now()
     slave.recent_platform = uname
     platform = uname2platforms.get(uname)
     if not platform:
         slave.put()
         return
-    prune = PendingJob.all().filter('d <=', datetime.utcnow() - span).fetch(100)
+    prune = PendingJob.all().filter('d <=', datetime.now() - span).fetch(100)
     if prune:
         db.run_in_transaction(prune_pending_jobs, [ob.key() for ob in prune])
-    review = Review.all().filter('n =', platform).filter('r =', repo).get()
+    review = Review.all().filter('n =', platform).filter('r =', repo).filter(
+        'g =', 'test'
+        ).get()
     commit = Commit.all().filter('n =', platform).filter('r =', repo).get()
+    commits = Commit.all().fetch(100)
     if review and commit:
-        if review.date >= commit.date:
+        if review.d >= commit.d:
             parent = review
         else:
             parent = commit
@@ -586,10 +621,12 @@ def get_slave_job(repo, slave_id, token, uname, span=timedelta(seconds=1800)):
     result = []
     parent_key = parent.key()
     db.run_in_transaction(create_job, parent_key, result, slave_id, platform)
+    if not result:
+        slave.working = False
+        slave.put()
+        return
     slave.working = True
     slave.put()
-    if not result:
-        return
     if type == 'commit':
         return parent_key.name().split(':')[1]
     review = parent_key.parent().name().split(':')
@@ -603,11 +640,11 @@ def prune_pending_jobs(keys):
     for i in range(len(jobs)):
         platform = jobs[i].build_platform
         parent = parents[i]
-        if (platform not in parent.passed_builds) or \
-           (platform not in parent.failed_builds) or \
-           (platform not in parent.needed_builds):
+        if not ((platform in parent.passed_builds) or
+            (platform in parent.failed_builds) or
+            (platform in parent.needed_builds)):
             parent.needed_builds.append(platform)
-            save(parent_keys[i])
+            save(parent)
     db.delete(keys)
     db.put(to_save)
 
@@ -624,9 +661,14 @@ def create_job(key, result, slave_id, platform):
 
 @worker(GAE_QUEUE)
 def create_build(
-    slave_id, token, repo, revision, uname, platform, payload, traceback,
-    has_failure
+    slave_id, token, repo, revision, uname, platform, executed, payload,
+    timings, traceback, has_failure
     ):
+    slave = Slave.get_by_id(slave_id)
+    if (not slave) or (not secure_string_comparison(slave.token, token)):
+        raise ValueError("Couldn't verify slave %s" % slave_id)
+    if slave.disabled:
+        raise ValueError("Slave %s has been disabled." % slave_id)
     if '/' in revision:
         user, issue, id = revision.split('/')
         id = int(id)
@@ -636,6 +678,55 @@ def create_build(
         target = Commit.get_by_key_name('%s:%s' % (repo, revision))
     if not target:
         raise ValueError("Unknown revision %r for %s" % (revision, repo))
+    build = Build()
+    build.has_failure = has_failure
+    build.executed = executed
+    build.uname = uname
+    build.build_platform = platform
+    build.repo = repo
+    build.slave = slave_id
+    build.version = revision
+    slave.last_seen = datetime.now()
+    slave.recent_platform = uname
+    slave.working = False
+    slave.jobs_done += 1
+    db.put([build, slave])
+    data = BuildData(key_name='d', parent=build)
+    if traceback:
+        data.traceback = True
+        data.payload = payload
+    else:
+        data.payload = encode_json(payload)
+    data.timings = timings
+    db.put(data)
+    db.run_in_transaction(
+        update_build_target, target.key(), platform, has_failure
+        )
+    return build.key().id()
+
+def update_build_target(target, platform, has_failure):
+    target = db.get(target)
+    while platform in target.needed_builds:
+        target.needed_builds.remove(platform)
+    if has_failure:
+        target.has_failure = True
+        if platform not in target.failed_builds:
+            target.failed_builds.append(platform)
+    else:
+        if platform not in target.passed_builds:
+            target.passed_builds.append(platform)
+    if (not target.needed_builds) and target.stage == 'test':
+        target.stage = 'tested'
+    db.put(target)
+
+@worker(GAE_QUEUE)
+def get_build_data(build_id):
+    build_id = int(build_id)
+    build = Build.get_by_id(build_id)
+    if not build:
+        return
+    data = db.get(db.Key.from_path('D', 'd', parent=build.key()))
+    return build, data
 
 # ------------------------------------------------------------------------------
 # Datastore Models
@@ -643,37 +734,37 @@ def create_build(
 
 class A(db.Model): # normal id; parent = Review
     user = db.StringProperty(name='u')
-    stage = db.ByteStringProperty(name='g')
-    date = db.DateTimeProperty(name='d', auto_now_add=True)
+    stage = db.StringProperty(name='g')
+    d = db.DateTimeProperty(auto_now_add=True)
 
 Appraisal = A
 
 class B(db.Model): # normal id
-    repo = db.ByteStringProperty(name='r')
+    repo = db.StringProperty(name='r')
     slave = db.IntegerProperty(name='s')
     version = db.StringProperty(name='v')
     build_platform = db.StringProperty(name='b')
     uname = db.StringProperty(name='u')
     executed = db.StringListProperty(name='e')
     has_failure = db.BooleanProperty(name='h', default=False)
-    date = db.DateTimeProperty(name='d', auto_now_add=True)
+    d = db.DateTimeProperty(auto_now_add=True)
 
 Build = B
 
 class C(db.Model): # normal id; parent = Review
     user = db.StringProperty(name='u')
-    date = db.DateTimeProperty(name='d', auto_now_add=True)
     text = db.TextProperty(name='t')
     version = db.StringProperty(name='v')
     line = db.IntegerProperty(name='l', default=0)
     file = db.StringProperty(name='f', default='')
+    d = db.DateTimeProperty(auto_now_add=True)
 
 Comment = C
 
 class D(db.Model): # normal id; parent = Build
     traceback = db.BooleanProperty(name='e', default=False)
     payload = db.TextProperty('p')
-    timings = db.StringListProperty(name='t', indexed=False)
+    timings = db.ListProperty(int, name='t', indexed=False)
 
 BuildData = D
 
@@ -683,22 +774,22 @@ class G(db.Model): # id = <repo>:<git-revision>
     committer = db.StringProperty(name='c')
     committer_email = db.StringProperty(name='e')
     committed_timestamp = db.DateTimeProperty(name='t')
-    repo = db.ByteStringProperty(name='r')
+    repo = db.StringProperty(name='r')
     subject = db.TextProperty(name='s')
     needed_builds = db.StringListProperty(name='n')
     passed_builds = db.StringListProperty(name='p', indexed=False)
     failed_builds = db.StringListProperty(name='f', indexed=False)
     has_failure = db.BooleanProperty(name='h', default=False)
     user = db.StringProperty(name='u') # #unknown
-    date = db.DateTimeProperty(name='d', auto_now_add=True)
-    modified = db.DateTimeProperty(name='m', auto_now=True)
+    d = db.DateTimeProperty(auto_now_add=True)
+    m = db.DateTimeProperty(auto_now=True)
 
 Commit = G
 
 class P(db.Model): # normal id; parent = Commit or Review
     slave = db.IntegerProperty(name='s')
     build_platform = db.StringProperty(name='b')
-    date = db.DateTimeProperty(name='d', auto_now_add=True)
+    d = db.DateTimeProperty(auto_now_add=True)
 
 PendingJob = P
 
@@ -710,16 +801,16 @@ ReviewBase = Q
 
 class R(db.Model): # id = incrementing integer; parent = ReviewBase
     subject = db.TextProperty(name='s')
-    repo = db.ByteStringProperty(name='r')
-    upstream_revision = db.ByteStringProperty(name='i')
-    stage = db.ByteStringProperty(name='g', default='pending')
+    repo = db.StringProperty(name='r')
+    upstream_revision = db.StringProperty(name='i')
+    stage = db.StringProperty(name='g', default='pending')
     needed_builds = db.StringListProperty(name='n')
     passed_builds = db.StringListProperty(name='p', indexed=False)
     failed_builds = db.StringListProperty(name='f', indexed=False)
     has_failure = db.BooleanProperty(name='h', default=False)
     user = db.StringProperty(name='u')
-    date = db.DateTimeProperty(name='d', auto_now_add=True)
-    modified = db.DateTimeProperty(name='m', auto_now=True)
+    d = db.DateTimeProperty(auto_now_add=True)
+    m = db.DateTimeProperty(auto_now=True)
 
 Review = R
 
@@ -730,17 +821,17 @@ class S(db.Model): # normal id
     last_seen = db.DateTimeProperty(name='l')
     owner = db.StringProperty(name='o')
     recent_platform = db.StringProperty(name='r')
-    token = db.ByteStringProperty(name='t')
+    token = db.StringProperty(name='t')
 
 Slave = S
 
 class U(db.Model): # key = github username
     name = db.StringProperty(name='n')
     emails = db.StringListProperty(name='e')
-    gravatar = db.ByteStringProperty(name='g')
+    gravatar = db.StringProperty(name='g')
     last_seen = db.DateTimeProperty(name='l', auto_now=True)
-    token = db.ByteStringProperty(name='t')
-    date = db.DateTimeProperty(name='d', auto_now_add=True)
+    token = db.StringProperty(name='t')
+    d = db.DateTimeProperty(auto_now_add=True)
 
 User = U
 
@@ -861,7 +952,7 @@ class BuildsHandler(BaseHandler):
 class BuildHandler(BaseHandler):
 
     @async
-    def post(self, has_failure=0):
+    def post(self, has_failure=False):
         get = self.get_argument
         revision = get('revision')
         uname = get('uname')
@@ -882,6 +973,9 @@ class BuildHandler(BaseHandler):
         if 'traceback' in data:
             traceback = 1
             payload = data['traceback']
+            timings = []
+            executed = []
+            has_failure = True
         else:
             traceback = 0
             executed = data['executed']
@@ -895,13 +989,35 @@ class BuildHandler(BaseHandler):
                 out = data.get('%s|stdout' % item, None)
                 add_stdout(out)
                 if out:
-                    has_failure = 1
+                    has_failure = True
         platform = uname2platforms.get(uname)
         build = yield create_build(
-            slave_id, token, repo, revision, uname, platform, payload,
-            traceback, has_failure
+            slave_id, token, repo, revision, uname, platform, executed, payload,
+            timings, traceback, has_failure
             )
         self.write('OK %s' % build)
+
+class BuildDetailsHandler(BaseHandler):
+
+    @async
+    def get(self, build_id):
+        build_data = yield get_build_data(build_id)
+        if not build_data:
+            self.errmsg("No records found for build %s" % build_id)
+            return
+        build, data = build_data
+        traceback = timings = stderr = stdout = None
+        if data:
+            if data.traceback:
+                traceback = data.payload
+            else:
+                timings = data.timings
+                stderr, stdout = decode_json(data.payload)
+        self.display(
+            'builddetails', build_id=build_id, build=build, traceback=traceback,
+            timings=timings, stdout=stdout, stderr=stderr, data=data,
+            platforms=uname2platforms
+            )
 
 class JobHandler(BaseHandler):
 
@@ -923,7 +1039,6 @@ class JobHandler(BaseHandler):
         except ValueError, err:
             self.write(repr(err))
             return
-        job = '5cf2644cf3131f797275c6f8e3a3ca0814f96261'
         self.write('OK ')
         if job:
             self.write(job)
@@ -991,11 +1106,11 @@ class SlaveHandler(BaseHandler):
         if not slave_data:
             self.errmsg("No records found for slave %s" % slave_id)
             return
-        slave, builds, more = slave_data
+        slave, builds, pending, more = slave_data
         show_token = self.is_admin_user() or (self.current_user == slave.owner)
         self.display(
             'slave', slave_id=slave_id, slave=slave, show_token=show_token,
-            builds=builds, more=more
+            builds=builds, more=more, pending=pending
             )
 
     @auth(async=True, xsrf=True)
@@ -1064,6 +1179,9 @@ def main(argv=None):
         print "ERROR: Please create %s" % repo_home
         sys.exit(1)
 
+    logging.getLogger().setLevel(logging.INFO)
+    enable_pretty_logging()
+
     github_account = settings['github_account']
 
     _repos = settings['repos']
@@ -1081,8 +1199,6 @@ def main(argv=None):
             if not git('config', 'remote.upstream.url', exit_on_error=False):
                 upstream_url = 'https://github.com/%s/%s.git' % repos[repo]
                 git('remote', 'add', 'upstream', upstream_url)
-            git('remote', 'update', '-p', out=True)
-            git('push', 'origin', 'upstream/master:master', out=True)
 
     application = Application([
         (r"/dashboard", DashboardHandler),
@@ -1090,6 +1206,7 @@ def main(argv=None):
         (r"/reviews", ReviewsHandler),
         (r"/review", ReviewHandler),
         (r"/builds", BuildsHandler),
+        (r"/build/([0-9]+)", BuildDetailsHandler),
         (r"/build", BuildHandler),
         (r"/job", JobHandler),
         (r"/logout", LogoutHandler),
@@ -1101,8 +1218,9 @@ def main(argv=None):
         (r"/", RootHandler),
     ], **settings)
 
+    port = settings['port']
     http_server = HTTPServer(application)
-    http_server.listen(settings['port'])
+    http_server.listen(port)
 
     uname2platforms.update(settings['platforms'])
     for platform in uname2platforms.values():
@@ -1119,13 +1237,20 @@ def main(argv=None):
     for queue in [URL_QUEUE, GIT_QUEUE, GAE_QUEUE]:
         start_new_thread(threaded_worker_dispatcher, (queue,))
 
-    print "Connecting to App Engine Server at", settings['gae_host']
+    logging.info("Connecting to App Engine Server at %s" % settings['gae_host'])
     init_appengine(
         settings['gae_app_id'], settings['gae_host'],
         settings['gae_remote_key'], settings['gae_secure']
         )
 
-    print "The git review server is listening on port %d ..." % settings['port']
+    for repo in repos:
+        logging.info("Storing commit data for %s" % repo)
+        commit = Commit.all().filter('r =', repo).get()
+        if not commit:
+            commits = _get_new_commits(repo, 'upstream/master^')
+            _create_commits(repo, commits)
+
+    logging.info("The git review server is listening on port %d ..." % port)
     Loop.start()
 
 # ------------------------------------------------------------------------------

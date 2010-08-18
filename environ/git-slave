@@ -21,7 +21,7 @@ from urllib import urlencode, urlopen
 
 from daemon import Daemon
 from optcomplete import ListCompleter, autocomplete
-from pyutil.exception import html_format_exception
+from pyutil.exception import format_exception
 from pyutil.scm import is_git, SCMConfig
 from pyutil.env import run_command
 from simplejson import dumps as encode_json
@@ -108,12 +108,11 @@ class Slave(Daemon):
                     self.setup_repo(revision)
                     self.execute_build(results)
                 except Exception:
-                    tb = '<br />'.join(html_format_exception())
+                    tb = '<br />'.join(format_exception())
                     if self.debug:
                         self.log("=> Error running build:")
                     self.error()
                     results = {'traceback': tb}
-                    revision = None
                 try:
                     self.send_results(revision, results)
                 except Exception:
@@ -167,7 +166,7 @@ class Slave(Daemon):
                 command, retcode=True, reterror=True
                 )
             duration = time() - start
-            results[name + '|time'] = duration
+            results[name + '|time'] = int(duration * 1000)
             if error:
                 results[name + '|stdout'] = stdout
                 if stderr:
@@ -184,6 +183,7 @@ class Slave(Daemon):
         return config['slave']
 
     def send_results(self, revision, results):
+        #sys.exit()
         response = {
             'data': encode_json(results),
             'revision': revision,

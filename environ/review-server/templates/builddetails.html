@@ -1,0 +1,56 @@
+<h1>Build {{build_id}}</h1>
+<blockquote><table cellspacing="0px" width="100%">
+<tr class="header">
+	<td>By</td><td>Repo</td><td>Revision</td>
+	<td>Status</td><td>When</td>
+</tr>
+<tr>
+	<td><a href="/slave/{{build.slave}}">Slave {{build.slave}}</a></td>
+	<td>{{escape(build.repo)}}</td>
+	<td>{% if '/' in build.version %}{{escape(build.version)}}{% else %}<code>{{escape(build.version[:10])}}{% end %}</code></td>
+	<td>{% if build.has_failure %}✗{% else %}✓{% end %}</td>
+	<td><span class="timestamp">{{ build.d.strftime('%s') }}</span></td>
+</tr>
+</table></blockquote>
+
+<blockquote>
+<ul>
+	<li>{{escape(build.uname)}}</li>
+	<li>{{escape(build.build_platform)}}</li>
+</ul>
+</blockquote>
+
+{% if traceback %}
+
+<blockquote>
+<pre class="fail">{{escape(traceback)}}</pre>
+</blockquote>
+
+{% else %}
+
+<h2>Phases</h2>
+{% if timings %}
+<ul>
+{% for idx, phase in enumerate(build.executed) %}
+	<li>
+		<span class="{% if stdout[idx] %}fail{% else %}pass{% end %}">{{ escape(phase) }}</span>
+		&nbsp;
+		<span class="small">{{ timings[idx] }} milliseconds</span>
+		{% if stdout[idx] %}
+		<pre>{{escape(stdout[idx])}}</pre>
+		{% end %}
+		{% if stderr[idx] %}
+		<pre class="fail">{{escape(stderr[idx])}}</pre>
+		{% end %}
+	</li>
+{% end %}
+</ul>
+{% else %}
+<ul>
+{% for phase in build.executed %}
+	<li>{{ escape(phase) }}</li>
+{% end %}
+</ul>
+{% end %}
+
+{% end %}
