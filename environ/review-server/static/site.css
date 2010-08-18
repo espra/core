@@ -168,6 +168,10 @@ ul {
 	vertical-align: middle;
 }
 
+.active {
+	color: #282;
+}
+
 .center {
 	text-align: center;
 }
@@ -177,7 +181,7 @@ ul {
 }
 
 .disabled {
-	color: #6f6f6f;
+	color: #afafaf;
 }
 
 .errmsg {

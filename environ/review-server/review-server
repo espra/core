@@ -507,10 +507,7 @@ def get_slaves(next=None, n=101):
     if len(slaves) == n:
         more = slaves[-1].key().id()
     slaves = slaves[:n-1]
-    return [(
-        slave.key().id(), slave.owner, slave.recent_platform, slave.working,
-        slave.jobs_done, slave.last_seen
-        ) for slave in slaves], more
+    return slaves, more
 
 @worker(GAE_QUEUE)
 def get_slave(slave_id, next=None, n=101):

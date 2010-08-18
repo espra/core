@@ -20,7 +20,7 @@
 	<td>{% if slave.working %}✓{% else %}✗{% end %}</td>
 	<td>{{ slave.jobs_done }}</td>
 	<td>{% if slave.last_seen %}<span class="timestamp">{{ slave.last_seen.strftime('%s') }}</span>{% else %}-{% end %}</td>
-	<td>{% if slave.disabled %}<span class="disabled">disabled</span>{% else %}active{% end %}</td>
+	<td>{% if slave.disabled %}<span class="disabled">disabled</span>{% else %}<span class="active">active</span>{% end %}</td>
 </tr>
 </table></blockquote>
 {% if builds %}

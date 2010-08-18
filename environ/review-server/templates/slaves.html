@@ -14,16 +14,18 @@
 	<td>Official Platform</td>
 	<td>Owner</td>
 	<td>Working</td><td>Done</td><td>Last Seen</td>
+	<td>Status</td>
 </tr>
 {% for slave in slaves %}
 <tr>
-	<td><a href="/slave/{{slave[0]}}">{{ slave[0] }}</a></td>
-	<td>{{ escape(slave[2] or '-') }}</td>
-	<td>{{ escape(platforms.get(slave[2], '-')) }}</td>
-	<td>{{ escape(slave[1]) }}</td>
-	<td>{% if slave[3] %}✓{% else %}✗{% end %}</td>
-	<td>{{ slave[4] }}</td>
-	<td>{% if slave[5] %}<span class="timestamp">{{ slave[5].strftime('%s') }}</span>{% else %}-{% end %}</td>
+	<td><a href="/slave/{{slave.key().id()}}">{{ slave.key().id() }}</a></td>
+	<td>{{ escape(slave.recent_platform or '-') }}</td>
+	<td>{{ escape(platforms.get(slave.recent_platform, '-')) }}</td>
+	<td>{{ escape(slave.owner) }}</td>
+	<td>{% if slave.working %}✓{% else %}✗{% end %}</td>
+	<td>{{ slave.jobs_done }}</td>
+	<td>{% if slave.last_seen %}<span class="timestamp">{{ slave.last_seen.strftime('%s') }}</span>{% else %}-{% end %}</td>
+	<td>{% if slave.disabled %}<span class="disabled">disabled</span>{% else %}<span class="active">active</span>{% end %}</td>
 </tr>
 {% end %}
 </table></blockquote>
