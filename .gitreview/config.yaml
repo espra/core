@@ -10,6 +10,5 @@ cc: ampify@googlegroups.com
 watchlist: on
 
 slave:
-- ['build', './environ/amp', 'build']
 - ['py-tests', './environ/amp', 'test', 'python']
 - ['go-tests', './environ/amp', 'test', 'go']
