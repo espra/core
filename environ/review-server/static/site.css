@@ -120,6 +120,21 @@ tr.header td {
 	white-space: nowrap;
 }
 
+tr.header-left td {
+	border-top: 0px;
+}
+
+tr.header-left td.header {
+	background-color: #dfd;
+	border-right: 1px solid #afa;
+	border-top: 1px solid #afa;
+	font-weight: bold;
+	padding: 7px 10px 7px 10px;
+	white-space: nowrap;
+	text-align: right;
+}
+
+
 tr.header-small td {
 	background-color: #dfd;
 	font-size: 0.8em;
@@ -205,6 +220,10 @@ ul {
 	color: #822;
 }
 
+.float-right {
+	float: right;
+}
+
 .head {
 	font-family: "Lobster", serif;
 	font-size: 36px;
@@ -221,7 +240,12 @@ ul {
 	vertical-align: sub;
 }
 
-.inactive {
+.huge {
+	font-size: 96px;
+	padding-right: 20px;
+}
+
+.inactive, .grey {
 	color: #afafaf;
 }
 

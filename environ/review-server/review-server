@@ -78,6 +78,7 @@ repos = {}
 repo_paths = {}
 
 cache = None
+repo_commits = {}
 platforms = []
 uname2platforms = {}
 
@@ -481,7 +482,11 @@ get_new_commits = worker(GIT_QUEUE)(_get_new_commits)
 
 def _create_commits(repo, data):
     commits = []; new_commit = commits.append
+    first = 1
     for (rev, an, ae, at, cn, ce, ct, subject) in data:
+        if first:
+            first = 0
+            repo_commits[repo] = rev
         commit = Commit(key_name='%s:%s' % (repo, rev))
         commit.author = an
         commit.author_email = ae
@@ -669,13 +674,7 @@ def create_build(
         raise ValueError("Couldn't verify slave %s" % slave_id)
     if slave.disabled:
         raise ValueError("Slave %s has been disabled." % slave_id)
-    if '/' in revision:
-        user, issue, id = revision.split('/')
-        id = int(id)
-        parent = db.Key.from_path('Q', '%s:%s:%s' % (repo, user, issue))
-        target = db.get(db.Key.from_path('R', id, parent=parent))
-    else:
-        target = Commit.get_by_key_name('%s:%s' % (repo, revision))
+    target = db.get(get_key_for_version(repo, revision))
     if not target:
         raise ValueError("Unknown revision %r for %s" % (revision, repo))
     build = Build()
@@ -719,14 +718,57 @@ def update_build_target(target, platform, has_failure):
         target.stage = 'tested'
     db.put(target)
 
+def get_key_for_version(repo, version, create_key=db.Key.from_path):
+    if '/' in version:
+        user, issue, id = version.split('/')
+        parent = create_key('Q', '%s:%s:%s' % (repo, user, issue))
+        return create_key('R', int(id), parent=parent)
+    return create_key('G', '%s:%s' % (repo, version))
+
+@worker(GAE_QUEUE)
+def db_get(key):
+    return db.get(key)
+
 @worker(GAE_QUEUE)
 def get_build_data(build_id):
     build_id = int(build_id)
     build = Build.get_by_id(build_id)
     if not build:
         return
-    data = db.get(db.Key.from_path('D', 'd', parent=build.key()))
-    return build, data
+    build_key = build.key()
+    data, target = db.get([
+        db.Key.from_path('D', 'd', parent=build_key),
+        get_key_for_version(build.repo, build.version)
+        ])
+    rebuild_state = uname2platforms.get(build.uname, None)
+    if rebuild_state:
+        if rebuild_state in target.needed_builds:
+            rebuild_state = 1
+        else:
+            rebuild_state = 2
+    return build, data, rebuild_state
+
+def _rebuild(target_key, platform, result):
+    target = db.get(target_key)
+    if platform in target.needed_builds:
+        return
+    target.needed_builds.append(platform)
+    while platform in target.passed_builds:
+        target.passed_builds.remove(platform)
+    while platform in target.failed_builds:
+        target.failed_builds.remove(platform)
+    if not target.failed_builds:
+        target.has_failure = False
+    target.put()
+    result.append(1)
+
+@worker(GAE_QUEUE)
+def rebuild(repo, version, platform):
+    target_key = get_key_for_version(repo, version)
+    result = []
+    db.run_in_transaction(_rebuild, target_key, platform, result)
+    if result:
+        return 1
 
 # ------------------------------------------------------------------------------
 # Datastore Models
@@ -1005,7 +1047,7 @@ class BuildDetailsHandler(BaseHandler):
         if not build_data:
             self.errmsg("No records found for build %s" % build_id)
             return
-        build, data = build_data
+        build, data, rebuild_state = build_data
         traceback = timings = stderr = stdout = None
         if data:
             if data.traceback:
@@ -1016,7 +1058,7 @@ class BuildDetailsHandler(BaseHandler):
         self.display(
             'builddetails', build_id=build_id, build=build, traceback=traceback,
             timings=timings, stdout=stdout, stderr=stderr, data=data,
-            platforms=uname2platforms
+            rebuild_state=rebuild_state, platforms=uname2platforms
             )
 
 class JobHandler(BaseHandler):
@@ -1131,10 +1173,27 @@ class PostReceiveHandler(BaseHandler):
 
     @async
     def post(self):
-        commits = yield get_new_commits(self.get_argument('repo'))
+        repo = self.get_argument('repo')
+        commits = yield get_new_commits(repo, repo_commits[repo])
+        yield create_commits(repo, commits)
         self.write('OK')
 
     get = post
+
+class RebuildHandler(BaseHandler):
+
+    @auth(async=True, xsrf=True)
+    def post(self):
+        get = self.get_argument
+        repo = get('repo')
+        version = get('version')
+        platform = get('platform')
+        build_id = get('build_id')
+        if platform not in platforms:
+            self.errmsg("%s is not supported atm." % platform)
+            return
+        retval = yield rebuild(repo, version, platform)
+        self.redirect('/build/%s' % build_id)
 
 # ------------------------------------------------------------------------------
 # Main Runner
@@ -1215,6 +1274,7 @@ def main(argv=None):
         (r"/slaves", SlavesHandler),
         (r"/activity", ActivityHandler),
         (r"/post-receive", PostReceiveHandler),
+        (r"/rebuild", RebuildHandler),
         (r"/", RootHandler),
     ], **settings)
 
@@ -1246,7 +1306,9 @@ def main(argv=None):
     for repo in repos:
         logging.info("Storing commit data for %s" % repo)
         commit = Commit.all().filter('r =', repo).get()
-        if not commit:
+        if commit:
+            repo_commits[repo] = commit.key().name().split(':')[1]
+        else:
             commits = _get_new_commits(repo, 'upstream/master^')
             _create_commits(repo, commits)
 

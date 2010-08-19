@@ -44,8 +44,8 @@ Working on:
 	<td><a href="/build/{{build.key().id()}}">{{build.key().id()}}</a></td>
 	<td>{{escape(build.repo)}}</td>
 	<td>{% if '/' in build.version %}{{escape(build.version)}}{% else %}<code>{{escape(build.version[:10])}}{% end %}</code></td>
-	<td>{{escape(build.uname)}}</td>
-	<td>{% if build.has_failure %}✗{% else %}✓{% end %}</td>
+	<td>{{escape(build.uname.lower())}}</td>
+	<td>{% if build.has_failure %}<span class="grey">✗</span>{% else %}✓{% end %}</td>
 	<td><span class="timestamp">{{ build.d.strftime('%s') }}</span></td>
 </tr>
 {% end %}
