@@ -1,4 +1,4 @@
-{% if current_user %}
+{% if is_admin %}
 <form action="/slaves" method="post" id="form">
 	{% if xsrf_token %}
 	<input type="hidden" name="xsrf_token" value="{{xsrf_token}}" />

@@ -1,0 +1,37 @@
+<h1>Builds</h1>
+{% if builds %}
+<blockquote><table cellspacing="0px" width="100%">
+<tr class="header">
+	<td>ID</td>
+	<td>Platform</td>
+	<td>Commit</td>
+	<td>Status</td><td>When</td>
+	<td>By</td>
+</tr>
+{% for build in builds %}
+<tr>
+	<td><a href="/build/{{build.key().id()}}">{{build.key().id()}}</a></td>
+	<td>{{escape(build.uname.lower())}}</td>
+	<td>
+		<a href="/activity/{{escape(url_escape(build.repo))}}">{{escape(build.repo)}}</a> /
+		{% if '/' in build.version %}{{escape(build.version)}}{% else %}<a href="/master/{{escape(build.repo)}}/{{escape(build.version)}}"><code>{{escape(build.version[:20])}}</code></a>{% end %}
+	</td>
+	<td>{% if build.has_failure %}<span class="grey">✗</span>{% else %}✓{% end %}</td>
+	<td><span class="timestamp">{{ build.d.strftime('%s') }}</span></td>
+	<td><a href="/slave/{{build.slave}}">slave {{ build.slave }}</td>
+</tr>
+{% end %}
+</table></blockquote>
+{% if more %}
+<a class="button" href="/builds?next={{more}}"><span>Next &rarr;</span></a>
+{% end %}
+{% end %}
+
+{% if len(repos) > 1 %}
+<h2>{% if repo %}Other{% else %}Specific{% end %} Repositories</h2>
+<ul>
+{% for repo_name in sorted(repos) %}{% if repo_name != repo %}
+<li><a href="/builds/{{escape(repo_name)}}">{{repo_name}}</a></li>
+{% end %}{% end %}
+</ul>
+{% end %}

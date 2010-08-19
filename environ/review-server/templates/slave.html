@@ -1,4 +1,4 @@
-{% if show_token %}
+{% if is_admin %}
 <form action="/slave/{{slave_id}}" method="post" id="form">
 	{% if xsrf_token %}
 	<input type="hidden" name="xsrf_token" value="{{xsrf_token}}" />
@@ -6,6 +6,7 @@
 	<input type="hidden" name="action" id="action" value="reset" />
 	<a id="submit-disable" class="button"><span>{% if slave.disabled %}Enable{% else %}Disable{% end %} Slave</span></a>
 	<a id="submit" class="button"><span>Reset Slave Token</span></a>
+	<a id="submit-owner" class="button"><span>New Owner</span></a>
 </form>
 {% end %}
 <h1><a href="/slaves">Git Slaves</a> &middot; Slave {{slave_id}}</h1>
@@ -37,14 +38,19 @@ Working on:
 <h2>Recent Builds</h2>
 <blockquote><table cellspacing="0px" width="100%">
 <tr class="header">
-	<td>ID</td><td>Repo</td><td>Revision</td><td>Platform</td><td>Status</td><td>When</td>
+	<td>ID</td>
+	<td>Platform</td>
+	<td>Commit</td>
+	<td>Status</td><td>When</td>
 </tr>
 {% for build in builds %}
 <tr>
 	<td><a href="/build/{{build.key().id()}}">{{build.key().id()}}</a></td>
-	<td>{{escape(build.repo)}}</td>
-	<td>{% if '/' in build.version %}{{escape(build.version)}}{% else %}<code>{{escape(build.version[:10])}}{% end %}</code></td>
 	<td>{{escape(build.uname.lower())}}</td>
+	<td>
+		<a href="/activity/{{escape(url_escape(build.repo))}}">{{escape(build.repo)}}</a> /
+		{% if '/' in build.version %}{{escape(build.version)}}{% else %}<a href="/master/{{escape(build.repo)}}/{{escape(build.version)}}"><code>{{escape(build.version[:20])}}</code></a>{% end %}
+	</td>
 	<td>{% if build.has_failure %}<span class="grey">✗</span>{% else %}✓{% end %}</td>
 	<td><span class="timestamp">{{ build.d.strftime('%s') }}</span></td>
 </tr>
@@ -60,4 +66,12 @@ $('#submit-disable').click(function () {
   $('#action').val('status');
   $('#form').submit();
 });
+$('#submit-owner').click(function () {
+  var owner = prompt("Change the owner to:");
+  if (!owner)
+    return false;
+  $('#action').val('set_owner:' + owner);
+  $('#form').submit();
+});
+
 </script>

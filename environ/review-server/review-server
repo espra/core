@@ -10,7 +10,9 @@ import sys
 
 from base64 import urlsafe_b64encode
 from binascii import hexlify
+from cgi import escape
 from datetime import datetime, timedelta
+from hashlib import md5
 from hmac2 import HMAC
 from optparse import OptionParser
 from os import chdir, close, environ, getcwd, remove, urandom, write
@@ -20,7 +22,7 @@ from shutil import rmtree
 from tempfile import mkstemp
 from thread import start_new_thread
 from time import sleep
-from urllib import quote, urlencode, urlopen
+from urllib import quote, unquote_plus, urlencode, urlopen
 
 from tornado.httpserver import HTTPServer
 from tornado.options import enable_pretty_logging
@@ -290,13 +292,13 @@ def async(method):
 # Auth Support
 # ------------------------------------------------------------------------------
 
-def auth(async=False, cookie=True, xsrf=False):
+def auth(async=True, cookie=True, xsrf=True, admin=True):
     def wrapper(method):
         def __wrapper(handler, *args, **kwargs):
             handler._auto_finish = 0
             TornadoWebDispatcher(
                 authenticate(
-                    async, method, handler, cookie, xsrf, *args, **kwargs
+                    async, method, handler, cookie, xsrf, admin, *args, **kwargs
                     ),
                 handler
                 )
@@ -304,7 +306,7 @@ def auth(async=False, cookie=True, xsrf=False):
         return __wrapper
     return wrapper
 
-def authenticate(async, method, handler, cookie, xsrf, *args, **kwargs):
+def authenticate(async, method, handler, cookie, xsrf, admin, *args, **kwargs):
     login = handler.get_argument('login', '')
     if login:
         token = handler.get_argument('token', '')
@@ -315,7 +317,6 @@ def authenticate(async, method, handler, cookie, xsrf, *args, **kwargs):
         if not info:
             raise HTTPError(403)
         yield update_user(login, info)
-        USERS[login] = token
     elif cookie:
         login = handler.get_secure_cookie('login')
         if not login:
@@ -330,6 +331,9 @@ def authenticate(async, method, handler, cookie, xsrf, *args, **kwargs):
         if login not in XSRF:
             XSRF[login] = HMAC(settings['xsrf_secret'], login).hexdigest()
         if not secure_string_comparison(XSRF[login], xsrf_token):
+            raise HTTPError(403)
+    if admin:
+        if login not in settings['admins']:
             raise HTTPError(403)
     if async:
         gen = method(handler, *args, **kwargs)
@@ -385,6 +389,7 @@ def update_repo(name):
 USERS = CachingDict()
 XSRF = CachingDict()
 EMAILS = CachingDict()
+GRAVATARS = CachingDict()
 
 @worker(URL_QUEUE)
 def get_github_user_info(login, token, keys=['email', 'gravatar_id', 'name']):
@@ -401,6 +406,9 @@ def get_github_user_info(login, token, keys=['email', 'gravatar_id', 'name']):
     for key in keys:
         if key in data:
             info[key] = data[key]
+    USERS[login] = token
+    EMAILS[info['email']] = login
+    GRAVATARS[login] = info['gravatar_id']
     return info
 
 GAE_SERVICES = [
@@ -488,6 +496,7 @@ def _create_commits(repo, data):
             first = 0
             repo_commits[repo] = rev
         commit = Commit(key_name='%s:%s' % (repo, rev))
+        commit.version = rev
         commit.author = an
         commit.author_email = ae
         commit.committer = cn
@@ -570,9 +579,7 @@ def get_slave(slave_id, next=None, n=101):
     return slave, builds, pending, more
 
 @worker(GAE_QUEUE)
-def reset_slave_token(action, slave_id, user, is_admin):
-    if action not in ['status', 'reset']:
-        raise ValueError("Unknown action: %s" % action)
+def change_slave_details(action, slave_id, user, is_admin):
     slave = Slave.get_by_id(int(slave_id))
     if not slave:
         return
@@ -584,6 +591,11 @@ def reset_slave_token(action, slave_id, user, is_admin):
     if action == 'status':
         if is_admin:
             slave.disabled = not slave.disabled
+            slave.put()
+            return 1
+    if action.startswith('set_owner:'):
+        if is_admin:
+            slave.owner = action[10:]
             slave.put()
             return 1
     return 2
@@ -657,7 +669,19 @@ def create_job(key, result, slave_id, platform):
     parent = db.get(key)
     if platform not in parent.needed_builds:
         return
+    corrupted = 0
+    if platform in parent.passed_builds:
+        corrupted = 1
+        while platform in parent.passed_builds:
+            parent.passed_builds.remove(platform)
+    if platform in parent.failed_builds:
+        corrupted = 1
+        while platform in parent.failed_builds:
+            parent.failed_builds.remove(platform)
     parent.needed_builds.remove(platform)
+    if corrupted:
+        parent.put()
+        return
     job = PendingJob(parent=parent)
     job.slave = slave_id
     job.build_platform = platform
@@ -726,6 +750,29 @@ def get_key_for_version(repo, version, create_key=db.Key.from_path):
     return create_key('G', '%s:%s' % (repo, version))
 
 @worker(GAE_QUEUE)
+def get_builds(repo, platform, version, next=None, n=101):
+    more = False
+    builds = Build.all()
+    if repo:
+        builds.filter('r =', repo)
+    if platform:
+        builds.filter('b =', unquote_plus(platform))
+    if version:
+        builds.filter('v =', version)
+    if next:
+        next = db.Key.from_path('B', int(next))
+        builds = builds.filter('__key__ <=', next).order('-__key__').fetch(n)
+    else:
+        builds = builds.order('-__key__').fetch(n)
+    if not builds:
+        builds = []
+    else:
+        if len(builds) == n:
+            more = builds[-1].key().id()
+        builds = builds[:n-1]
+    return builds, more
+
+@worker(GAE_QUEUE)
 def db_get(key):
     return db.get(key)
 
@@ -769,6 +816,40 @@ def rebuild(repo, version, platform):
     db.run_in_transaction(_rebuild, target_key, platform, result)
     if result:
         return 1
+
+@worker(GAE_QUEUE)
+def get_commits(repo, version, failures_only, single, next, n=101):
+    more = False
+    commits = Commit.all()
+    if single:
+        start = db.Key.from_path('G', '%s:%s' % (repo, version))
+        end = db.Key.from_path('G', '%s:%sz' % (repo, version))
+        commits = commits.filter('__key__ >= ', start).filter(
+            '__key__ <=', end
+            ).fetch(1)
+    else:
+        if repo:
+            commits = commits.filter('r =', repo)
+        if failures_only:
+            if failures_only == '0':
+                commits = commits.filter('h =', False)
+            else:
+                commits = commits.filter('h =', True)
+        if next:
+            next = datetime.fromtimestamp(int(next) + 1)
+            commits = commits.filter('d <=', next)
+        commits = commits.order('-d').fetch(n)
+    if commits:
+        if len(commits) == n:
+            more = commits[-1].d.strftime('%s')
+        commits = commits[:n-1]
+    builds = None
+    if single and commits:
+        version = commits[0].key().name().split(':')[1]
+        builds = Build.all().filter('r =', repo).filter('v =', version).order(
+            '-d'
+            ).fetch(1000)
+    return commits, builds, more
 
 # ------------------------------------------------------------------------------
 # Datastore Models
@@ -818,6 +899,7 @@ class G(db.Model): # id = <repo>:<git-revision>
     committed_timestamp = db.DateTimeProperty(name='t')
     repo = db.StringProperty(name='r')
     subject = db.TextProperty(name='s')
+    version = db.StringProperty(name='v')
     needed_builds = db.StringListProperty(name='n')
     passed_builds = db.StringListProperty(name='p', indexed=False)
     failed_builds = db.StringListProperty(name='f', indexed=False)
@@ -922,7 +1004,7 @@ class RootHandler(BaseHandler):
 
 class ActivityHandler(BaseHandler):
 
-    def get(self):
+    def get(self, repo=None):
         if not repos:
             self.errmsg('No repositories configured.')
             return
@@ -943,7 +1025,7 @@ class ReviewHandler(BaseHandler):
         else:
             self.write('//')
 
-    @auth(async=True)
+    @auth(admin=False)
     def post(self):
 
         get = self.get_argument
@@ -988,10 +1070,75 @@ class ReviewHandler(BaseHandler):
 class ReviewsHandler(BaseHandler):
     pass
 
+class MasterHandler(BaseHandler):
+
+    title = 'master commits'
+
+    @async
+    def get(self, repo=None, version=None, single=0):
+        get = self.get_argument
+        next = get('next', '')
+        failures_only = get('failures_only', '')
+        if repo and version:
+            single = 1
+        revision_data = yield get_commits(
+            repo, version, failures_only, single, next
+            )
+        if not revision_data:
+            self.error("Sorry, no data found.")
+            return
+        commits, builds, more = revision_data
+        master_url = '/master'
+        if repo:
+            master_url += escape(quote('/%s' % repo), 1)
+        self.display(
+            'master', commits=commits, more=more, builds=builds, single=single,
+            failures_only=failures_only, version=version, master_url=master_url,
+            repos=repos, repo=repo, platforms=platforms, gravatars=GRAVATARS,
+            md5=md5
+            )
+
 class BuildsHandler(BaseHandler):
-    pass
+
+    title = 'builds'
+
+    @async
+    def get(self, repo=None, platform=None, version=None):
+        if repo == '*':
+            repo = None
+        if platform == '*':
+            platform = None
+        next = self.get_argument('next', '')
+        builds, more = yield get_builds(repo, platform, version, next)
+        if repo and platform and version and builds:
+            if len(builds) == 1:
+                self.redirect('/build/%s' % builds[0].key().id())
+                return
+        self.display('builds', builds=builds, more=more, repo=repo, repos=repos)
 
 class BuildHandler(BaseHandler):
+
+    title = 'build'
+
+    @async
+    def get(self, build_id):
+        build_data = yield get_build_data(build_id)
+        if not build_data:
+            self.errmsg("No records found for build %s" % build_id)
+            return
+        build, data, rebuild_state = build_data
+        traceback = timings = stderr = stdout = None
+        if data:
+            if data.traceback:
+                traceback = data.payload
+            else:
+                timings = data.timings
+                stderr, stdout = decode_json(data.payload)
+        self.display(
+            'build', build_id=build_id, build=build, traceback=traceback,
+            timings=timings, stdout=stdout, stderr=stderr, data=data,
+            rebuild_state=rebuild_state, platforms=uname2platforms
+            )
 
     @async
     def post(self, has_failure=False):
@@ -1039,28 +1186,6 @@ class BuildHandler(BaseHandler):
             )
         self.write('OK %s' % build)
 
-class BuildDetailsHandler(BaseHandler):
-
-    @async
-    def get(self, build_id):
-        build_data = yield get_build_data(build_id)
-        if not build_data:
-            self.errmsg("No records found for build %s" % build_id)
-            return
-        build, data, rebuild_state = build_data
-        traceback = timings = stderr = stdout = None
-        if data:
-            if data.traceback:
-                traceback = data.payload
-            else:
-                timings = data.timings
-                stderr, stdout = decode_json(data.payload)
-        self.display(
-            'builddetails', build_id=build_id, build=build, traceback=traceback,
-            timings=timings, stdout=stdout, stderr=stderr, data=data,
-            rebuild_state=rebuild_state, platforms=uname2platforms
-            )
-
 class JobHandler(BaseHandler):
 
     @async
@@ -1106,7 +1231,6 @@ class LoginHandler(BaseHandler):
             self.display('login', errmsg="Invalid Login.")
             return
         yield update_user(login, info)
-        USERS[login] = token
         self.set_secure_cookie('login', login)
         self.redirect('/')
 
@@ -1132,7 +1256,7 @@ class SlavesHandler(BaseHandler):
             'slaves', slaves=slaves, platforms=uname2platforms, more=more
             )
 
-    @auth(async=True, xsrf=True)
+    @auth()
     def post(self):
         slave_id = yield create_slave(self.current_user)
         self.redirect('/slave/%s' % slave_id)
@@ -1155,10 +1279,10 @@ class SlaveHandler(BaseHandler):
             builds=builds, more=more, pending=pending
             )
 
-    @auth(async=True, xsrf=True)
+    @auth()
     def post(self, slave_id):
         action = self.get_argument('action', '')
-        retcode = yield reset_slave_token(
+        retcode = yield change_slave_details(
             action, slave_id, self.current_user, self.is_admin_user()
             )
         if not retcode:
@@ -1182,7 +1306,7 @@ class PostReceiveHandler(BaseHandler):
 
 class RebuildHandler(BaseHandler):
 
-    @auth(async=True, xsrf=True)
+    @auth()
     def post(self):
         get = self.get_argument
         repo = get('repo')
@@ -1264,14 +1388,20 @@ def main(argv=None):
         (r"/charts", ChartsHandler),
         (r"/reviews", ReviewsHandler),
         (r"/review", ReviewHandler),
+        (r"/builds/([^/]*)", BuildsHandler),
+        (r"/builds/([^/]*)/([^/]*)", BuildsHandler),
+        (r"/builds/([^/]*)/([^/]*)/(.*)", BuildsHandler),
         (r"/builds", BuildsHandler),
-        (r"/build/([0-9]+)", BuildDetailsHandler),
-        (r"/build", BuildHandler),
+        (r"/build/([0-9]+)", BuildHandler),
+        (r"/master/([^/]*)/([0-9a-z]*)", MasterHandler),
+        (r"/master/([^/]*)", MasterHandler),
+        (r"/master", MasterHandler),
         (r"/job", JobHandler),
         (r"/logout", LogoutHandler),
         (r"/login", LoginHandler),
         (r"/slave/([0-9]+)", SlaveHandler),
         (r"/slaves", SlavesHandler),
+        (r"/activity/([^/]*)", ActivityHandler),
         (r"/activity", ActivityHandler),
         (r"/post-receive", PostReceiveHandler),
         (r"/rebuild", RebuildHandler),
@@ -1321,5 +1451,3 @@ def main(argv=None):
 
 if __name__ == '__main__':
     main()
-
-# <img src="http://www.gravatar.com/avatar/%s" />

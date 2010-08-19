@@ -48,6 +48,16 @@ a.button:active span {
     padding: 6px 0 4px 18px;
 }
 
+a.no-link {
+	color: #000;
+	text-decoration: none;
+}
+
+a.no-link:hover {
+	color: #000;
+	text-decoration: underline;
+}
+
 code, pre {
 	font-family: "Inconsolata", Monaco, monospace;
 }
@@ -62,7 +72,18 @@ h1 {
 }
 
 h2 {
-	margin-top: 50px;
+	margin-top: 30px;
+}
+
+hr.clear {
+	clear: both;
+	height: 0;
+	width: 0;
+	margin: 0;
+	padding: 0;
+	color: #c00;
+	background-color: transparent;
+	border: 0px solid;
 }
 
 input.largetext {
@@ -114,7 +135,7 @@ td {
 
 tr.header td {
 	background-color: #dfd;
-	border-bottom: 0px solid #afa;
+	border-top: 1px solid #afa;
 	font-weight: bold;
 	padding: 7px;
 	white-space: nowrap;
@@ -139,9 +160,11 @@ tr.header-small td {
 	background-color: #dfd;
 	font-size: 0.8em;
 	font-weight: bold;
-	border-bottom: 0px solid #afa;
+	border-top: 1px solid #afa;
 	padding: 7px;
 	white-space: nowrap;
+	vertical-align: bottom;
+	line-height: 1.4em;
 }
 
 tr.middle td {
@@ -220,8 +243,20 @@ ul {
 	color: #822;
 }
 
+.float-left {
+	float: left;
+	margin-right: 10px;
+}
+
 .float-right {
 	float: right;
+}
+
+.gravatar {
+	margin-right: 3px;
+	vertical-align: middle;
+	padding: 0px;
+	border: 1px solid #cacaca;
 }
 
 .head {
@@ -249,10 +284,6 @@ ul {
 	color: #afafaf;
 }
 
-.float-right {
-	float: right;
-}
-
 .pass {
 	color: #282;
 }
@@ -261,3 +292,16 @@ ul {
 	font-size: 0.4em;
 }
 
+.small-info {
+	text-align: left;
+	font-size: 0.8em;
+	padding-top: 5px;
+	padding-left: 20px;
+	color: #6f6f6f;
+}
+
+.text {
+	line-height: 1.4em;
+	margin-top: 5px;
+	margin-bottom: 10px;
+}
