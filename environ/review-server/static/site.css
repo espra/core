@@ -124,13 +124,47 @@ pre {
 	border-left: 2px solid #cacaca;
 	padding-left: 10px;
 	margin-left: 20px;
-	margin-top: 30px;
+	margin-top: 20px;
 }
 
 td {
 	padding: 7px;
 	vertical-align: top;
 	border-top: 1px solid #afa;
+}
+
+table.build-results td {
+	border: 0px;
+	padding: 4px 5px;
+	margin: 0;
+}
+
+.build-pass, .build-fail {
+	padding: 6px 7px;
+	margin-bottom: 20px;
+	float: left;
+}
+
+.build-fail {
+	margin-bottom: 0px;
+}
+
+table.build-results td.pass, .build-pass {
+	-moz-border-radius: 5px;
+	-webkit-border-radius: 5px;
+	border-radius: 5px;
+	border: 1px solid #afa;
+	background-color: #dfd;
+	color: #000;
+}
+
+table.build-results td.fail, .build-fail {
+	-moz-border-radius: 5px;
+	-webkit-border-radius: 5px;
+	border-radius: 5px;
+	border: 1px solid #faa;
+	background-color: #fdd;
+	color: #000;
 }
 
 tr.header td {
@@ -221,6 +255,12 @@ ul {
 	color: #282;
 }
 
+.activity {
+	line-height: 1.4em;
+	border-bottom: 1px dashed #cfcfcf;
+	padding: 14px 0;
+}
+
 .center {
 	text-align: center;
 }
@@ -259,6 +299,13 @@ ul {
 	border: 1px solid #cacaca;
 }
 
+.gravatar-activity {
+	margin-right: 5px;
+	vertical-align: middle;
+	padding: 0px;
+	margin-bottom: 6px;
+}
+
 .head {
 	font-family: "Lobster", serif;
 	font-size: 36px;
@@ -292,11 +339,23 @@ ul {
 	font-size: 0.4em;
 }
 
+.small-grey {
+	color: #6f6f6f;
+	text-transform: uppercase;
+	font-family: "Yanone Kaffeesatz", Georgia, serif;
+	font-size: 0.7em;
+	padding-left: 5px;
+}
+
 .small-info {
 	text-align: left;
 	font-size: 0.8em;
 	padding-top: 5px;
 	padding-left: 20px;
+	color: #6f6f6f;
+}
+
+.subject {
 	color: #6f6f6f;
 }
 

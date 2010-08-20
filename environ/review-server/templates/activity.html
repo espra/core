@@ -1,0 +1,51 @@
+{% if not user %}
+{% if hide_slaves %}
+<a href="{{request.path}}{% if hide_commits %}?hide_commits=1{% end %}" class="button"><span>Show Slaves</span></a>
+{% else %}
+<a href="{{request.path}}?hide_slaves=1{% if hide_commits %}&amp;hide_commits=1{% end %}" class="button"><span>Hide Slaves</span></a>
+{% end %}
+{% if hide_commits %}
+<a href="{{request.path}}{% if hide_slaves %}?hide_slaves=1{% end %}" class="button"><span>Show Commits</span></a>
+{% else %}
+<a href="{{request.path}}?hide_commits=1{% if hide_slaves %}&amp;hide_slaves=1{% end %}" class="button"><span>Hide Commits</span></a>
+{% end %}
+{% end %}
+<h1>{% if repo or user %}<a href="/activity">Activities</a>{% if repo %} &middot; {{escape(repo)}}{% end %}{% if user %} &middot; user {{escape(user)}}{% end %}{% else %}Activities{% end %}</h1>
+
+{% for activity in activities %}
+<div class="activity">
+{% if activity.kind() == 'G' %}
+
+<img class="gravatar-activity" src="http://www.gravatar.com/avatar/{% if activity.user in gravatars %}{{gravatars[commit.user]}}{% else %}{{ md5(activity.author_email).hexdigest() }}{% end %}?s=16&amp;d=http%3A%2F%2Fgithub.com%2Fimages%2Fgravatars%2Fgravatar-16.png" />
+
+{% if activity.user %}<a href="/activity/*/{{escape(url_escape(activity.user))}}" class="no-link">{% end %}{{escape(activity.user or activity.author_email or '')}}{% if activity.user %}</a>{% end %} committed <a href="/commit/{{escape(url_escape(activity.repo))}}/{{escape(activity.version)}}"><code>{{escape(activity.version[:8])}}</code></a> to <a href="/activity/{{escape(url_escape(activity.repo))}}">{{escape(activity.repo)}}</a> <span class="timestamp small-grey">{{ activity.d.strftime('%s') }}</span>
+
+{% if activity.subject %}
+<blockquote class="subject">
+{{escape(activity.subject)}}
+</blockquote>
+{% end %}
+
+{% elif activity.kind() == 'B' %}
+
+<a href="/slave/{{activity.slave}}"><img class="gravatar-activity" src="http://en.gravatar.com/userimage/15837594/6d5fa36199674517e77940ec24c6bd8f.jpg" width="16px" height="16px"  /></a><!--http://www.gravatar.com/avatar/040008bc083a22725f9f6df2eed1dcdc?s=24&d=http%3A%2F%2Fgithub.com%2Fimages%2Fgravatars%2Fgravatar-24.png--> <a href="/slave/{{activity.slave}}" class="no-link">slave-{{activity.slave}}</a> <a href="/build/{{build_id = activity.key().id()}}">built {{build_id}}</a> from <a href="/activity/{{escape(url_escape(activity.repo))}}" class="no-links">{{escape(activity.repo)}}</a>/<a href="/commit/{{escape(url_escape(activity.repo))}}/{{escape(activity.version)}}" class="no-links"><code>{{escape(activity.version[:8])}}</code></a> on <a href="/builds/*/{{escape(url_escape(activity.build_platform))}}">{{escape(activity.build_platform.lower())}}</a> <span class="timestamp small-grey">{{ activity.d.strftime('%s') }}</span>
+
+
+<blockquote><table class="build-results" cellspacing="0px"><tr>
+{% if activity.build_phases %}
+{% for phase, failure in decode_json(activity.build_phases) %}
+<td class="{% if failure %}fail">✗ {% else %}pass">✓ {% end %}&nbsp;{{ escape(phase) }}</td>
+<td> </td>
+{% end %}
+{% else %}
+<td class="fail">✗ &nbsp;git-slave failure</td>
+{% end %}
+</tr></table></blockquote>
+
+{% end %}
+</div>
+{% end %}
+
+{% if more %}
+<a class="button" href="/activity?next={{more}}"><span>Next &rarr;</span></a>
+{% end %}

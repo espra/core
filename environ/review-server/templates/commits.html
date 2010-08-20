@@ -1,20 +1,20 @@
 {% if not single %}{% if failures_only %}
-<a class="button" href="{{master_url}}"><span>All</span></a>
+<a class="button" href="{{commits_url}}"><span>All</span></a>
 {% if failures_only == "0" %}
-<a class="button" href="{{master_url}}?failures_only=1"><span>Failures Only</span></a>
+<a class="button" href="{{commits_url}}?failures_only=1"><span>Hide Non-Failures</span></a>
 {% else %}
-<a class="button" href="{{master_url}}?failures_only=0"><span>Non-Failures Only</span></a>
+<a class="button" href="{{commits_url}}?failures_only=0"><span>Hide Failures</span></a>
 {% end %}
 {% else %}
-<a class="button" href="{{master_url}}?failures_only=1"><span>Failures Only</span></a>
-<a class="button" href="{{master_url}}?failures_only=0"><span>Non-Failures Only</span></a>
+<a class="button" href="{{commits_url}}?failures_only=1"><span>Hide Non-Failures</span></a>
+<a class="button" href="{{commits_url}}?failures_only=0"><span>Hide Failures</span></a>
 {% end %}{% end %}
 {% if single %}
-<h1><a href="/master">Master Commits</a> &middot; {{ escape(version[:12]) }}</h1>
+<h1><a href="/commits">Commits</a> &middot; {{ escape(version[:12]) }}</h1>
 {% elif repo %}
-<h1><a href="/master">Master Commits</a> &middot; {{ escape(repo) }}</h1>
+<h1><a href="/commits">Commits</a> &middot; {{ escape(repo) }}</h1>
 {% else %}
-<h1>Master Commits</h1>
+<h1>Commits</h1>
 {% end %}
 
 {% if commits %}
@@ -42,7 +42,7 @@
 		&nbsp;&middot;&nbsp;
 		<a href="http://github.com/{{'%s/%s' % repos[commit.repo]}}/commit/{{version}}">github</a>
 		{% else %}
-		<a href="/master/{{commit.repo}}/{{revision = escape(url_escape(commit.key().name().split(':')[1]))}}"><code>{{revision[:12]}}</code></a>
+		<a href="/commit/{{commit.repo}}/{{revision = escape(url_escape(commit.key().name().split(':')[1]))}}"><code>{{revision[:12]}}</code></a>
 		&nbsp;&middot;&nbsp;
 		<a href="http://github.com/{{'%s/%s' % repos[commit.repo]}}/commit/{{revision}}">github</a>
 		{% end %}
@@ -59,7 +59,7 @@
 {% end %}
 </table></blockquote>
 {% if more %}
-<a class="button" href="{{master_url}}?next={{more}}&amp;{% if failures_only %}failures_only={{failures_only}}{% end %}"><span>Next &rarr;</span></a>
+<a class="button" href="{{commits_url}}?next={{more}}&amp;{% if failures_only %}failures_only={{failures_only}}{% end %}"><span>Next &rarr;</span></a>
 {% end %}
 {% end %}
 
@@ -69,7 +69,6 @@
 <tr class="header">
 	<td>ID</td>
 	<td>Platform</td>
-	<td>Official Platform</td>
 	<td>Status</td>
 	<td>When</td>
 	<td>By</td>
@@ -77,9 +76,19 @@
 {% for build in builds %}
 <tr>
 	<td><a href="/build/{{build_id = build.key().id()}}">{{build_id}}</a></td>
-	<td>{{escape(build.uname.lower())}}</td>
 	<td>{{escape(build.build_platform.lower())}}</td>
-	<td>{% if build.has_failure %}<a class="fail" href="/build/{{build_id}}">fail</a>{% else %}<a class="no-link" href="/build/{{build_id}}">✓</a>{% end %}</td>
+	<td>
+		<table class="build-results" cellspacing="0px"><tr>
+			{% if build.build_phases %}
+			{% for phase, failure in decode_json(build.build_phases) %}
+			<td class="{% if failure %}fail">✗ {% else %}pass">✓ {% end %}&nbsp;{{ escape(phase) }}</td>
+			<td> </td>
+			{% end %}
+			{% else %}
+			<td class="fail">✗ &nbsp;git-slave failure</td>
+			{% end %}
+		</tr></table>
+	</td>
 	<td><span class="timestamp">{{ build.d.strftime('%s') }}</span></td>
 	<td><a href="/slave/{{build.slave}}">slave {{ build.slave }}</td>
 </tr>
@@ -91,7 +100,7 @@
 <h2>{% if repo %}Other{% else %}Specific{% end %} Repositories</h2>
 <ul>
 {% for repo_name in sorted(repos) %}{% if repo_name != repo %}
-<li><a href="/master/{{escape(repo_name)}}">{{repo_name}}</a></li>
+<li><a href="/commits/{{escape(repo_name)}}">{{repo_name}}</a></li>
 {% end %}{% end %}
 </ul>
 {% end %}

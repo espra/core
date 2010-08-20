@@ -481,16 +481,17 @@ def _get_new_commits(repo, start):
     chdir(repo_paths[repo])
     git('remote', 'update', '-p', 'upstream', raise_error=True)
     git('push', 'origin', 'upstream/master:master', raise_error=True)
-    return [commit.splitlines() for commit in git(
-        'log', '--format=%H%n%an%n%ae%n%at%n%cn%n%ce%n%ct%n%s',
-        '-z', '--no-color', '%s...upstream/master' % start, raise_error=True
-        ).split('\x00')]
+    return filter(None, [commit.strip().splitlines() for commit in git(
+        'log', '--format=%H%n%an%n%ae%n%at%n%cn%n%ce%n%ct%n%s%x00',
+        '--no-color', '%s...upstream/master' % start, raise_error=True
+        ).split('\x00')])
 
 get_new_commits = worker(GIT_QUEUE)(_get_new_commits)
 
 def _create_commits(repo, data):
     commits = []; new_commit = commits.append
     first = 1
+    logging.error(repr(data))
     for (rev, an, ae, at, cn, ce, ct, subject) in data:
         if first:
             first = 0
@@ -709,6 +710,17 @@ def create_build(
     build.repo = repo
     build.slave = slave_id
     build.version = revision
+    if traceback:
+        build.build_phases = ''
+    else:
+        stdout = payload[1]
+        build_phases = []; add_phase = build_phases.append
+        for idx, phase in enumerate(executed):
+            if stdout[idx]:
+                add_phase([phase, 1])
+            else:
+                add_phase([phase, 0])
+        build.build_phases = encode_json(build_phases)
     slave.last_seen = datetime.now()
     slave.recent_platform = uname
     slave.working = False
@@ -851,6 +863,51 @@ def get_commits(repo, version, failures_only, single, next, n=101):
             ).fetch(1000)
     return commits, builds, more
 
+@worker(GAE_QUEUE)
+def get_activities(
+    repo, user, hide_commits, hide_slaves, next, n=101,
+    get_key=db.Key.from_path
+    ):
+    more = False
+    if hide_commits:
+        commits = []
+    else:
+        commits = Commit.all()
+    if hide_slaves:
+        builds = []
+    else:
+        builds = Build.all()
+    if next:
+        next = datetime.fromtimestamp(int(next) + 1)
+    if repo:
+        if not hide_commits:
+            commits = commits.filter('r =', repo)
+        if not hide_slaves:
+            builds = builds.filter('r =', repo)
+    if user:
+        if not hide_commits:
+            commits = commits.filter('u =', user)
+        builds = []
+    elif not hide_slaves:
+        if next:
+            builds = builds.filter('d <=', next)
+        builds = builds.order('-d').fetch(n)
+        if not builds:
+            builds = []
+    if not hide_commits:
+        if next:
+            commits = commits.filter('d <=', next)
+        commits = commits.order('-d').fetch(n)
+        if not commits:
+            commits = []
+    activities = commits + builds
+    activities = sorted(activities, key=lambda i: i.d, reverse=1)
+    if activities:
+        if len(activities) >= n:
+            more = activities[n-1].d.strftime('%s')
+        activities = activities[:n-1]
+    return activities, more
+
 # ------------------------------------------------------------------------------
 # Datastore Models
 # ------------------------------------------------------------------------------
@@ -869,6 +926,7 @@ class B(db.Model): # normal id
     build_platform = db.StringProperty(name='b')
     uname = db.StringProperty(name='u')
     executed = db.StringListProperty(name='e')
+    build_phases = db.TextProperty('p')
     has_failure = db.BooleanProperty(name='h', default=False)
     d = db.DateTimeProperty(auto_now_add=True)
 
@@ -989,7 +1047,9 @@ class BaseHandler(RequestHandler):
             content = self.render_string(template + '.html', **kwargs)
         else:
             content = ''
-        self.render('site.html', content=content, title=self.title, **kwargs)
+        if 'title' not in kwargs:
+            kwargs['title'] = self.title
+        self.render('site.html', content=content, **kwargs)
 
     def errmsg(self, errmsg):
         self.render('site.html', content='', errmsg=errmsg, title=self.title)
@@ -1004,11 +1064,25 @@ class RootHandler(BaseHandler):
 
 class ActivityHandler(BaseHandler):
 
-    def get(self, repo=None):
+    @async
+    def get(self, repo=None, user=None):
         if not repos:
             self.errmsg('No repositories configured.')
             return
-        self.display('home', repos=repos)
+        if repo == '*':
+            repo = None
+        get = self.get_argument
+        next = get('next', '')
+        hide_commits = get('hide_commits', '')
+        hide_slaves = get('hide_slaves', '')
+        activities, more = yield get_activities(
+            repo, user, hide_commits, hide_slaves, next
+            )
+        self.display(
+            'activity', activities=activities, more=more, repo=repo, user=user,
+            gravatars=GRAVATARS, md5=md5, hide_commits=hide_commits,
+            hide_slaves=hide_slaves, decode_json=decode_json
+            )
 
 class DashboardHandler(BaseHandler):
     pass
@@ -1070,9 +1144,9 @@ class ReviewHandler(BaseHandler):
 class ReviewsHandler(BaseHandler):
     pass
 
-class MasterHandler(BaseHandler):
+class CommitsHandler(BaseHandler):
 
-    title = 'master commits'
+    title = 'commits'
 
     @async
     def get(self, repo=None, version=None, single=0):
@@ -1081,6 +1155,9 @@ class MasterHandler(BaseHandler):
         failures_only = get('failures_only', '')
         if repo and version:
             single = 1
+            title = 'commit'
+        else:
+            title = self.title
         revision_data = yield get_commits(
             repo, version, failures_only, single, next
             )
@@ -1088,14 +1165,14 @@ class MasterHandler(BaseHandler):
             self.error("Sorry, no data found.")
             return
         commits, builds, more = revision_data
-        master_url = '/master'
+        commits_url = '/commits'
         if repo:
-            master_url += escape(quote('/%s' % repo), 1)
+            commits_url += escape(quote('/%s' % repo), 1)
         self.display(
-            'master', commits=commits, more=more, builds=builds, single=single,
-            failures_only=failures_only, version=version, master_url=master_url,
-            repos=repos, repo=repo, platforms=platforms, gravatars=GRAVATARS,
-            md5=md5
+            'commits', commits=commits, more=more, builds=builds, single=single,
+            failures_only=failures_only, version=version,
+            commits_url=commits_url, repos=repos, repo=repo, platforms=platforms,
+            gravatars=GRAVATARS, md5=md5, decode_json=decode_json, title=title
             )
 
 class BuildsHandler(BaseHandler):
@@ -1393,15 +1470,16 @@ def main(argv=None):
         (r"/builds/([^/]*)/([^/]*)/(.*)", BuildsHandler),
         (r"/builds", BuildsHandler),
         (r"/build/([0-9]+)", BuildHandler),
-        (r"/master/([^/]*)/([0-9a-z]*)", MasterHandler),
-        (r"/master/([^/]*)", MasterHandler),
-        (r"/master", MasterHandler),
+        (r"/commit/([^/]*)/([0-9a-z]*)", CommitsHandler),
+        (r"/commits/([^/]*)", CommitsHandler),
+        (r"/commits", CommitsHandler),
         (r"/job", JobHandler),
         (r"/logout", LogoutHandler),
         (r"/login", LoginHandler),
         (r"/slave/([0-9]+)", SlaveHandler),
         (r"/slaves", SlavesHandler),
         (r"/activity/([^/]*)", ActivityHandler),
+        (r"/activity/([^/]*)/(.*)", ActivityHandler),
         (r"/activity", ActivityHandler),
         (r"/post-receive", PostReceiveHandler),
         (r"/rebuild", RebuildHandler),

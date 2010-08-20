@@ -15,12 +15,14 @@
 	<body>
 		<div id="header">
 			<div id="nav">
+			  <!--
 				{% if current_user %}
 				<a href="/dashboard">Dashboard</a> &nbsp;·&nbsp;
 				{% end %}
-				<a href="/activity">Activity Feed</a> &nbsp;·&nbsp;
 				<a href="/reviews">Reviews</a> &nbsp;·&nbsp;
-				<a href="/master">Master Commits</a> &nbsp;·&nbsp;
+			  -->
+				<a href="/activity">Activity Feed</a> &nbsp;·&nbsp;
+				<a href="/commits">Commits</a> &nbsp;·&nbsp;
 				<a href="/slaves">Slaves</a> &nbsp;·&nbsp;
 				{% if not current_user %}
 				<a href="/login">Login</a>

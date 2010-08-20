@@ -21,7 +21,7 @@
 <tr class="header-left">
 	<td class="header">Commit</td>
 	<td>
-		<a href="/activity/{{escape(url_escape(build.repo))}}">{{escape(build.repo)}}</a> / {% if '/' in build.version %}{{escape(build.version)}}{% else %}<a href="/master/{{escape(build.repo)}}/{{escape(build.version)}}"><code>{{escape(build.version)}}</code></a>{% end %}
+		<a href="/activity/{{escape(url_escape(build.repo))}}">{{escape(build.repo)}}</a> / {% if '/' in build.version %}{{escape(build.version)}}{% else %}<a href="/commit/{{escape(build.repo)}}/{{escape(build.version)}}"><code>{{escape(build.version)}}</code></a>{% end %}
 	</td>
 </tr>
 <tr class="header-left">
@@ -49,21 +49,21 @@
 
 <h2>Phases</h2>
 {% if timings %}
-<ul>
+<blockquote>
 {% for idx, phase in enumerate(build.executed) %}
-	<li>
-		<span class="{% if stdout[idx] %}fail{% else %}pass{% end %}">{{ escape(phase) }}</span>
+		<div class="{% if stdout[idx] %}build-fail">✗ {% else %}build-pass">✓ {% end %}&nbsp;{{ escape(phase) }}
 		&nbsp;
 		<span class="small">{{ timings[idx] }} milliseconds</span>
+		</div>
+		<hr class="clear" />
 		{% if stdout[idx] %}
 		<pre>{{escape(stdout[idx])}}</pre>
 		{% end %}
 		{% if stderr[idx] %}
 		<pre class="fail">{{escape(stderr[idx])}}</pre>
 		{% end %}
-	</li>
 {% end %}
-</ul>
+</blockquote>
 {% else %}
 <ul>
 {% for phase in build.executed %}
