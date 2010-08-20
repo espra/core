@@ -15,10 +15,10 @@
 	<body>
 		<div id="header">
 			<div id="nav">
-			  <!--
 				{% if current_user %}
-				<a href="/dashboard">Dashboard</a> &nbsp;·&nbsp;
+				<a href="/user/{{escape(url_escape(current_user))}}">Dashboard</a> &nbsp;·&nbsp;
 				{% end %}
+			  <!--
 				<a href="/reviews">Reviews</a> &nbsp;·&nbsp;
 			  -->
 				<a href="/activity">Activity Feed</a> &nbsp;·&nbsp;

@@ -830,7 +830,7 @@ def rebuild(repo, version, platform):
         return 1
 
 @worker(GAE_QUEUE)
-def get_commits(repo, version, failures_only, single, next, n=101):
+def get_commits(repo, version, user, failures_only, single, next, n=101):
     more = False
     commits = Commit.all()
     if single:
@@ -842,6 +842,8 @@ def get_commits(repo, version, failures_only, single, next, n=101):
     else:
         if repo:
             commits = commits.filter('r =', repo)
+        if user:
+            commits = commits.filter('u =', user)
         if failures_only:
             if failures_only == '0':
                 commits = commits.filter('h =', False)
@@ -1043,10 +1045,14 @@ class BaseHandler(RequestHandler):
             kwargs['xsrf_token'] = XSRF[user]
         else:
             kwargs['xsrf_token'] = None
+        if 'dashboard_view' not in kwargs:
+            kwargs['dashboard_view'] = 0
         if template:
             content = self.render_string(template + '.html', **kwargs)
         else:
             content = ''
+        if 'return_content' in kwargs:
+            return content
         if 'title' not in kwargs:
             kwargs['title'] = self.title
         self.render('site.html', content=content, **kwargs)
@@ -1081,11 +1087,43 @@ class ActivityHandler(BaseHandler):
         self.display(
             'activity', activities=activities, more=more, repo=repo, user=user,
             gravatars=GRAVATARS, md5=md5, hide_commits=hide_commits,
-            hide_slaves=hide_slaves, decode_json=decode_json
+            hide_slaves=hide_slaves, decode_json=decode_json, repos=repos
             )
 
-class DashboardHandler(BaseHandler):
-    pass
+class UserHandler(BaseHandler):
+
+    @async
+    def get(self, user=None):
+        if not user:
+            user = self.current_user
+            if not user:
+                self.errmsg("You need to either specify a user.")
+                return
+        activities, _ = yield get_activities(None, user, None, None, None, n=31)
+        if activities:
+            activities = self.display(
+                'activity', activities=activities, more=None, repo=None,
+                user=user, gravatars=GRAVATARS, md5=md5, hide_commits=None,
+                hide_slaves=None, decode_json=decode_json, repos=repos,
+                dashboard_view=1, return_content=1
+                )
+
+        commits = yield get_commits(
+            None, None, user, None, None, None, n=31
+            )
+        if commits and commits[0]:
+            commits = self.display(
+                'commits', commits=commits[0], commits_url='/commits',
+                repos=repos, platforms=platforms, gravatars=GRAVATARS, md5=md5,
+                decode_json=decode_json, dashboard_view=1, return_content=1,
+                single=None
+                )
+        else:
+            commits = None
+
+        self.display(
+            'dashboard', activities=activities, commits=commits, user=user
+            )
 
 class ReviewHandler(BaseHandler):
 
@@ -1149,20 +1187,24 @@ class CommitsHandler(BaseHandler):
     title = 'commits'
 
     @async
-    def get(self, repo=None, version=None, single=0):
+    def get(self, repo=None, version=None, user=None, single=0):
         get = self.get_argument
         next = get('next', '')
         failures_only = get('failures_only', '')
+        if repo == '*':
+            repo = None
+        if version == '*':
+            version = None
         if repo and version:
             single = 1
             title = 'commit'
         else:
             title = self.title
         revision_data = yield get_commits(
-            repo, version, failures_only, single, next
+            repo, version, user, failures_only, single, next
             )
         if not revision_data:
-            self.error("Sorry, no data found.")
+            self.errmsg("Sorry, no data found.")
             return
         commits, builds, more = revision_data
         commits_url = '/commits'
@@ -1461,7 +1503,7 @@ def main(argv=None):
                 git('remote', 'add', 'upstream', upstream_url)
 
     application = Application([
-        (r"/dashboard", DashboardHandler),
+        (r"/user/([^/]*)", UserHandler),
         (r"/charts", ChartsHandler),
         (r"/reviews", ReviewsHandler),
         (r"/review", ReviewHandler),
@@ -1470,6 +1512,7 @@ def main(argv=None):
         (r"/builds/([^/]*)/([^/]*)/(.*)", BuildsHandler),
         (r"/builds", BuildsHandler),
         (r"/build/([0-9]+)", BuildHandler),
+        (r"/commits/([^/]*)/([^/]*)/([^/]*)", CommitsHandler),
         (r"/commit/([^/]*)/([0-9a-z]*)", CommitsHandler),
         (r"/commits/([^/]*)", CommitsHandler),
         (r"/commits", CommitsHandler),

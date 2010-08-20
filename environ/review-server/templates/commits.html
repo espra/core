@@ -1,3 +1,4 @@
+{% if not dashboard_view %}
 {% if not single %}{% if failures_only %}
 <a class="button" href="{{commits_url}}"><span>All</span></a>
 {% if failures_only == "0" %}
@@ -16,6 +17,7 @@
 {% else %}
 <h1>Commits</h1>
 {% end %}
+{% end %}
 
 {% if commits %}
 <blockquote><table cellspacing="0px" width="100%">
@@ -33,7 +35,7 @@
 		</div>
 		<div class="small-info">
 			<img class="gravatar" src="http://www.gravatar.com/avatar/{% if commit.user in gravatars %}{{gravatars[commit.user]}}{% else %}{{ md5(commit.author_email).hexdigest() }}{% end %}?s=16&amp;d=http%3A%2F%2Fgithub.com%2Fimages%2Fgravatars%2Fgravatar-16.png" />
-		{% if commit.user %}<a href="/activity/*/{{escape(commit.user)}}">{{escape(commit.user)}}</a>{% else %}{{escape(commit.author_email or commit.author or '')}}{% end %}
+		{% if commit.user %}<a href="/user/{{escape(commit.user)}}">{{escape(commit.user)}}</a>{% else %}{{escape(commit.author_email or commit.author or '')}}{% end %}
 		/
 		<a href="/activity/{{escape(url_escape(commit.repo))}}">{{escape(commit.repo)}}</a>
 		/
@@ -58,11 +60,12 @@
 </tr>
 {% end %}
 </table></blockquote>
-{% if more %}
+{% if (not dashboard_view) and more %}
 <a class="button" href="{{commits_url}}?next={{more}}&amp;{% if failures_only %}failures_only={{failures_only}}{% end %}"><span>Next &rarr;</span></a>
 {% end %}
 {% end %}
 
+{% if not dashboard_view %}
 {% if builds %}
 <h2>Builds</h2>
 <blockquote><table cellspacing="0px" width="100%">
@@ -95,7 +98,9 @@
 {% end %}
 </table></blockquote>
 {% end %}
+{% end %}
 
+{% if not dashboard_view %}
 {% if (not single) and len(repos) > 1 %}
 <h2>{% if repo %}Other{% else %}Specific{% end %} Repositories</h2>
 <ul>
@@ -103,4 +108,5 @@
 <li><a href="/commits/{{escape(repo_name)}}">{{repo_name}}</a></li>
 {% end %}{% end %}
 </ul>
+{% end %}
 {% end %}
