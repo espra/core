@@ -10,8 +10,10 @@ import sys
 
 from fnmatch import fnmatch
 from optparse import OptionParser
-from os import chdir, walk
+from os import chdir, environ, fdopen, remove, walk
 from os.path import join, realpath
+from re import compile as compile_regex, MULTILINE
+from tempfile import mkstemp
 from time import time
 from traceback import print_exc
 from urllib import urlencode, urlopen
@@ -28,6 +30,12 @@ from yaml import safe_load as decode_yaml
 # ------------------------------------------------------------------------------
 
 CONFIG = {}
+
+REVIEW_MESSAGE = """
+
+# Write a brief message about your review submission.
+# Lines beginning with a # will be stripped out.
+"""
 
 # ------------------------------------------------------------------------------
 # Utility Functions
@@ -163,6 +171,25 @@ def valid_review_id(id, valid=set('abcdefghijklmnopqrstuvwxyz0123456789-_')):
         if char not in valid:
             return
     return id
+
+replace_comments = compile_regex(r'^#.*$', MULTILINE).sub
+
+def editor(text=REVIEW_MESSAGE):
+    fd, filename = mkstemp()
+    tempfile = fdopen(fd, 'wb')
+    tempfile.write(text)
+    tempfile.close()
+    _, retcode = run_command(
+        [environ.get('EDITOR', 'vi'), filename], retcode=True,
+        redirect_stdout=False, redirect_stderr=False
+        )
+    if retcode:
+        return
+    tempfile = open(filename, 'rb')
+    text = tempfile.read()
+    tempfile.close()
+    remove(filename)
+    return replace_comments('', text).strip()
 
 # ------------------------------------------------------------------------------
 # Review Changelist and Checkers
@@ -536,15 +563,22 @@ def submit(argv=None, completer=None):
         print "ERROR: Generated patch is empty. Nothing to send!"
         sys.exit(1)
 
+    message = options.msg
+    if not message:
+        message = editor()
+        if not message:
+            print "ERROR: No message provided. Exiting submission."
+            sys.exit(1)
+
     print "=> Sending patch to the review-server."
     review_server = CONFIG['review_server']
-    server = urlopen(review_server + '/review', urlencode({
-        'id': review_branch,
+    server = urlopen(review_server + '/reviews', urlencode({
+        'issue': review_branch,
         'revision': HEAD,
         'patch': patch,
         'login': login,
         'token': token,
-        'message': options.msg,
+        'message': message,
         'cc': reviewers,
         'repo': CONFIG['repo_id'],
         'upstream': upstream_revision
