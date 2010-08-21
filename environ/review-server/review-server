@@ -88,7 +88,7 @@ uname2platforms = {}
 
 review_stages = {
     'pending': '<span class="subdued">needs "safe to test</span>"',
-    'test': '<span class="subdued">testing&#8230;</span>',
+    'test': '<span class="subdued">being tested</span>',
     'tested': 'tested',
     'approved': '✓',
     'rejected': '<span class="grey">✗</span>'
@@ -1059,7 +1059,7 @@ def format_diff(diff, comments=None):
     for line in parser:
         if line.startswith('diff --git '):
             if output:
-                append('</table>')
+                append('</table></div>')
             line = parser.next()
             while not line.startswith('---'):
                 line = parser.next()
@@ -1069,7 +1069,7 @@ def format_diff(diff, comments=None):
             else:
                 parser.next()
             append(
-                '<table class="patch" cellspacing="0px"><tr>'
+                '<div class="patch"><table class="patch" cellspacing="0px"><tr>'
                 '<td colspan="3" class="patch-title">'
                 '<span class="patch-icon"><img src="/static/txt.png" /></span><span class="filename">%s</span></td></tr>'
                 % escape(filename, 1)
@@ -1152,7 +1152,7 @@ def format_diff(diff, comments=None):
                 line.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace('"', "&quot;")
                 )
             )
-    append('</table>')
+    append('</table></div>')
     return '\n'.join(output)
 
 @worker(GIT_QUEUE)

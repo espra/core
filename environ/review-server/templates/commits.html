@@ -38,10 +38,10 @@
 		<img class="gravatar-activity" src="http://www.gravatar.com/avatar/{% if commit.user in gravatars %}{{gravatars[commit.user]}}{% else %}{{ md5(commit.author_email).hexdigest() }}{% end %}?s=32&amp;d=http%3A%2F%2Fgithub.com%2Fimages%2Fgravatars%2Fgravatar-32.png" />
 
 		{% if commit.user %}<a href="/profile/{{escape(url_escape(commit.user))}}" class="no-link">{% end %}{{escape(commit.user or commit.author_email or '')}}{% if commit.user %}</a>{% end %} &nbsp;&middot;&nbsp; {% if single %}<code>{{escape(version[:8])}}</code>{% else %}<a href="/commit/{{escape(url_escape(commit.repo))}}/{{escape(commit.version)}}"><code>{{escape(commit.version[:8])}}</code></a>{% end %} &nbsp;&middot;&nbsp; <a href="/activity/{{escape(url_escape(commit.repo))}}">{{escape(commit.repo)}}</a>
-		<!--
+		{% if single %}
 		&nbsp;&middot;&nbsp;
-		<a href="http://github.com/{{'%s/%s' % repos[commit.repo]}}/commit/{{escape(commit.version)}}">diff</a>
-		-->
+		<a href="http://github.com/{{'%s/%s' % repos[commit.repo]}}/commit/{{escape(commit.version)}}">github</a>
+		{% end %}
 		{% if single and (commit.author_email != commit.committer_email) %}
 		&nbsp;&middot;&nbsp;
 		committed by {{escape(commit.committer or committer_email or '??')}}

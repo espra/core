@@ -217,13 +217,19 @@ tr.no-border blockquote {
 	margin-bottom: 0;
 }
 
-table.patch {
-	border: 1px solid #ccc;
-	font-family: "Inconsolata", Monaco, monospace;
-	margin: 16px 24px 24px 24px;
-	font-size: 0.9em;
+div.patch {
+	overflow: auto;
 	width: 850px;
-	overflow: hidden;
+	padding: 0;
+	margin: 0;
+	border: 1px solid #ccc;
+	margin: 16px 24px 24px 24px;
+}
+
+table.patch {
+	font-family: "Inconsolata", Monaco, monospace;
+	font-size: 0.9em;
+	width: 100%;
 }
 
 table.patch td {
@@ -252,16 +258,19 @@ table.patch td.line {
 	padding: 0px 6px;
 }
 
+table.patch td.del, table.patch td.add, table.patch td.nrm, table.patch td.frag {
+	padding: 0 6px;
+	width: 800px;
+}
+
+
 table.patch td.frag {
 	background-color: #eaf2f5;
 	color: #999;
-	padding: 0 6px;
 }
 
 table.patch td.del {
 	background-color: #fdd;
-	padding: 0 6px;
-	width: 840px;
 }
 
 table.patch td.del strong {
@@ -270,8 +279,6 @@ table.patch td.del strong {
 
 table.patch td.add {
 	background-color: #dfd;
-	padding: 0 6px;
-	width: 840px;
 }
 
 table.patch td.add strong {
@@ -280,8 +287,6 @@ table.patch td.add strong {
 
 table.patch td.nrm {
 	background-color: #f8f8ff;
-	padding: 0 6px;
-	width: 840px;
 }
 
 table.patch pre {
