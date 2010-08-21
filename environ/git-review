@@ -36,6 +36,9 @@ REVIEW_MESSAGE = """
 # Please enter a message for your review submission. All
 # lines starting with '#' will be ignored, and an empty
 # message aborts the submission.
+#
+# A default message has been generated from the various
+# commit messages involved in this submission.
 """
 
 # ------------------------------------------------------------------------------
@@ -569,7 +572,12 @@ def submit(argv=None, completer=None):
 
     message = options.msg
     if not message:
-        message = editor()
+        log = git('log', '--pretty=email', '-z', '%s...' % upstream_revision)
+        log = [
+            item.split('Subject: [PATCH] ', 1)[1].strip()
+            for item in log.split('\x00')
+            ]
+        message = editor('\n\n'.join(log) + REVIEW_MESSAGE)
         if not message:
             print "ERROR: No message provided. Exiting submission."
             sys.exit(1)
