@@ -49,7 +49,7 @@ Working on:
 	<td>{{escape(build.uname.lower())}}</td>
 	<td>
 		<a href="/activity/{{escape(url_escape(build.repo))}}">{{escape(build.repo)}}</a> /
-		{% if '/' in build.version %}{{escape(build.version)}}{% else %}<a href="/commit/{{escape(build.repo)}}/{{escape(build.version)}}"><code>{{escape(build.version[:20])}}</code></a>{% end %}
+		{% if '/' in build.version %}<a href="/review/{{escape(url_escape(build.repo))}}/{{escape('/'.join(map(url_escape, build.version.split('/'))))}}">{{escape(build.version)}}</a>{% else %}<a href="/commit/{{escape(build.repo)}}/{{escape(build.version)}}"><code>{{escape(build.version[:20])}}</code></a>{% end %}
 	</td>
 	<td>{% if build.has_failure %}<span class="grey">✗</span>{% else %}✓{% end %}</td>
 	<td><span class="timestamp">{{ build.d.strftime('%s') }}</span></td>

@@ -416,6 +416,12 @@ def render_text(text):
             return "ERROR: text encoding."
     return sanitise(markdown(text), secure_id_prefix=secure_id_prefix)
 
+def get_gravatar(user):
+    gravatar = GRAVATARS.get(user)
+    if gravatar:
+        return gravatar
+    NEEDED_GRAVATARS.add(user)
+
 # ------------------------------------------------------------------------------
 # Worker Functions
 # ------------------------------------------------------------------------------
@@ -425,6 +431,7 @@ XSRF = CachingDict()
 EMAILS = CachingDict()
 GRAVATARS = CachingDict()
 USERS2EMAILS = CachingDict()
+NEEDED_GRAVATARS = set()
 
 @worker(URL_QUEUE)
 def get_github_user_info(login, token, keys=['email', 'gravatar_id', 'name']):
@@ -979,7 +986,16 @@ def get_activities(
     repo, user, hide_commits, hide_slaves, next, n=101,
     get_key=db.Key.from_path
     ):
+    if NEEDED_GRAVATARS:
+        changed = []
+        for u in User.get_by_key_name(list(NEEDED_GRAVATARS)):
+            if u and u.gravatar:
+                GRAVATARS[u.key().name()] = u.gravatar
+                changed.append(u)
+        if changed:
+            db.put(changed)
     more = False
+    submissions = Review.all()
     if hide_commits:
         commits = []
     else:
@@ -991,11 +1007,13 @@ def get_activities(
     if next:
         next = datetime.fromtimestamp(int(next) + 1)
     if repo:
+        submissions = submissions.filter('r =', repo)
         if not hide_commits:
             commits = commits.filter('r =', repo)
         if not hide_slaves:
             builds = builds.filter('r =', repo)
     if user:
+        submissions = submissions.filter('u =', user)
         if not hide_commits:
             commits = commits.filter('u =', user)
         builds = []
@@ -1011,7 +1029,10 @@ def get_activities(
         commits = commits.order('-d').fetch(n)
         if not commits:
             commits = []
-    activities = commits + builds
+    if next:
+        submissions = submissions.filter('d <=', next)
+    submissions = submissions.order('-d').fetch(n)
+    activities = commits + builds + submissions
     activities = sorted(activities, key=lambda i: i.d, reverse=1)
     if activities:
         if len(activities) >= n:
@@ -1067,7 +1088,6 @@ def get_reviews(repo, user, next, n=101):
 def format_diff(diff, strip_first=1, comments=None):
     if not diff:
         return
-    logging.error(diff)
     if strip_first:
         diff = diff.split('\n', 1)
         if len(diff) == 1:
@@ -1081,20 +1101,42 @@ def format_diff(diff, strip_first=1, comments=None):
         if line.startswith('diff --git '):
             if output:
                 append('</table></div>')
-            line = parser.next()
-            while not line.startswith('---'):
+            filename = line.split()[-1]
+            binary = create = delete = end = 0
+            while 1:
                 line = parser.next()
-            filename = line.split('--- ')[1]
-            if filename == '/dev/null':
-                filename = parser.next().split('+++ ')[1]
-            else:
-                parser.next()
+                if line.startswith('new file mode'):
+                    create = line
+                elif line.startswith('Binary files'):
+                    binary = 1
+                elif line.startswith('deleted file mode'):
+                    delete = line
+                elif line.startswith('---'):
+                    filename = line.split('--- ')[1]
+                    if filename == '/dev/null':
+                        filename = parser.next().split('+++ ')[1]
+                    else:
+                        parser.next()
+                    break
+                elif line.startswith('diff --git'):
+                    parser.push(line)
+                    end = 1
+                    break
             append(
                 '<div class="patch"><table class="patch" cellspacing="0px"><tr>'
                 '<td colspan="3" class="patch-title">'
                 '<span class="patch-icon"><img src="/static/txt.png" /></span><span class="filename">%s</span></td></tr>'
                 % escape(filename, 1)
                 )
+            if binary:
+                append('<tr><td colspan="3" class="binary"><pre>binary file not shown</pre></td></tr>')
+                continue
+            if end:
+                append(
+                    '<tr><td colspan="3" class="action"><pre>%s</pre></td></tr>'
+                    % (create or delete)
+                    )
+                continue
             line = parser.next()
             in_delete = 0
         if line.startswith('@@ '):
@@ -1312,6 +1354,8 @@ class BaseHandler(RequestHandler):
         return self.current_user in settings['admins']
 
     def display(self, template, **kwargs):
+        kwargs['render_text'] = render_text
+        kwargs['get_gravatar'] = get_gravatar
         if 'errmsg' not in kwargs:
             kwargs['errmsg'] = None
         kwargs['is_admin'] = self.is_admin_user()
@@ -1364,7 +1408,8 @@ class ActivityHandler(BaseHandler):
         self.display(
             'activity', activities=activities, more=more, repo=repo, user=user,
             gravatars=GRAVATARS, md5=md5, hide_commits=hide_commits,
-            hide_slaves=hide_slaves, decode_json=decode_json, repos=repos
+            hide_slaves=hide_slaves, decode_json=decode_json, repos=repos,
+            render_text=render_text
             )
 
 class ProfileHandler(BaseHandler):

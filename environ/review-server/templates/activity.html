@@ -19,19 +19,31 @@
 <div class="activity">
 {% if activity.kind() == 'G' %}
 
-<img class="gravatar-activity" src="http://www.gravatar.com/avatar/{% if activity.user in gravatars %}{{gravatars[activity.user]}}{% else %}{{ md5(activity.author_email).hexdigest() }}{% end %}?s=32&amp;d=http%3A%2F%2Fgithub.com%2Fimages%2Fgravatars%2Fgravatar-32.png" />
+<img class="gravatar-activity" src="http://www.gravatar.com/avatar/{% if get_gravatar(activity.user) %}{{gravatars.get(activity.user)}}{% else %}{{ md5(activity.author_email).hexdigest() }}{% end %}?s=32&amp;d=http%3A%2F%2Fgithub.com%2Fimages%2Fgravatars%2Fgravatar-32.png" />
 
 {% if activity.user %}<a href="/profile/{{escape(url_escape(activity.user))}}" class="no-link">{% end %}{{escape(activity.user or activity.author_email or '')}}{% if activity.user %}</a>{% end %} committed <a href="/commit/{{escape(url_escape(activity.repo))}}/{{escape(activity.version)}}"><code>{{escape(activity.version[:8])}}</code></a> to <a href="/activity/{{escape(url_escape(activity.repo))}}">{{escape(activity.repo)}}</a> <span class="timestamp small-grey">{{ activity.d.strftime('%s') }}</span>
 
 {% if activity.subject %}
 <blockquote class="subject">
-{{escape(activity.subject)}}
+{{render_text(activity.subject)}}
+</blockquote>
+{% end %}
+
+{% elif activity.kind() == 'R' %}
+
+<img class="gravatar-activity" src="http://www.gravatar.com/avatar/{% if get_gravatar(activity.user) %}{{gravatars.get(activity.user, '')}}{% else %}unknown{% end %}?s=32&amp;d=http%3A%2F%2Fgithub.com%2Fimages%2Fgravatars%2Fgravatar-32.png" />
+
+<a href="/profile/{{escape(url_escape(activity.user))}}" class="no-link">{{escape(activity.user or '')}}</a> submitted <a href="/review/{{escape(url_escape(activity.repo))}}/{{escape('/'.join(map(url_escape, activity.version.split('/'))))}}">{{escape(activity.version)}}</a> for review in <a href="/activity/{{escape(url_escape(activity.repo))}}">{{escape(activity.repo)}}</a> <span class="timestamp small-grey">{{ activity.d.strftime('%s') }}</span>
+
+{% if activity.subject %}
+<blockquote class="subject">
+{{render_text(activity.subject)}}
 </blockquote>
 {% end %}
 
 {% elif activity.kind() == 'B' %}
 
-<a href="/slave/{{activity.slave}}"><img class="gravatar-activity" src="http://www.gravatar.com/avatar/040008bc083a22725f9f6df2eed1dcdc?s=32&d=http%3A%2F%2Fgithub.com%2Fimages%2Fgravatars%2Fgravatar-32.png" /> <a href="/slave/{{activity.slave}}" class="no-link">slave-{{activity.slave}}</a> <a href="/build/{{build_id = activity.key().id()}}">built {{build_id}}</a> from {% if '/' in activity.version %}<a href="/review/{{escape(url_escape(activity.repo))}}/{{escape('/'.join(map(url_escape, activity.version.split('/'))))}}">{{escape(activity.version)}}</a>{% else %}<a href="/commit/{{escape(url_escape(activity.repo))}}/{{escape(activity.version)}}" class="no-links"><code>{{escape(activity.version[:8])}}</code></a>{% end %} on <a href="/builds/*/{{escape(url_escape(activity.build_platform))}}">{{escape(activity.build_platform.lower())}}</a> <span class="timestamp small-grey">{{ activity.d.strftime('%s') }}</span>
+<a href="/slave/{{activity.slave}}"><img class="gravatar-activity" src="http://www.gravatar.com/avatar/040008bc083a22725f9f6df2eed1dcdc?s=32&d=http%3A%2F%2Fgithub.com%2Fimages%2Fgravatars%2Fgravatar-32.png" /> <a href="/slave/{{activity.slave}}" class="no-link">slave-{{activity.slave}}</a> made <a href="/build/{{build_id = activity.key().id()}}">build {{build_id}}</a> from {% if '/' in activity.version %}<a href="/review/{{escape(url_escape(activity.repo))}}/{{escape('/'.join(map(url_escape, activity.version.split('/'))))}}">{{escape(activity.version)}}</a>{% else %}<a href="/commit/{{escape(url_escape(activity.repo))}}/{{escape(activity.version)}}" class="no-links"><code>{{escape(activity.version[:8])}}</code></a>{% end %} on <a href="/builds/*/{{escape(url_escape(activity.build_platform))}}">{{escape(activity.build_platform.lower())}}</a> <span class="timestamp small-grey">{{ activity.d.strftime('%s') }}</span>
 
 
 <blockquote><table class="build-results" cellspacing="0px"><tr>
