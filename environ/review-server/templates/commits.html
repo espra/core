@@ -57,9 +57,9 @@
 	</td>
 	{% if not single %}
 	{% for platform in platforms %}{% if platform in commit.passed_builds %}
-	<td><a class="no-link" href="/builds/{{escape(url_escape(commit.repo))}}/{{escape(url_escape(platform))}}/{{escape(commit.version)}}">✓</a></td>
+	<td><a class="build-pass-bubble" href="/builds/{{escape(url_escape(commit.repo))}}/{{escape(url_escape(platform))}}/{{escape(commit.version)}}">✓ &nbsp;pass</a></div></td>
 	{% elif platform in commit.failed_builds %}
-	<td><a class="fail" href="/builds/{{escape(url_escape(commit.repo))}}/{{escape(url_escape(platform))}}/{{escape(commit.version)}}">fail</a></td>
+	<td><a class="build-fail-bubble" href="/builds/{{escape(url_escape(commit.repo))}}/{{escape(url_escape(platform))}}/{{escape(commit.version)}}">✗ &nbsp;fail</a></td>
 	{% else %}
 	<td>-</td>
 	{% end %}{% end %}

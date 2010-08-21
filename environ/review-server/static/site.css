@@ -153,7 +153,7 @@ table.build-results td {
 	margin-bottom: 0px;
 }
 
-table.build-results td.pass, .build-pass {
+table.build-results td.pass, .build-pass, .build-pass-bubble {
 	-moz-border-radius: 5px;
 	-webkit-border-radius: 5px;
 	border-radius: 5px;
@@ -162,13 +162,23 @@ table.build-results td.pass, .build-pass {
 	color: #000;
 }
 
-table.build-results td.fail, .build-fail {
+table.build-results td.fail, .build-fail, .build-fail-bubble {
 	-moz-border-radius: 5px;
 	-webkit-border-radius: 5px;
 	border-radius: 5px;
 	border: 1px solid #faa;
 	background-color: #fdd;
 	color: #000;
+}
+
+a.build-pass-bubble, a.build-fail-bubble {
+	padding: 8px 10px;
+	float: left;
+	text-decoration: none;
+}
+
+a.build-pass-bubble:hover, a.build-fail-bubble:hover {
+	border: 1px solid #c8c8cf;
 }
 
 tr.header td {

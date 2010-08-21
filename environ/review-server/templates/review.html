@@ -1,12 +1,5 @@
-{% if not dashboard_view %}
-{% if repo %}
-<h1><a href="/reviews">Reviews</a> &middot; {{escape(repo)}}</h1>
-{% else %}
-<h1>Reviews</h1>
-{% end %}
-{% end %}
+<h1><a href="/reviews">Reviews</a> &middot; {{escape(review.version)}}</h1>
 
-{% if reviews %}
 <blockquote><table cellspacing="0px" width="100%">
 <tr class="header">
 	<td></td>
@@ -14,15 +7,14 @@
 	<td class="center">State</td>
 	<td class="center">Upstream</td>
 </tr>
-{% for review in reviews %}
 <tr class="middle">
 	<td class="left-pad-none">
 		<img class="gravatar" src="http://www.gravatar.com/avatar/{% if review.user in gravatars %}{{gravatars[review.user]}}{% else %}{{ 'not-available' }}{% end %}?s=32&amp;d=http%3A%2F%2Fgithub.com%2Fimages%2Fgravatars%2Fgravatar-32.png" />
 
 		<a href="/review/{{escaped_repo = escape(url_escape(review.repo))}}/{{escaped_patch_base = escape(review.version.rsplit('/', 1)[0])}}/{{current_patch_number = int(review.version.rsplit('/', 1)[1])}}">{{escape(review.version)}}</a>
-		{% if bases[review.version].latest != 1 %}
+		{% if base.latest != 1 %}
 		&nbsp;&middot;&nbsp;
-		{% for patch_number in range(int(bases[review.version].latest), 0, -1) %}{% if patch_number != current_patch_number %}<a href="/review/{{escaped_repo}}/{{escaped_patch_base}}/{{patch_number}}">{{patch_number}}</a>{% if not ((current_patch_number == 1) and (patch_number == 2) or (patch_number == 1)) %}, {% end %}{% end %}{% end %}
+		{% for patch_number in range(int(base.latest), 0, -1) %}{% if patch_number != current_patch_number %}<a href="/review/{{escaped_repo}}/{{escaped_patch_base}}/{{patch_number}}">{{patch_number}}</a>{% if not ((current_patch_number == 1) and (patch_number == 2) or (patch_number == 1)) %}, {% end %}{% end %}{% end %}
 		{% end %}
 		<span class="small-grey">{% if review.m == review.d %}SUBMITTED{% else %}LAST UPDATED{% end %} <span class="timestamp">{{ review.d.strftime('%s') }}</span></span>
 		{% if review.subject %}
@@ -33,8 +25,8 @@
 
 	</td>
 	<td class="center">
-		{% if bases[review.version].cc %}
-		{% for user in bases[review.version].cc %}
+		{% if base.cc %}
+		{% for user in base.cc %}
 		{% if ('@' not in user) and user != review.user %}
 		<a href="/profile/{{ escape(url_escape(user)) }}">{{escape(user)}}</a>
 		{% end %}
@@ -56,19 +48,42 @@
 		<a href="{{github_url = 'http://github.com/' + escape(url_escape(github)) + '/' + escape(url_escape(review.repo)) + '/compare/'}}master...{{escape(url_escape(review.version.replace('/', ';')))}}">diff</a>
 	</td>
 </tr>
+</table></blockquote>
+
+{% if builds %}
+<h2>Builds</h2>
+<blockquote><table cellspacing="0px" width="100%">
+<tr class="header">
+	<td>ID</td>
+	<td>Platform</td>
+	<td>Status</td>
+	<td>When</td>
+	<td>By</td>
+</tr>
+{% for build in builds %}
+<tr>
+	<td><a href="/build/{{build_id = build.key().id()}}">{{build_id}}</a></td>
+	<td>{{escape(build.build_platform.lower())}}</td>
+	<td>
+		<table class="build-results" cellspacing="0px"><tr>
+			{% if build.build_phases %}
+			{% for phase, failure in decode_json(build.build_phases) %}
+			<td class="{% if failure %}fail">✗ {% else %}pass">✓ {% end %}&nbsp;{{ escape(phase) }}</td>
+			<td> </td>
+			{% end %}
+			{% else %}
+			<td class="fail">✗ &nbsp;git-slave failure</td>
+			{% end %}
+		</tr></table>
+	</td>
+	<td><span class="timestamp">{{ build.d.strftime('%s') }}</span></td>
+	<td><a href="/slave/{{build.slave}}">slave {{ build.slave }}</td>
+</tr>
 {% end %}
 </table></blockquote>
-{% if (not dashboard_view) and more %}
-{% end %}
 {% end %}
 
-{% if not dashboard_view %}
-{% if len(repos) > 1 %}
-<h2>{% if repo %}Other{% else %}Specific{% end %} Repositories</h2>
-<ul>
-{% for repo_name in sorted(repos) %}{% if repo_name != repo %}
-<li><a href="/reviews/{{escape(repo_name)}}">{{repo_name}}</a></li>
-{% end %}{% end %}
-</ul>
-{% end %}
+{% if changes %}
+<h2>Changes</h2>
+{{ changes }}
 {% end %}

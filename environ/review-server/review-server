@@ -88,7 +88,7 @@ uname2platforms = {}
 
 review_stages = {
     'pending': '<span class="subdued">needs "safe to test</span>"',
-    'test': '<span class="subdued">being tested</span>',
+    'test': '<span class="subdued">build tests</span>',
     'tested': 'tested',
     'approved': '✓',
     'rejected': '<span class="grey">✗</span>'
@@ -593,7 +593,6 @@ get_new_commits = worker(GIT_QUEUE)(_get_new_commits)
 def _create_commits(repo, data):
     commits = []; new_commit = commits.append
     first = 1
-    logging.error(repr(data))
     for (rev, an, ae, at, cn, ce, ct, subject) in data:
         if first:
             first = 0
@@ -721,8 +720,9 @@ def get_slave_job(repo, slave_id, token, uname, span=timedelta(seconds=1)):
         db.run_in_transaction(prune_pending_jobs, [ob.key() for ob in prune])
     review = Review.all().filter('n =', platform).filter('r =', repo).filter(
         'g =', 'test'
-        ).get()
-    commit = Commit.all().filter('n =', platform).filter('r =', repo).get()
+        ).order('d').get()
+    commit = Commit.all().filter('n =', platform).filter('r =', repo).order(
+        'd').get()
     if review and commit:
         if review.d >= commit.d:
             parent = review
@@ -746,10 +746,7 @@ def get_slave_job(repo, slave_id, token, uname, span=timedelta(seconds=1)):
         return
     slave.working = True
     slave.put()
-    if type == 'commit':
-        return parent_key.name().split(':')[1]
-    review = parent_key.parent().name().split(':')
-    return "%s/%s/%s" % (review[1], review[2], parent_key.id())
+    return parent.version
 
 def prune_pending_jobs(keys):
     jobs = db.get(keys)
@@ -859,7 +856,7 @@ def get_key_for_version(repo, version, create_key=db.Key.from_path):
     if '/' in version:
         user, issue, id = version.split('/')
         parent = create_key('Q', '%s:%s:%s' % (repo, user, issue))
-        return create_key('R', int(id), parent=parent)
+        return create_key('R', id, parent=parent)
     return create_key('G', '%s:%s' % (repo, version))
 
 @worker(GAE_QUEUE)
@@ -1012,6 +1009,17 @@ def get_activities(
     return activities, more
 
 @worker(GAE_QUEUE)
+def get_review(repo, user, name, number, create_key=db.Key.from_path):
+    base_key = create_key('Q', "%s:%s:%s" % (repo, user, name))
+    review_key = create_key('R', number, parent=base_key)
+    base, review = db.get([base_key, review_key])
+    builds = None
+    if review:
+        builds = Build.all().filter('r =', repo).filter(
+            'v =', review.version).order('-d').fetch(1000)
+    return base, review, builds
+
+@worker(GAE_QUEUE)
 def get_reviews(repo, user, next, n=101):
     more = False
     reviews = Review.all()
@@ -1045,18 +1053,21 @@ def get_reviews(repo, user, next, n=101):
                 GRAVATARS[user.key().name()] = user.gravatar
     return _reviews, bases, more
 
-def format_diff(diff, comments=None):
+def format_diff(diff, strip_first=1, comments=None):
     if not diff:
         return
-    diff = diff.split('\n', 1)
-    if len(diff) == 1:
-        return
-    diff = diff[1]
+    logging.error(diff)
+    if strip_first:
+        diff = diff.split('\n', 1)
+        if len(diff) == 1:
+            return
+        diff = diff[1]
     if not diff.strip():
         return
     output = []; append = output.append
     parser = IteratorParser(diff.splitlines())
     for line in parser:
+        logging.error("LINE: %r" % line)
         if line.startswith('diff --git '):
             if output:
                 append('</table></div>')
@@ -1076,6 +1087,7 @@ def format_diff(diff, comments=None):
                 )
             line = parser.next()
             in_delete = 0
+        logging.error("SLINE: %r" % line)
         if line.startswith('@@ '):
             _, left, right, _ = line.split(' ', 3)
             left = abs(int(left.split(',')[0]))
@@ -1085,8 +1097,6 @@ def format_diff(diff, comments=None):
                 '<td class="frag">%s</td>' % escape(line, 1)
             )
             line = parser.next()
-        if 'duration' in line:
-            logging.error(repr((in_delete, line)))
         if (not in_delete) and line.startswith('-'):
             next = ori_next = parser.next()
             if next.startswith('+'):
@@ -1094,11 +1104,6 @@ def format_diff(diff, comments=None):
                 next = next[1:]
                 h1, d1, t1 = get_difference(line, next)
                 h2, d2, t2 = get_difference(next, line)
-                if 0 or 'duration' in line:
-                    logging.error(repr(line))
-                    logging.error(repr(next))
-                    logging.error(repr((h1, d1, t1)))
-                    logging.error(repr((h2, d2, t2)))
                 if d1:
                     first = (
                         escape(h1, 1) + '<strong>' + escape(d1, 1) + '</strong>' +
@@ -1160,6 +1165,14 @@ def get_diff(repo, revision):
     chdir(repo_paths[repo])
     return git(
         'diff-tree', '-B', '--no-renames', '-p', '--no-prefix', revision,
+        raise_error=True
+        )
+
+@worker(GIT_QUEUE)
+def get_diff_between(repo, r1, r2):
+    chdir(repo_paths[repo])
+    return git(
+        'diff-tree', '-B', '--no-renames', '-p', '--no-prefix', r1, r2,
         raise_error=True
         )
 
@@ -1247,8 +1260,8 @@ class R(db.Model): # id = incrementing integer; parent = ReviewBase
     failed_builds = db.StringListProperty(name='f', indexed=False)
     has_failure = db.BooleanProperty(name='h', default=False)
     user = db.StringProperty(name='u')
-    d = db.DateTimeProperty(auto_now_add=True)
-    m = db.DateTimeProperty(auto_now=True)
+    d = db.DateTimeProperty()
+    m = db.DateTimeProperty()
     revision = db.StringProperty(name='z')
 
 Review = R
@@ -1377,7 +1390,15 @@ class ProfileHandler(BaseHandler):
         else:
             commits = None
         user_obj = yield db_get(db.Key.from_path('U', user))
-        reviews = None
+        reviews = yield get_reviews(None, user, None)
+        if reviews and reviews[0]:
+            reviews, bases, _ = reviews
+            reviews = self.display(
+                'reviews', reviews=reviews, more=None, repos=repos, repo=None,
+                bases=bases, gravatars=GRAVATARS, github=settings['github_account'],
+                review_stages=review_stages, return_content=1, dashboard_view=1
+                )
+
         self.display(
             'profile', activities=activities, commits=commits, user=user,
             reviews=reviews, user_obj=user_obj
@@ -1385,8 +1406,23 @@ class ProfileHandler(BaseHandler):
 
 class ReviewHandler(BaseHandler):
 
+    @async
     def get(self, repo, user, name, number):
-        self.write('review')
+        repo, user, name = map(unquote_plus, (repo, user, name))
+        base, review, builds = yield get_review(repo, user, name, number)
+        if not review:
+            self.errmsg("No such review found.")
+            return
+        diff = yield get_diff_between(
+            repo, review.upstream_revision, review.version
+            )
+        changes = format_diff(diff, strip_first=0)
+        self.display(
+            'review', review=review, repos=repos, repo=repo, base=base,
+            gravatars=GRAVATARS, github=settings['github_account'],
+            review_stages=review_stages, builds=builds, changes=changes,
+            decode_json=decode_json
+            )
 
     @auth(admin=False)
     def post(self):
@@ -1461,6 +1497,8 @@ class ReviewsHandler(BaseHandler):
 
         yield apply_patch(repo, review_id, upstream, patch_file)
 
+        now = datetime.now()
+        review.d = review.m = now
         review.subject = message
         review.repo = repo
         review.upstream_revision = upstream
@@ -1569,6 +1607,7 @@ class BuildHandler(BaseHandler):
         slave_id = get('slave_id')
         token = get('token')
         data = get('data')
+        logging.error(revision)
         try:
             slave_id = int(slave_id)
         except Exception:
@@ -1811,6 +1850,7 @@ def main(argv=None):
         (r"/builds/([^/]*)/([^/]*)/(.*)", BuildsHandler),
         (r"/builds", BuildsHandler),
         (r"/build/([0-9]+)", BuildHandler),
+        (r"/build", BuildHandler),
         (r"/review/([^/]*)/([^/]*)/([^/]*)/([^/]*)", ReviewHandler),
         (r"/reviews/([^/]*)/([^/]*)/([^/]*)", ReviewsHandler),
         (r"/reviews/([^/]*)/([^/]*)", ReviewsHandler),
