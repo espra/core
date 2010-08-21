@@ -183,7 +183,6 @@ class Slave(Daemon):
         return config['slave']
 
     def send_results(self, revision, results):
-        #sys.exit()
         response = {
             'data': encode_json(results),
             'revision': revision,
@@ -208,27 +207,34 @@ class Slave(Daemon):
 def main():
 
     argv = sys.argv[1:]
-    command = argv[0] if argv else ''
-    print_help = False
 
-    commands = ['start', 'stop', 'restart', 'run']
-    autocomplete(OptionParser(add_help_option=False), ListCompleter(commands))
+    op = OptionParser(usage=(
+        "Usage: git slave [command]\n\n"
+        "Commands:\n"
+        "   run       run the slave in the foreground\n"
+        "   start     start the slave daemon\n"
+        "   stop      stop the slave daemon\n"
+        "   restart   restart the slave daemon"
+        ))
 
-    if command in ['-h', '--help', 'help']:
-        print_help = True
+    op.add_option('-s', dest='server', default="",
+                  help="override the http server url in the repo config")
+
+    commands = ['start', 'stop', 'restart', 'run', 'help']
+    autocomplete(op, ListCompleter(commands))
+
+    options, args = op.parse_args(argv)
+    if not args:
+        op.print_help()
+        sys.exit()
+
+    command = args[0]
+
+    if command == 'help':
+        op.print_help()
+        sys.exit()
     elif command not in commands:
-        print_help = True
-
-    if print_help:
-        print "Usage: git slave [command]"
-        print
-        print "Commands:"
-        print
-        print "   run       run the slave in the foreground"
-        print "   start     start the slave daemon"
-        print "   stop      stop the slave daemon"
-        print "   restart   restart the slave daemon"
-        print
+        op.print_help()
         sys.exit(1)
 
     if not is_git():
@@ -252,7 +258,9 @@ def main():
     config = decode_yaml(config_file.read())
     config_file.close()
 
-    review_server = config['review_server']
+    review_server = options.server
+    if not review_server:
+        review_server = config['review_server']
 
     slave_id = git.get('slave.id')
     token = git.get('slave.token')
