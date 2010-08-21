@@ -19,7 +19,7 @@
 		<span class="small-grey">{% if review.m == review.d %}SUBMITTED{% else %}LAST UPDATED{% end %} <span class="timestamp">{{ review.d.strftime('%s') }}</span></span>
 		{% if review.subject %}
 		<blockquote class="subject">
-			{{ escape(review.subject) }}
+			{{ render_text(review.subject) }}
 		</blockquote>
 		{% end %}
 

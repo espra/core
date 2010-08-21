@@ -50,7 +50,7 @@
 
 		{% if commit.subject %}
 		<blockquote class="subject">
-			{{escape(commit.subject)}}
+			{{render_text(commit.subject)}}
 		</blockquote>
 		{% end %}
 

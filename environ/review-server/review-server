@@ -30,10 +30,12 @@ from tornado.options import enable_pretty_logging
 from tornado.web import Application, HTTPError, RequestHandler
 from tornado.ioloop import IOLoop
 
+from markdown import markdown
 from pyutil.crypto import create_tamper_proof_string, secure_string_comparison
 from pyutil.env import run_command
 from pyutil.io import IteratorParser
 from pyutil.redis import Redis, set_max_connections
+from pyutil.sanitise import sanitise
 from simplejson import loads as decode_json, dumps as encode_json
 from yaml import safe_load as decode_yaml
 
@@ -85,6 +87,7 @@ cache = None
 repo_commits = {}
 platforms = []
 uname2platforms = {}
+secure_id_prefix = hexlify(urandom(18))
 
 review_stages = {
     'pending': '<span class="subdued">needs "safe to test</span>"',
@@ -404,6 +407,14 @@ def get_difference(s1, s2):
     if not tail:
         return s1[:head], s1[head:], ''
     return s1[:head], s1[head:tail], s1[tail:]
+
+def render_text(text):
+    if not isinstance(text, unicode):
+        try:
+            text = text.decode('utf-8')
+        except UnicodeDecodeError:
+            return "ERROR: text encoding."
+    return sanitise(markdown(text), secure_id_prefix=secure_id_prefix)
 
 # ------------------------------------------------------------------------------
 # Worker Functions
@@ -1067,7 +1078,6 @@ def format_diff(diff, strip_first=1, comments=None):
     output = []; append = output.append
     parser = IteratorParser(diff.splitlines())
     for line in parser:
-        logging.error("LINE: %r" % line)
         if line.startswith('diff --git '):
             if output:
                 append('</table></div>')
@@ -1087,7 +1097,6 @@ def format_diff(diff, strip_first=1, comments=None):
                 )
             line = parser.next()
             in_delete = 0
-        logging.error("SLINE: %r" % line)
         if line.startswith('@@ '):
             _, left, right, _ = line.split(' ', 3)
             left = abs(int(left.split(',')[0]))
@@ -1385,7 +1394,7 @@ class ProfileHandler(BaseHandler):
                 'commits', commits=commits[0], commits_url='/commits',
                 repos=repos, platforms=platforms, gravatars=GRAVATARS, md5=md5,
                 decode_json=decode_json, dashboard_view=1, return_content=1,
-                single=None
+                single=None, render_text=render_text
                 )
         else:
             commits = None
@@ -1396,7 +1405,8 @@ class ProfileHandler(BaseHandler):
             reviews = self.display(
                 'reviews', reviews=reviews, more=None, repos=repos, repo=None,
                 bases=bases, gravatars=GRAVATARS, github=settings['github_account'],
-                review_stages=review_stages, return_content=1, dashboard_view=1
+                review_stages=review_stages, return_content=1, dashboard_view=1,
+                render_text=render_text
                 )
 
         self.display(
@@ -1421,7 +1431,7 @@ class ReviewHandler(BaseHandler):
             'review', review=review, repos=repos, repo=repo, base=base,
             gravatars=GRAVATARS, github=settings['github_account'],
             review_stages=review_stages, builds=builds, changes=changes,
-            decode_json=decode_json
+            decode_json=decode_json, render_text=render_text
             )
 
     @auth(admin=False)
@@ -1444,7 +1454,7 @@ class ReviewsHandler(BaseHandler):
         self.display(
             'reviews', reviews=reviews, more=more, repos=repos, repo=repo,
             bases=bases, gravatars=GRAVATARS, github=settings['github_account'],
-            review_stages=review_stages
+            review_stages=review_stages, render_text=render_text
             )
 
     @auth(xsrf=False, admin=False)
@@ -1553,7 +1563,7 @@ class CommitsHandler(BaseHandler):
             failures_only=failures_only, version=version, user=user,
             commits_url=commits_url, repos=repos, repo=repo, platforms=platforms,
             gravatars=GRAVATARS, md5=md5, decode_json=decode_json, title=title,
-            changes=changes
+            changes=changes, render_text=render_text
             )
 
 class BuildsHandler(BaseHandler):
