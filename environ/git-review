@@ -474,6 +474,9 @@ def submit(argv=None, completer=None):
     op.add_option('-m', dest='msg', default="",
                   help="use the message as the title for the review item")
 
+    op.add_option('-s', dest='server', default="",
+                  help="override the http server url in the repo config")
+
     op.add_option('--cc', action='append', dest='reviewer',
                   help="the email address for an additional reviewer")
 
@@ -572,7 +575,10 @@ def submit(argv=None, completer=None):
             sys.exit(1)
 
     print "=> Sending patch to the review-server."
-    review_server = CONFIG['review_server']
+    review_server = options.server
+    if not review_server:
+        review_server = CONFIG['review_server']
+
     server = urlopen(review_server + '/reviews', urlencode({
         'name': review_branch,
         'revision': HEAD,
