@@ -72,7 +72,7 @@ h1 {
 }
 
 h2 {
-	margin-top: 30px;
+	margin-top: 10px;
 }
 
 hr.clear {
@@ -131,6 +131,10 @@ td {
 	padding: 7px;
 	vertical-align: top;
 	border-top: 1px solid #afa;
+}
+
+table {
+	line-height: 1.4em;
 }
 
 table.build-results td {
@@ -205,6 +209,99 @@ tr.middle td {
 	vertical-align: middle;
 }
 
+tr.no-border td {
+	border: 0;
+}
+
+tr.no-border blockquote {
+	margin-bottom: 0;
+}
+
+table.patch {
+	border: 1px solid #ccc;
+	font-family: "Inconsolata", Monaco, monospace;
+	margin: 16px 24px 24px 24px;
+	font-size: 0.9em;
+	width: 850px;
+	overflow: hidden;
+}
+
+table.patch td {
+	border: 0;
+	padding: 0;
+	vertical-align: top;
+}
+
+/* the following table.patch styles are adapted from github's css */
+
+table.patch td.patch-title {
+	background: #eee url("/static/patch-header.gif") repeat-x;
+	color: #333;
+	border-bottom: 1px solid #ccc;
+	padding: 10px;
+	line-height: 33px;
+	height: 33px;
+	padding: 0 5px;
+}
+
+table.patch td.line {
+	background-color: #ececec;
+	border-right: 1px solid #ddd;
+	color: #aaa;
+	text-align: right;
+	padding: 0px 6px;
+}
+
+table.patch td.frag {
+	background-color: #eaf2f5;
+	color: #999;
+	padding: 0 6px;
+}
+
+table.patch td.del {
+	background-color: #fdd;
+	padding: 0 6px;
+	width: 840px;
+}
+
+table.patch td.del strong {
+	background-color: #faa;
+}
+
+table.patch td.add {
+	background-color: #dfd;
+	padding: 0 6px;
+	width: 840px;
+}
+
+table.patch td.add strong {
+	background-color: #afa;
+}
+
+table.patch td.nrm {
+	background-color: #f8f8ff;
+	padding: 0 6px;
+	width: 840px;
+}
+
+table.patch pre {
+	border: 0;
+	padding: 0px;
+	margin: 0px;
+}
+
+.patch-icon {
+	background-color: #f7f7f7;
+	border: 1px solid #e5e5e5;
+	margin-right: 5px;
+	vertical-align: middle;
+	-moz-border-radius: 3px;
+	-webkit-border-radius: 3px;
+	border-radius: 3px;
+	padding: 3px;
+	margin: 5px 5px 0 0;
+}
+
 ul {
 	margin-top: 0;
 	padding-top: 0;
@@ -212,8 +309,8 @@ ul {
 }
 
 #content {
-	margin: 1em auto;
-	padding: 1em;
+	margin: 5px auto;
+	padding: 15px;
 	width: 900px;
 }
 
@@ -293,14 +390,13 @@ ul {
 }
 
 .gravatar {
-	margin-right: 3px;
+	margin-right: 5px;
 	vertical-align: middle;
 	padding: 0px;
-	border: 1px solid #cacaca;
 }
 
 .gravatar-activity {
-	margin-right: 5px;
+	margin-right: 8px;
 	vertical-align: middle;
 	padding: 0px;
 	margin-bottom: 6px;
@@ -352,6 +448,10 @@ ul {
 	font-size: 0.8em;
 	padding-top: 5px;
 	padding-left: 20px;
+	color: #6f6f6f;
+}
+
+.subdued {
 	color: #6f6f6f;
 }
 

@@ -1,0 +1,72 @@
+{% if not dashboard_view %}
+<h1>Reviews</h1>
+{% end %}
+
+{% if reviews %}
+<blockquote><table cellspacing="0px" width="100%">
+<tr class="header">
+	<td></td>
+	<td>Reviewers</td>
+	<td>State</td>
+	<td>Upstream</td>
+</tr>
+{% for review in reviews %}
+<tr class="middle">
+	<td class="left-pad-none">
+		<img class="gravatar" src="http://www.gravatar.com/avatar/{% if review.user in gravatars %}{{gravatars[review.user]}}{% else %}{{ 'not-available' }}{% end %}?s=32&amp;d=http%3A%2F%2Fgithub.com%2Fimages%2Fgravatars%2Fgravatar-32.png" />
+
+		<a href="/review/{{escaped_repo = escape(url_escape(review.repo))}}/{{escaped_patch_base = escape(review.version.rsplit('/', 1)[0])}}/{{latest_patch_number = review.version.rsplit('/', 1)[1]}}">{{escape(review.version)}}</a>
+		{% if latest_patch_number != '1' %}
+		&nbsp;&middot;&nbsp;
+		{% for patch_number in range(int(latest_patch_number) - 1, 0, -1) %}<a href="/review/{{escaped_repo}}/{{escaped_patch_base}}/{{patch_number}}">{{patch_number}}</a>{% if patch_number != 1 %},{% end %}{% end %}
+		{% end %}
+		<span class="small-grey">LAST UPDATED <span class="timestamp">{{ review.d.strftime('%s') }}</span></span>
+		{% if review.subject %}
+		<blockquote class="subject">
+			{{ escape(review.subject) }}
+		</blockquote>
+		{% end %}
+
+	</td>
+	<td>
+		{% if bases[review.version].cc %}
+		{% for user in bases[review.version].cc %}
+		{% if ('@' not in user) and user != review.user %}
+		<a href="/profile/{{ escape(url_escape(user)) }}">{{escape(user)}}</a>
+		{% end %}
+		{% end %}
+		{% end %}
+	</td>
+	<td>
+		{% if review.stage == 'tested' %}
+		{% if review.has_failure %}
+		<a href="" class="fail">tested</a>
+		{% else %}
+		<a href="">tested</a>
+		{% end %}
+		{% else %}
+		{{review_stages.get(review.stage, 'unknown')}}
+		{% end %}
+	</td>
+	<td>
+		<a href="{{github_url = 'http://github.com/' + escape(url_escape(github)) + '/' + escape(url_escape(review.repo)) + '/compare/'}}{{escape(url_escape(review.upstream_revision))}}...{{escape(url_escape(review.version.replace('/', ';')))}}">then</a>
+		&nbsp;
+		<a href="{{github_url}}master...{{escape(url_escape(review.version.replace('/', ';')))}}">now</a>
+	</td>
+</tr>
+{% end %}
+</table></blockquote>
+{% if (not dashboard_view) and more %}
+{% end %}
+{% end %}
+
+{% if not dashboard_view %}
+{% if len(repos) > 1 %}
+<h2>{% if repo %}Other{% else %}Specific{% end %} Repositories</h2>
+<ul>
+{% for repo_name in sorted(repos) %}{% if repo_name != repo %}
+<li><a href="/reviews/{{escape(repo_name)}}">{{repo_name}}</a></li>
+{% end %}{% end %}
+</ul>
+{% end %}
+{% end %}

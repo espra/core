@@ -11,7 +11,7 @@
 <a class="button" href="{{commits_url}}?failures_only=0"><span>Hide Failures</span></a>
 {% end %}{% end %}
 {% if single %}
-<h1><a href="/commits">Commits</a> &middot; {{ escape(version[:12]) }}</h1>
+<h1><a href="/commits">Commits</a></h1>
 {% elif repo %}
 <h1><a href="/commits">Commits</a> &middot; {{ escape(repo) }}</h1>
 {% elif user %}
@@ -23,35 +23,39 @@
 
 {% if commits %}
 <blockquote><table cellspacing="0px" width="100%">
+{% if not single %}
 <tr class="header-small">
 	<td></td>
 	{% for platform in platforms %}
 	<td>{{escape(platform.rsplit(' ', 1)[0])}}<br />{{escape(platform.rsplit(' ', 1)[1])}}</td>
 	{% end %}
 </tr>
+{% end %}
 {% for commit in commits %}
-<tr class="middle">
+<tr class="middle{% if single %} no-border{% end %}">
 	<td class="left-pad-none">
-		<div class="text">
-			{{escape(commit.subject or '')}}
-		</div>
-		<div class="small-info">
-			<img class="gravatar" src="http://www.gravatar.com/avatar/{% if commit.user in gravatars %}{{gravatars[commit.user]}}{% else %}{{ md5(commit.author_email).hexdigest() }}{% end %}?s=16&amp;d=http%3A%2F%2Fgithub.com%2Fimages%2Fgravatars%2Fgravatar-16.png" />
-		{% if commit.user %}<a href="/profile/{{escape(commit.user)}}">{{escape(commit.user)}}</a>{% else %}{{escape(commit.author_email or commit.author or '')}}{% end %}
-		/
-		<a href="/activity/{{escape(url_escape(commit.repo))}}">{{escape(commit.repo)}}</a>
-		/
-		{% if single %}
-		<code>{{escape(version[:12])}}</code>
+
+		<img class="gravatar-activity" src="http://www.gravatar.com/avatar/{% if commit.user in gravatars %}{{gravatars[commit.user]}}{% else %}{{ md5(commit.author_email).hexdigest() }}{% end %}?s=32&amp;d=http%3A%2F%2Fgithub.com%2Fimages%2Fgravatars%2Fgravatar-32.png" />
+
+		{% if commit.user %}<a href="/profile/{{escape(url_escape(commit.user))}}" class="no-link">{% end %}{{escape(commit.user or commit.author_email or '')}}{% if commit.user %}</a>{% end %} &nbsp;&middot;&nbsp; {% if single %}<code>{{escape(version[:8])}}</code>{% else %}<a href="/commit/{{escape(url_escape(commit.repo))}}/{{escape(commit.version)}}"><code>{{escape(commit.version[:8])}}</code></a>{% end %} &nbsp;&middot;&nbsp; <a href="/activity/{{escape(url_escape(commit.repo))}}">{{escape(commit.repo)}}</a>
+		<!--
 		&nbsp;&middot;&nbsp;
-		<a href="http://github.com/{{'%s/%s' % repos[commit.repo]}}/commit/{{version}}">github</a>
-		{% else %}
-		<a href="/commit/{{commit.repo}}/{{revision = escape(url_escape(commit.key().name().split(':')[1]))}}"><code>{{revision[:12]}}</code></a>
+		<a href="http://github.com/{{'%s/%s' % repos[commit.repo]}}/commit/{{escape(commit.version)}}">diff</a>
+		-->
+		{% if single and (commit.author_email != commit.committer_email) %}
 		&nbsp;&middot;&nbsp;
-		<a href="http://github.com/{{'%s/%s' % repos[commit.repo]}}/commit/{{revision}}">github</a>
+		committed by {{escape(commit.committer or committer_email or '??')}}
 		{% end %}
-		</div>
+		<span class="timestamp small-grey">{{ commit.d.strftime('%s') }}</span>
+
+		{% if commit.subject %}
+		<blockquote class="subject">
+			{{escape(commit.subject)}}
+		</blockquote>
+		{% end %}
+
 	</td>
+	{% if not single %}
 	{% for platform in platforms %}{% if platform in commit.passed_builds %}
 	<td><a class="no-link" href="/builds/{{escape(url_escape(commit.repo))}}/{{escape(url_escape(platform))}}/{{escape(commit.version)}}">✓</a></td>
 	{% elif platform in commit.failed_builds %}
@@ -59,6 +63,7 @@
 	{% else %}
 	<td>-</td>
 	{% end %}{% end %}
+	{% end %}
 </tr>
 {% end %}
 </table></blockquote>
@@ -99,6 +104,13 @@
 </tr>
 {% end %}
 </table></blockquote>
+{% end %}
+{% end %}
+
+{% if not dashboard_view %}
+{% if single and changes %}
+<h2>Changes</h2>
+{{ changes }}
 {% end %}
 {% end %}
 
