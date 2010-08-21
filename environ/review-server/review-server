@@ -16,7 +16,7 @@ from hashlib import md5
 from hmac2 import HMAC
 from optparse import OptionParser
 from os import chdir, close, environ, getcwd, remove, urandom, write
-from os.path import dirname, isdir, isfile, join, realpath
+from os.path import dirname, isdir, join, realpath
 from Queue import Queue
 from shutil import rmtree
 from tempfile import mkstemp
@@ -369,13 +369,13 @@ def git(*args, **kwargs):
         kwargs['retcode'] = True
     return run_command(['git'] + list(args), **kwargs)
 
-def valid_review_id(id, valid=set('abcdefghijklmnopqrstuvwxyz0123456789-_')):
+def valid_patch_name(id, valid=set('abcdefghijklmnopqrstuvwxyz0123456789.-_')):
     if id.startswith('-') or id.startswith('_'):
         return
     for char in id:
         if char not in valid:
             return
-    return id
+    return 1
 
 # ------------------------------------------------------------------------------
 # Worker Functions
@@ -385,6 +385,7 @@ USERS = CachingDict()
 XSRF = CachingDict()
 EMAILS = CachingDict()
 GRAVATARS = CachingDict()
+USERS2EMAILS = CachingDict()
 
 @worker(URL_QUEUE)
 def get_github_user_info(login, token, keys=['email', 'gravatar_id', 'name']):
@@ -403,6 +404,8 @@ def get_github_user_info(login, token, keys=['email', 'gravatar_id', 'name']):
             info[key] = data[key]
     USERS[login] = token
     EMAILS[info['email']] = login
+    # USERS2EMAILS[login] = '"%s" <%s>' % (info.get('name', login), info['email'])
+    USERS2EMAILS[login] = info['email']
     GRAVATARS[login] = info['gravatar_id']
     return info
 
@@ -471,6 +474,82 @@ def apply_patch(repo, review_id, upstream, patch_file):
 def get_patch(repo, rev1, rev2):
     chdir(repo_paths[repo])
     git('diff', rev1, rev2)
+
+class Retry(Exception):
+    pass
+
+def _update_and_email_review(base_key, review, cc, expected, emails):
+    base = db.get(base_key)
+    if not base.cc == expected:
+        raise Retry("It's changed!")
+    for person in cc:
+        if person not in base.cc:
+            base.cc.append(person)
+    db.put([base, review])
+
+@worker(GAE_QUEUE)
+def update_and_email_review(base, review, cc, n=3):
+    while n:
+        if base.cc:
+            expected_cc = base.cc[:]
+        else:
+            expected_cc = []
+        likely_cc = cc.union(expected_cc)
+        needed_emails = []; needed = needed_emails.append
+        emails = set()
+        skipped = []
+        for person in likely_cc:
+            if '@' in person:
+                emails.add(person)
+            else:
+                email = USERS2EMAILS.get(person, None)
+                if email:
+                    emails.add(email)
+                else:
+                    needed(person)
+        if needed_emails:
+            users = User.get_by_key_name(needed_emails)
+            for idx, user in enumerate(users):
+                if user:
+                    login = needed_emails[idx]
+                    # email = '"%s" <%s>' % (user.name or login, user.email)
+                    email = user.email
+                    USERS2EMAILS[login] = email
+                    emails.add(email)
+                else:
+                    skipped.append(needed_emails[idx])
+        try:
+            db.run_in_transaction(
+                _update_and_email_review, base.key(), review, cc,
+                expected_cc, emails
+                )
+        except Retry:
+            n -= 1
+            continue
+        if skipped:
+            logging.error("Couldn't email %s" % skipped)
+        return
+
+def _get_review_object(base_key, revision, result, create_key=db.Key.from_path):
+    base = ReviewBase.get(base_key)
+    if not base:
+        base = ReviewBase(key=base_key)
+    base.latest += 1
+    review = Review(key_name=str(base.latest), parent=base_key)
+    review.revision = revision
+    db.put([base, review])
+    result.append([base, review])
+
+@worker(GAE_QUEUE)
+def get_review_object(repo, user, patch_name, revision):
+    exist = Review.all().filter('r =', repo).filter('z =', revision).get()
+    if exist:
+        return 1, exist.version
+    base_key = db.Key.from_path('Q', '%s:%s:%s' % (repo, user, patch_name))
+    result = []
+    db.run_in_transaction(_get_review_object, base_key, revision, result)
+    if result:
+        return result[0]
 
 def _get_new_commits(repo, start):
     chdir(repo_paths[repo])
@@ -979,9 +1058,10 @@ ReviewBase = Q
 
 class R(db.Model): # id = incrementing integer; parent = ReviewBase
     subject = db.TextProperty(name='s')
+    version = db.StringProperty(name='v')
     repo = db.StringProperty(name='r')
     upstream_revision = db.StringProperty(name='i')
-    stage = db.StringProperty(name='g', default='pending')
+    stage = db.StringProperty(name='g', default='unset')
     needed_builds = db.StringListProperty(name='n')
     passed_builds = db.StringListProperty(name='p', indexed=False)
     failed_builds = db.StringListProperty(name='f', indexed=False)
@@ -989,6 +1069,7 @@ class R(db.Model): # id = incrementing integer; parent = ReviewBase
     user = db.StringProperty(name='u')
     d = db.DateTimeProperty(auto_now_add=True)
     m = db.DateTimeProperty(auto_now=True)
+    revision = db.StringProperty(name='z')
 
 Review = R
 
@@ -1138,38 +1219,49 @@ class ReviewsHandler(BaseHandler):
     def get(self, repo=None, user=None, issue=None):
         pass
 
-    @auth(admin=False)
+    @auth(xsrf=False, admin=False)
     def post(self):
 
         get = self.get_argument
-        issue = get('issue')
-        if not valid_review_id(issue):
-            self.write("Invalid characters in the review id: %s" % issue)
+        patch_name = get('name')
+        if not valid_patch_name(patch_name):
+            self.write("Invalid characters in the patch name: %s" % patch_name)
+            return
 
-        login = get('login')
         repo = get('repo')
+        if repo not in repos:
+            self.write("Unknown repo: %s" % repo)
+            return
+
+        user = get('login')
         patch = get('patch')
         upstream = get('upstream')
-        message = get('message', '')
+        message = get('message')
         revision = get('revision')
 
         cc = get('cc', '')
         if cc:
-            cc = decode_json(cc)
+            cc = set(decode_json(cc))
         else:
-            cc = []
+            cc = set()
 
-        login_id_prefix = '%s/%s' % (login, id)
-        issue_number = 2
-        review_id = '%s/%s/%s' % (login, id, issue_number)
+        review = yield get_review_object(repo, user, patch_name, revision)
+        if not review:
+            self.write("Couldn't create new review object.")
+            return
 
-        # existing_review_id = yield db.get(revision)
-        # if existing_review_id:
-        #     self.write(
-        #         "This revision has already been submitted for review as %s."
-        #         % existing_review_id
-        #     )
-        #     return
+        base, review = review
+        if base == 1:
+            self.write(
+                "Sorry, your submission already exists at /review/%s/%s"
+                % (repo, review)
+                )
+            return
+
+        patch_number = review.key().name()
+
+        review_id = '%s/%s/%s' % (user, patch_name, patch_number)
+        review_url = '%s/%s' % (repo, review_id)
 
         fd, patch_file = mkstemp('-review-patch')
         write(fd, patch.encode('utf-8'))
@@ -1177,8 +1269,22 @@ class ReviewsHandler(BaseHandler):
 
         yield apply_patch(repo, review_id, upstream, patch_file)
 
-        self.write('OK %s' % review_id)
-        #remove(patch_file)
+        review.subject = message
+        review.repo = repo
+        review.upstream_revision = upstream
+        review.needed_builds = platforms
+        review.user = user
+        review.version = review_id
+
+        if user in settings['admins']:
+            review.stage = 'test'
+        else:
+            review.stage = 'pending'
+
+        yield update_and_email_review(base, review, cc)
+
+        self.write('OK %s' % review_url)
+        remove(patch_file)
 
 class CommitsHandler(BaseHandler):
 
