@@ -21,7 +21,7 @@
 
 <img class="gravatar-activity" src="http://www.gravatar.com/avatar/{% if activity.user in gravatars %}{{gravatars[activity.user]}}{% else %}{{ md5(activity.author_email).hexdigest() }}{% end %}?s=16&amp;d=http%3A%2F%2Fgithub.com%2Fimages%2Fgravatars%2Fgravatar-16.png" />
 
-{% if activity.user %}<a href="/user/{{escape(url_escape(activity.user))}}" class="no-link">{% end %}{{escape(activity.user or activity.author_email or '')}}{% if activity.user %}</a>{% end %} committed <a href="/commit/{{escape(url_escape(activity.repo))}}/{{escape(activity.version)}}"><code>{{escape(activity.version[:8])}}</code></a> to <a href="/activity/{{escape(url_escape(activity.repo))}}">{{escape(activity.repo)}}</a> <span class="timestamp small-grey">{{ activity.d.strftime('%s') }}</span>
+{% if activity.user %}<a href="/profile/{{escape(url_escape(activity.user))}}" class="no-link">{% end %}{{escape(activity.user or activity.author_email or '')}}{% if activity.user %}</a>{% end %} committed <a href="/commit/{{escape(url_escape(activity.repo))}}/{{escape(activity.version)}}"><code>{{escape(activity.version[:8])}}</code></a> to <a href="/activity/{{escape(url_escape(activity.repo))}}">{{escape(activity.repo)}}</a> <span class="timestamp small-grey">{{ activity.d.strftime('%s') }}</span>
 
 {% if activity.subject %}
 <blockquote class="subject">

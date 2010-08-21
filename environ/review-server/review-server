@@ -377,11 +377,6 @@ def valid_review_id(id, valid=set('abcdefghijklmnopqrstuvwxyz0123456789-_')):
             return
     return id
 
-def update_repo(name):
-    chdir(repo_paths[name])
-    git('remote', 'update', '-p')
-    git('push', 'origin', 'upstream/master:master')
-
 # ------------------------------------------------------------------------------
 # Worker Functions
 # ------------------------------------------------------------------------------
@@ -621,7 +616,6 @@ def get_slave_job(repo, slave_id, token, uname, span=timedelta(seconds=1)):
         'g =', 'test'
         ).get()
     commit = Commit.all().filter('n =', platform).filter('r =', repo).get()
-    commits = Commit.all().fetch(100)
     if review and commit:
         if review.d >= commit.d:
             parent = review
@@ -1090,7 +1084,9 @@ class ActivityHandler(BaseHandler):
             hide_slaves=hide_slaves, decode_json=decode_json, repos=repos
             )
 
-class UserHandler(BaseHandler):
+class ProfileHandler(BaseHandler):
+
+    title = 'profile'
 
     @async
     def get(self, user=None):
@@ -1107,7 +1103,6 @@ class UserHandler(BaseHandler):
                 hide_slaves=None, decode_json=decode_json, repos=repos,
                 dashboard_view=1, return_content=1
                 )
-
         commits = yield get_commits(
             None, None, user, None, None, None, n=31
             )
@@ -1120,30 +1115,36 @@ class UserHandler(BaseHandler):
                 )
         else:
             commits = None
-
+        user_obj = yield db_get(db.Key.from_path('U', user))
+        reviews = None
         self.display(
-            'dashboard', activities=activities, commits=commits, user=user
+            'profile', activities=activities, commits=commits, user=user,
+            reviews=reviews, user_obj=user_obj
             )
 
 class ReviewHandler(BaseHandler):
 
-    def get(self):
-        from random import random
-        uname = self.get_argument('uname')
-        repo_id = self.get_argument('repo_id')
-        self.set_header('Content-Type', 'text/plain')
-        if random() > 0.5:
-            self.write('tav/ampify/master')
-        else:
-            self.write('//')
+    def get(self, repo, user, issue, id):
+        self.write('review')
+
+    @auth(admin=False)
+    def post(self):
+        pass
+
+class ReviewsHandler(BaseHandler):
+
+    title = 'reviews'
+
+    def get(self, repo=None, user=None, issue=None):
+        pass
 
     @auth(admin=False)
     def post(self):
 
         get = self.get_argument
-        id = get('id')
-        if not valid_review_id(id):
-            self.write("Invalid characters in the review id: %s" % id)
+        issue = get('issue')
+        if not valid_review_id(issue):
+            self.write("Invalid characters in the review id: %s" % issue)
 
         login = get('login')
         repo = get('repo')
@@ -1179,9 +1180,6 @@ class ReviewHandler(BaseHandler):
         self.write('OK %s' % review_id)
         #remove(patch_file)
 
-class ReviewsHandler(BaseHandler):
-    pass
-
 class CommitsHandler(BaseHandler):
 
     title = 'commits'
@@ -1212,7 +1210,7 @@ class CommitsHandler(BaseHandler):
             commits_url += escape(quote('/%s' % repo), 1)
         self.display(
             'commits', commits=commits, more=more, builds=builds, single=single,
-            failures_only=failures_only, version=version,
+            failures_only=failures_only, version=version, user=user,
             commits_url=commits_url, repos=repos, repo=repo, platforms=platforms,
             gravatars=GRAVATARS, md5=md5, decode_json=decode_json, title=title
             )
@@ -1435,7 +1433,7 @@ class RebuildHandler(BaseHandler):
         if platform not in platforms:
             self.errmsg("%s is not supported atm." % platform)
             return
-        retval = yield rebuild(repo, version, platform)
+        yield rebuild(repo, version, platform)
         self.redirect('/build/%s' % build_id)
 
 # ------------------------------------------------------------------------------
@@ -1503,7 +1501,7 @@ def main(argv=None):
                 git('remote', 'add', 'upstream', upstream_url)
 
     application = Application([
-        (r"/user/([^/]*)", UserHandler),
+        (r"/profile/([^/]*)", ProfileHandler),
         (r"/charts", ChartsHandler),
         (r"/reviews", ReviewsHandler),
         (r"/review", ReviewHandler),

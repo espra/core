@@ -1,0 +1,29 @@
+<h1>Profile &middot; {{escape(user)}}</h1>
+
+<blockquote><table cellspacing="0px">
+<tr class="header-left">
+	<td class="header">GitHub</td>
+	<td><a href="http://github.com/{{escape(url_escape(user))}}">{% if user_obj and user_obj.name %}{{escape(user_obj.name)}}{% else %}{{escape(user)}}{% end %}</a></td>
+</tr>
+</table></blockquote>
+
+{% if reviews %}
+<h2>Recent Reviews</h2>
+{{ reviews }}
+<a href="/reviews/*/{{escape(url_escape(user))}}" class="button"><span>See All</span></a>
+<hr class="clear" />
+{% end %}
+
+{% if commits %}
+<h2>Recent Commits</h2>
+{{ commits }}
+<a href="/commits/*/*/{{escape(url_escape(user))}}" class="button"><span>See All</span></a>
+<hr class="clear" />
+{% end %}
+
+{% if activities %}
+<h2>Recent Activities</h2>
+{{ activities }}
+<a href="/activity/*/{{escape(url_escape(user))}}" class="button"><span>See All</span></a>
+<hr class="clear" />
+{% end %}
