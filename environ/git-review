@@ -33,8 +33,9 @@ CONFIG = {}
 
 REVIEW_MESSAGE = """
 
-# Write a brief message about your review submission.
-# Lines beginning with a # will be stripped out.
+# Please enter a message for your review submission. All
+# lines starting with '#' will be ignored, and an empty
+# message aborts the submission.
 """
 
 # ------------------------------------------------------------------------------
@@ -573,7 +574,7 @@ def submit(argv=None, completer=None):
     print "=> Sending patch to the review-server."
     review_server = CONFIG['review_server']
     server = urlopen(review_server + '/reviews', urlencode({
-        'issue': review_branch,
+        'name': review_branch,
         'revision': HEAD,
         'patch': patch,
         'login': login,
