@@ -12,7 +12,7 @@
 <div class="float-right" style="text-align: right;">
 {% if build.has_failure %}{% if is_admin and rebuild_state %}{% if rebuild_state == 2 %}<a class="button" id="submit"><span>Rebuild for Platform + Commit</span></a>{% else %}<span class="grey">Rebuilding ...</span>{% end %}<br />{% end %}<span class="fail huge">✗</span>{% else %}<span class="pass huge">✓</span>{% end %}
 </div>
-<h1><a href="/builds">Builds</a> &middot; Build {{build_id}}</h1>
+<h1><a href="/builds" class="no-link">Builds</a> &middot; Build {{build_id}}</h1>
 <blockquote><table cellspacing="0px">
 <tr class="header-left">
 	<td class="header">By</td>

@@ -1399,6 +1399,27 @@ class RootHandler(BaseHandler):
     def get(self):
         self.redirect('/activity')
 
+class RepoHandler(BaseHandler):
+
+    title = 'repository'
+
+    def get(self, repo):
+        if repo not in repos:
+            self.errmsg("No such repository found.")
+            return
+        self.display('repo', repo=repo, github=repos[repo])
+
+class RepositoriesHandler(BaseHandler):
+
+    title = 'repositories'
+
+    def get(self):
+        content = ["<h1>Repositories</h1><ul>"]; out = content.append
+        for repo in sorted(repos):
+            out('<li><a href="/repo/%s">%s</a></li>' % (repo, repo))
+        out('</ul>')
+        self.render_('site.html', content='\n'.join(content))
+
 class ActivityHandler(BaseHandler):
 
     title = 'activities'
@@ -1684,7 +1705,8 @@ class BuildHandler(BaseHandler):
         self.display(
             'build', build_id=build_id, build=build, traceback=traceback,
             timings=timings, stdout=stdout, stderr=stderr, data=data,
-            rebuild_state=rebuild_state, platforms=uname2platforms
+            rebuild_state=rebuild_state, platforms=uname2platforms,
+            repo=build.repo
             )
 
     @async
@@ -1932,6 +1954,8 @@ def main(argv=None):
                 git('remote', 'add', 'upstream', upstream_url)
 
     application = Application([
+        (r"/repositories", RepositoriesHandler),
+        (r"/repo/([^/]*)", RepoHandler),
         (r"/profile/([^/]*)", ProfileHandler),
         (r"/charts", ChartsHandler),
         (r"/builds/([^/]*)", BuildsHandler),

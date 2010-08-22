@@ -11,7 +11,7 @@
 <a href="{{request.path}}?hide_commits=1{% if hide_slaves %}&amp;hide_slaves=1{% end %}" class="button"><span>Hide Commits</span></a>
 {% end %}
 {% end %}
-<h1>{% if repo or user %}<a href="/activity">Activities</a>{% if repo %} &middot; {{escape(repo)}}{% end %}{% if user %} &middot; user {{escape(user)}}{% end %}{% else %}Activities{% end %}</h1>
+<h1>{% if repo or user %}<a class="no-link" href="/activity">Activities</a>{% if repo %} &middot; {{escape(repo)}}{% end %}{% if user %} &middot; user {{escape(user)}}{% end %}{% else %}Activities{% end %}</h1>
 {% end %}
 
 <blockquote>
@@ -66,11 +66,4 @@
 {% if more %}
 <a class="button" href="/activity?next={{more}}"><span>Next &rarr;</span></a>
 {% end %}
-
-<h2><img class="float-right" src="{{ static_url('github.png') }}" width="60px" height="60px" /> GitHub Repositories</h2>
-<ul>
-{% for repo_name in sorted(repos) %}
-	<li><a href="{{'http://github.com/%s/%s' % repos[repo_name]}}">{{repos[repo_name][1]}}</a></li>
-{% end %}
-</ul>
 {% end %}

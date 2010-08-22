@@ -250,7 +250,7 @@ table.patch td {
 
 /* the following table.patch styles are adapted from github's css */
 
-table.patch td.patch-title, #header-repo {
+table.patch td.patch-title {
 	background: #eee url("/static/patch-header.gif") repeat-x;
 	color: #333;
 	border-bottom: 1px solid #ccc;
@@ -258,15 +258,6 @@ table.patch td.patch-title, #header-repo {
 	line-height: 33px;
 	height: 33px;
 	padding: 0 5px;
-}
-
-#header-repo {
-	padding-left: 20px;
-	text-align: left;
-}
-
-#header-repo a {
-	color: #333;
 }
 
 table.patch td.line {
@@ -344,35 +335,29 @@ ul {
 	width: 900px;
 }
 
+#logo {
+	font-family: "Lobster", serif;
+	font-size: 33px;
+	/* text-shadow: 4px 4px 4px #aaa; */
+}
+
+#logo {
+	text-decoration: none !important;
+}
+
 #header {
-	background-color: #dfd;
-	background-color: #feb380;
-	background-color: #578059;
-	background-color: #A47272;
-	background-color: #dfd;
-	border-bottom: 1px solid #afa;
+	background: #eee url("/static/patch-header.gif") repeat-x;
+	color: #333;
 	border-bottom: 1px solid #ccc;
-	padding: 0.2em 1em 0.4em 1.2em;
+	padding: 10px;
+	line-height: 33px;
+	height: 43px;
+	padding: 8px 20px 5px 20px;
+	text-align: left;
 }
 
-#headers a {
-	color: #fff;
-	color: #fff;
-}
-
-#nav {
-	margin-top: 10px;
-	font-size: 1.2em;
-	float: right;
-}
-
-#nav a {
-	color: #000;
-	text-decoration: underline;
-}
-
-#nav a:hover {
-	text-decoration: none;
+#header a {
+	color: #333;
 }
 
 #info {
@@ -386,6 +371,20 @@ ul {
 #repo {
 	font-family: "Yanone Kaffeesatz", Georgia, serif;
 	text-transform: uppercase;
+	text-decoration: none;
+	border: 1px solid #cacaca;
+	-moz-border-radius: 8px;
+	-webkit-border-radius: 8px;
+	border-radius: 8px;
+	background-color: #e0e0e0;
+	padding: 5px 6px;
+	font-size: 20px;
+}
+
+#tick {
+	font-size: 50px;
+	padding-top: 3px;
+	float: left;
 }
 
 .absmiddle {
@@ -444,22 +443,6 @@ ul {
 	vertical-align: middle;
 	padding: 0px;
 	margin-bottom: 6px;
-}
-
-.head {
-	font-family: "Lobster", serif;
-	font-size: 36px;
-	/* text-shadow: 4px 4px 4px #aaa; */
-}
-
-.head a {
-	text-decoration: none;
-	color: #000;
-}
-
-.headtick {
-	font-size: 54px;
-	vertical-align: sub;
 }
 
 .huge {
