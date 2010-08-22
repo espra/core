@@ -5,7 +5,7 @@
 	{% end %}
 	<input type="hidden" name="platform" value="{{escape(build.build_platform)}}" />
 	<input type="hidden" name="version" value="{{escape(build.version)}}" />
-	<input type="hidden" name="repo" value="{{escape(build.repo)}}" />
+	<input type="hidden" name="repo" value="{{build.repo}}" />
 	<input type="hidden" name="build_id" value="{{build_id}}" />
 </form>
 {% end %}
@@ -21,7 +21,7 @@
 <tr class="header-left">
 	<td class="header">Commit</td>
 	<td>
-		<a href="/activity/{{escape(url_escape(build.repo))}}">{{escape(build.repo)}}</a> / {% if '/' in build.version %}<a href="/review/{{escape(url_escape(build.repo))}}/{{escape('/'.join(map(url_escape, build.version.split('/'))))}}">{{escape(build.version)}}</a>{% else %}<a href="/commit/{{escape(build.repo)}}/{{escape(build.version)}}"><code>{{escape(build.version)}}</code></a>{% end %}
+		<a href="/builds/{{build.repo}}">{{build.repo}}</a> / {% if '/' in build.version %}<a href="/review/{{build.repo}}/{{escape('/'.join(map(url_escape, build.version.split('/'))))}}">{{escape(build.version)}}</a>{% else %}<a href="/commit/{{build.repo}}/{{escape(build.version)}}"><code>{{escape(build.version)}}</code></a>{% end %}
 	</td>
 </tr>
 <tr class="header-left">

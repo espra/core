@@ -27,6 +27,15 @@
 			</div>
 			<span class="head"><a href="/" title="git review home"><span class="headtick">✓</span> git review</a></span>
 		</div>
+		{% if repo %}
+		<div id="header-repo">
+			<a id="repo" href="/repo/{{_repo = escape(repo) }}">{{_repo}}</a>  &nbsp;·&nbsp;
+			<a href="/activity/{{_repo}}">Activity Feed</a> &nbsp;·&nbsp;
+			<a href="/reviews/{{_repo}}">Reviews</a> &nbsp;·&nbsp;
+			<a href="/commits/{{_repo}}">Commits</a> &nbsp;·&nbsp;
+			<a href="/builds/{{_repo}}">Builds</a>
+		</div>
+		{% end %}
 		<div id="content">
 			{% if errmsg %}
 			<div class="errmsg">{{ errmsg }}</div>

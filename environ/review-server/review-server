@@ -1356,8 +1356,6 @@ class BaseHandler(RequestHandler):
     def display(self, template, **kwargs):
         kwargs['render_text'] = render_text
         kwargs['get_gravatar'] = get_gravatar
-        if 'errmsg' not in kwargs:
-            kwargs['errmsg'] = None
         kwargs['is_admin'] = self.is_admin_user()
         user = self.current_user
         if user:
@@ -1374,12 +1372,24 @@ class BaseHandler(RequestHandler):
             content = ''
         if 'return_content' in kwargs:
             return content
+        self.render_('site.html', content=content, **kwargs)
+
+    def render_(self, *args, **kwargs):
         if 'title' not in kwargs:
             kwargs['title'] = self.title
-        self.render('site.html', content=content, **kwargs)
+        if 'repo' in kwargs:
+            if kwargs['repo'] not in repos:
+                kwargs['repo'] = None
+        else:
+            kwargs['repo'] = None
+        if 'errmsg' not in kwargs:
+            kwargs['errmsg'] = None
+        self.render(*args, **kwargs)
 
-    def errmsg(self, errmsg):
-        self.render('site.html', content='', errmsg=errmsg, title=self.title)
+    def errmsg(self, errmsg, repo=None):
+        self.render_(
+            'site.html', content='', errmsg=errmsg, repo=repo
+            )
 
     def get(self):
         self.errmsg("Not implemented yet.")
@@ -1390,6 +1400,8 @@ class RootHandler(BaseHandler):
         self.redirect('/activity')
 
 class ActivityHandler(BaseHandler):
+
+    title = 'activities'
 
     @async
     def get(self, repo=None, user=None):
@@ -1405,12 +1417,28 @@ class ActivityHandler(BaseHandler):
         activities, more = yield get_activities(
             repo, user, hide_commits, hide_slaves, next
             )
+        if not activities:
+            self.errmsg("No activities found.", repo)
+            return
         self.display(
             'activity', activities=activities, more=more, repo=repo, user=user,
             gravatars=GRAVATARS, md5=md5, hide_commits=hide_commits,
             hide_slaves=hide_slaves, decode_json=decode_json, repos=repos,
             render_text=render_text
             )
+
+class DiffHandler(BaseHandler):
+
+    @async
+    def get(self, repo, r1, r2):
+        r1 = r1.replace(';', '/')
+        r2 = r2.replace(';', '/')
+        diff = yield get_diff_between(repo, r1, r2)
+        changes = format_diff(diff, strip_first=0)
+        content = (
+            '<h1>Diff &middot; %s &rarr; %s</h1>%s' % (r1, r2, changes)
+            )
+        self.render_('site.html', content=content, errmsg=None, title='diff')
 
 class ProfileHandler(BaseHandler):
 
@@ -1466,7 +1494,7 @@ class ReviewHandler(BaseHandler):
         repo, user, name = map(unquote_plus, (repo, user, name))
         base, review, builds = yield get_review(repo, user, name, number)
         if not review:
-            self.errmsg("No such review found.")
+            self.errmsg("No such review found.", repo)
             return
         diff = yield get_diff_between(
             repo, review.upstream_revision, review.version
@@ -1493,7 +1521,7 @@ class ReviewsHandler(BaseHandler):
         next = get('next', '')
         reviews = yield get_reviews(repo, user, next)
         if not reviews:
-            self.errmsg("No reviews found.")
+            self.errmsg("No reviews found.", repo)
             return
         reviews, bases, more = reviews
         self.display(
@@ -1593,9 +1621,12 @@ class CommitsHandler(BaseHandler):
             repo, version, user, failures_only, single, next
             )
         if not revision_data:
-            self.errmsg("Sorry, no data found.")
+            self.errmsg("Sorry, no data found.", repo)
             return
         commits, builds, more = revision_data
+        if not commits:
+            self.errmsg("No commits found.", repo)
+            return
         commits_url = '/commits'
         if repo:
             commits_url += escape(quote('/%s' % repo), 1)
@@ -1623,6 +1654,9 @@ class BuildsHandler(BaseHandler):
             platform = None
         next = self.get_argument('next', '')
         builds, more = yield get_builds(repo, platform, version, next)
+        if not builds:
+            self.errmsg("No builds found.", repo)
+            return
         if repo and platform and version and builds:
             if len(builds) == 1:
                 self.redirect('/build/%s' % builds[0].key().id())
@@ -1925,6 +1959,7 @@ def main(argv=None):
         (r"/activity", ActivityHandler),
         (r"/post-receive", PostReceiveHandler),
         (r"/rebuild", RebuildHandler),
+        (r"/diff/([^/]*)/([^/]*)/([^/]*)", DiffHandler),
         (r"/", RootHandler),
     ], **settings)
 

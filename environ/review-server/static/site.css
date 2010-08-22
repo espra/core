@@ -250,7 +250,7 @@ table.patch td {
 
 /* the following table.patch styles are adapted from github's css */
 
-table.patch td.patch-title {
+table.patch td.patch-title, #header-repo {
 	background: #eee url("/static/patch-header.gif") repeat-x;
 	color: #333;
 	border-bottom: 1px solid #ccc;
@@ -258,6 +258,15 @@ table.patch td.patch-title {
 	line-height: 33px;
 	height: 33px;
 	padding: 0 5px;
+}
+
+#header-repo {
+	padding-left: 20px;
+	text-align: left;
+}
+
+#header-repo a {
+	color: #333;
 }
 
 table.patch td.line {
@@ -337,9 +346,18 @@ ul {
 
 #header {
 	background-color: #dfd;
+	background-color: #feb380;
+	background-color: #578059;
+	background-color: #A47272;
+	background-color: #dfd;
 	border-bottom: 1px solid #afa;
-	border-bottom: 1px solid #dedede;
+	border-bottom: 1px solid #ccc;
 	padding: 0.2em 1em 0.4em 1.2em;
+}
+
+#headers a {
+	color: #fff;
+	color: #fff;
 }
 
 #nav {
@@ -363,6 +381,11 @@ ul {
 	-webkit-border-radius: 5px;
 	border-radius: 5px;
 	/* -webkit-box-shadow: 0px 0px 7px #cacaca; */
+}
+
+#repo {
+	font-family: "Yanone Kaffeesatz", Georgia, serif;
+	text-transform: uppercase;
 }
 
 .absmiddle {
