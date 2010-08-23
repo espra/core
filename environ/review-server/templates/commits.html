@@ -10,9 +10,7 @@
 <a class="button" href="{{commits_url}}?failures_only=1"><span>Hide Non-Failures</span></a>
 <a class="button" href="{{commits_url}}?failures_only=0"><span>Hide Failures</span></a>
 {% end %}{% end %}
-{% if single %}
-<h1><a href="/commits" class="no-link">Commits</a></h1>
-{% elif repo %}
+{% if repo %}
 <h1><a href="/commits" class="no-link">Commits</a> &middot; {{ repo }}</h1>
 {% elif user %}
 <h1><a href="/commits" class="no-link">Commits</a> &middot; user {{ escape(user) }}</h1>

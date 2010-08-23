@@ -85,5 +85,23 @@
 
 {% if changes %}
 <h2>Changes</h2>
+<div id="#changes">
 {{ changes }}
+</div>
 {% end %}
+
+<script>
+{% if line_notes %}
+add_line_notes({{line_notes}});
+{% end %}
+{% if current_user %}
+$(function () {
+    $('.add-bubble').each(function (elem) {
+        var $elem = $(this);
+        $elem.click(function () {
+            add_line_note($elem.attr('id').slice(8));
+        });
+    });
+});
+{% end %}
+</script>

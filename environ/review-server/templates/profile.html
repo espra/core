@@ -1,11 +1,20 @@
+{% if repo %}
+<div class="float-right" style="margin-bottom: 10px;">
+	<h1><a href="/profile/{{escape(url_escape(user))}}" class="no-link">{{escape(user)}}</a>/<a href="/repo/{{escape(url_escape(repo))}}" class="no-link">{{escape(repo)}}</a></h1>
+</div>
+{% else %}
 <h1>Profile &middot; {{escape(user)}}</h1>
+{% end %}
 
+{% if repo %}
+{% else %}
 <blockquote><table cellspacing="0px">
 <tr class="header-left">
 	<td class="header">GitHub</td>
 	<td><a href="http://github.com/{{escape(url_escape(user))}}">{% if user_obj and user_obj.name %}{{escape(user_obj.name)}}{% else %}{{escape(user)}}{% end %}</a></td>
 </tr>
 </table></blockquote>
+{% end %}
 
 {% if reviews %}
 <h2>Recent Reviews</h2>

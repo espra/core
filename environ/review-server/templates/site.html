@@ -10,7 +10,7 @@
 	</head>
 	<body>
 		<div id="header">
-			<div class="float-right">
+			<div id="nav-right">
 				{% if current_user %}
 				<a href="/profile/{{escape(url_escape(current_user))}}">Profile</a>
 				&nbsp;·&nbsp;
@@ -26,11 +26,19 @@
 			<a id="logo" href="/"><div id="tick">✓</div> git review</a> &nbsp;·&nbsp;
 			{% if repo %}
 			<a id="repo" href="/repo/{{_repo = escape(repo) }}">{{_repo}}</a>  &nbsp;·&nbsp;
+			{% if current_user %}
+			<a href="/dashboard/{{escape(url_escape(current_user))}}/{{_repo}}">Dashboard</a>
+			&nbsp;·&nbsp;
+			{% end %}
 			<a href="/activity/{{_repo}}">Activity Feed</a> &nbsp;·&nbsp;
 			<a href="/reviews/{{_repo}}">Reviews</a> &nbsp;·&nbsp;
 			<a href="/commits/{{_repo}}">Commits</a> &nbsp;·&nbsp;
 			<a href="/builds/{{_repo}}">Builds</a>
 			{% else %}
+			{% if current_user %}
+			<a href="/profile/{{escape(url_escape(current_user))}}">Profile</a>
+			&nbsp;·&nbsp;
+			{% end %}
 			<a href="/activity">Activity Feed</a> &nbsp;·&nbsp;
 			<a href="/reviews">Reviews</a> &nbsp;·&nbsp;
 			<a href="/commits">Commits</a> &nbsp;·&nbsp;
