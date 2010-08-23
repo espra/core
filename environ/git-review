@@ -231,6 +231,8 @@ def create_changelist(diff):
         changes[action].append(path)
     return changelist
 
+checker_prefix_path = ''
+
 def run_review_checks(diff, root):
 
     changelist = create_changelist(diff)
@@ -247,10 +249,13 @@ def run_review_checks(diff, root):
 
     print "=> Loading review hooks."
 
+    global checker_prefix_path
+
     for path in hooks:
+        checker_prefix_path = path.rsplit('revhook', 1)[0]
         builtins = {
             'BINARY_FILES': BINARY_FILES, 'run': run, 'checker': checker,
-            'realpath': realpath
+            'realpath': realpath, 'run_command': run_command
             }
         try:
             execfile(path, builtins)
@@ -264,16 +269,16 @@ def run_review_checks(diff, root):
     print "=> Running review checks."
     added_and_modified = changelist.added + changelist.modified
 
-    for checker_func, include, exclude in CHECKERS:
+    for checker_func, include, exclude, prefix in CHECKERS:
         changelist.template = checker_func.__doc__ or "%s"
         files = []
         for file in added_and_modified:
             for pattern in include:
-                if fnmatch(file, pattern) and file not in files:
+                if fnmatch(file, prefix + pattern) and file not in files:
                     files.append(file)
         for file in files[:]:
             for pattern in exclude:
-                if fnmatch(file, pattern):
+                if fnmatch(file, prefix + pattern):
                     files.remove(file)
         try:
             checker_func(changelist, files)
@@ -302,18 +307,17 @@ CHECKERS = []
 
 def checker(include=['*'], exclude=[]):
     def wrapper(func):
-        CHECKERS.append((func, include, exclude))
+        CHECKERS.append((func, include, exclude, checker_prefix_path))
         return func
     return wrapper
 
 def run(*args, **kwargs):
     for kw in ['retcode', 'reterror']:
-        if kw not in kwargs:
-            kwargs[kw] = True
+        kwargs[kw] = True
     for kw in ['redirect_stderr', 'redirect_stdout']:
-        if kw not in kwargs:
-            kwargs[kw] = False
-    return run_command(args, **kwargs)
+        kwargs[kw] = True
+    stdout, stderr, retcode = run_command(args, **kwargs)
+    return stdout.strip(), stderr.strip(), retcode
 
 # ------------------------------------------------------------------------------
 # Main Runner
