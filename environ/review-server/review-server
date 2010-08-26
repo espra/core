@@ -18,6 +18,7 @@ from hmac2 import HMAC
 from optparse import OptionParser
 from os import chdir, close, environ, getcwd, remove, urandom, write
 from os.path import dirname, isdir, join, realpath
+from re import compile as compile_regex, DOTALL, MULTILINE
 from Queue import Queue
 from shutil import rmtree
 from tempfile import mkstemp
@@ -31,6 +32,7 @@ from tornado.web import Application, HTTPError, RequestHandler
 from tornado.ioloop import IOLoop
 
 from markdown import markdown
+from pyutil.async import async as process
 from pyutil.crypto import create_tamper_proof_string, secure_string_comparison
 from pyutil.env import run_command
 from pyutil.io import IteratorParser
@@ -82,6 +84,8 @@ Loop = IOLoop.instance()
 
 repos = {}
 repo_paths = {}
+repo_maintainers = {}
+maintainer_repos = {}
 
 cache = None
 repo_commits = {}
@@ -308,13 +312,13 @@ def async(method):
 # Auth Support
 # ------------------------------------------------------------------------------
 
-def auth(async=True, cookie=True, xsrf=True, admin=True):
+def auth(async=True, cookie=True, xsrf=True):
     def wrapper(method):
         def __wrapper(handler, *args, **kwargs):
             handler._auto_finish = 0
             TornadoWebDispatcher(
                 authenticate(
-                    async, method, handler, cookie, xsrf, admin, *args, **kwargs
+                    async, method, handler, cookie, xsrf, *args, **kwargs
                     ),
                 handler
                 )
@@ -322,7 +326,7 @@ def auth(async=True, cookie=True, xsrf=True, admin=True):
         return __wrapper
     return wrapper
 
-def authenticate(async, method, handler, cookie, xsrf, admin, *args, **kwargs):
+def authenticate(async, method, handler, cookie, xsrf, *args, **kwargs):
     login = handler.get_argument('login', '')
     if login:
         token = handler.get_argument('token', '')
@@ -347,9 +351,6 @@ def authenticate(async, method, handler, cookie, xsrf, admin, *args, **kwargs):
         if login not in XSRF:
             XSRF[login] = HMAC(settings['xsrf_secret'], login).hexdigest()
         if not secure_string_comparison(XSRF[login], xsrf_token):
-            raise HTTPError(403)
-    if admin:
-        if login not in settings['admins']:
             raise HTTPError(403)
     if async:
         gen = method(handler, *args, **kwargs)
@@ -408,6 +409,31 @@ def get_difference(s1, s2):
         return s1[:head], s1[head:], ''
     return s1[:head], s1[head:tail], s1[tail:]
 
+# GitHub-flavoured markdown port adapted from http://gist.github.com/457617
+replace_newlines = compile_regex(r'^[\w\<][^\n]*(\n+)', MULTILINE).sub
+pre_extract = compile_regex(r'<pre>.*?</pre>', MULTILINE | DOTALL).sub
+pre_insert = compile_regex(r'{gfm-extraction-([0-9a-f]{32})\}').sub
+
+def gfm(text):
+    # Extract pre blocks.
+    extractions = {}
+    def pre_extraction_callback(matchobj):
+        digest = md5(matchobj.group(0)).hexdigest()
+        extractions[digest] = matchobj.group(0)
+        return "{gfm-extraction-%s}" % digest
+    text = pre_extract(pre_extraction_callback, text)
+    # In very clear cases, let newlines become <br /> tags.
+    def newline_callback(matchobj):
+        if len(matchobj.group(1)) == 1:
+            return matchobj.group(0).rstrip() + '  \n'
+        else:
+            return matchobj.group(0)
+    text = replace_newlines(newline_callback, text)
+    # Insert pre block extractions.
+    def pre_insert_callback(matchobj):
+        return '\n\n' + extractions[matchobj.group(1)]
+    return pre_insert(pre_insert_callback, text)
+
 css_classes = set([
     'c', 'cm', 'cp', 'cs', 'c1', 'err', 'g', 'gd', 'ge', 'gh', 'gi',
     'go', 'gp', 'gr', 'gs', 'gt', 'gu', 'k', 'kc', 'kd', 'kn', 'kp',
@@ -425,7 +451,7 @@ def render_text(text, css_classes=css_classes):
         except UnicodeDecodeError:
             return "ERROR: text encoding."
     return sanitise(
-        markdown(text, ['codehilite']), secure_id_prefix=secure_id_prefix,
+        markdown(gfm(text), ['codehilite']), secure_id_prefix=secure_id_prefix,
         valid_css_classes=css_classes
         )
 
@@ -511,6 +537,14 @@ def init_appengine(*args, **kwargs):
     error, response = EVENTS.pop(marker)
     if error:
         raise response
+
+@worker(GAE_QUEUE)
+def get_repo(repo):
+    uname2platforms.update(settings['platforms'])
+    for platform in uname2platforms.values():
+        if platform not in platforms:
+            platforms.append(platform)
+
 
 @worker(GIT_QUEUE)
 def apply_patch(repo, review_id, upstream, patch_file):
@@ -761,10 +795,8 @@ def get_slave_job(repo, slave_id, token, uname, span=timedelta(seconds=1)):
             parent = commit
     elif review:
         parent = review
-        type = 'review'
     elif commit:
         parent = commit
-        type = 'commit'
     else:
         slave.put()
         return
@@ -988,7 +1020,7 @@ def get_commits(repo, version, user, failures_only, single, next, n=101):
         commits = commits[:n-1]
     builds = None
     if single and commits:
-        version = commits[0].key().name().split(':')[1]
+        version = commits[0].version
         builds = Build.all().filter('r =', repo).filter('v =', version).order(
             '-d'
             ).fetch(1000)
@@ -1313,13 +1345,6 @@ def get_diff_between(repo, r1, r2):
 # Datastore Models
 # ------------------------------------------------------------------------------
 
-class A(db.Model): # normal id; parent = Review
-    user = db.StringProperty(name='u')
-    stage = db.StringProperty(name='g')
-    d = db.DateTimeProperty(auto_now_add=True)
-
-Appraisal = A
-
 class B(db.Model): # normal id
     repo = db.StringProperty(name='r')
     slave = db.IntegerProperty(name='s')
@@ -1333,12 +1358,15 @@ class B(db.Model): # normal id
 
 Build = B
 
-class C(db.Model): # normal id; parent = Review
+class C(db.Model): # normal id; parent = Commit/Review
     user = db.StringProperty(name='u')
     text = db.TextProperty(name='t')
     version = db.StringProperty(name='v')
-    line = db.IntegerProperty(name='l', default=0)
+    line = db.IntegerProperty(name='l')
     file = db.StringProperty(name='f', default='')
+    d = db.DateTimeProperty(auto_now_add=True)
+
+    stage = db.StringProperty(name='g')
     d = db.DateTimeProperty(auto_now_add=True)
 
 Comment = C
@@ -1365,7 +1393,7 @@ class G(db.Model): # id = <repo>:<git-revision>
     has_failure = db.BooleanProperty(name='h', default=False)
     user = db.StringProperty(name='u') # #unknown
     d = db.DateTimeProperty()
-    m = db.DateTimeProperty(auto_now=True)
+    m = db.DateTimeProperty()
 
 Commit = G
 
@@ -1422,6 +1450,13 @@ class U(db.Model): # key = github username
 
 User = U
 
+class Y(db.Model): # key = repo name
+    maintainer = db.StringProperty(name='m')
+    core_devs = db.StringListProperty(name='c')
+    platforms = db.TextProperty(name='p')
+
+Repo = Y
+
 # ------------------------------------------------------------------------------
 # Handlers
 # ------------------------------------------------------------------------------
@@ -1434,13 +1469,9 @@ class BaseHandler(RequestHandler):
     def get_current_user(self):
         return self.get_secure_cookie('login')
 
-    def is_admin_user(self):
-        return self.current_user in settings['admins']
-
     def display(self, template, **kwargs):
         kwargs['render_text'] = render_text
         kwargs['get_gravatar'] = get_gravatar
-        kwargs['is_admin'] = self.is_admin_user()
         user = self.current_user
         if user:
             if user not in XSRF:
@@ -1458,7 +1489,7 @@ class BaseHandler(RequestHandler):
             return content
         self.render_('site.html', content=content, **kwargs)
 
-    def render_(self, *args, **kwargs):
+    def render_site(self, *args, **kwargs):
         if 'title' not in kwargs:
             kwargs['title'] = self.title
         if 'repo' in kwargs:
@@ -1471,12 +1502,16 @@ class BaseHandler(RequestHandler):
         self.render(*args, **kwargs)
 
     def errmsg(self, errmsg, repo=None):
-        self.render_(
+        self.render_site(
             'site.html', content='', errmsg=errmsg, repo=repo
             )
 
     def get(self):
         self.errmsg("Not implemented yet.")
+
+    @process
+    def is_repo_admin(self, repo):
+        yield get_repo(repo)
 
 class RootHandler(BaseHandler):
 
@@ -1502,7 +1537,7 @@ class RepositoriesHandler(BaseHandler):
         for repo in sorted(repos):
             out('<li><a href="/repo/%s">%s</a></li>' % (repo, repo))
         out('</ul>')
-        self.render_('site.html', content='\n'.join(content))
+        self.render_site('site.html', content='\n'.join(content))
 
 class ActivityHandler(BaseHandler):
 
@@ -1543,7 +1578,9 @@ class DiffHandler(BaseHandler):
         content = (
             '<h1>Diff &middot; %s &rarr; %s</h1>%s' % (r1, r2, changes)
             )
-        self.render_('site.html', content=content, errmsg=None, title='diff')
+        self.render_site(
+            'site.html', content=content, errmsg=None, title='diff'
+            )
 
 class ProfileHandler(BaseHandler):
 
@@ -1624,6 +1661,7 @@ Hehe.
             line[-1] = render_text(line[-1])
         if line_notes:
             line_notes = encode_json(line_notes)
+        line_notes = None
         self.display(
             'review', review=review, repos=repos, repo=repo, base=base,
             gravatars=GRAVATARS, github=settings['github_account'],
@@ -1632,7 +1670,7 @@ Hehe.
             line_notes=line_notes
             )
 
-    @auth(admin=False)
+    @auth()
     def post(self):
         pass
 
@@ -1657,7 +1695,7 @@ class ReviewsHandler(BaseHandler):
             review_stages=review_stages, render_text=render_text
             )
 
-    @auth(xsrf=False, admin=False)
+    @auth(xsrf=False)
     def post(self):
 
         get = self.get_argument
@@ -1944,7 +1982,7 @@ class SlavesHandler(BaseHandler):
             'slaves', slaves=slaves, platforms=uname2platforms, more=more
             )
 
-    @auth(admin=False)
+    @auth()
     def post(self):
         slave_id = yield create_slave(self.current_user)
         self.redirect('/slave/%s' % slave_id)
@@ -2058,7 +2096,12 @@ def main(argv=None):
     _repos = settings['repos']
     if _repos:
         for repo in _repos:
-            repos[repo] = tuple(_repos[repo])
+            repos[repo] = tuple(_repos[repo]['github'])
+            maintainer = _repos[repo]['maintainer']
+            repo_maintainers[repo] = maintainer
+            if maintainer not in maintainer_repos:
+                maintainer_repos[maintainer] = []
+            maintainer_repos[maintainer].append(repo)
             repo_paths[repo] = repo_path = join(repo_home, repo)
             if options.dev:
                 continue
@@ -2070,6 +2113,9 @@ def main(argv=None):
             if not git('config', 'remote.upstream.url', exit_on_error=False):
                 upstream_url = 'https://github.com/%s/%s.git' % repos[repo]
                 git('remote', 'add', 'upstream', upstream_url)
+
+    for values in maintainer_repos.values():
+        values.sort()
 
     application = Application([
         (r"/repositories", RepositoriesHandler),
@@ -2111,11 +2157,6 @@ def main(argv=None):
     http_server = HTTPServer(application)
     http_server.listen(port)
 
-    uname2platforms.update(settings['platforms'])
-    for platform in uname2platforms.values():
-        if platform not in platforms:
-            platforms.append(platform)
-
     set_max_connections(50)
     def cache_init(ipc=settings['redis_socket_file']):
         return Redis(unix_socket=ipc)
@@ -2136,10 +2177,20 @@ def main(argv=None):
         logging.info("Storing commit data for %s" % repo)
         commit = Commit.all().filter('r =', repo).get()
         if commit:
-            repo_commits[repo] = commit.key().name().split(':')[1]
+            repo_commits[repo] = commit.version
         else:
             commits = _get_new_commits(repo, 'upstream/master^')
             _create_commits(repo, commits)
+
+    if repos:
+        repo_keys = repos.keys()
+        to_save = []; save = to_save.append
+        for key, repo in zip(repo_keys, Repo.get_by_key_name(repo_keys)):
+            if not repo:
+                repo = Repo(key_name=key)
+            repo.maintainer = repo_maintainers[key]
+            save(repo)
+        db.put(to_save)
 
     logging.info("The git review server is listening on port %d ..." % port)
     Loop.start()
@@ -2150,4 +2201,3 @@ def main(argv=None):
 
 if __name__ == '__main__':
     main()
-
