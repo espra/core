@@ -1,4 +1,4 @@
-{% if is_admin %}
+{% if current_user %}
 <form action="/slaves" method="post" id="form">
 	{% if xsrf_token %}
 	<input type="hidden" name="xsrf_token" value="{{xsrf_token}}" />
@@ -10,8 +10,7 @@
 <blockquote><table cellspacing="0px" width="100%">
 <tr class="header">
 	<td>ID</td>
-	<td>Recent Platform</td>
-	<td>Official Platform</td>
+	<td>Recent Uname</td>
 	<td>Owner</td>
 	<td>Working</td><td>Done</td><td>Last Seen</td>
 	<td>Status</td>
@@ -20,12 +19,11 @@
 <tr>
 	<td><a href="/slave/{{slave.key().id()}}">{{ slave.key().id() }}</a></td>
 	<td>{{ escape((slave.recent_platform or '-').lower()) }}</td>
-	<td>{{ escape(platforms.get(slave.recent_platform, '-').lower()) }}</td>
 	<td>{{ escape(slave.owner) }}</td>
 	<td>{% if slave.working %}✓{% else %}<span class="inactive">✗</span>{% end %}</td>
 	<td>{{ slave.jobs_done }}</td>
 	<td>{% if slave.last_seen %}<span class="timestamp">{{ slave.last_seen.strftime('%s') }}</span>{% else %}-{% end %}</td>
-	<td>{% if slave.disabled %}<span class="inactive">disabled</span>{% else %}<span class="active">active</span>{% end %}</td>
+	<td>{% if slave.authorised_repos %}<span class="active">active</span>{% else %}<span class="inactive">inactive</span>{% end %}</td>
 </tr>
 {% end %}
 </table></blockquote>

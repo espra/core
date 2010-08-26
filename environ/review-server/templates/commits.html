@@ -24,8 +24,12 @@
 {% if not single %}
 <tr class="header-small">
 	<td></td>
+	{% if repo %}
 	{% for platform in platforms %}
 	<td>{{escape(platform.rsplit(' ', 1)[0])}}<br />{{escape(platform.rsplit(' ', 1)[1])}}</td>
+	{% end %}
+	{% else %}
+	<td>Builds</td>
 	{% end %}
 </tr>
 {% end %}
@@ -35,7 +39,7 @@
 
 		<img class="gravatar-activity" src="http://www.gravatar.com/avatar/{% if commit.user in gravatars %}{{gravatars[commit.user]}}{% else %}{{ md5(commit.author_email).hexdigest() }}{% end %}?s=32&amp;d=http%3A%2F%2Fgithub.com%2Fimages%2Fgravatars%2Fgravatar-32.png" />
 
-		{% if commit.user %}<a href="/profile/{{escape(url_escape(commit.user))}}" class="no-link">{% end %}{{escape(commit.user or commit.author_email or '')}}{% if commit.user %}</a>{% end %} &nbsp;&middot;&nbsp; {% if single %}<code>{{escape(version)}}</code>{% else %}<a href="/commit/{{commit.repo}}/{{escape(commit.version)}}"><code>{{escape(commit.version[:8])}}</code></a>{% end %} &nbsp;&middot;&nbsp; <a href="/commits/{{commit.repo}}">{{commit.repo}}</a>
+		{% if commit.user %}<a href="/profile/{{url_escape(commit.user)}}" class="bold-link">{% end %}{{escape(commit.user or commit.author_email or '')}}{% if commit.user %}</a>{% end %} &nbsp;&middot;&nbsp; {% if single %}<code>{{escape(version)}}</code>{% else %}<a href="/commit/{{commit.repo}}/{{escape(commit.version)}}"><code>{{escape(commit.version[:8])}}</code></a>{% end %} &nbsp;&middot;&nbsp; <a href="/commits/{{commit.repo}}">{{commit.repo}}</a>
 		{% if single %}
 		&nbsp;&middot;&nbsp;
 		<a href="http://github.com/{{'%s/%s' % repos[commit.repo]}}/commit/{{escape(commit.version)}}">github</a>
@@ -54,13 +58,25 @@
 
 	</td>
 	{% if not single %}
+	{% if repo %}
 	{% for platform in platforms %}{% if platform in commit.passed_builds %}
-	<td><a class="build-pass-bubble" href="/builds/{{commit.repo}}/{{escape(url_escape(platform))}}/{{escape(commit.version)}}">✓ &nbsp;pass</a></div></td>
+	<td><a class="build-pass-bubble" href="/builds/{{commit.repo}}/{{url_escape(platform)}}/{{url_escape(commit.version)}}">✓ &nbsp;pass</a></div></td>
 	{% elif platform in commit.failed_builds %}
-	<td><a class="build-fail-bubble" href="/builds/{{commit.repo}}/{{escape(url_escape(platform))}}/{{escape(commit.version)}}">✗ &nbsp;fail</a></td>
+	<td><a class="build-fail-bubble" href="/builds/{{commit.repo}}/{{url_escape(platform)}}/{{url_escape(commit.version)}}">✗ &nbsp;fail</a></td>
+	{% elif platform in commit.needed_builds %}
+	<td></td>
 	{% else %}
 	<td>-</td>
 	{% end %}{% end %}
+	{% else %}
+	{% if commit.has_failure %}
+	<td><a class="build-fail-bubble" href="/builds/{{commit.repo}}//{{url_escape(commit.version)}}">✗ &nbsp;fail</a></td>
+	{% elif not commit.needed_builds %}
+	<td><a class="build-pass-bubble" href="/builds/{{commit.repo}}//{{url_escape(commit.version)}}">✗ &nbsp;pass</a></td>
+	{% else %}
+	<td>-</td>
+	{% end %}
+	{% end %}
 	{% end %}
 </tr>
 {% end %}

@@ -11,7 +11,7 @@
 	<td class="left-pad-none">
 		<img class="gravatar" src="http://www.gravatar.com/avatar/{% if review.user in gravatars %}{{gravatars[review.user]}}{% else %}{{ 'not-available' }}{% end %}?s=32&amp;d=http%3A%2F%2Fgithub.com%2Fimages%2Fgravatars%2Fgravatar-32.png" />
 
-		<a href="/review/{{escaped_repo = escape(url_escape(review.repo))}}/{{escaped_patch_base = escape(review.version.rsplit('/', 1)[0])}}/{{current_patch_number = int(review.version.rsplit('/', 1)[1])}}">{{escape(review.version)}}</a>
+		<a href="/review/{{escaped_repo = url_escape(review.repo)}}/{{escaped_patch_base = escape(review.version.rsplit('/', 1)[0])}}/{{current_patch_number = int(review.version.rsplit('/', 1)[1])}}">{{escape(review.version)}}</a>
 		{% if base.latest != 1 %}
 		&nbsp;&middot;&nbsp;
 		{% for patch_number in range(int(base.latest), 0, -1) %}{% if patch_number != current_patch_number %}<a href="/review/{{escaped_repo}}/{{escaped_patch_base}}/{{patch_number}}">{{patch_number}}</a>{% if not ((current_patch_number == 1) and (patch_number == 2) or (patch_number == 1)) %}, {% end %}{% end %}{% end %}
@@ -28,7 +28,7 @@
 		{% if base.cc %}
 		{% for user in base.cc %}
 		{% if ('@' not in user) and user != review.user %}
-		<a href="/profile/{{ escape(url_escape(user)) }}">{{escape(user)}}</a>
+		<a href="/profile/{{ url_escape(user) }}">{{escape(user)}}</a>
 		{% end %}
 		{% end %}
 		{% end %}
@@ -45,7 +45,7 @@
 		{% end %}
 	</td>
 	<td class="center">
-		<a href="{{github_url = 'http://github.com/' + escape(url_escape(github)) + '/' + escape(url_escape(review.repo)) + '/compare/'}}master...{{escape(url_escape(review.version.replace('/', ';')))}}">diff</a>
+		<a href="{{github_url = 'http://github.com/' + url_escape(github) + '/' + url_escape(review.repo) + '/compare/'}}master...{{url_escape(review.version.replace('/', ';'))}}">diff</a>
 	</td>
 </tr>
 </table></blockquote>
@@ -83,6 +83,10 @@
 </table></blockquote>
 {% end %}
 
+{% if current_user %}
+<h2>Comments</h2>
+{% end %}
+
 {% if changes %}
 <h2>Changes</h2>
 <div id="#changes">
@@ -95,6 +99,8 @@
 add_line_notes({{line_notes}});
 {% end %}
 {% if current_user %}
+var xsrf_token = "{{xsrf_token}}";
+var version = "{{escape(review.version)}}";
 $(function () {
     $('.add-bubble').each(function (elem) {
         var $elem = $(this);

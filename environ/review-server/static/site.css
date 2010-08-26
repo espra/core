@@ -19,7 +19,7 @@ a:hover {
 }
 
 a.button {
-	background: transparent url('/static/bg_button_a.gif') no-repeat scroll top right;
+	background: transparent url('/static/bg-button-a.gif') no-repeat scroll top right;
 	color: #444;
 	display: block;
 	float: right;
@@ -28,6 +28,7 @@ a.button {
 	margin-right: 6px;
 	padding-right: 18px;
 	text-decoration: none;
+	margin-bottom: 10px;
 }
 
 a.button:active {
@@ -37,7 +38,7 @@ a.button:active {
 }
 
 a.button span {
-	background: transparent url('/static/bg_button_span.gif') no-repeat;
+	background: transparent url('/static/bg-button-span.gif') no-repeat;
 	display: block;
 	line-height: 14px;
 	padding: 5px 0 5px 18px;
@@ -75,7 +76,7 @@ code, pre {
 	font-size: 14px;
 }
 
-code {
+.note-text code, .subject code {
 	background-color: #f0f0f0;
 	border: 1px solid #dadada;
 	padding: 1px 3px;
@@ -145,6 +146,10 @@ pre {
 	padding-left: 10px;
 	margin-left: 20px;
 	margin-top: 20px;
+}
+
+strong {
+	font-weight: bold;
 }
 
 td {
@@ -281,7 +286,7 @@ table.patch td.note-list {
 /* the following table.patch styles are adapted from github's css */
 
 table.patch td.patch-title {
-	background: #eee url("/static/patch-header.gif") repeat-x;
+	background: #eee url('/static/patch-header.gif') repeat-x;
 	color: #333;
 	border-bottom: 1px solid #ccc;
 	padding: 10px;
@@ -338,6 +343,7 @@ table.patch td.del {
 
 table.patch td.del strong {
 	background-color: #faa;
+	font-weight: normal;
 }
 
 table.patch td.add {
@@ -346,6 +352,7 @@ table.patch td.add {
 
 table.patch td.add strong {
 	background-color: #afa;
+	font-weight: normal;
 }
 
 table.patch td.nrm {
@@ -408,6 +415,7 @@ a.note-button {
 	-moz-border-radius: 10px;
 	-webkit-border-radius: 10px;
 	border-radius: 10px;
+	border: 1px solid transparent;
 	color: #333;
 	font-size: 12px;
 	padding: 3px 8px 3px 8px;
@@ -465,7 +473,7 @@ ul {
 }
 
 #header {
-	background: #eee url("/static/patch-header.gif") repeat-x;
+	background: #eee url('/static/patch-header.gif') repeat-x;
 	color: #333;
 	border-bottom: 1px solid #ccc;
 	padding: 10px;

@@ -84,13 +84,12 @@ Loop = IOLoop.instance()
 
 repos = {}
 repo_paths = {}
+repo_cache = {}
+repo_commits = {}
 repo_maintainers = {}
 maintainer_repos = {}
 
 cache = None
-repo_commits = {}
-platforms = []
-uname2platforms = {}
 secure_id_prefix = hexlify(urandom(18))
 
 review_stages = {
@@ -418,7 +417,7 @@ def gfm(text):
     # Extract pre blocks.
     extractions = {}
     def pre_extraction_callback(matchobj):
-        digest = md5(matchobj.group(0)).hexdigest()
+        digest = md5(matchobj.group(0) + str(len(extractions))).hexdigest()
         extractions[digest] = matchobj.group(0)
         return "{gfm-extraction-%s}" % digest
     text = pre_extract(pre_extraction_callback, text)
@@ -538,13 +537,33 @@ def init_appengine(*args, **kwargs):
     if error:
         raise response
 
-@worker(GAE_QUEUE)
-def get_repo(repo):
-    uname2platforms.update(settings['platforms'])
-    for platform in uname2platforms.values():
-        if platform not in platforms:
-            platforms.append(platform)
+def setup_repo_platforms(repo):
+    if not repo.platforms:
+        repo._platforms = []
+        repo._unames = {}
+        repo_cache[repo.key().name()] = repo
+        return
+    repo._unames = unames = decode_yaml(repo.platforms)
+    repo._platforms = platforms = []
+    if unames and isinstance(unames, dict):
+        for platform in unames.values():
+            if platform not in platforms:
+                platforms.append(platform)
+    else:
+        repo._unames = {}
+    repo_cache[repo.key().name()] = repo
 
+@worker(GAE_QUEUE)
+def update_repo(repo, platforms, core_devs):
+    repo_obj = Repo.get_by_key_name(repo)
+    repo_obj.platforms = platforms.strip()
+    repo_obj.core_devs = filter(None, core_devs.strip().splitlines())
+    repo_obj.put()
+    setup_repo_platforms(repo_obj)
+
+@worker(GAE_QUEUE)
+def get_authorised_slaves(repo):
+    return Slave.all().filter('a =', repo).order('__key__').fetch(1000)
 
 @worker(GIT_QUEUE)
 def apply_patch(repo, review_id, upstream, patch_file):
@@ -684,7 +703,7 @@ def _create_commits(repo, data):
                     commit.user = '#'
         else:
             commit.user = '#'
-        commit.needed_builds = platforms
+        commit.needed_builds = repo_cache[repo]._platforms
         new_commit(commit)
     db.put(commits)
 
@@ -746,25 +765,38 @@ def get_slave(slave_id, next=None, n=101):
     return slave, builds, pending, more
 
 @worker(GAE_QUEUE)
-def change_slave_details(action, slave_id, user, is_admin):
+def change_slave_details(action, slave_id, user):
     slave = Slave.get_by_id(int(slave_id))
     if not slave:
         return
+    if user != slave.owner:
+        return 2
     if action == 'reset':
-        if is_admin or user == slave.owner:
-            slave.token = hexlify(urandom(18))
-            slave.put()
+        slave.token = hexlify(urandom(18))
+        slave.put()
+        return 1
+    if action.startswith('auth:'):
+        repo = action[5:]
+        if repo not in repos:
+            return 2
+        if slave.authorised_repos:
+            if repo in slave.authorised_repos:
+                return 1
+            slave.authorised_repos.append(repo)
+        else:
+            slave.authorised_repos = [repo]
+        slave.put()
+        return 1
+    if action.startswith('deauth:'):
+        repo = action[7:]
+        if repo not in repos:
+            return 2
+        if not slave.authorised_repos:
             return 1
-    if action == 'status':
-        if is_admin:
-            slave.disabled = not slave.disabled
-            slave.put()
-            return 1
-    if action.startswith('set_owner:'):
-        if is_admin:
-            slave.owner = action[10:]
-            slave.put()
-            return 1
+        while repo in slave.authorised_repos:
+            slave.authorised_repos.remove(repo)
+        slave.put()
+        return 1
     return 2
 
 @worker(GAE_QUEUE)
@@ -776,7 +808,7 @@ def get_slave_job(repo, slave_id, token, uname, span=timedelta(seconds=1)):
         raise ValueError("Slave %s has been disabled." % slave_id)
     slave.last_seen = datetime.now()
     slave.recent_platform = uname
-    platform = uname2platforms.get(uname)
+    platform = repo_cache[repo]._unames.get(uname)
     if not platform:
         slave.put()
         return
@@ -960,7 +992,7 @@ def get_build_data(build_id):
         db.Key.from_path('D', 'd', parent=build_key),
         get_key_for_version(build.repo, build.version)
         ])
-    rebuild_state = uname2platforms.get(build.uname, None)
+    rebuild_state = repo_cache[build.repo]._unames.get(build.uname, None)
     if rebuild_state:
         if rebuild_state in target.needed_builds:
             rebuild_state = 1
@@ -1179,7 +1211,11 @@ def format_diff(diff, strip_first=1, add_bubbles=None):
             filename = line.split()[-1]
             binary = create = delete = end = 0
             while 1:
-                line = parser.next()
+                try:
+                    line = parser.next()
+                except StopIteration:
+                    end = 1
+                    break
                 if line.startswith('new file mode'):
                     create = line
                 elif line.startswith('Binary files'):
@@ -1225,8 +1261,11 @@ def format_diff(diff, strip_first=1, add_bubbles=None):
             )
             line = parser.next()
         if (not in_delete) and line.startswith('-'):
-            next = ori_next = parser.next()
-            if next.startswith('+'):
+            try:
+                next = ori_next = parser.next()
+            except StopIteration:
+                next = None
+            if next and next.startswith('+'):
                 line = line[1:]
                 next = next[1:]
                 h1, d1, t1 = get_difference(line, next)
@@ -1272,7 +1311,7 @@ def format_diff(diff, strip_first=1, add_bubbles=None):
                 left += 1
                 right += 1
                 continue
-            else:
+            elif next:
                 parser.push(ori_next)
         if line.startswith('+'):
             type = 'add'
@@ -1430,7 +1469,7 @@ class R(db.Model): # id = incrementing integer; parent = ReviewBase
 Review = R
 
 class S(db.Model): # normal id
-    disabled = db.BooleanProperty(name='d', default=False)
+    authorised_repos = db.StringListProperty(name='a')
     working = db.BooleanProperty(name='w', default=False)
     jobs_done = db.IntegerProperty(name='j', default=0)
     last_seen = db.DateTimeProperty(name='l')
@@ -1487,7 +1526,7 @@ class BaseHandler(RequestHandler):
             content = ''
         if 'return_content' in kwargs:
             return content
-        self.render_('site.html', content=content, **kwargs)
+        self.render_site('site.html', content=content, **kwargs)
 
     def render_site(self, *args, **kwargs):
         if 'title' not in kwargs:
@@ -1509,9 +1548,20 @@ class BaseHandler(RequestHandler):
     def get(self):
         self.errmsg("Not implemented yet.")
 
-    @process
-    def is_repo_admin(self, repo):
-        yield get_repo(repo)
+    def is_repo_admin(self, repo_name):
+        maintainer = repo_maintainers.get(repo_name, None)
+        if not maintainer:
+            return
+        if self.current_user == maintainer:
+            return True
+
+    def is_repo_dev(self, repo_name):
+        if self.is_repo_admin(repo_name):
+            return True
+        repo = repo_cache.get(repo_name, None)
+        if repo and repo.core_devs:
+            if self.current_user in repo.core_devs:
+                return True
 
 class RootHandler(BaseHandler):
 
@@ -1522,11 +1572,40 @@ class RepoHandler(BaseHandler):
 
     title = 'repository'
 
+    @async
     def get(self, repo):
         if repo not in repos:
             self.errmsg("No such repository found.")
             return
-        self.display('repo', repo=repo, github=repos[repo])
+        repo_obj = repo_cache[repo]
+        if repo_obj.platforms:
+            try:
+                platforms = decode_yaml(repo_obj.platforms)
+                if not isinstance(platforms, dict):
+                    platforms = None
+            except Exception:
+                platforms = None
+        else:
+            platforms = None
+        slaves = yield get_authorised_slaves(repo)
+        self.display(
+            'repo', repo=repo, github=repos[repo], repo_obj=repo_obj,
+            platforms=platforms, slaves=slaves
+            )
+
+    @auth()
+    def post(self, repo):
+        if repo not in repos:
+            self.errmsg("No such repository found.")
+            return
+        if repo_maintainers[repo] != self.current_user:
+            self.errmsg("You are not authorised to edit this repository.")
+            return
+        get = self.get_argument
+        platforms = get('platforms', '')
+        core_devs = get('core_devs', '')
+        yield update_repo(repo, platforms, core_devs)
+        self.redirect('/repo/%s' % repo)
 
 class RepositoriesHandler(BaseHandler):
 
@@ -1604,6 +1683,10 @@ class ProfileHandler(BaseHandler):
         commits = yield get_commits(
             repo, None, user, None, None, None, n=31
             )
+        if repo:
+            platforms = repo_cache[repo]._platforms
+        else:
+            platforms = None
         if commits and commits[0]:
             commits = self.display(
                 'commits', commits=commits[0], commits_url='/commits',
@@ -1753,7 +1836,7 @@ class ReviewsHandler(BaseHandler):
         review.subject = message
         review.repo = repo
         review.upstream_revision = upstream
-        review.needed_builds = platforms
+        review.needed_builds = repo_cache[repo]._platforms
         review.user = user
         review.version = review_id
 
@@ -1808,9 +1891,13 @@ class CommitsHandler(BaseHandler):
         if repo:
             commits_url += escape(quote('/%s' % repo), 1)
         changes = None
-        if single and commits:
-            diff = yield get_diff(repo, commits[0].version)
-            changes = format_diff(diff, add_bubbles=self.current_user)
+        platforms = []
+        if repo:
+            platforms = repo_cache[repo]._platforms
+        if single:
+            if commits:
+                diff = yield get_diff(repo, commits[0].version)
+                changes = format_diff(diff, add_bubbles=self.current_user)
         self.display(
             'commits', commits=commits, more=more, builds=builds, single=single,
             failures_only=failures_only, version=version, user=user,
@@ -1858,11 +1945,12 @@ class BuildHandler(BaseHandler):
             else:
                 timings = data.timings
                 stderr, stdout = decode_json(data.payload)
+        is_repo_dev = self.is_repo_dev(build.repo)
         self.display(
             'build', build_id=build_id, build=build, traceback=traceback,
             timings=timings, stdout=stdout, stderr=stderr, data=data,
-            rebuild_state=rebuild_state, platforms=uname2platforms,
-            repo=build.repo
+            rebuild_state=rebuild_state, unames=repo_cache[build.repo]._unames,
+            repo=build.repo, is_repo_dev=is_repo_dev
             )
 
     @async
@@ -1905,7 +1993,7 @@ class BuildHandler(BaseHandler):
                 add_stdout(out)
                 if out:
                     has_failure = True
-        platform = uname2platforms.get(uname)
+        platform = repo_cache[repo]._unames.get(uname)
         build = yield create_build(
             slave_id, token, repo, revision, uname, platform, executed, payload,
             timings, traceback, has_failure
@@ -1978,9 +2066,7 @@ class SlavesHandler(BaseHandler):
     def get(self):
         next = self.get_argument('next', '')
         slaves, more = yield get_slaves(next)
-        self.display(
-            'slaves', slaves=slaves, platforms=uname2platforms, more=more
-            )
+        self.display('slaves', slaves=slaves, more=more)
 
     @auth()
     def post(self):
@@ -1999,17 +2085,18 @@ class SlaveHandler(BaseHandler):
             self.errmsg("No records found for slave %s" % slave_id)
             return
         slave, builds, pending, more = slave_data
-        show_token = self.is_admin_user() or (self.current_user == slave.owner)
+        show_token = self.current_user == slave.owner
         self.display(
             'slave', slave_id=slave_id, slave=slave, show_token=show_token,
-            builds=builds, more=more, pending=pending
+            builds=builds, more=more, pending=pending,
+            repos=maintainer_repos.get(self.current_user, None)
             )
 
     @auth()
     def post(self, slave_id):
         action = self.get_argument('action', '')
         retcode = yield change_slave_details(
-            action, slave_id, self.current_user, self.is_admin_user()
+            action, slave_id, self.current_user
             )
         if not retcode:
             self.errmsg("Couldn't find a record for slave %s." % slave_id)
@@ -2022,8 +2109,7 @@ class SlaveHandler(BaseHandler):
 class PostReceiveHandler(BaseHandler):
 
     @async
-    def post(self):
-        repo = self.get_argument('repo')
+    def post(self, repo):
         commits = yield get_new_commits(repo, repo_commits[repo])
         yield create_commits(repo, commits)
         self.write('OK')
@@ -2039,7 +2125,7 @@ class RebuildHandler(BaseHandler):
         version = get('version')
         platform = get('platform')
         build_id = get('build_id')
-        if platform not in platforms:
+        if platform not in repo_cache[repo]._platforms:
             self.errmsg("%s is not supported atm." % platform)
             return
         yield rebuild(repo, version, platform)
@@ -2146,7 +2232,7 @@ def main(argv=None):
         (r"/activity/([^/]*)", ActivityHandler),
         (r"/activity/([^/]*)/(.*)", ActivityHandler),
         (r"/activity", ActivityHandler),
-        (r"/post-receive", PostReceiveHandler),
+        (r"/post-receive/([^/]*)", PostReceiveHandler),
         (r"/rebuild", RebuildHandler),
         (r"/diff/([^/]*)/([^/]*)/([^/]*)", DiffHandler),
         (r"/preview", PreviewHandler),
@@ -2191,6 +2277,8 @@ def main(argv=None):
             repo.maintainer = repo_maintainers[key]
             save(repo)
         db.put(to_save)
+        for repo in to_save:
+            setup_repo_platforms(repo)
 
     logging.info("The git review server is listening on port %d ..." % port)
     Loop.start()

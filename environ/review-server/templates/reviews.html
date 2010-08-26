@@ -38,7 +38,7 @@
 		{% if bases[review.version].cc %}
 		{% for user in bases[review.version].cc %}
 		{% if ('@' not in user) and user != review.user %}
-		<a href="/profile/{{ escape(url_escape(user)) }}">{{escape(user)}}</a>
+		<a href="/profile/{{ url_escape(user) }}">{{escape(user)}}</a>
 		{% end %}
 		{% end %}
 		{% end %}
@@ -55,7 +55,7 @@
 		{% end %}
 	</td>
 	<td class="center">
-		<a href="{{github_url = 'http://github.com/' + escape(url_escape(github)) + '/' + review.repo + '/compare/'}}master...{{escape(url_escape(review.version.replace('/', ';')))}}">diff</a>
+		<a href="{{github_url = 'http://github.com/' + url_escape(github) + '/' + review.repo + '/compare/'}}master...{{url_escape(review.version.replace('/', ';'))}}">diff</a>
 	</td>
 </tr>
 {% end %}

@@ -12,7 +12,7 @@
 		<div id="header">
 			<div id="nav-right">
 				{% if current_user %}
-				<a href="/profile/{{escape(url_escape(current_user))}}">Profile</a>
+				<a href="/profile/{{url_escape(current_user)}}">Profile</a>
 				&nbsp;·&nbsp;
 				{% end %}
 				<a href="/slaves">Slaves</a>
@@ -27,7 +27,7 @@
 			{% if repo %}
 			<a id="repo" href="/repo/{{_repo = escape(repo) }}">{{_repo}}</a>  &nbsp;·&nbsp;
 			{% if current_user %}
-			<a href="/dashboard/{{escape(url_escape(current_user))}}/{{_repo}}">Dashboard</a>
+			<a href="/dashboard/{{url_escape(current_user)}}/{{_repo}}">Dashboard</a>
 			&nbsp;·&nbsp;
 			{% end %}
 			<a href="/activity/{{_repo}}">Activity Feed</a> &nbsp;·&nbsp;
@@ -36,7 +36,7 @@
 			<a href="/builds/{{_repo}}">Builds</a>
 			{% else %}
 			{% if current_user %}
-			<a href="/profile/{{escape(url_escape(current_user))}}">Profile</a>
+			<a href="/profile/{{url_escape(current_user)}}">Profile</a>
 			&nbsp;·&nbsp;
 			{% end %}
 			<a href="/activity">Activity Feed</a> &nbsp;·&nbsp;

@@ -1,6 +1,6 @@
 {% if repo %}
 <div class="float-right" style="margin-bottom: 10px;">
-	<h1><a href="/profile/{{escape(url_escape(user))}}" class="no-link">{{escape(user)}}</a>/<a href="/repo/{{escape(url_escape(repo))}}" class="no-link">{{escape(repo)}}</a></h1>
+	<h1><a href="/profile/{{url_escape(user)}}" class="no-link">{{escape(user)}}</a>/<a href="/repo/{{url_escape(repo)}}" class="no-link">{{escape(repo)}}</a></h1>
 </div>
 {% else %}
 <h1>Profile &middot; {{escape(user)}}</h1>
@@ -11,7 +11,7 @@
 <blockquote><table cellspacing="0px">
 <tr class="header-left">
 	<td class="header">GitHub</td>
-	<td><a href="http://github.com/{{escape(url_escape(user))}}">{% if user_obj and user_obj.name %}{{escape(user_obj.name)}}{% else %}{{escape(user)}}{% end %}</a></td>
+	<td><a href="http://github.com/{{url_escape(user)}}">{% if user_obj and user_obj.name %}{{escape(user_obj.name)}}{% else %}{{escape(user)}}{% end %}</a></td>
 </tr>
 </table></blockquote>
 {% end %}
@@ -19,20 +19,20 @@
 {% if reviews %}
 <h2>Recent Reviews</h2>
 {{ reviews }}
-<a href="/reviews/*/{{escape(url_escape(user))}}" class="button"><span>See All</span></a>
+<a href="/reviews/*/{{url_escape(user)}}" class="button"><span>See All</span></a>
 <hr class="clear" />
 {% end %}
 
 {% if commits %}
 <h2>Recent Commits</h2>
 {{ commits }}
-<a href="/commits/*/*/{{escape(url_escape(user))}}" class="button"><span>See All</span></a>
+<a href="/commits/*/*/{{url_escape(user)}}" class="button"><span>See All</span></a>
 <hr class="clear" />
 {% end %}
 
 {% if activities %}
 <h2>Recent Activities</h2>
 {{ activities }}
-<a href="/activity/*/{{escape(url_escape(user))}}" class="button"><span>See All</span></a>
+<a href="/activity/*/{{url_escape(user)}}" class="button"><span>See All</span></a>
 <hr class="clear" />
 {% end %}

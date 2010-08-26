@@ -1,4 +1,4 @@
-{% if is_admin and (rebuild_state == 2) %}
+{% if is_repo_dev and (rebuild_state == 2) %}
 <form action="/rebuild" method="post" id="form">
 	{% if xsrf_token %}
 	<input type="hidden" name="xsrf_token" value="{{xsrf_token}}" />
@@ -10,7 +10,7 @@
 </form>
 {% end %}
 <div class="float-right" style="text-align: right;">
-{% if build.has_failure %}{% if is_admin and rebuild_state %}{% if rebuild_state == 2 %}<a class="button" id="submit"><span>Rebuild for Platform + Commit</span></a>{% else %}<span class="grey">Rebuilding ...</span>{% end %}<br />{% end %}<span class="fail huge">✗</span>{% else %}<span class="pass huge">✓</span>{% end %}
+{% if build.has_failure %}{% if is_repo_dev and rebuild_state %}{% if rebuild_state == 2 %}<a class="button" id="submit"><span>Rebuild for Platform + Commit</span></a>{% else %}<span class="grey">Rebuilding ...</span>{% end %}<br />{% end %}<span class="fail huge">✗</span>{% else %}<span class="pass huge">✓</span>{% end %}
 </div>
 <h1><a href="/builds" class="no-link">Builds</a> &middot; Build {{build_id}}</h1>
 <blockquote><table cellspacing="0px">
@@ -21,13 +21,13 @@
 <tr class="header-left">
 	<td class="header">Commit</td>
 	<td>
-		<a href="/builds/{{build.repo}}">{{build.repo}}</a> / {% if '/' in build.version %}<a href="/review/{{build.repo}}/{{escape('/'.join(map(url_escape, build.version.split('/'))))}}">{{escape(build.version)}}</a>{% else %}<a href="/commit/{{build.repo}}/{{escape(build.version)}}"><code>{{escape(build.version)}}</code></a>{% end %}
+		<a href="/builds/{{build.repo}}">{{build.repo}}</a> / {% if '/' in build.version %}<a href="/review/{{build.repo}}/{{'/'.join(map(url_escape, build.version.split('/')))}}">{{escape(build.version)}}</a>{% else %}<a href="/commit/{{build.repo}}/{{escape(build.version)}}"><code>{{escape(build.version)}}</code></a>{% end %}
 	</td>
 </tr>
 <tr class="header-left">
 	<td class="header">Platform</td>
 	<td>
-		<a href="/builds/*/{{escape(url_escape(build.build_platform))}}">{{escape(build.build_platform.lower())}}</a>
+		<a href="/builds/*/{{url_escape(build.build_platform)}}">{{escape(build.build_platform.lower())}}</a>
 		&nbsp;&middot;&nbsp;
 		{{escape(build.uname.lower())}}
 	</td>
