@@ -1024,14 +1024,14 @@ Ampify Core
 ✓ git review
 ✓ git review init
 ✓ git review: builtins
-✗ git review: github cross repository compare
-✗ git review: diff view
-✗ git review: comment
+✓ git review: github cross repository compare
+✓ git review: diff view
+✓ git review: comment
 ✓ git review: test runner
 ✓ git review: build slave
-✗ git review: try bot
+✓ git review: try bot
 ✓ git review: watchlist
-✗ git review: view
+✓ git review: view
 
 ✗ google calendar integration: in
 ✗ google calendar integration: out
