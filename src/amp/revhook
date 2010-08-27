@@ -1,0 +1,17 @@
+# -*- mode: python -*-
+
+# No Copyright (-) 2010 The Ampify Authors. This file is under the
+# Public Domain license that can be found in the root LICENSE file.
+
+from os.path import realpath
+
+@checker(include=['*.go'])
+def gofmt(changelist, files):
+    """Need to gofmt %s\n\n"""
+
+    for filename in files:
+        stdout, stderr, retcode = run('gofmt', '-l=true', filename)
+        if stdout:
+            changelist.error(
+                filename, "Please run:\n\n    gofmt -w %s" % realpath(filename)
+                )
