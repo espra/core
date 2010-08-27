@@ -19,20 +19,20 @@
 {% if reviews %}
 <h2>Recent Reviews</h2>
 {{ reviews }}
-<a href="/reviews/*/{{url_escape(user)}}" class="button"><span>See All</span></a>
+<a href="/reviews/{% if repo %}{{url_escape(repo)}}{% else %}*{% end %}/{{url_escape(user)}}" class="button"><span>See All</span></a>
 <hr class="clear" />
 {% end %}
 
 {% if commits %}
 <h2>Recent Commits</h2>
 {{ commits }}
-<a href="/commits/*/*/{{url_escape(user)}}" class="button"><span>See All</span></a>
+<a href="/commits/{% if repo %}{{url_escape(repo)}}{% else %}*{% end %}/*/{{url_escape(user)}}" class="button"><span>See All</span></a>
 <hr class="clear" />
 {% end %}
 
 {% if activities %}
 <h2>Recent Activities</h2>
 {{ activities }}
-<a href="/activity/*/{{url_escape(user)}}" class="button"><span>See All</span></a>
+<a href="/activity/{% if repo %}{{url_escape(repo)}}{% else %}*{% end %}/{{url_escape(user)}}" class="button"><span>See All</span></a>
 <hr class="clear" />
 {% end %}

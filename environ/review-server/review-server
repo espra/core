@@ -93,10 +93,11 @@ cache = None
 secure_id_prefix = hexlify(urandom(18))
 
 review_stages = {
-    'pending': '<span class="subdued">needs "safe to test</span>"',
-    'test': '<span class="subdued">build tests</span>',
-    'tested': 'tested',
+    'pending': '<span class="subdued">needs "safe to build"</span>',
+    'build': '<span class="subdued">awaiting builds</span>',
+    'built': 'built',
     'approved': '✓',
+    'applied': '✓✓',
     'rejected': '<span class="grey">✗</span>'
     }
 
@@ -341,16 +342,16 @@ def authenticate(async, method, handler, cookie, xsrf, *args, **kwargs):
         if not login:
             handler.redirect('/login')
             return
+        if xsrf:
+            xsrf_token = handler.get_argument('xsrf_token', '')
+            if not xsrf_token:
+                raise HTTPError(403)
+            if login not in XSRF:
+                XSRF[login] = HMAC(settings['xsrf_secret'], login).hexdigest()
+            if not secure_string_comparison(XSRF[login], xsrf_token):
+                raise HTTPError(403)
     else:
         raise HTTPError(403)
-    if xsrf:
-        xsrf_token = handler.get_argument('xsrf_token', '')
-        if not xsrf_token:
-            raise HTTPError(403)
-        if login not in XSRF:
-            XSRF[login] = HMAC(settings['xsrf_secret'], login).hexdigest()
-        if not secure_string_comparison(XSRF[login], xsrf_token):
-            raise HTTPError(403)
     if async:
         gen = method(handler, *args, **kwargs)
         resp = None
@@ -392,6 +393,17 @@ def valid_patch_name(id, valid=set('abcdefghijklmnopqrstuvwxyz0123456789.-_')):
         if char not in valid:
             return
     return 1
+
+def is_repo_dev(repo_name, user):
+    maintainer = repo_maintainers.get(repo_name, None)
+    if not maintainer:
+        return
+    if user == maintainer:
+        return True
+    repo = repo_cache.get(repo_name, None)
+    if repo and repo.core_devs:
+        if user in repo.core_devs:
+            return True
 
 def get_difference(s1, s2):
     head = 0
@@ -703,7 +715,7 @@ def _create_commits(repo, data):
                     commit.user = '#'
         else:
             commit.user = '#'
-        commit.needed_builds = repo_cache[repo]._platforms
+        commit.needed_builds = repo_cache[repo]._platforms[:]
         new_commit(commit)
     db.put(commits)
 
@@ -816,7 +828,7 @@ def get_slave_job(repo, slave_id, token, uname, span=timedelta(seconds=1)):
     if prune:
         db.run_in_transaction(prune_pending_jobs, [ob.key() for ob in prune])
     review = Review.all().filter('n =', platform).filter('r =', repo).filter(
-        'g =', 'test'
+        'g =', 'build'
         ).order('d').get()
     commit = Commit.all().filter('n =', platform).filter('r =', repo).order(
         'd').get()
@@ -932,8 +944,8 @@ def create_build(
         )
     return build.key().id()
 
-def update_build_target(target, platform, has_failure):
-    target = db.get(target)
+def update_build_target(target_key, platform, has_failure):
+    target = db.get(target_key)
     while platform in target.needed_builds:
         target.needed_builds.remove(platform)
     if has_failure:
@@ -943,9 +955,15 @@ def update_build_target(target, platform, has_failure):
     else:
         if platform not in target.passed_builds:
             target.passed_builds.append(platform)
-    if (not target.needed_builds) and target.stage == 'test':
-        target.stage = 'tested'
-    db.put(target)
+    to_save = [target]
+    if (not target.needed_builds) and target.stage == 'build':
+        target.stage = 'built'
+        if target.kind() == 'R':
+            base = db.get(target_key.parent())
+            if int(target_key.name()) == base.latest:
+                base.stage = 'built'
+                to_save.append(base)
+    db.put(to_save)
 
 def get_key_for_version(repo, version, create_key=db.Key.from_path):
     if '/' in version:
@@ -1024,6 +1042,7 @@ def rebuild(repo, version, platform):
 
 @worker(GAE_QUEUE)
 def get_commits(repo, version, user, failures_only, single, next, n=101):
+    update_gravatars()
     more = False
     commits = Commit.all()
     if single:
@@ -1058,11 +1077,7 @@ def get_commits(repo, version, user, failures_only, single, next, n=101):
             ).fetch(1000)
     return commits, builds, more
 
-@worker(GAE_QUEUE)
-def get_activities(
-    repo, user, hide_commits, hide_slaves, next, n=101,
-    get_key=db.Key.from_path
-    ):
+def update_gravatars():
     if NEEDED_GRAVATARS:
         changed = []
         for u in User.get_by_key_name(list(NEEDED_GRAVATARS)):
@@ -1071,8 +1086,16 @@ def get_activities(
                 changed.append(u)
         if changed:
             db.put(changed)
+
+@worker(GAE_QUEUE)
+def get_activities(
+    repo, user, hide_commits, hide_slaves, next, n=101,
+    get_key=db.Key.from_path
+    ):
+    update_gravatars()
     more = False
     submissions = Review.all()
+    comments = Comment.all()
     if hide_commits:
         commits = []
     else:
@@ -1085,12 +1108,14 @@ def get_activities(
         next = datetime.fromtimestamp(int(next) + 1)
     if repo:
         submissions = submissions.filter('r =', repo)
+        comments = comments.filter('r =', repo)
         if not hide_commits:
             commits = commits.filter('r =', repo)
         if not hide_slaves:
             builds = builds.filter('r =', repo)
     if user:
         submissions = submissions.filter('u =', user)
+        comments = comments.filter('u =', user)
         if not hide_commits:
             commits = commits.filter('u =', user)
         builds = []
@@ -1108,8 +1133,10 @@ def get_activities(
             commits = []
     if next:
         submissions = submissions.filter('d <=', next)
+        comments = comments.filter('d <=', next)
     submissions = submissions.order('-d').fetch(n)
-    activities = commits + builds + submissions
+    comments = comments.order('-d').fetch(n)
+    activities = commits + builds + submissions + comments
     activities = sorted(activities, key=lambda i: i.d, reverse=1)
     if activities:
         if len(activities) >= n:
@@ -1119,6 +1146,7 @@ def get_activities(
 
 @worker(GAE_QUEUE)
 def get_review(repo, user, name, number, create_key=db.Key.from_path):
+    update_gravatars()
     base_key = create_key('Q', "%s:%s:%s" % (repo, user, name))
     review_key = create_key('R', number, parent=base_key)
     base, review = db.get([base_key, review_key])
@@ -1128,11 +1156,19 @@ def get_review(repo, user, name, number, create_key=db.Key.from_path):
             'v =', review.version).order('-d').fetch(1000)
     return base, review, builds
 
-def get_reviews_for_user(repo, user, next, n, create_key=db.Key.from_path):
+@worker(GAE_QUEUE)
+def get_reviews(
+    repo, user, state, next, n=201, create_key=db.Key.from_path
+    ):
+    update_gravatars()
     more = False
-    bases = ReviewBase.all().filter('c =', user)
+    bases = ReviewBase.all()
+    if user:
+        bases = bases.filter('c =', user)
     if repo:
         bases = bases.filter('r =', repo)
+    if state:
+        bases = bases.filter('g =', state)
     if next:
         next = datetime.fromtimestamp(int(next) + 1)
         bases = bases.filter('m <=', next)
@@ -1148,62 +1184,22 @@ def get_reviews_for_user(repo, user, next, n, create_key=db.Key.from_path):
     _bases = {}
     for review, base in zip(reviews, bases):
         _bases[review.version] = base
-    if user not in GRAVATARS:
-        user_item = User.get_by_key_name(user)
-        if user_item:
-            GRAVATARS[user] = user_item.gravatar
     return reviews, _bases, more
 
-@worker(GAE_QUEUE)
-def get_reviews(repo, user, next, n=101):
-    if user:
-        return get_reviews_for_user(repo, user, next, n)
-    more = False
-    reviews = Review.all()
-    if repo:
-        reviews = reviews.filter('r =', repo)
-    if next:
-        next = datetime.fromtimestamp(int(next) + 1)
-        reviews = reviews.filter('m <=', next)
-    reviews = reviews.order('-m').fetch(n)
-    if not reviews:
-        return
-    base_versions = []; add_version = base_versions.append
-    base_keys = []; add_key = base_keys.append
-    seen_keys = set(); seen = seen_keys.add
-    _reviews = []; add_review = _reviews.append
-    get_users = set(); get_user = get_users.add
-    for review in reviews:
-        base_key = review.key().parent()
-        if base_key not in seen_keys:
-            add_review(review)
-            add_version(review.version)
-            add_key(base_key)
-            seen(base_key)
-            if review.user not in GRAVATARS:
-                get_user(review.user)
-    parents = db.get(list(base_keys))
-    bases = dict(zip(base_versions, parents))
-    if get_users:
-        users = User.get_by_key_name(get_users)
-        for user in users:
-            if user:
-                GRAVATARS[user.key().name()] = user.gravatar
-    return _reviews, bases, more
-
 def format_diff(diff, strip_first=1, add_bubbles=None):
+    files = []; add_file = files.append
     if not diff:
-        return
+        return None, files
     if strip_first:
         diff = diff.split('\n', 1)
         if len(diff) == 1:
-            return
+            return None, files
         diff = diff[1]
     if not diff.strip():
-        return
+        return None, files
     output = []; append = output.append
     parser = IteratorParser(diff.splitlines())
-    counter = 0
+    counter = -1
     for line in parser:
         if line.startswith('diff --git '):
             if output:
@@ -1234,11 +1230,13 @@ def format_diff(diff, strip_first=1, add_bubbles=None):
                     end = 1
                     break
             counter += 1
+            _filename = escape(filename, 1)
+            add_file(_filename)
             append(
                 '<div class="patch"><table class="patch" cellspacing="0px"><tr>'
                 '<td colspan="3" class="patch-title">'
                 '<span class="patch-icon"><img src="/static/txt.png" /></span><span class="filename">%s</span></td></tr>'
-                % escape(filename, 1)
+                % _filename
                 )
             if binary:
                 append('<tr><td colspan="3" class="binary"><pre>binary file not shown</pre></td></tr>')
@@ -1286,11 +1284,11 @@ def format_diff(diff, strip_first=1, add_bubbles=None):
                     second = escape(next, 1)
                 if add_bubbles:
                     left_bubble = (
-                        '<div class="add-bubble" id="comment-L%sL%s">+ comment</div>'
+                        '<a class="add-bubble" rel="%s-L%s">+ comment</a>'
                         % (counter, left)
                         )
                     right_bubble = (
-                        '<div class="add-bubble" id="comment-L%sR%s">+ comment</div>'
+                        '<a class="add-bubble" rel="%s-R%s">+ comment</a>'
                         % (counter, right)
                         )
                 else:
@@ -1334,10 +1332,12 @@ def format_diff(diff, strip_first=1, add_bubbles=None):
             in_delete = 0
         if add_bubbles:
             if _left is not None:
-                bubble = 'L%sL%s' % (counter, _left)
+                bubble = '%s-L%s' % (counter, _left)
             else:
-                bubble = 'L%sR%s' % (counter, _right)
-            bubble = '<div class="add-bubble" id="comment-%s">+ comment</div>' % bubble
+                bubble = '%s-R%s' % (counter, _right)
+            bubble = (
+                '<a class="add-bubble" rel="%s">+ comment</a>' % bubble
+                )
         else:
             bubble = ''
         if _left is not None:
@@ -1362,7 +1362,7 @@ def format_diff(diff, strip_first=1, add_bubbles=None):
                 )
             )
     append('</table></div>')
-    return '\n'.join(output)
+    return '\n'.join(output), files
 
 @worker(GIT_QUEUE)
 def get_diff(repo, revision):
@@ -1400,11 +1400,10 @@ Build = B
 class C(db.Model): # normal id; parent = Commit/Review
     user = db.StringProperty(name='u')
     text = db.TextProperty(name='t')
+    repo = db.StringProperty(name='r')
     version = db.StringProperty(name='v')
-    line = db.IntegerProperty(name='l')
-    file = db.StringProperty(name='f', default='')
-    d = db.DateTimeProperty(auto_now_add=True)
-
+    line = db.StringProperty(name='l')
+    file = db.StringProperty(name='f')
     stage = db.StringProperty(name='g')
     d = db.DateTimeProperty(auto_now_add=True)
 
@@ -1448,6 +1447,7 @@ class Q(db.Model): # id = <repo>:<user>:<issue>
     latest = db.IntegerProperty(name='l', default=0)
     repo = db.StringProperty(name='r')
     m = db.DateTimeProperty(auto_now=True)
+    stage = db.StringProperty(name='g', default='unset')
 
 ReviewBase = Q
 
@@ -1653,7 +1653,7 @@ class DiffHandler(BaseHandler):
         r1 = r1.replace(';', '/')
         r2 = r2.replace(';', '/')
         diff = yield get_diff_between(repo, r1, r2)
-        changes = format_diff(diff, strip_first=0)
+        changes, files = format_diff(diff, strip_first=0)
         content = (
             '<h1>Diff &middot; %s &rarr; %s</h1>%s' % (r1, r2, changes)
             )
@@ -1697,7 +1697,7 @@ class ProfileHandler(BaseHandler):
         else:
             commits = None
         user_obj = yield db_get(db.Key.from_path('U', user))
-        reviews = yield get_reviews(repo, user, None)
+        reviews = yield get_reviews(repo, user, None, None)
         if reviews and reviews[0]:
             reviews, bases, _ = reviews
             reviews = self.display(
@@ -1729,33 +1729,129 @@ class ReviewHandler(BaseHandler):
         diff = yield get_diff_between(
             repo, review.upstream_revision, review.version
             )
-        changes = format_diff(diff, strip_first=0, add_bubbles=self.current_user)
-        line_notes = [
-            ['L1R35', 'tav', '6cf15f03f4e93f91688b7e6b945c469e', '1282401342', 'Hello *world*. This is a long sentence. and this is some more text and here is some more equal right amendment stuff coming youer way and some more... woo!! and, oh, yes, praise be to GOD! and more...\n\nAnd some more!'],
-            ['L1R35', 'tav', '6cf15f03f4e93f91688b7e6b945c469e', '1182401342', """Yeah, grats! <blockquote>foo</blockquote>
-Hehe.
-
-    :::python
-    def python(hello):
-        if True: pass
-"""]
-            ]
-        for idx, line in enumerate(line_notes):
-            line[-1] = render_text(line[-1])
-        if line_notes:
-            line_notes = encode_json(line_notes)
-        line_notes = None
+        changes, files = format_diff(diff, strip_first=0, add_bubbles=self.current_user)
+        comments, line_notes = yield get_comments(review)
         self.display(
             'review', review=review, repos=repos, repo=repo, base=base,
             gravatars=GRAVATARS, github=settings['github_account'],
             review_stages=review_stages, builds=builds, changes=changes,
             decode_json=decode_json, render_text=render_text,
-            line_notes=line_notes
+            line_notes=line_notes, comments=comments, files=files,
+            is_repo_dev=self.is_repo_dev(repo)
             )
+
+class CommentHandler(BaseHandler):
 
     @auth()
     def post(self):
-        pass
+        get = self.get_argument
+        login = get('login', self.current_user)
+        review_id = get('review_id', '')
+        if review_id:
+            user, name, number = review_id.split('/')
+            repo = get('repo')
+            base = db.Key.from_path('Q', '%s:%s:%s' % (repo, user, name))
+            key = db.Key.from_path('R', number, parent=base)
+        else:
+            key = db.Key(get('key'))
+        action = get('action', '')
+        file = get('file', '')
+        line = get('line', '')
+        text = get('text', '')
+        if not (action or text):
+            self.errmsg("Comment was blank.")
+            return
+        retpath = yield add_comment(key, login, action, text, file, line)
+        if not retpath:
+            self.errmsg("Invalid action.")
+            return
+        self.redirect(retpath)
+
+@worker(GAE_QUEUE)
+def add_comment(key, user, action, text, file, line):
+    base_key = key.parent()
+    return db.run_in_transaction(
+        _add_comment, base_key, key, user, action, text, file, line
+        )
+
+def _add_comment(base_key, key, user, action, text, file, line):
+    if base_key:
+        base, target = db.get([base_key, key])
+    else:
+        target = db.get(key)
+    kind = target.kind()
+    now = datetime.now()
+    if kind == 'R':
+        retpath = '/review/%s/%s' % (target.repo, target.version)
+        comment = Comment(parent=key)
+        comment.repo = target.repo
+        comment.version = target.version
+        comment.user = user
+        comment.text = text
+        if file and line:
+            comment.file = file
+            comment.line = line
+        elif action:
+            if not is_repo_dev(target.repo, user):
+                return
+            if action == 'build':
+                comment.stage = target.stage = base.stage = 'build'
+            elif action == 'approve':
+                if (target.stage != 'built') or (target.has_failure):
+                    return
+                comment.stage = target.stage = base.stage = 'approved'
+            elif action == 'reject':
+                comment.stage = target.stage = base.stage = 'rejected'
+            elif action == 'applied':
+                logging.error(target.stage)
+                if target.stage != 'approved':
+                    return
+                comment.stage = target.stage = base.stage = 'applied'
+        target.m = base.m = now
+        if not base.cc:
+            base.cc = [user]
+        elif user not in base.cc:
+            base.cc.append(user)
+        db.put([comment, target, base])
+    elif kind == 'G':
+        retpath = '/commit/%s/%s' % (target.repo, target.version)
+        if not text:
+            return
+        comment = Comment(parent=key)
+        comment.text = text
+        comment.repo = target.repo
+        comment.version = target.version
+        comment.user = user
+        if file and line:
+            comment.file = file
+            comment.line = line
+        target.m = now
+        db.put([comment, target])
+    else:
+        return
+    return retpath
+
+@worker(GAE_QUEUE)
+def get_comments(parent):
+    _comments = Comment.all().ancestor(parent).order('-d').fetch(1000)
+    if _comments:
+        line_notes = []; add_line_note = line_notes.append
+        comments = []; add_comment = comments.append
+        for comment in _comments:
+            if comment.file:
+                add_line_note([
+                    comment.file,
+                    comment.line,
+                    comment.user,
+                    get_gravatar(comment.user) or '',
+                    comment.d.strftime('%s'),
+                    render_text(comment.text)
+                    ])
+            else:
+                add_comment(comment)
+        line_notes = encode_json(list(reversed(line_notes)))
+        return comments, line_notes
+    return None, None
 
 class ReviewsHandler(BaseHandler):
 
@@ -1765,17 +1861,31 @@ class ReviewsHandler(BaseHandler):
     def get(self, repo=None, user=None):
         get = self.get_argument
         next = get('next', '')
+        state = get('state', '')
         if repo == '*':
             repo = None
-        reviews = yield get_reviews(repo, user, next)
+        reviews = yield get_reviews(repo, user, state, next)
         if not reviews:
-            self.errmsg("No reviews found.", repo)
+            self.errmsg("No matching reviews found.", repo)
             return
         reviews, bases, more = reviews
+        more_url_base = '/reviews'
+        if repo:
+            more_url_base += '/' + quote(repo)
+        elif user:
+            more_url_base += '/*'
+        if user:
+            more_url_base += '/' + quote(user)
+        url_base = more_url_base
+        if state:
+            more_url_base += '?state=%s&' % state
+        else:
+            more_url_base += '?'
         self.display(
             'reviews', reviews=reviews, more=more, repos=repos, repo=repo,
             bases=bases, gravatars=GRAVATARS, github=settings['github_account'],
-            review_stages=review_stages, render_text=render_text
+            review_stages=review_stages, render_text=render_text,
+            more_url_base=more_url_base, url_base=url_base, state=state
             )
 
     @auth(xsrf=False)
@@ -1836,12 +1946,12 @@ class ReviewsHandler(BaseHandler):
         review.subject = message
         review.repo = repo
         review.upstream_revision = upstream
-        review.needed_builds = repo_cache[repo]._platforms
+        review.needed_builds = repo_cache[repo]._platforms[:]
         review.user = user
         review.version = review_id
 
         if user in settings['admins']:
-            review.stage = 'test'
+            review.stage = 'build'
         else:
             review.stage = 'pending'
 
@@ -1891,19 +2001,24 @@ class CommitsHandler(BaseHandler):
         if repo:
             commits_url += escape(quote('/%s' % repo), 1)
         changes = None
+        files = []
         platforms = []
         if repo:
             platforms = repo_cache[repo]._platforms
+        line_notes = None
+        comments = None
         if single:
             if commits:
                 diff = yield get_diff(repo, commits[0].version)
-                changes = format_diff(diff, add_bubbles=self.current_user)
+                changes, files = format_diff(diff, add_bubbles=self.current_user)
+                comments, line_notes = yield get_comments(commits[0])
         self.display(
             'commits', commits=commits, more=more, builds=builds, single=single,
             failures_only=failures_only, version=version, user=user,
             commits_url=commits_url, repos=repos, repo=repo, platforms=platforms,
             gravatars=GRAVATARS, md5=md5, decode_json=decode_json, title=title,
-            changes=changes, render_text=render_text
+            changes=changes, render_text=render_text, files=files,
+            line_notes=line_notes, comments=comments
             )
 
 class BuildsHandler(BaseHandler):
@@ -1962,7 +2077,6 @@ class BuildHandler(BaseHandler):
         slave_id = get('slave_id')
         token = get('token')
         data = get('data')
-        logging.error(revision)
         try:
             slave_id = int(slave_id)
         except Exception:
@@ -2204,6 +2318,7 @@ def main(argv=None):
         values.sort()
 
     application = Application([
+        (r"/comment", CommentHandler),
         (r"/repositories", RepositoriesHandler),
         (r"/repo/([^/]*)", RepoHandler),
         (r"/dashboard/([^/]*)/(.*)", ProfileHandler),

@@ -29,6 +29,7 @@ a.button {
 	padding-right: 18px;
 	text-decoration: none;
 	margin-bottom: 10px;
+	cursor: pointer;
 }
 
 a.button:active {
@@ -283,7 +284,28 @@ table.patch td.note-list {
 	font-size: 1em;
 }
 
-/* the following table.patch styles are adapted from github's css */
+/* the following styles are adapted from github's css */
+
+a.add-bubble {
+	opacity: 0;
+	-webkit-transition: opacity 0.1s linear;
+	position: absolute;
+	margin-left: -80px;
+	cursor: pointer;
+	display: inline;
+	color: #f8f8ff !important;
+	background-color: #3a3a3a;
+	padding: 0 6px;
+	font-size: 12px;
+	text-decoration: none;
+	border: 1px solid #3a3a3a;
+}
+
+a.add-bubble:hover {
+	color: #fff !important;
+	text-decoration: none !important;
+	border: 1px solid #c0fafa;
+}
 
 table.patch td.patch-title {
 	background: #eee url('/static/patch-header.gif') repeat-x;
@@ -309,7 +331,7 @@ table.patch td.line a {
 }
 
 tr:hover td.line a {
-	color: #666 !important;
+	color: #666;
 }
 
 #changes {
@@ -365,19 +387,6 @@ table.patch pre {
 	margin: 0px;
 }
 
-.add-bubble {
-	opacity: 0;
-	-webkit-transition: opacity 0.1s linear;
-	position: absolute;
-	margin-left: -80px;
-	cursor: pointer;
-	display: inline;
-	color: #f8f8ff;
-	background-color: #3a3a3a;
-	padding: 0 6px;
-	font-size: 12px;
-}
-
 tr:hover .add-bubble {
 	opacity: 1;
 }
@@ -397,12 +406,14 @@ tr:hover .add-bubble {
 .note-wrap {
 	border: 1px solid #ccc;
 	margin: 10px 60px 20px 60px;
+	max-width: 690px;
 }
 
 .note-head, .note-head-write {
 	border-bottom: 1px solid #ccc;
 	background: url('/static/metabar.gif') 0 -33px repeat-x;
 	height: 33px;
+	font-size: 12px;
 	line-height: 33px;
 	padding: 0 5px;
 }
@@ -608,8 +619,9 @@ ul {
 	color: #6f6f6f;
 	text-transform: uppercase;
 	font-family: "Yanone Kaffeesatz", Georgia, serif;
-	font-size: 0.7em;
+	font-size: 12px;
 	padding-left: 5px;
+	padding-right: 5px;
 }
 
 .small-info {

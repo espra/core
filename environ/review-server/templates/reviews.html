@@ -1,4 +1,11 @@
 {% if not dashboard_view %}
+{% if state == 'applied' %}<a href="{{url_base}}" class="button"><span>All</span></a>{% else %}<a href="{{url_base}}?state=applied" class="button"><span>Applied</span></a>{% end %}
+{% if state == 'approved' %}<a href="{{url_base}}" class="button"><span>All</span></a>{% else %}<a href="{{url_base}}?state=approved" class="button"><span>Approved</span></a>{% end %}
+{% if state == 'rejected' %}<a href="{{url_base}}" class="button"><span>All</span></a>{% else %}<a href="{{url_base}}?state=rejected" class="button"><span>Rejected</span></a>{% end %}
+{% if state == 'built' %}<a href="{{url_base}}" class="button"><span>All</span></a>{% else %}<a href="{{url_base}}?state=built" class="button"><span>Built</span></a>{% end %}
+{% if state == 'build' %}<a href="{{url_base}}" class="button"><span>All</span></a>{% else %}<a href="{{url_base}}?state=build" class="button"><span>Building</span></a>{% end %}
+{% if state == 'pending' %}<a href="{{url_base}}" class="button"><span>All</span></a>{% else %}<a href="{{url_base}}?state=pending" class="button"><span>Pending</span></a>{% end %}
+
 {% if repo %}
 <h1><a href="/reviews" class="no-link">Reviews</a> &middot; {{repo}}</h1>
 {% else %}
@@ -17,7 +24,7 @@
 {% for review in reviews %}
 <tr class="middle">
 	<td class="left-pad-none">
-		<img class="gravatar" src="http://www.gravatar.com/avatar/{% if review.user in gravatars %}{{gravatars[review.user]}}{% else %}{{ 'not-available' }}{% end %}?s=32&amp;d=http%3A%2F%2Fgithub.com%2Fimages%2Fgravatars%2Fgravatar-32.png" />
+		<a href="/profile/{{url_escape(review.user)}}"><img class="gravatar" src="http://www.gravatar.com/avatar/{% if get_gravatar(review.user) %}{{escape(gravatars.get(review.user, ''))}}{% else %}{{ 'not-available' }}{% end %}?s=32&amp;d=http%3A%2F%2Fgithub.com%2Fimages%2Fgravatars%2Fgravatar-32.png" /></a>
 
 		<a href="/review/{{review.repo}}/{{escaped_patch_base = escape(review.version.rsplit('/', 1)[0])}}/{{current_patch_number = int(review.version.rsplit('/', 1)[1])}}">{{escape(review.version)}}</a>
 		{% if bases[review.version].latest != 1 %}
@@ -26,7 +33,7 @@
 		{% end %}
 		&nbsp;&middot;&nbsp;
 		<a href="/reviews/{{review.repo}}">{{review.repo}}</a>
-		<span class="small-grey">{% if review.m == review.d %}SUBMITTED{% else %}LAST UPDATED{% end %} <span class="timestamp">{{ review.d.strftime('%s') }}</span></span>
+		<span class="small-grey">{% if review.m == review.d %}SUBMITTED{% else %}UPDATED{% end %} <span class="timestamp">{{ review.m.strftime('%s') }}</span></span>
 		{% if review.subject %}
 		<blockquote class="subject">
 			{{ render_text(review.subject) }}
@@ -61,5 +68,6 @@
 {% end %}
 </table></blockquote>
 {% if (not dashboard_view) and more %}
+<a class="button" href="{{more_url_base}}next={{more}}"><span>Next &rarr;</span></a>
 {% end %}
 {% end %}

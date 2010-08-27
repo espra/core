@@ -19,7 +19,7 @@
 <div class="activity">
 {% if activity.kind() == 'G' %}
 
-<img class="gravatar-activity" src="http://www.gravatar.com/avatar/{% if get_gravatar(activity.user) %}{{gravatars.get(activity.user)}}{% else %}{{ md5(activity.author_email).hexdigest() }}{% end %}?s=32&amp;d=http%3A%2F%2Fgithub.com%2Fimages%2Fgravatars%2Fgravatar-32.png" />
+{% if activity.user %}<a href="/profile/{{url_escape(activity.user)}}">{% end %}<img class="gravatar-activity" src="http://www.gravatar.com/avatar/{% if get_gravatar(activity.user) %}{{escape(gravatars.get(activity.user, ''))}}{% else %}{{ md5(activity.author_email).hexdigest() }}{% end %}?s=32&amp;d=http%3A%2F%2Fgithub.com%2Fimages%2Fgravatars%2Fgravatar-32.png" />{% if activity.user %}</a>{% end %}
 
 {% if activity.user %}<a href="/profile/{{url_escape(activity.user)}}" class="bold-link">{% end %}{{escape(activity.user or activity.author_email or '')}}{% if activity.user %}</a>{% end %} committed <a href="/commit/{{url_escape(activity.repo)}}/{{escape(activity.version)}}"><code>{{escape(activity.version[:8])}}</code></a> to <a href="/activity/{{url_escape(activity.repo)}}">{{escape(activity.repo)}}</a> <span class="timestamp small-grey">{{ activity.d.strftime('%s') }}</span>
 
@@ -29,9 +29,22 @@
 </blockquote>
 {% end %}
 
+{% elif activity.kind() == 'C' %}
+
+<a href="/profile/{{url_escape(activity.user)}}"><img class="gravatar-activity" src="http://www.gravatar.com/avatar/{% if get_gravatar(activity.user) %}{{gravatars.get(activity.user, '')}}{% else %}unknown{% end %}?s=32&amp;d=http%3A%2F%2Fgithub.com%2Fimages%2Fgravatars%2Fgravatar-32.png" /></a>
+
+<a href="/profile/{{url_escape(activity.user)}}" class="bold-link">{{escape(activity.user or '')}}</a> {% if activity.stage %}{% if activity.stage == 'build' %}approved safe to build for{% elif activity.stage == 'rejected' %}rejected{% elif activity.stage == 'approved' %}approved{% elif activity.stage == 'applied' %}applied patch to master{% end %}{% else %}wrote a comment on{% end %} {% if '/' in activity.version %}<a href="/review/{{url_escape(activity.repo)}}/{{'/'.join(map(url_escape, activity.version.split('/')))}}">{{escape(activity.version)}}</a>{% else %}<a href="/commit/{{escape(url_escape(activity.repo))}}/{{escape(activity.version)}}"><code>{{escape(activity.version[:8])}}</code></a>{% end %} &nbsp;&middot;&nbsp; <a href="/activity/{{url_escape(activity.repo)}}">{{escape(activity.repo)}}</a> <span class="timestamp small-grey">{{ activity.d.strftime('%s') }}</span>
+
+
+{% if activity.text %}
+<blockquote class="subject">
+{{render_text(activity.text)}}
+</blockquote>
+{% end %}
+
 {% elif activity.kind() == 'R' %}
 
-<img class="gravatar-activity" src="http://www.gravatar.com/avatar/{% if get_gravatar(activity.user) %}{{gravatars.get(activity.user, '')}}{% else %}unknown{% end %}?s=32&amp;d=http%3A%2F%2Fgithub.com%2Fimages%2Fgravatars%2Fgravatar-32.png" />
+<a href="/profile/{{url_escape(activity.user)}}"><img class="gravatar-activity" src="http://www.gravatar.com/avatar/{% if get_gravatar(activity.user) %}{{gravatars.get(activity.user, '')}}{% else %}unknown{% end %}?s=32&amp;d=http%3A%2F%2Fgithub.com%2Fimages%2Fgravatars%2Fgravatar-32.png" /></a>
 
 <a href="/profile/{{url_escape(activity.user)}}" class="bold-link">{{escape(activity.user or '')}}</a> submitted <a href="/review/{{url_escape(activity.repo)}}/{{'/'.join(map(url_escape, activity.version.split('/')))}}">{{escape(activity.version)}}</a> for review in <a href="/activity/{{url_escape(activity.repo)}}">{{escape(activity.repo)}}</a> <span class="timestamp small-grey">{{ activity.d.strftime('%s') }}</span>
 
@@ -43,8 +56,7 @@
 
 {% elif activity.kind() == 'B' %}
 
-<a href="/slave/{{activity.slave}}"><img class="gravatar-activity" src="http://www.gravatar.com/avatar/040008bc083a22725f9f6df2eed1dcdc?s=32&d=http%3A%2F%2Fgithub.com%2Fimages%2Fgravatars%2Fgravatar-32.png" /> <a href="/slave/{{activity.slave}}" class="bold-link">slave-{{activity.slave}}</a> made <a href="/build/{{build_id = activity.key().id()}}">build {{build_id}}</a> from {% if '/' in activity.version %}<a href="/review/{{url_escape(activity.repo)}}/{{'/'.join(map(url_escape, activity.version.split('/')))}}">{{escape(activity.version)}}</a>{% else %}<a href="/commit/{{escape(url_escape(activity.repo))}}/{{escape(activity.version)}}" class="no-links"><code>{{escape(activity.version[:8])}}</code></a>{% end %} on <a href="/builds/*/{{url_escape(activity.build_platform)}}">{{escape(activity.build_platform.lower())}}</a> <span class="timestamp small-grey">{{ activity.d.strftime('%s') }}</span>
-
+<a href="/slave/{{activity.slave}}"><img class="gravatar-activity" src="http://www.gravatar.com/avatar/040008bc083a22725f9f6df2eed1dcdc?s=32&d=http%3A%2F%2Fgithub.com%2Fimages%2Fgravatars%2Fgravatar-32.png" /> <a href="/slave/{{activity.slave}}" class="bold-link">slave-{{activity.slave}}</a> made <a href="/build/{{build_id = activity.key().id()}}">build {{build_id}}</a> from {% if '/' in activity.version %}<a href="/review/{{url_escape(activity.repo)}}/{{'/'.join(map(url_escape, activity.version.split('/')))}}">{{escape(activity.version)}}</a>{% else %}<a href="/commit/{{escape(url_escape(activity.repo))}}/{{escape(activity.version)}}"><code>{{escape(activity.version[:8])}}</code></a>{% end %} on <a href="/builds/*/{{url_escape(activity.build_platform)}}">{{escape(activity.build_platform.lower())}}</a> <span class="timestamp small-grey">{{ activity.d.strftime('%s') }}</span>
 
 <blockquote><table class="build-results" cellspacing="0px"><tr>
 {% if activity.build_phases %}

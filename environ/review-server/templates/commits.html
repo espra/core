@@ -2,13 +2,13 @@
 {% if not single %}{% if failures_only %}
 <a class="button" href="{{commits_url}}"><span>All</span></a>
 {% if failures_only == "0" %}
-<a class="button" href="{{commits_url}}?failures_only=1"><span>Hide Non-Failures</span></a>
+<a class="button" href="{{commits_url}}?failures_only=1"><span>Failures</span></a>
 {% else %}
-<a class="button" href="{{commits_url}}?failures_only=0"><span>Hide Failures</span></a>
+<a class="button" href="{{commits_url}}?failures_only=0"><span>Non-Failures</span></a>
 {% end %}
 {% else %}
-<a class="button" href="{{commits_url}}?failures_only=1"><span>Hide Non-Failures</span></a>
-<a class="button" href="{{commits_url}}?failures_only=0"><span>Hide Failures</span></a>
+<a class="button" href="{{commits_url}}?failures_only=1"><span>Failures</span></a>
+<a class="button" href="{{commits_url}}?failures_only=0"><span>Non-Failures</span></a>
 {% end %}{% end %}
 {% if repo %}
 <h1><a href="/commits" class="no-link">Commits</a> &middot; {{ repo }}</h1>
@@ -37,7 +37,7 @@
 <tr class="middle{% if single %} no-border{% end %}">
 	<td class="left-pad-none">
 
-		<img class="gravatar-activity" src="http://www.gravatar.com/avatar/{% if commit.user in gravatars %}{{gravatars[commit.user]}}{% else %}{{ md5(commit.author_email).hexdigest() }}{% end %}?s=32&amp;d=http%3A%2F%2Fgithub.com%2Fimages%2Fgravatars%2Fgravatar-32.png" />
+		{% if commit.user %}<a href="/profile/{{url_escape(commit.user)}}">{% end %}<img class="gravatar-activity" src="http://www.gravatar.com/avatar/{% if get_gravatar(commit.user) %}{{url_escape(gravatars.get(commit.user, ''))}}{% else %}{{ md5(commit.author_email).hexdigest() }}{% end %}?s=32&amp;d=http%3A%2F%2Fgithub.com%2Fimages%2Fgravatars%2Fgravatar-32.png" />{% if commit.user %}</a>{% end %}
 
 		{% if commit.user %}<a href="/profile/{{url_escape(commit.user)}}" class="bold-link">{% end %}{{escape(commit.user or commit.author_email or '')}}{% if commit.user %}</a>{% end %} &nbsp;&middot;&nbsp; {% if single %}<code>{{escape(version)}}</code>{% else %}<a href="/commit/{{commit.repo}}/{{escape(commit.version)}}"><code>{{escape(commit.version[:8])}}</code></a>{% end %} &nbsp;&middot;&nbsp; <a href="/commits/{{commit.repo}}">{{commit.repo}}</a>
 		{% if single %}
@@ -49,6 +49,9 @@
 		committed by {{escape(commit.committer or committer_email or '??')}}
 		{% end %}
 		<span class="timestamp small-grey">{{ commit.d.strftime('%s') }}</span>
+		{% if commit.m %}
+		<a href="/commit/{{commit.repo}}/{{escape(commit.version)}}"><img class="absmiddle" src="{{static_url('comment.png')}}" /></a>
+		{% end %}
 
 		{% if commit.subject %}
 		<blockquote class="subject">
@@ -64,7 +67,7 @@
 	{% elif platform in commit.failed_builds %}
 	<td><a class="build-fail-bubble" href="/builds/{{commit.repo}}/{{url_escape(platform)}}/{{url_escape(commit.version)}}">✗ &nbsp;fail</a></td>
 	{% elif platform in commit.needed_builds %}
-	<td></td>
+	<td>&middot;</td>
 	{% else %}
 	<td>-</td>
 	{% end %}{% end %}
@@ -83,6 +86,46 @@
 </table></blockquote>
 {% if (not dashboard_view) and more %}
 <a class="button" href="{{commits_url}}?next={{more}}&amp;{% if failures_only %}failures_only={{failures_only}}{% end %}"><span>Next &rarr;</span></a>
+{% end %}
+{% end %}
+
+{% if single %}
+{% if current_user or comments %}
+<h2 id="comments">Comments</h2>
+
+{% if current_user %}
+<div class="note-wrap">
+	<div class="note-head-write">
+		<a href="" class="note-button pressed" id="comment-write">Write</a>
+		<a href="" class="note-button" id="comment-preview">Preview</a>
+	</div>
+	<form class="note-text-write" id="comment-form" action="/comment" method="post">
+		<input type="hidden" name="xsrf_token" value="{{xsrf_token}}" />
+		<input type="hidden" name="key" value="{{escape(str(commit.key()))}}" />
+		<textarea name="text" rows="6" id="comment-textarea"></textarea><br/>
+	</form>
+	<div class="note-text" id="comment-text">
+	</div>
+</div>
+<a class="button" id="comment-submit"><span>Add Comment</span></a>
+<hr class="clear" />
+{% end %}
+
+{% if comments %}
+{% for comment in comments %}
+<div class="note-wrap">
+<div class="note-head">
+	<a href="/profile/{{url_escape(comment.user)}}"><img class="gravatar-note" src="http://www.gravatar.com/avatar/{{escape(get_gravatar(comment.user) or '')}}?s=20&d=http%3A%2F%2Fgithub.com%2Fimages%2Fgravatars%2Fgravatar-20.png" width="20px" height="20px" /></a>
+	<a class="bold-link" href="/profile/{{url_escape(comment.user)}}">{{escape(comment.user)}}</a>
+	wrote a comment <span class="small-grey timestamp">{{comment.d.strftime('%s')}}</span>
+</div>
+<div class="note-text">
+{{render_text(comment.text)}}
+</div>
+</div>
+{% end %}
+{% end %}
+
 {% end %}
 {% end %}
 
@@ -123,7 +166,22 @@
 
 {% if not dashboard_view %}
 {% if single and changes %}
+
 <h2>Changes</h2>
 {{ changes }}
+
+<script>
+var files = {{repr(files)}};
+{% if line_notes %}
+add_line_notes({{line_notes}});
+{% end %}
+{% if current_user %}
+var xsrf_token = "{{xsrf_token}}";
+var key = "{{escape(str(commit.key()))}}";
+$(setup_comments);
+{% end %}
+</script>
+
+
 {% end %}
 {% end %}

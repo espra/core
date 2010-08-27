@@ -51,18 +51,21 @@ var add_line_notes = function (data) {
     var number_of_comments = data.length;
     for (var i=0; i < number_of_comments; i++) {
         var comment_info = data[i];
-        var line = comment_info[0];
-        var $container = get_container_for_line(line);
-        var user = comment_info[1];
-        var gravatar = comment_info[2];
-        var timestamp = comment_info[3];
-        var comment = comment_info[4];
+        var filename = comment_info[0];
+        var line = comment_info[1];
+        var line_id = 'L' + files.indexOf(filename) + line;
+        var $container = get_container_for_line(line_id);
+        var user = comment_info[2];
+        var gravatar = comment_info[3];
+        var timestamp = comment_info[4];
+        var comment = comment_info[5];
         $container.append(
             '<div class="note-wrap"><div class="note-head">'
             + '<img class="gravatar-note" src="http://www.gravatar.com/avatar/'
             + gravatar
             + '?s=20&d=http%3A%2F%2Fgithub.com%2Fimages%2Fgravatars%2Fgravatar-20.png"'
-            + '/> <a class="bold-link" href="/profile/' + user + '">' + user
+            + '/> <a class="bold-link" href="/profile/' + encodeURIComponent(user) + '">'
+            + user.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;').replace('"', '&quot;')
             + '</a> wrote a comment <span class="small-grey">'
             + get_relative_time(new Date(parseInt(timestamp) * 1000))
             + '</span></div><div class="note-text">' + comment
@@ -72,20 +75,30 @@ var add_line_notes = function (data) {
 };
 
 var add_line_note = function (line) {
-    var $container = get_container_for_line(line);
-    var base_id = '' + ((new Date()).getTime()) + '-' + line;
+    line = line.split('-');
+    var file = line[0];
+    line = line[1];
+    var line_id = 'L' + file + line;
+    var $container = get_container_for_line(line_id);
+    var filename = files[parseInt(file, 10)];
+    var base_id = '' + ((new Date()).getTime()) + '-' + line_id;
     var $new = $(
         '<div class="note-wrap"><div class="note-head-write">'
         + '<a href="" class="note-button pressed" id="write-' + base_id
         + '">Write</a> '
         + '<a href="" class="note-button" id="preview-' + base_id
         + '">Preview</a>'
-        + '</div><form class="note-text-write" id="form-' + base_id + '">'
+        + '</div><form action="/comment" method="post" '
+        + 'class="note-text-write" id="form-' + base_id + '">'
+        + '<input type="hidden" name="key" value="' + key + '" />'
+        + '<input type="hidden" name="xsrf_token" value="' + xsrf_token + '" />'
+        + '<input type="hidden" name="file" value="' + filename + '" />'
+        + '<input type="hidden" name="line" value="' + line + '" />'
         + '<textarea name="text" rows="6" id="textarea-' + base_id
         + '"></textarea><br />'
         + '</form><div class="note-text" id="text-' + base_id + '">'
         + '</div></div>'
-        + '<a href="" class="button" id="submit-' + base_id
+        + '<a class="button" id="submit-' + base_id
         + '"><span>Add Comment</span></a>'
         + '<hr class="clear" />'
         );
@@ -114,7 +127,7 @@ var add_line_note = function (line) {
         return false;
     });
     $('#submit-' + base_id).click(function () {
-        $new.hide(); return false;
+        $('#form-' + base_id).submit();
     });
     $('#textarea-' + base_id).focus();
 };
@@ -125,3 +138,37 @@ $(function () {
         $span.text(get_relative_time(new Date(parseInt($span.text()) * 1000)));
     });
 });
+
+function setup_comments () {
+    $('#comment-preview').click(function () {
+        $('#comment-preview').addClass('pressed');
+        $('#comment-write').removeClass('pressed');
+        $('#comment-form').hide();
+        var $preview = $('#comment-text');
+        var text = $('#comment-textarea').val();
+        if (!text) {
+            $preview.html("<p>Nothing to preview.</p>").show();
+        } else {
+            $.post('/preview', {text: text}, function(data) {
+                $preview.html(data).show();
+            });
+        }
+        return false;
+    });
+    $('#comment-write').click(function () {
+        $('#comment-preview').removeClass('pressed');
+        $('#comment-write').addClass('pressed');
+        $('#comment-form').show();
+        $('#comment-text').hide();
+        $('#comment-textarea').focus();
+        return false;
+    });
+    $('#comment-textarea').focus();
+    $('#comment-submit').click(function () { $('#comment-form').submit(); });
+    $('.add-bubble').each(function (elem) {
+        var $elem = $(this);
+        $elem.click(function () {
+            add_line_note($elem.attr('rel'));
+        });
+    });
+};
