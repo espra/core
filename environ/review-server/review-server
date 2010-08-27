@@ -405,7 +405,15 @@ def is_repo_dev(repo_name, user):
         if user in repo.core_devs:
             return True
 
-def get_difference(s1, s2):
+def get_difference(s1, s2, encoded=0):
+    try:
+        u1 = unicode(s1, 'utf-8')
+        u2 = unicode(s2, 'utf-8')
+    except Exception:
+        pass
+    else:
+        s1, s2 = u1, u2
+        encoded = 1
     head = 0
     for left, right in zip(s1, s2[:len(s1)]):
         if left != right:
@@ -417,7 +425,15 @@ def get_difference(s1, s2):
             break
         tail -= 1
     if not tail:
+        if encoded:
+            return s1[:head].encode('utf-8'), s1[head:].encode('utf-8'), ''
         return s1[:head], s1[head:], ''
+    if encoded:
+        return (
+            s1[:head].encode('utf-8'),
+            s1[head:tail].encode('utf-8'),
+            s1[tail:].encode('utf-8')
+            )
     return s1[:head], s1[head:tail], s1[tail:]
 
 # GitHub-flavoured markdown port adapted from http://gist.github.com/457617
@@ -1206,6 +1222,7 @@ def format_diff(diff, strip_first=1, add_bubbles=None):
                 append('</table></div>')
             filename = line.split()[-1]
             binary = create = delete = end = 0
+            new_filename = ''
             while 1:
                 try:
                     line = parser.next()
@@ -1221,9 +1238,11 @@ def format_diff(diff, strip_first=1, add_bubbles=None):
                 elif line.startswith('---'):
                     filename = line.split('--- ')[1]
                     if filename == '/dev/null':
-                        filename = parser.next().split('+++ ')[1]
+                        filename = parser.next().split('+++ ', 1)[1]
                     else:
-                        parser.next()
+                        new_filename = parser.next().split('+++ ', 1)[1]
+                        if filename == new_filename:
+                            new_filename = ''
                     break
                 elif line.startswith('diff --git'):
                     parser.push(line)
@@ -1231,12 +1250,14 @@ def format_diff(diff, strip_first=1, add_bubbles=None):
                     break
             counter += 1
             _filename = escape(filename, 1)
+            if new_filename:
+                new_filename = ' &rarr; ' + escape(new_filename, 1)
             add_file(_filename)
             append(
                 '<div class="patch"><table class="patch" cellspacing="0px"><tr>'
                 '<td colspan="3" class="patch-title">'
-                '<span class="patch-icon"><img src="/static/txt.png" /></span><span class="filename">%s</span></td></tr>'
-                % _filename
+                '<span class="patch-icon"><img src="/static/txt.png" /></span><span class="filename">%s%s</span></td></tr>'
+                % (_filename, new_filename)
                 )
             if binary:
                 append('<tr><td colspan="3" class="binary"><pre>binary file not shown</pre></td></tr>')
@@ -1368,7 +1389,7 @@ def format_diff(diff, strip_first=1, add_bubbles=None):
 def get_diff(repo, revision):
     chdir(repo_paths[repo])
     return git(
-        'diff-tree', '-B', '--no-renames', '-p', '--no-prefix', revision,
+        'diff-tree', '-B', '-M', '-p', '--no-prefix', revision,
         raise_error=True
         )
 
@@ -1376,7 +1397,7 @@ def get_diff(repo, revision):
 def get_diff_between(repo, r1, r2):
     chdir(repo_paths[repo])
     return git(
-        'diff-tree', '-B', '--no-renames', '-p', '--no-prefix', r1, r2,
+        'diff-tree', '-B', '-M', '-p', '--no-prefix', r1, r2,
         raise_error=True
         )
 
