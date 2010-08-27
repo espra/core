@@ -59,8 +59,9 @@ var add_line_notes = function (data) {
         var gravatar = comment_info[3];
         var timestamp = comment_info[4];
         var comment = comment_info[5];
+        var comment_id = comment_info[6];
         $container.append(
-            '<div class="note-wrap"><div class="note-head">'
+            '<div class="note-wrap" id="comment-' + comment_id + '"><div class="note-head">'
             + '<img class="gravatar-note" src="http://www.gravatar.com/avatar/'
             + gravatar
             + '?s=20&d=http%3A%2F%2Fgithub.com%2Fimages%2Fgravatars%2Fgravatar-20.png"'
@@ -163,7 +164,9 @@ function setup_comments () {
         $('#comment-textarea').focus();
         return false;
     });
-    $('#comment-textarea').focus();
+    if (!window.location.hash) {
+        $('#comment-textarea').focus();
+    }
     $('#comment-submit').click(function () { $('#comment-form').submit(); });
     $('.add-bubble').each(function (elem) {
         var $elem = $(this);

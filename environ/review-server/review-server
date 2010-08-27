@@ -1380,6 +1380,93 @@ def get_diff_between(repo, r1, r2):
         raise_error=True
         )
 
+@worker(GAE_QUEUE)
+def add_comment(key, user, action, text, file, line):
+    base_key = key.parent()
+    return db.run_in_transaction(
+        _add_comment, base_key, key, user, action, text, file, line
+        )
+
+def _add_comment(base_key, key, user, action, text, file, line):
+    if base_key:
+        base, target = db.get([base_key, key])
+    else:
+        target = db.get(key)
+    kind = target.kind()
+    now = datetime.now()
+    if kind == 'R':
+        retpath = '/review/%s/%s' % (target.repo, target.version)
+        comment = Comment(parent=key)
+        comment.repo = target.repo
+        comment.version = target.version
+        comment.user = user
+        comment.text = text
+        if file and line:
+            comment.file = file
+            comment.line = line
+        elif action:
+            if not is_repo_dev(target.repo, user):
+                return
+            if action == 'build':
+                comment.stage = target.stage = base.stage = 'build'
+            elif action == 'approve':
+                if (target.stage != 'built') or (target.has_failure):
+                    return
+                comment.stage = target.stage = base.stage = 'approved'
+            elif action == 'reject':
+                comment.stage = target.stage = base.stage = 'rejected'
+            elif action == 'applied':
+                logging.error(target.stage)
+                if target.stage != 'approved':
+                    return
+                comment.stage = target.stage = base.stage = 'applied'
+        target.m = base.m = now
+        if not base.cc:
+            base.cc = [user]
+        elif user not in base.cc:
+            base.cc.append(user)
+        db.put([comment, target, base])
+    elif kind == 'G':
+        retpath = '/commit/%s/%s' % (target.repo, target.version)
+        if not text:
+            return
+        comment = Comment(parent=key)
+        comment.text = text
+        comment.repo = target.repo
+        comment.version = target.version
+        comment.user = user
+        if file and line:
+            comment.file = file
+            comment.line = line
+        target.m = now
+        db.put([comment, target])
+    else:
+        return
+    return "%s#comment-%s" % (retpath, comment.key().id())
+
+@worker(GAE_QUEUE)
+def get_comments(parent):
+    _comments = Comment.all().ancestor(parent).order('-d').fetch(1000)
+    if _comments:
+        line_notes = []; add_line_note = line_notes.append
+        comments = []; add_comment = comments.append
+        for comment in _comments:
+            if comment.file:
+                add_line_note([
+                    comment.file,
+                    comment.line,
+                    comment.user,
+                    get_gravatar(comment.user) or '',
+                    comment.d.strftime('%s'),
+                    render_text(comment.text),
+                    comment.key().id()
+                    ])
+            else:
+                add_comment(comment)
+        line_notes = encode_json(list(reversed(line_notes)))
+        return comments, line_notes
+    return None, None
+
 # ------------------------------------------------------------------------------
 # Datastore Models
 # ------------------------------------------------------------------------------
@@ -1719,6 +1806,8 @@ class ProfileHandler(BaseHandler):
 
 class ReviewHandler(BaseHandler):
 
+    title = 'review'
+
     @async
     def get(self, repo, user, name, number):
         repo, user, name = map(unquote_plus, (repo, user, name))
@@ -1766,92 +1855,6 @@ class CommentHandler(BaseHandler):
             self.errmsg("Invalid action.")
             return
         self.redirect(retpath)
-
-@worker(GAE_QUEUE)
-def add_comment(key, user, action, text, file, line):
-    base_key = key.parent()
-    return db.run_in_transaction(
-        _add_comment, base_key, key, user, action, text, file, line
-        )
-
-def _add_comment(base_key, key, user, action, text, file, line):
-    if base_key:
-        base, target = db.get([base_key, key])
-    else:
-        target = db.get(key)
-    kind = target.kind()
-    now = datetime.now()
-    if kind == 'R':
-        retpath = '/review/%s/%s' % (target.repo, target.version)
-        comment = Comment(parent=key)
-        comment.repo = target.repo
-        comment.version = target.version
-        comment.user = user
-        comment.text = text
-        if file and line:
-            comment.file = file
-            comment.line = line
-        elif action:
-            if not is_repo_dev(target.repo, user):
-                return
-            if action == 'build':
-                comment.stage = target.stage = base.stage = 'build'
-            elif action == 'approve':
-                if (target.stage != 'built') or (target.has_failure):
-                    return
-                comment.stage = target.stage = base.stage = 'approved'
-            elif action == 'reject':
-                comment.stage = target.stage = base.stage = 'rejected'
-            elif action == 'applied':
-                logging.error(target.stage)
-                if target.stage != 'approved':
-                    return
-                comment.stage = target.stage = base.stage = 'applied'
-        target.m = base.m = now
-        if not base.cc:
-            base.cc = [user]
-        elif user not in base.cc:
-            base.cc.append(user)
-        db.put([comment, target, base])
-    elif kind == 'G':
-        retpath = '/commit/%s/%s' % (target.repo, target.version)
-        if not text:
-            return
-        comment = Comment(parent=key)
-        comment.text = text
-        comment.repo = target.repo
-        comment.version = target.version
-        comment.user = user
-        if file and line:
-            comment.file = file
-            comment.line = line
-        target.m = now
-        db.put([comment, target])
-    else:
-        return
-    return retpath
-
-@worker(GAE_QUEUE)
-def get_comments(parent):
-    _comments = Comment.all().ancestor(parent).order('-d').fetch(1000)
-    if _comments:
-        line_notes = []; add_line_note = line_notes.append
-        comments = []; add_comment = comments.append
-        for comment in _comments:
-            if comment.file:
-                add_line_note([
-                    comment.file,
-                    comment.line,
-                    comment.user,
-                    get_gravatar(comment.user) or '',
-                    comment.d.strftime('%s'),
-                    render_text(comment.text)
-                    ])
-            else:
-                add_comment(comment)
-        line_notes = encode_json(list(reversed(line_notes)))
-        return comments, line_notes
-    return None, None
 
 class ReviewsHandler(BaseHandler):
 

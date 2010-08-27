@@ -113,7 +113,7 @@
 
 {% if comments %}
 {% for comment in comments %}
-<div class="note-wrap">
+<div class="note-wrap" id="comment-{{comment.key().id()}}">
 <div class="note-head">
 	<a href="/profile/{{url_escape(comment.user)}}"><img class="gravatar-note" src="http://www.gravatar.com/avatar/{{escape(get_gravatar(comment.user) or '')}}?s=20&d=http%3A%2F%2Fgithub.com%2Fimages%2Fgravatars%2Fgravatar-20.png" width="20px" height="20px" /></a>
 	<a class="bold-link" href="/profile/{{url_escape(comment.user)}}">{{escape(comment.user)}}</a>
