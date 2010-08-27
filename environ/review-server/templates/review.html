@@ -17,6 +17,7 @@
 		{% for patch_number in range(int(base.latest), 0, -1) %}{% if patch_number != current_patch_number %}<a href="/review/{{escaped_repo}}/{{escaped_patch_base}}/{{patch_number}}">{{patch_number}}</a>{% if not ((current_patch_number == 1) and (patch_number == 2) or (patch_number == 1)) %}, {% end %}{% end %}{% end %}
 		{% end %}
 		<span class="small-grey">{% if review.m == review.d %}SUBMITTED{% else %}UPDATED{% end %} <span class="timestamp">{{ review.m.strftime('%s') }}</span></span>
+		{% if review.has_comment %}<a href="/review/{{review.repo}}/{{escaped_patch_base}}/{{current_patch_number}}"><img class="absmiddle" src="{{static_url('comment.png')}}" /></a>{% end %}
 		{% if review.subject %}
 		<blockquote class="subject">
 			{{ render_text(review.subject) }}

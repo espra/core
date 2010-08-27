@@ -1421,6 +1421,7 @@ def _add_comment(base_key, key, user, action, text, file, line):
                     return
                 comment.stage = target.stage = base.stage = 'applied'
         target.m = base.m = now
+        target.has_comment = True
         if not base.cc:
             base.cc = [user]
         elif user not in base.cc:
@@ -1548,6 +1549,7 @@ class R(db.Model): # id = incrementing integer; parent = ReviewBase
     passed_builds = db.StringListProperty(name='p', indexed=False)
     failed_builds = db.StringListProperty(name='f', indexed=False)
     has_failure = db.BooleanProperty(name='h', default=False)
+    has_comment = db.BooleanProperty(name='j', default=False)
     user = db.StringProperty(name='u')
     d = db.DateTimeProperty()
     m = db.DateTimeProperty()
