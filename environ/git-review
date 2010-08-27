@@ -382,17 +382,39 @@ def main(argv=None, show_help=False):
 def apply(argv=None, completer=None):
 
     op = OptionParser(
-        usage="Usage: git review apply <review-id>",
+        usage="Usage: git review apply <review-id> [options]",
         add_help_option=False
         )
+
+    op.add_option('--official', action='store_true',
+                  help="inform the review server of the review apply")
+
+    op.add_option('-s', dest='server', default="",
+                  help="override the http server url in the repo config")
 
     review_ids = get_review_ids()
     if completer:
         return op, ListCompleter(review_ids)
 
-    root = SCMConfig('git').root
+    login, token, root = get_git_info()
     parse_config(root)
     options, args = parse_options(op, argv, completer, True)
+
+    if options.official:
+        print "=> Informing review-server of the change."
+        review_server = options.server
+        if not review_server:
+            review_server = CONFIG['review_server']
+        server = urlopen(review_server + '/comment', urlencode({
+            'review_id': args[0],
+            'login': login,
+            'token': token,
+            'repo': CONFIG['repo_id'],
+            'action': 'applied'
+            }))
+        server.read()
+        server.close()
+        return
 
     chdir(root)
     current_branch = get_current_branch()
