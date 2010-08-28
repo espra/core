@@ -90,6 +90,7 @@ repo_maintainers = {}
 maintainer_repos = {}
 
 cache = None
+caches = {}
 secure_id_prefix = hexlify(urandom(18))
 
 review_stages = {
@@ -162,7 +163,6 @@ class CachingDict(dict):
     def get(self, key, default=None):
         if key in self:
             return self.__getitem__(key)
-
         return default
 
     def pop(self, key, default=Blank):
@@ -180,7 +180,6 @@ class CachingDict(dict):
     def setdefault(self, key, default):
         if key in self:
             return self.__getitem__(key)
-
         self.__setitem__(key, default)
         return default
 
@@ -201,10 +200,8 @@ class CachingDict(dict):
         return list(self.iteritems())
 
     def set_cache_size(self, cache_size):
-
         if not isinstance(cache_size, (int, long)):
             raise ValueError("Cache size must be an integer.")
-
         self._cache_size = cache_size
 
     def get_cache_byte_size(self):
@@ -221,6 +218,17 @@ GAE_QUEUE = Queue()
 
 EVENTS = {}
 
+def get_cache_key(func, args, kwargs):
+    return (func.__name__,) + args + tuple(sorted(kwargs.values()))
+
+def invalidate(*names):
+    for name in names:
+        if name not in caches:
+            continue
+        #logging.error(caches[name])
+        caches[name].clear()
+        #logging.error(caches[name])
+
 def threaded_worker_dispatcher(queue, error_logger=None):
     while 1:
         marker, worker, args, kwargs = queue.get()
@@ -233,10 +241,23 @@ def threaded_worker_dispatcher(queue, error_logger=None):
 
 class Worker(object):
 
-    def __init__(self, queue, callback, errback, func, args, kwargs):
+    def __init__(self, queue, callback, errback, func, args, kwargs, cache):
+        self.marker = marker = id(self)
+        self.cache = cache
         self.callback = callback
         self.errback = errback
-        self.marker = marker = id(self)
+        if cache:
+            logging.error(cache)
+            if cache not in caches:
+                caches[cache] = CachingDict(5000)
+            cache_store = caches[cache]
+            cache_key = get_cache_key(func, args, kwargs)
+            cached_data = cache_store.get(cache_key, Blank)
+            self.cache_key = cache_key
+            if cached_data is not Blank:
+                EVENTS[marker] = (0, cached_data)
+                Loop.add_callback(self.respond)
+                return
         queue.put((marker, func, args, kwargs))
         Loop.add_callback(self.respond)
 
@@ -249,13 +270,18 @@ class Worker(object):
         if error:
             self.errback(response)
         else:
+            cache = self.cache
+            if cache:
+                caches[cache][self.cache_key] = response
             self.callback(response)
 
-def worker(queue):
+def worker(queue, cache=None):
     def __worker(func):
         def wrapper(*args, **kwargs):
             def __wrapper(callback, errback):
-                return Worker(queue, callback, errback, func, args, kwargs)
+                return Worker(
+                    queue, callback, errback, func, args, kwargs, cache
+                    )
             __wrapper.__name__ = func.__name__
             return __wrapper
         wrapper.__name__ = func.__name__
@@ -591,7 +617,7 @@ def update_repo(repo, platforms, core_devs):
     repo_obj.put()
     setup_repo_platforms(repo_obj)
 
-@worker(GAE_QUEUE)
+@worker(GAE_QUEUE, cache='slaves:auth')
 def get_authorised_slaves(repo):
     return Slave.all().filter('a =', repo).order('__key__').fetch(1000)
 
@@ -611,11 +637,6 @@ def apply_patch(repo, review_id, upstream, patch_file):
     git('checkout', '-b', review_id, upstream, raise_error=True)
     git('am', patch_file, raise_error=True)
     git('push', 'origin', 'upstream/master:master', review_id, raise_error=True)
-
-@worker(GIT_QUEUE)
-def get_patch(repo, rev1, rev2):
-    chdir(repo_paths[repo])
-    git('diff', rev1, rev2)
 
 class Retry(Exception):
     pass
@@ -702,7 +723,7 @@ def _get_new_commits(repo, start):
         '--no-color', '%s...upstream/master' % start, raise_error=True
         ).split('\x00')])
 
-get_new_commits = worker(GIT_QUEUE)(_get_new_commits)
+get_new_commits = worker(GIT_QUEUE, cache='commits:new')(_get_new_commits)
 
 def _create_commits(repo, data):
     commits = []; new_commit = commits.append
@@ -756,7 +777,7 @@ def create_slave(owner):
     slave.put()
     return slave.key().id()
 
-@worker(GAE_QUEUE)
+@worker(GAE_QUEUE, cache='slaves')
 def get_slaves(next=None, n=101):
     more = False
     if next:
@@ -771,7 +792,7 @@ def get_slaves(next=None, n=101):
     slaves = slaves[:n-1]
     return slaves, more
 
-@worker(GAE_QUEUE)
+@worker(GAE_QUEUE, cache='slave')
 def get_slave(slave_id, next=None, n=101):
     slave_id = int(slave_id)
     slave = Slave.get_by_id(slave_id)
@@ -990,7 +1011,7 @@ def get_key_for_version(repo, version, create_key=db.Key.from_path):
         return create_key('R', id, parent=parent)
     return create_key('G', '%s:%s' % (repo, version))
 
-@worker(GAE_QUEUE)
+@worker(GAE_QUEUE, cache='builds')
 def get_builds(repo, platform, version, next=None, n=101):
     more = False
     builds = Build.all()
@@ -1017,7 +1038,7 @@ def get_builds(repo, platform, version, next=None, n=101):
 def db_get(key):
     return db.get(key)
 
-@worker(GAE_QUEUE)
+@worker(GAE_QUEUE, cache='build')
 def get_build_data(build_id):
     build_id = int(build_id)
     build = Build.get_by_id(build_id)
@@ -1058,7 +1079,7 @@ def rebuild(repo, version, platform):
     if result:
         return 1
 
-@worker(GAE_QUEUE)
+@worker(GAE_QUEUE, cache='commits')
 def get_commits(repo, version, user, failures_only, single, next, n=101):
     update_gravatars()
     more = False
@@ -1105,7 +1126,7 @@ def update_gravatars():
         if changed:
             db.put(changed)
 
-@worker(GAE_QUEUE)
+@worker(GAE_QUEUE, cache='activities')
 def get_activities(
     repo, user, hide_commits, hide_slaves, next, n=101,
     get_key=db.Key.from_path
@@ -1162,7 +1183,7 @@ def get_activities(
         activities = activities[:n-1]
     return activities, more
 
-@worker(GAE_QUEUE)
+@worker(GAE_QUEUE, cache='review')
 def get_review(repo, user, name, number, create_key=db.Key.from_path):
     update_gravatars()
     base_key = create_key('Q', "%s:%s:%s" % (repo, user, name))
@@ -1174,7 +1195,7 @@ def get_review(repo, user, name, number, create_key=db.Key.from_path):
             'v =', review.version).order('-d').fetch(1000)
     return base, review, builds
 
-@worker(GAE_QUEUE)
+@worker(GAE_QUEUE, cache='reviews')
 def get_reviews(
     repo, user, state, next, n=201, create_key=db.Key.from_path
     ):
@@ -1387,7 +1408,7 @@ def format_diff(diff, strip_first=1, add_bubbles=None):
     append('</table></div>')
     return '\n'.join(output), files
 
-@worker(GIT_QUEUE)
+@worker(GIT_QUEUE, cache='diff')
 def get_diff(repo, revision):
     chdir(repo_paths[repo])
     return git(
@@ -1395,7 +1416,7 @@ def get_diff(repo, revision):
         raise_error=True
         )
 
-@worker(GIT_QUEUE)
+@worker(GIT_QUEUE, cache='diff:between')
 def get_diff_between(repo, r1, r2):
     chdir(repo_paths[repo])
     return git(
@@ -1439,7 +1460,6 @@ def _add_comment(base_key, key, user, action, text, file, line):
             elif action == 'reject':
                 comment.stage = target.stage = base.stage = 'rejected'
             elif action == 'applied':
-                logging.error(target.stage)
                 if target.stage != 'approved':
                     return
                 comment.stage = target.stage = base.stage = 'applied'
@@ -1468,7 +1488,7 @@ def _add_comment(base_key, key, user, action, text, file, line):
         return
     return "%s#comment-%s" % (retpath, comment.key().id())
 
-@worker(GAE_QUEUE)
+@worker(GAE_QUEUE, cache='comments')
 def get_comments(parent):
     _comments = Comment.all().ancestor(parent).order('-d').fetch(1000)
     if _comments:
@@ -1879,6 +1899,10 @@ class CommentHandler(BaseHandler):
         if not retpath:
             self.errmsg("Invalid action.")
             return
+        if retpath.startswith('/commit'):
+            invalidate('comments', 'activities', 'commits')
+        else:
+            invalidate('comments', 'activities', 'review', 'reviews')
         self.redirect(retpath)
 
 class ReviewsHandler(BaseHandler):
@@ -1987,6 +2011,7 @@ class ReviewsHandler(BaseHandler):
 
         self.write('OK %s' % review_url)
         remove(patch_file)
+        invalidate('review', 'reviews', 'activities')
 
 class PreviewHandler(BaseHandler):
 
@@ -2141,6 +2166,7 @@ class BuildHandler(BaseHandler):
             timings, traceback, has_failure
             )
         self.write('OK %s' % build)
+        invalidate('build', 'builds', 'activities')
 
 class JobHandler(BaseHandler):
 
@@ -2213,6 +2239,7 @@ class SlavesHandler(BaseHandler):
     @auth()
     def post(self):
         slave_id = yield create_slave(self.current_user)
+        invalidate('slaves')
         self.redirect('/slave/%s' % slave_id)
 
 class SlaveHandler(BaseHandler):
@@ -2246,6 +2273,7 @@ class SlaveHandler(BaseHandler):
         if retcode == 2:
             self.errmsg("You're not authorised for this action.")
             return
+        invalidate('slave', 'slave:auth', 'slaves')
         self.redirect('/slave/%s' % slave_id)
 
 class PostReceiveHandler(BaseHandler):
@@ -2255,6 +2283,7 @@ class PostReceiveHandler(BaseHandler):
         commits = yield get_new_commits(repo, repo_commits[repo])
         yield create_commits(repo, commits)
         self.write('OK')
+        invalidate('commits', 'activities')
 
     get = post
 
@@ -2271,6 +2300,7 @@ class RebuildHandler(BaseHandler):
             self.errmsg("%s is not supported atm." % platform)
             return
         yield rebuild(repo, version, platform)
+        invalidate('build')
         self.redirect('/build/%s' % build_id)
 
 # ------------------------------------------------------------------------------
