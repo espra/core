@@ -3,7 +3,11 @@
 # No Copyright (-) 2010 The Ampify Authors. This file is under the
 # Public Domain license that can be found in the root LICENSE file.
 
-require File.join(File.dirname(__FILE__), 'rubylibs')
+require 'pathname'
+
+MAIN_ROOT = Pathname.new(__FILE__).realpath.dirname.dirname
+$:.unshift MAIN_ROOT.join('third_party', 'haml', 'lib')
+
 require 'haml/exec'
 require 'haml/util'
 
@@ -13,6 +17,5 @@ elsif not ARGV.include? "--cache-location"
     ARGV.unshift "--cache-location", MAIN_ROOT.join('.sass-cache').to_s
 end
 
-#Haml.init_rails(binding) if defined?(Haml)
 opts = Haml::Exec::Sass.new(ARGV)
 opts.parse!
