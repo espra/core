@@ -483,6 +483,8 @@ def render_text(text, css_classes=css_classes):
         )
 
 def get_gravatar(user):
+    if not user:
+        return
     gravatar = GRAVATARS.get(user)
     if gravatar:
         return gravatar
@@ -728,9 +730,9 @@ def _create_commits(repo, data):
                     EMAILS[ae] = user
                     commit.user = user
                 else:
-                    commit.user = '#'
+                    commit.user = ''
         else:
-            commit.user = '#'
+            commit.user = ''
         commit.needed_builds = repo_cache[repo]._platforms[:]
         new_commit(commit)
     db.put(commits)
@@ -2400,15 +2402,6 @@ def main(argv=None):
         settings['gae_remote_key'], settings['gae_secure']
         )
 
-    for repo in repos:
-        logging.info("Storing commit data for %s" % repo)
-        commit = Commit.all().filter('r =', repo).get()
-        if commit:
-            repo_commits[repo] = commit.version
-        else:
-            commits = _get_new_commits(repo, 'upstream/master^')
-            _create_commits(repo, commits)
-
     if repos:
         repo_keys = repos.keys()
         to_save = []; save = to_save.append
@@ -2420,6 +2413,15 @@ def main(argv=None):
         db.put(to_save)
         for repo in to_save:
             setup_repo_platforms(repo)
+
+    for repo in repos:
+        logging.info("Storing commit data for %s" % repo)
+        commit = Commit.all().filter('r =', repo).get()
+        if commit:
+            repo_commits[repo] = commit.version
+        else:
+            commits = _get_new_commits(repo, 'upstream/master^')
+            _create_commits(repo, commits)
 
     logging.info("The git review server is listening on port %d ..." % port)
     Loop.start()
