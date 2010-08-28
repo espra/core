@@ -156,6 +156,17 @@ else
 	fi
 fi
 
+if [ "x$PRE_AMPENV_NODE_PATH" != "x" ]; then
+	export NODE_PATH=$AMPIFY_ROOT/third_party/vows/lib:$AMPIFY_ROOT/third_party/jslibs:$PRE_AMPENV_PATH
+else
+	if [ "x$NODE_PATH" != "x" ]; then
+		export PRE_AMPENV_NODE_PATH=$NODE_PATH
+		export NODE_PATH=$AMPIFY_ROOT/third_party/vows/lib:$AMPIFY_ROOT/third_party/jslibs:$NODE_PATH
+	else
+		export NODE_PATH=$AMPIFY_ROOT/third_party/vows/lib:$AMPIFY_ROOT/third_party/jslibs
+	fi
+fi
+
 if [ "x$PRE_AMPENV_MANPATH" != "x" ]; then
 	export MANPATH=$AMPIFY_ROOT/doc/man:$AMPIFY_LOCAL/share/man:$PRE_AMPENV_MANPATH
 else

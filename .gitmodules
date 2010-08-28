@@ -12,7 +12,10 @@
 	url = https://github.com/tav/pylibs.git
 [submodule "third_party/haml"]
 	path = third_party/haml
-	url = http://github.com/nex3/haml.git
+	url = https://github.com/nex3/haml.git
 [submodule "third_party/coffee-script"]
 	path = third_party/coffee-script
-	url = http://github.com/jashkenas/coffee-script.git
+	url = https://github.com/jashkenas/coffee-script.git
+[submodule "third_party/vows"]
+	path = third_party/vows
+	url = https://github.com/tav/vows.git
