@@ -114,6 +114,7 @@ for submodule in needs_update:
         sys.exit(retcode)
 
 if needs_attention:
+    status = 0
     for submodule in needs_attention:
         index_commit = run_command(
             ['git', 'ls-tree', 'HEAD', submodule], cwd=repo_path
@@ -123,9 +124,10 @@ if needs_attention:
             ).strip()
         if index_commit == head_commit:
             continue
+        status = 1
         print
         print(
             "Skipped: %s   <--  [May need attention... out of sync!]"
             % submodule
             )
-    sys.exit(1)
+    sys.exit(status)
