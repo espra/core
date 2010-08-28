@@ -131,7 +131,7 @@ func main() {
 	fmt.Printf("Running hubproxy with %d CPUs on %s\n",
 		runtime.CPUCount, addr)
 
-	proxy := new(Proxy)
+	proxy := &Proxy{}
 	http.Serve(listener, proxy)
 
 }

@@ -38,7 +38,7 @@ func GetOutput(args []string) (output string, error os.Error) {
 	if err != nil {
 		goto Error
 	}
-	buffer := new(bytes.Buffer)
+	buffer := &bytes.Buffer{}
 	_, err = io.Copy(buffer, read_pipe)
 	if err != nil {
 		goto Error

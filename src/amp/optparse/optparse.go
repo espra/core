@@ -89,7 +89,7 @@ func (op *OptionParser) computeFlags(flags []string, opt *option) (shortflag, lo
 }
 
 func (op *OptionParser) Default(flags []string, usage string, displayDest bool, dest ...string) (opt *option) {
-	opt = new(option)
+	opt = &option{}
 	opt.usage = usage
 	opt.shortflag, opt.longflag = op.computeFlags(flags, opt)
 	destSlice := []string(dest)
@@ -313,7 +313,7 @@ func (op *OptionParser) PrintUsage() {
 
 // Utility constructor.
 func Parser(usage string, version ...string) (op *OptionParser) {
-	op = new(OptionParser)
+	op = &OptionParser{}
 	op.long2options = make(map[string]*option)
 	op.short2options = make(map[string]*option)
 	op.Usage = usage
