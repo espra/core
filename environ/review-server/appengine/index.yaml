@@ -88,6 +88,12 @@ indexes:
     direction: desc
 
 - kind: C
+  properties:
+  - name: u
+  - name: d
+    direction: desc
+
+- kind: C
   ancestor: yes
   properties:
   - name: d
