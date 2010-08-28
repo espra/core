@@ -115,6 +115,14 @@ for submodule in needs_update:
 
 if needs_attention:
     for submodule in needs_attention:
+        index_commit = run_command(
+            ['git', 'ls-tree', 'HEAD', submodule], cwd=repo_path
+            ).strip().split()[2]
+        head_commit = run_command(
+            ['git', 'rev-parse', 'HEAD'], cwd=os.path.join(repo_path, submodule)
+            ).strip()
+        if index_commit == head_commit:
+            continue
         print
         print(
             "Skipped: %s   <--  [May need attention... out of sync!]"
