@@ -247,5 +247,8 @@ function bench(duration) {
 // print_tokens(tokenise("hello, wo—rld__.{(foo-bar\\"));
 
 // timeit(1000, tokenise, text);
-bench("tokeniser", 5.05, tokenise, text);
+// bench("tokeniser", 5.05, tokenise, text);
 
+if (typeof exports !== 'undefined') {
+    exports.tokenise = tokenise;
+}
