@@ -309,7 +309,7 @@ def test(argv=None, completer=None, run_all=False):
     op.add_option('-v', '--verbose', dest='verbose', action='store_true',
                   default=False, help="enable verbose mode")
 
-    testers = ['python', 'go']
+    testers = ['python', 'go', 'js']
     if completer:
         return op, ListCompleter(testers)
 
@@ -326,6 +326,19 @@ def test(argv=None, completer=None, run_all=False):
 
     if 'go' in args:
         go_tests()
+
+    if 'js' in args:
+        js_tests()
+
+def js_tests():
+    js_root = join(AMPIFY_ROOT, 'src', 'jsutil')
+    chdir(js_root)
+    _, retval = run_command(
+        ['vows', '--spec'], retcode=True, redirect_stderr=False,
+        redirect_stdout=False
+        )
+    if retval:
+        sys.exit(retval)
 
 def go_tests():
     go_root = join(AMPIFY_ROOT, 'src', 'amp')

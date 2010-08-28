@@ -156,14 +156,17 @@ else
 	fi
 fi
 
+_THIRD_PARTY=$AMPIFY_ROOT/third_party
+_ENV_VAL=$_THIRD_PARTY/vows/lib:$_THIRD_PARTY/jslibs:$_THIRD_PARTY/coffee-script/lib
+
 if [ "x$PRE_AMPENV_NODE_PATH" != "x" ]; then
-	export NODE_PATH=$AMPIFY_ROOT/third_party/vows/lib:$AMPIFY_ROOT/third_party/jslibs:$PRE_AMPENV_PATH
+	export NODE_PATH=$_ENV_VAL:$PRE_AMPENV_PATH
 else
 	if [ "x$NODE_PATH" != "x" ]; then
 		export PRE_AMPENV_NODE_PATH=$NODE_PATH
-		export NODE_PATH=$AMPIFY_ROOT/third_party/vows/lib:$AMPIFY_ROOT/third_party/jslibs:$NODE_PATH
+		export NODE_PATH=$_ENV_VAL:$NODE_PATH
 	else
-		export NODE_PATH=$AMPIFY_ROOT/third_party/vows/lib:$AMPIFY_ROOT/third_party/jslibs
+		export NODE_PATH=$_ENV_VAL
 	fi
 fi
 
@@ -259,3 +262,4 @@ fi
 unset _OS_NAME _OS_ARCH _OS_ARCH_64 _OS_ARCH_386
 unset _BASH_VERSION _BASH_MAJOR_VERSION _BASH_MINOR_VERSION
 unset _have _INTERACTIVE_SHELL
+unset _THIRD_PARTY _ENV_VAL
