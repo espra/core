@@ -409,6 +409,7 @@ def init_build_recipes():
         return
     # Try getting a lock to avoid concurrent builds.
     lock(BUILD_LOCK)
+    mkdir(RECEIPTS)
     for recipe in BUILD_RECIPES:
         execfile(recipe, BUILTINS)
     for package in list(RECIPES):
@@ -629,7 +630,7 @@ def install_packages(types=BUILD_TYPES):
     ensure_java_version()
 
     for directory in [
-        BUILD_WORKING_DIRECTORY, LOCAL, BIN, RECEIPTS, SHARE, TMP
+        BUILD_WORKING_DIRECTORY, LOCAL, BIN, SHARE, TMP
         ]:
         mkdir(directory)
 
