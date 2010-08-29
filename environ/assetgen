@@ -218,6 +218,8 @@ def assetgen(config_path, clean):
     for file in css_output_files:
         input = file + '.css'
         output = file + '.min.css'
+        if not exists(input):
+            continue
         if not newer(input, output):
             continue
         if not break_printed:
