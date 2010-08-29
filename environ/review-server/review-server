@@ -6,7 +6,6 @@
 
 """Git review server."""
 
-import pylibs
 import logging
 import sys
 
