@@ -13,17 +13,15 @@ environ/local
 environ/receipts
 
 environ/review-server/appengine/config.py
+environ/review-server/appengine/updated.py
 environ/review-server/config.yaml
 environ/review-server/var
 
 src/amp/ampnode/ampnode
 src/amp/hubproxy/hubproxy
-src/instance/*.css
-src/instance/fabfile.py
+src/jsutil/*.js
 src/instance/www/*.css
 src/instance/www/*.js
-src/kalati/UnicodeData.txt
-src/kalati/*.js
 
 src/tentapp/secret.py
 src/tentapp/static/*.css
