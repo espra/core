@@ -4,9 +4,9 @@
 # Naaga
 # =====
 
-fs = require('fs')
-sys = require('sys')
-ucd = require('./ucd')
+if exports?
+    sys = require('sys')
+    ucd = require('./ucd')
 
 Categories = ucd.Categories
 CategoryRanges = ucd.CategoryRanges

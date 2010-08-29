@@ -5,5 +5,5 @@
 # ========================
 
 # The client has a number of default parameters, e.g.
-HOST_URL: "https://espra.com"
-EVENTROUTE_URL: "https://sensor.espra.com"
+HOST_URL = "https://espra.com"
+EVENTROUTE_URL = "https://sensor.espra.com"
