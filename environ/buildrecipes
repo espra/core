@@ -76,7 +76,7 @@ RECIPES['closure'] = [{
 RECIPES['go'] = [{
     'type': 'submodule',
     'path': 'third_party/go',
-    'before': lambda: chdir(SRC),
+    'before': lambda: chdir('src'),
     'commands': [
         ['./all.bash']
         ]
