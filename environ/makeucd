@@ -66,10 +66,12 @@ out("""
 //
 // DO NOT EDIT
 
+(function () {
+
 var version = "5.2.0",
-    cat,
-    catranges,
-    catnames,
+    Categories,
+    CategoryRanges,
+    CategoryNames,
 """)
 
 for group in groups:
@@ -79,7 +81,7 @@ for idx, category in enumerate(categories):
     out("    %s = %i,\n" % (category, 1 << idx))
 
 out("    Unknown = Cn = 0;\n\n")
-out("catnames = {\n")
+out("CategoryNames = {\n")
 out('    0: "Unknown",\n')
 
 for idx, category in enumerate(categories):
@@ -87,7 +89,7 @@ for idx, category in enumerate(categories):
 
 trim(output)
 out("};\n\n")
-out("cat = {")
+out("Categories = {")
 
 for idx, category in enumerate(categories):
     out("\n    // General Category: %s\n" % category)
@@ -97,7 +99,7 @@ for idx, category in enumerate(categories):
 
 trim(output)
 out("};\n\n")
-out("catranges = [\n")
+out("CategoryRanges = [\n")
 
 for catrange in ranges:
     out("    [%i, %i, %s],\n" % tuple(catrange))
@@ -115,25 +117,30 @@ for group in groups:
 
 out("""
 if ((typeof process !== "undefined") && (process !== null)) {
-    exports.version = version;
-    exports.cat = cat;
-    exports.catranges = catranges;
-    exports.catnames = catnames;
+    ucd = exports;
+} else {
+    this.ucd = ucd = {};
+}
+
+ucd.version = version;
+ucd.Categories = Categories;
+ucd.CategoryRanges = CategoryRanges;
+ucd.CategoryNames = CategoryNames;
 """)
 
 for category in categories:
     # print "    %s = ucd.%s," % (category, category)
-    out("    exports.%s = %s;\n" % (category, category))
+    out("ucd.%s = %s;\n" % (category, category))
 
 for group in groups:
     # print "    %s = ucd.%s," % (group, group)
-    out("    exports.%s = %s;\n" % (group, group))
+    out("ucd.%s = %s;\n" % (group, group))
 
-out("    exports.Unknown = Unknown;")
+out("ucd.Unknown = Unknown;")
 
 out("""
-}
 
+})();
 """)
 
 ucd_file = open(sys.argv[2], 'wb')
