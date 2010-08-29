@@ -178,6 +178,16 @@ def strip_prefix(listing, prefix):
         new.add(item[lead:])
     return new
 
+def get_listing():
+    return strip_prefix(gather_local_filelisting(LOCAL), LOCAL)
+
+def cleanup_partial_install(current_filelisting):
+    new_filelisting = get_listing()
+    diff = new_filelisting.difference(current_filelisting)
+    for file in diff:
+        file = join(LOCAL, file)
+        remove(file)
+
 # ------------------------------------------------------------------------------
 # Constants
 # ------------------------------------------------------------------------------
@@ -704,9 +714,6 @@ def install_packages(types=BUILD_TYPES):
                     index = dep_index
         to_install_list.insert(index, package)
 
-    def get_listing():
-        return strip_prefix(gather_local_filelisting(LOCAL), LOCAL)
-
     current_filelisting = get_listing()
     install_data = []
     install_items = len(to_install_list) - 1
@@ -771,6 +778,10 @@ def install_packages(types=BUILD_TYPES):
             info['before']()
 
         env = environ.copy()
+        if 'MAKE' in env:
+            del env['MAKE']
+        if 'MAKELEVEL' in env:
+            del env['MAKELEVEL']
         if info['env']:
             env.update(info['env'])
 
@@ -805,6 +816,7 @@ def install_packages(types=BUILD_TYPES):
             traceback.print_exc()
             sys.exit(1)
         except SystemExit:
+            cleanup_partial_install(current_filelisting)
             exit("ERROR: Building %s %s failed" % (package, version))
 
         if info['after']:
