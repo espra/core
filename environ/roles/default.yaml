@@ -1,3 +1,16 @@
 requires: base
 packages:
-- nodejs
+- berkeleydb
+- closure
+- go
+- keyspace
+- libnatpmp
+- makeucd
+- miniupnpc
+- nginx
+- pyampify
+- pylibs
+- node
+- redis
+- ucd
+- yuicompressor

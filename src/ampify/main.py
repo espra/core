@@ -128,6 +128,14 @@ def build(argv=None, completer=None):
     load_role(options.role)
     install_packages()
 
+    _, retcode = run_command(
+        [sys.executable, join(AMPIFY_ROOT, 'environ', 'assetgen')],
+        retcode=True, redirect_stdout=False, redirect_stderr=False
+        )
+
+    if retcode:
+        sys.exit(retcode)
+
 # ------------------------------------------------------------------------------
 # Check Command
 # ------------------------------------------------------------------------------

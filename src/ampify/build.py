@@ -2,17 +2,18 @@
 # Public Domain license that can be found in the root LICENSE file.
 
 import os
-import re
 import sys
 import tarfile
 import traceback
 
 from errno import EACCES, ENOENT
+from glob import glob
 from hashlib import sha1, sha256
-from os import chdir, getcwd, environ, execve, listdir, makedirs, remove
+from os import chdir, getcwd, environ, execve, listdir, makedirs, remove, stat
 from os.path import dirname, exists, expanduser, isabs, isdir, isfile, islink
 from os.path import join, realpath
 from shutil import copy, rmtree
+from stat import ST_MTIME
 from thread import start_new_thread
 from time import sleep
 from urllib import urlopen
@@ -91,15 +92,6 @@ def do(*cmd, **kwargs):
     if 'exit_on_error' not in kwargs:
         kwargs['exit_on_error'] = True
     return run_command(cmd, **kwargs)
-
-#     if 'retcode' in kwargs:
-#         return run_command(*args, **kwargs)
-#     kwargs['retcode'] = 1
-#     result = run_command(*args, **kwargs)
-#     retcode = result[-1]
-#     if retcode and not Options.options.force:
-#         raise ValueError("Error running %s" % ' '.join(args[0]))
-#     return result[:-1]
 
 def query(question, options='Y/n', default='Y', alter=1):
     if alter:
@@ -202,16 +194,17 @@ MAN = join(SHARE, 'man')
 RECEIPTS = join(ENVIRON, 'receipts')
 TMP = join(LOCAL, 'tmp')
 VAR = join(LOCAL, 'var')
+SRC = join(ROOT, 'src')
 
 DISTFILES_URL_BASE = environ.get(
     'AMPIFY_DISTFILES_URL_BASE',
     "http://cloud.github.com/downloads/tav/ampify/distfile."
     )
 
-DISTFILES_URL_BASE = environ.get(
-    'AMPIFY_DISTFILES_URL_BASE',
-    "http://github.s3.amazonaws.com/downloads/tav/ampify/distfile."
-    )
+# DISTFILES_URL_BASE = environ.get(
+#     'AMPIFY_DISTFILES_URL_BASE',
+#     "http://github.s3.amazonaws.com/downloads/tav/ampify/distfile."
+#     )
 
 # Alternatively, could use the HTTPS URL -- note that this would be using S3 and
 # not Amazon CloudFront:
@@ -423,7 +416,45 @@ def init_build_recipes():
         versions = []
         data = {}
         for recipe in recipes:
-            version = recipe['version']
+            recipe_type = recipe.get('type')
+            if recipe_type == 'submodule':
+                path = join(ROOT, recipe['path'])
+                version = run_command(
+                    ['git', 'rev-parse', 'HEAD'], cwd=path, exit_on_error=True
+                    ).strip()
+            elif recipe_type == 'makelike':
+                contents = []
+                latest = 0
+                for pattern in recipe['depends']:
+                    for file in glob(pattern):
+                        dep_file = open(file, 'rb')
+                        contents.append(dep_file.read())
+                        dep_file.close()
+                        dep_mtime = stat(file)[ST_MTIME]
+                        if dep_mtime > latest:
+                            latest = dep_mtime
+                generate = 0
+                for pattern in recipe['outputs']:
+                    files = glob(pattern)
+                    if not files:
+                        generate = 1
+                        break
+                    for file in files:
+                        if not isfile(file):
+                            generate = 1
+                            break
+                        if stat(file)[ST_MTIME] <= latest:
+                            generate = 1
+                            break
+                    if generate:
+                        break
+                if generate:
+                    for file in listdir(RECEIPTS):
+                        if file.startswith(package + '-'):
+                            remove(join(RECEIPTS, file))
+                version = sha1(''.join(contents)).hexdigest()
+            else:
+                version = recipe['version']
             versions.append(version)
             data[version] = recipe
         RECIPES[package] = data
@@ -488,25 +519,48 @@ PYTHON_BUILD.update({
     })
 
 def resource_build_commands(package, info):
-    return []
+    source = info['source'] or join(BUILD_WORKING_DIRECTORY, package)
+    destination = info['destination'] or join(SHARE, package)
+    return [['cp', '-R', source, destination]]
 
 RESOURCE_BUILD = BASE_BUILD.copy()
 RESOURCE_BUILD.update({
     'commands': resource_build_commands,
-    'source': '',
-    'destination': '',
+    'source': None,
+    'destination': None,
     })
 
-JAVA_BUILD = BASE_BUILD.copy()
-JAVA_BUILD.update({
-    'distfile': '%(name)s-%(version)s.jar'
+def jar_install(package, info):
+    filename = info['distfile'] % {'name': package, 'version': info['version']}
+    return [lambda: copy(filename, join(BIN, filename))]
+
+JAR_BUILD = BASE_BUILD.copy()
+JAR_BUILD.update({
+    'distfile': '%(name)s-%(version)s.jar',
+    'commands': jar_install
+    })
+
+SUBMODULE_BUILD = BASE_BUILD.copy()
+SUBMODULE_BUILD.update({
+    'distfile': ''
+    })
+
+def makelike_commands(package, info):
+    return info['generators']
+
+MAKELIKE_BUILD = BASE_BUILD.copy()
+MAKELIKE_BUILD.update({
+    'commands': makelike_commands,
+    'distfile': ''
     })
 
 BUILD_TYPES = {
     'default': DEFAULT_BUILD,
-    'java': JAVA_BUILD,
+    'jar': JAR_BUILD,
+    'makelike': MAKELIKE_BUILD,
     'python': PYTHON_BUILD,
-    'resources': RESOURCE_BUILD,
+    'resource': RESOURCE_BUILD,
+    'submodule': SUBMODULE_BUILD
     }
 
 # ------------------------------------------------------------------------------
@@ -580,15 +634,21 @@ def install_packages(types=BUILD_TYPES):
         mkdir(directory)
 
     # We assume the invariant that all packages only have one version installed.
-    installed = dict(f.rsplit('-', 1) for f in listdir(RECEIPTS))
+    installed = dict(f.split('-', 1) for f in listdir(RECEIPTS))
     uninstall = {}
 
-    def get_installed_dependencies(package, gathered=None):
+    raw_types = ['submodule', 'makelike']
+    def get_installed_dependencies(package, gathered=None, raw_types=raw_types):
         if gathered is None:
             gathered = set()
         else:
             gathered.add(package)
-        recipe = RECIPES[package][installed[package]]
+        installed_version = installed[package]
+        recipes = RECIPES[package]
+        if recipes.values()[0].get('type') in raw_types:
+            recipe = recipes.values()[0]
+        else:
+            recipe = recipes[installed_version]
         for dep in recipe.get('requires', []):
             get_installed_dependencies(dep, gathered)
         return gathered
@@ -701,6 +761,10 @@ def install_packages(types=BUILD_TYPES):
             tar.extractall()
             tar.close()
             chdir(package)
+        elif info.get('type') == 'submodule':
+            chdir(join(ROOT, info['path']))
+            if info.get('clean'):
+                do('git', 'clean', '-fdx')
 
         if info['before']:
             info['before']()
@@ -769,10 +833,4 @@ def build_base_and_reload():
     load_role('base')
     install_packages()
     unlock(BUILD_LOCK)
-#     uninstall_package('openssl')
-#     uninstall_package('bzip2')
-#    uninstall_package('bsdiff')
-#    sys.exit(1)
-#     uninstall_package('readline')
-#     uninstall_package('zlib')
     execve(join(ENVIRON, 'amp'), sys.argv, get_ampify_env(environ))

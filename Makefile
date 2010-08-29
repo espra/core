@@ -24,7 +24,9 @@ build:
 	@$(AMP) build
 
 clean:
-	rm -f src/instance/www/*.css
+	@./environ/assetgen --clean
+	rm -rf src/build
+	rm -rf third_party/pylibs/build
 
 debug:
 	@$(AMP) build --debug
@@ -32,7 +34,7 @@ debug:
 distclean: clean
 	rm -rf environ/local
 	rm -rf environ/receipts
-	rm -rf src/build
+	rm -f src/jsutil/ucd.js
 	rm -f src/ampify/*.so
 
 docs:
@@ -42,8 +44,6 @@ docs:
 	@./environ/yatiblog doc
 
 nuke: distclean
-	rm -rf .build
-	rm -f .build-lock
 	rm -rf .sass-cache
 
 test:

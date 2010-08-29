@@ -3,7 +3,7 @@
 # No Copyright (-) 2010 The Ampify Authors. This file is under the
 # Public Domain license that can be found in the root LICENSE file.
 
-"""Build recipes for Ampify Zero."""
+"""Build recipes for Ampify."""
 
 if NUMBER_OF_CPUS > 1:
     PARALLEL = '-j%i' % NUMBER_OF_CPUS
@@ -15,10 +15,9 @@ else:
 # ------------------------------------------------------------------------------
 
 RECIPES['berkeleydb'] = [{
-    'version': '4.8.26',
-    'hash': '00f34dffc0350a06ff03186ee71e7c47e2c60e4689dad1557c0b1f281296a9ed',
+    'version': '4.8.30',
+    'hash': 'aad516a6e991e1e48dd45ba410f0b74c465bc54fb2ad04e00df60594f30a256c',
     'before': lambda: chdir('build_unix'),
-    'after': lambda: rmdir(join(LOCAL, 'docs'), 'environ/local/docs'),
     'config_command': '../dist/configure',
     'config_flags': ['--enable-cxx', '--prefix', LOCAL],
     }]
@@ -66,8 +65,21 @@ RECIPES['bzip2'] = [{
 
 RECIPES['closure'] = [{
     'version': '2010-03-24',
-    'hash': '00f34dffc0350a06ff03186ee71e7c47e2c60e4689dad1557c0b1f281296a9ed',
+    'hash': '43281e5b891fac5156dedd47773982cfd931a2233e3b586b966ca1a701e5783e',
     'type': 'jar'
+    }]
+
+# ------------------------------------------------------------------------------
+# go
+# ------------------------------------------------------------------------------
+
+RECIPES['go'] = [{
+    'type': 'submodule',
+    'path': 'third_party/go',
+    'before': lambda: chdir(SRC),
+    'commands': [
+        ['./all.bash']
+        ]
     }]
 
 # ------------------------------------------------------------------------------
@@ -76,15 +88,15 @@ RECIPES['closure'] = [{
 
 def copy_keyspace_py_lib():
     directory = join(getcwd(), 'bin', 'python')
-    pylibs = join(LOCAL, 'system', 'pylibs')
+    pylibs = join(ROOT, 'third_party', 'pylibs')
     mkdir(pylibs)
     for file in listdir(directory):
         if file.endswith('.so') or file.endswith('.py'):
-            copy(join(python, file), join(pylibs, file))
+            copy(join(directory, file), join(pylibs, file))
 
 RECIPES['keyspace'] = [{
-    'version': '1.4.13',
-    'hash': '',
+    'version': '1.8.0',
+    'hash': '5f6425411eff961e1bf9122aa3f59a898cee4af0fcd7a1abe29b84a3cf6539e2',
     'after': copy_keyspace_py_lib,
     'env': {
         'PREFIX': LOCAL
@@ -106,12 +118,60 @@ RECIPES['libevent'] = [{
     }]
 
 # ------------------------------------------------------------------------------
+# libnatpmp
+# ------------------------------------------------------------------------------
+
+RECIPES['libnatpmp'] = [{
+    'requires': ['python'],
+    'version': '20100202',
+    'hash': '8236d11bb83f13fdc5967a78fa7f5e43a429ab2e59b01e2c4991627e621162e2',
+    'commands': [
+        [MAKE],
+        [sys.executable, 'setup.py', 'build_ext', '-i']
+        ],
+    'after': lambda: copy('libnatpmp.so', join(ROOT, 'third_party', 'pylibs'))
+    }]
+
+# ------------------------------------------------------------------------------
+# makeucd
+# ------------------------------------------------------------------------------
+
+MAKEUCD_SCRIPT = join(ENVIRON, 'makeucd')
+UCD_DATA_FILE = join(SHARE, 'ucd', 'UnicodeData.txt')
+UCD_JS_FILE = join(SRC, 'jsutil', 'ucd.js')
+
+RECIPES['makeucd'] = [{
+    'requires': ['python', 'ucd'],
+    'type': 'makelike',
+    'depends': [MAKEUCD_SCRIPT],
+    'outputs': [UCD_JS_FILE],
+    'generators': [
+        [MAKEUCD_SCRIPT, UCD_DATA_FILE, UCD_JS_FILE]
+        ]
+    }]
+
+# ------------------------------------------------------------------------------
+# miniupnpc
+# ------------------------------------------------------------------------------
+
+RECIPES['miniupnpc'] = [{
+    'requires': ['python'],
+    'version': '1.4.20100609',
+    'hash': 'dfc902939514a752235890572211a8dfa5e4b97b31d47e5952281fca7c4767f7',
+    'commands': [
+        [MAKE],
+        [sys.executable, 'setup.py', 'build_ext', '-i']
+        ],
+    'after': lambda: copy('miniupnpc.so', join(ROOT, 'third_party', 'pylibs'))
+    }]
+
+# ------------------------------------------------------------------------------
 # nodejs
 # ------------------------------------------------------------------------------
 
-RECIPES['nodejs'] = [{
-    'version': '1.4.13',
-    'hash': ''
+RECIPES['node'] = [{
+    'version': '0.2.0',
+    'hash': '0116ff380a63271e684e05a80207cb8e01b40797d831b6c8c92a3658b860efb5'
     }]
 
 # ------------------------------------------------------------------------------
@@ -124,7 +184,7 @@ NGINX_TMP = join(NGINX, 'tmp')
 RECIPES['nginx'] = [{
     'requires': ['openssl', 'pcre', 'zlib'],
     'version': '0.7.67',
-    'hash': '00f34dffc0350a06ff03186ee71e7c47e2c60e4689dad1557c0b1f281296a9ed',
+    'hash': '7dba22b0e17a996af4ec409084f38d33a3cbc5c678abb980470dc932c9200e8f',
     'before': lambda: mkdir(NGINX_TMP),
     'config_flags': [
         '--with-http_stub_status_module',
@@ -167,20 +227,52 @@ RECIPES['openssl'] = [{
 RECIPES['pcre'] = [{
     'requires': ['zlib'],
     'version': '8.10',
-    'hash': ''
+    'hash': 'c82ac809d5bd0a281400ec4b4368ce1d9f93b589c42bd9b413f8dfc187c9541d'
+    }]
+
+# ------------------------------------------------------------------------------
+# pyampify
+# ------------------------------------------------------------------------------
+
+PYAMP_C_FILES = glob(join(SRC, 'ampify', '*.c'))
+PYAMP_SO_FILES = [file.rsplit('.c', 1)[0] + '.so' for file in PYAMP_C_FILES]
+
+RECIPES['pyampify'] = [{
+    'requires': ['python'],
+    'type': 'makelike',
+    'before': lambda: chdir(SRC),
+    'depends': PYAMP_C_FILES + [join(ROOT, 'src', 'setup.py')],
+    'outputs': PYAMP_SO_FILES,
+    'after': lambda: rmdir('build'),
+    'generators': [
+        lambda: [remove(path) for path in PYAMP_SO_FILES if isfile(path)],
+        [sys.executable, 'setup.py', 'build_ext', '-i']
+        ]
+    }]
+
+# ------------------------------------------------------------------------------
+# pylibs
+# ------------------------------------------------------------------------------
+
+RECIPES['pylibs'] = [{
+    'type': 'submodule',
+    'requires': ['python'],
+    'path': 'third_party/pylibs',
+    'after': lambda: rmdir('build'),
+    'commands': [
+        [sys.executable, 'setup.py', 'build_ext', '-i']
+        ]
     }]
 
 # ------------------------------------------------------------------------------
 # python
 # ------------------------------------------------------------------------------
 
-CPPFLAGS = "-I%s" % INCLUDE
-LDFLAGS = "-L%s" % LIB
-
 RECIPES['python'] = [{
     'requires': ['bzip2', 'openssl', 'readline', 'zlib'],
     'version': '2.7',
-    'hash': '',
+    'hash': 'f559ac6bf5a112c63659c631f3ad27f41ecc3d8c64ea5873da1bfa50b738f125',
+    'after': lambda: rmdir(join(LOCAL, 'lib', 'python2.7', 'test')),
     'config_flags': [
         '--enable-unicode=ucs2', '--enable-ipv6', '--prefix=%s' % LOCAL
         ],
@@ -207,12 +299,25 @@ RECIPES['readline'] = [{
 # ------------------------------------------------------------------------------
 
 RECIPES['redis'] = [{
-    'version': '',
-    'hash': '',
-    'after': lambda: copy(join(getcwd(), 'redis-server'), join(BIN, 'redis')),
+    'type': 'submodule',
+    'path': 'third_party/redis',
+    'after': lambda: copy(
+        join(getcwd(), 'src', 'redis-server'), join(BIN, 'redis')
+        ),
     'commands': [
         [MAKE]
         ]
+    }]
+
+# ------------------------------------------------------------------------------
+# ucd
+# ------------------------------------------------------------------------------
+
+RECIPES['ucd'] = [{
+    'required': ['python'],
+    'version': '5.2.0',
+    'hash': '12363cd8793148283551a69478ec42220c9e43c91d4dd77557df5d5265199e51',
+    'type': 'resource'
     }]
 
 # ------------------------------------------------------------------------------
