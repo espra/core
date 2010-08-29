@@ -6,6 +6,7 @@
 
 """Git review server."""
 
+import pylibs
 import logging
 import sys
 
@@ -2280,6 +2281,9 @@ class PostReceiveHandler(BaseHandler):
 
     @async
     def post(self, repo):
+        if repo not in repos:
+            self.errmsg("No such repo configured.")
+            return
         commits = yield get_new_commits(repo, repo_commits[repo])
         yield create_commits(repo, commits)
         self.write('OK')
