@@ -1,0 +1,23 @@
+coffee2js:
+- ../../third_party/coffee-script/examples/underscore.coffee
+- ../jsutil/*.coffee
+
+coffee2js_output_path: ../jsutil
+
+compile_js:
+
+  static/base.js:
+    - ../../third_party/jslibs/json.js
+    - ../../third_party/jslibs/modernizr.js
+    - ../../third_party/jslibs/jquery.js
+    - ../../third_party/jslibs/raphael.js
+    - ../jsutil/underscore.js
+
+  static/tentapp.js:
+    - ../jsutil/tentapp.js
+
+sass2css:
+- static/site.sass
+
+css_embed_url_template: "/static/%(path)s?%(hash)s"
+css_embed_root_path: static
