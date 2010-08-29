@@ -235,6 +235,9 @@ RECIPES['pcre'] = [{
 # ------------------------------------------------------------------------------
 
 PYAMP_C_FILES = glob(join(SRC, 'ampify', '*.c'))
+if PLATFORM != 'darwin':
+    PYAMP_C_FILES.remove(join(SRC, 'ampify', 'darwinsandbox.c'))
+
 PYAMP_SO_FILES = [file.rsplit('.c', 1)[0] + '.so' for file in PYAMP_C_FILES]
 
 RECIPES['pyampify'] = [{
