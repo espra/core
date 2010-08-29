@@ -105,24 +105,24 @@ def assetgen(config_path, clean):
                     sass_file = open(file, 'rb')
                     sass = sass_file.read()
                     sass_file.close()
-                    if (newer(file, prefix + '.css')
-                        or newer(file, prefix + '.ie.css')):
-                        sass_input_files[file] = prefix
-                        if find_embeds(sass):
-                            css_embed_files.append(prefix)
-                    else:
-                        embeds = find_embeds(sass)
-                        if not embeds:
-                            continue
-                        regen = 0
-                        for embed in embeds:
-                            embed = join(css_embed_root_path, embed)
-                            if newer(embed, prefix + '.css'):
-                                regen = 1
-                                break
-                        if regen:
+                    embeds = find_embeds(sass)
+                    if not embeds:
+                        if newer(file, prefix + '.css'):
                             sass_input_files[file] = prefix
-                            css_embed_files.append(prefix)
+                        continue
+                    if (newer(file, prefix + '.css') or
+                        newer(file, prefix + '.ie.css')):
+                        sass_input_files[file] = prefix
+                        css_embed_files.append(prefix)
+                    regen = 0
+                    for embed in embeds:
+                        embed = join(css_embed_root_path, embed)
+                        if newer(embed, prefix + '.css'):
+                            regen = 1
+                            break
+                    if regen:
+                        sass_input_files[file] = prefix
+                        css_embed_files.append(prefix)
                 elif newer(file, prefix + '.css'):
                     sass_input_files[file] = prefix
 
