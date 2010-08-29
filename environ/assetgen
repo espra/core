@@ -51,14 +51,15 @@ def convert_to_data_uri(match):
     hash = sha1(data).hexdigest()
     data = b64encode(data)
     if len(data) > 32000:
-        url = css_embed_url_template % {'path': path, 'hash': hash}
-        print url
+        url = css_embed_url_template % {'path': path, 'hash': hash[:18]}
         return 'url("%s")' % url
     return 'url("data:%s;base64,%s")' % (ctype, data)
 
 def convert_to_url(match):
     path = match.group(1)
-    url = css_embed_url_template % {'path': path, 'hash': hash}
+    data = open(join(css_embed_root_path, path), 'rb').read()
+    hash = sha1(data).hexdigest()
+    url = css_embed_url_template % {'path': path, 'hash': hash[:18]}
     return 'url("%s")' % url
 
 # ------------------------------------------------------------------------------
