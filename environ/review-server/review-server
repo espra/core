@@ -225,9 +225,7 @@ def invalidate(*names):
     for name in names:
         if name not in caches:
             continue
-        #logging.error(caches[name])
         caches[name].clear()
-        #logging.error(caches[name])
 
 def threaded_worker_dispatcher(queue, error_logger=None):
     while 1:
@@ -247,7 +245,6 @@ class Worker(object):
         self.callback = callback
         self.errback = errback
         if cache:
-            logging.error(cache)
             if cache not in caches:
                 caches[cache] = CachingDict(5000)
             cache_store = caches[cache]
