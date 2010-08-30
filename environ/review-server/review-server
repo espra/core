@@ -1409,7 +1409,7 @@ def format_diff(diff, strip_first=1, add_bubbles=None):
 def get_diff(repo, revision):
     chdir(repo_paths[repo])
     return git(
-        'diff-tree', '-B', '-M', '-p', '--no-prefix', revision,
+        'diff-tree', '-M', '-p', '--no-prefix', revision,
         raise_error=True
         )
 
@@ -1417,7 +1417,7 @@ def get_diff(repo, revision):
 def get_diff_between(repo, r1, r2):
     chdir(repo_paths[repo])
     return git(
-        'diff-tree', '-B', '-M', '-p', '--no-prefix', r1, r2,
+        'diff-tree', '-M', '-p', '--no-prefix', r1, r2,
         raise_error=True
         )
 
