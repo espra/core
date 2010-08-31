@@ -50,40 +50,40 @@ Installation
 ============
 
 ✓ configure
-✗ make
+✓ make
 ✓ redpill: init
 ✓ redpill: config
-✗ redpill: packages
-✗ redpill: distribution
+✓ redpill: packages
+✓ redpill: distribution
 ✓ redpill: install
 ✓ redpill: uninstall
 ✗ redpill: daemon
 
-✗ package: base dependencies
+✓ package: base dependencies
 ✓ package: zlib
 ✓ package: bz2
 ✓ package: readline
-✗ package: libnatpmp
-✗ package: miniupnc
-✗ package: redis
-✗ package: go
-✗ package: nodejs
-✗ package: coffeescript
-✗ package: qrencode
-✗ package: pcre
-✗ package: nginx
+✓ package: libnatpmp
+✓ package: miniupnc
+✓ package: redis
+✓ package: go
+✓ package: nodejs
+✓ package: coffeescript
+✓ package: pcre
+✓ package: nginx
 ✓ package: openssl
-✗ package: python
+✓ package: python
 ✓ package: cython
-✗ package: sass
-✗ package: python-packages
-✗ package: berkeleydb
-✗ package: keyspace
+✓ package: sass
+✓ package: python-packages
+✓ package: berkeleydb
+✓ package: keyspace
 
 # package: freetype
 # package: libjpeg
 # package: libpng
 # package: python imaging library
+# package: qrencode
 # package: libevent
 # package: libxml2
 # package: libxslt
@@ -91,7 +91,7 @@ Installation
 # package: git
 # package: gevent
 
-✗ coffeescript/sass -> js lib/css generation -> minification
+✓ coffeescript/sass -> js lib/css generation -> minification
 
 ✓ amp command-line auto completion
 ✗ amp config handling
@@ -116,8 +116,8 @@ Ampify Core
 
 ✗ default configuration
 ✗ configuration handler
-✗ yaml parser nodule
-✗ yaml parser caller
+✓ yaml parser nodule
+✓ yaml parser caller
 
 ✗ verify support for modern browser
 ✗ browser update view
@@ -170,7 +170,7 @@ Ampify Core
 ✗ url truncating...
 ✗ url longurl expansion
 
-✗ google analytics
+✓ google analytics
 
 ✗ loading indicator
 ✗ load cache
@@ -397,7 +397,7 @@ Ampify Core
 ✗ ampnode main()
 ✗ ampnode command line arguments handler
 
-✗ lzf compression
+✓ lzf compression
 ✗ lzf compression: dictionary-support
 
 ✗ mail service
@@ -689,7 +689,7 @@ Ampify Core
 ✗ language models generation
 ✗ language models -> naaga data
 
-✗ javascript ucd -- part 1
+✓ javascript ucd -- part 1
 ✗ javascript ucd -- part 2
 ✗ javascript unicode normalisation
 ✗ javascript case-folding normalisation
@@ -1018,7 +1018,7 @@ Ampify Core
 ✗ web hooks post handler
 ✗ memcache invalidation handler
 
-# github integration
+✓ github integration
 # github key generation
 
 ✓ git review
@@ -1115,13 +1115,13 @@ Ampify Core
 ✗ public status app charts
 
 ✗ liquid democracy
-✗ amp test
 ✗ amp creds exchange
 ✗ usage tips
 ✗ virtual users, e.g. britney-spears, appa, etc.
 
 ✓ optparse
 ✓ hubproxy
+✓ amp test
 
 ✗ charts
 ✗ base32
