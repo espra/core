@@ -690,10 +690,11 @@ def update_and_email_review(base, review, cc, n=3):
             logging.error("Couldn't email %s" % skipped)
         return
 
-def _get_review_object(base_key, revision, result, create_key=db.Key.from_path):
+def _get_review_object(base_key, repo, revision, result, create_key=db.Key.from_path):
     base = ReviewBase.get(base_key)
     if not base:
         base = ReviewBase(key=base_key)
+        base.repo = repo
     base.latest += 1
     review = Review(key_name=str(base.latest), parent=base_key)
     review.revision = revision
@@ -707,7 +708,7 @@ def get_review_object(repo, user, patch_name, revision):
         return 1, exist.version
     base_key = db.Key.from_path('Q', '%s:%s:%s' % (repo, user, patch_name))
     result = []
-    db.run_in_transaction(_get_review_object, base_key, revision, result)
+    db.run_in_transaction(_get_review_object, base_key, repo, revision, result)
     if result:
         return result[0]
 
