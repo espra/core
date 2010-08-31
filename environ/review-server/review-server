@@ -729,7 +729,9 @@ def _create_commits(repo, data):
         if first:
             first = 0
             repo_commits[repo] = rev
-        commit = Commit(key_name='%s:%s' % (repo, rev))
+        commit = Commit.get_or_insert('%s:%s' % (repo, rev))
+        if commit.version:
+            continue
         commit.version = rev
         commit.author = an
         commit.author_email = ae
@@ -2447,7 +2449,7 @@ def main(argv=None):
 
     for repo in repos:
         logging.info("Storing commit data for %s" % repo)
-        commit = Commit.all().filter('r =', repo).get()
+        commit = Commit.all().filter('r =', repo).order('-d').get()
         if commit:
             repo_commits[repo] = commit.version
         else:
