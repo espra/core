@@ -720,7 +720,7 @@ def _get_new_commits(repo, start):
         '--no-color', '%s...upstream/master' % start, raise_error=True
         ).split('\x00')])
 
-get_new_commits = worker(GIT_QUEUE, cache='commits:new')(_get_new_commits)
+get_new_commits = worker(GIT_QUEUE)(_get_new_commits)
 
 def _create_commits(repo, data):
     commits = []; new_commit = commits.append
@@ -2165,7 +2165,7 @@ class BuildHandler(BaseHandler):
             timings, traceback, has_failure
             )
         self.write('OK %s' % build)
-        invalidate('build', 'builds', 'activities', 'slave', 'slaves')
+        invalidate('build', 'builds', 'activities', 'slave', 'slaves', 'commits', 'commit')
 
 class JobHandler(BaseHandler):
 
