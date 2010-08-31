@@ -3,6 +3,7 @@
 
 PACKAGES=\
 	command\
+	lzf\
 	optparse\
 	runtime\
 	slice\
@@ -10,6 +11,7 @@ PACKAGES=\
 
 NOBENCH=\
 	command\
+	lzf\
 	optparse\
 	slice\
 	tlsconf\
