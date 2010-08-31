@@ -246,10 +246,10 @@ def main():
         print "ERROR: Not inside a git repository."
         sys.exit(1)
 
-    if run_command(['git', 'status', '--porcelain']):
-        print "ERROR: This is not a fresh git repository clone."
-        print "ERROR: Please commit your changes and untracked files."
-        sys.exit(1)
+    # if run_command(['git', 'status', '--porcelain']):
+    #     print "ERROR: This is not a fresh git repository clone."
+    #     print "ERROR: Please commit your changes and untracked files."
+    #     sys.exit(1)
 
     git = SCMConfig('git')
     root = realpath(git.root)
