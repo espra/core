@@ -3,10 +3,8 @@
 
 include $(GOROOT)/src/Make.inc
 
-TARG=amplzf
-# TARG=amp/lzf
+TARG=amp/lzf
 GOFILES=\
         lzf.go\
 
-include $(GOROOT)/src/Make.cmd
-# include $(GOROOT)/src/Make.pkg
+include $(GOROOT)/src/Make.pkg

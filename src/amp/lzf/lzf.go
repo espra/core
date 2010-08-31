@@ -9,24 +9,21 @@
 // extremely optimised thanks to pointer arithmetic, this still works a lot
 // faster than many other compression algorithms. The compression ratio is also,
 // surprisingly, often better for formats like JSON.
-package main
-
-import (
-	"fmt"
-)
+package lzf
 
 const (
-
 	// The ``hashTableFactor`` can be set to anything from 13 all the way up to
-	// 23. A larger factor leads to better compression ratios at the cost of
+	// 23. A larger hash table leads to better compression ratios at the cost of
 	// speed and vice-versa.
 	hashTableFactor uint32 = 16
 	hashTableSize   uint32 = 1 << hashTableFactor
 	maxLiteral      uint32 = 1 << 5
-	maxOffset       uint32 = 1 << 13
+	maxOffset       int64  = 1 << 13
 	maxBackref      uint32 = (1 << 8) + (1 << 3)
-	MaxSize         uint32 = (1 << 32) - 4
 
+	// The maximum size of LZF encoded byte stream is limited to a relatively
+	// sane size.
+	MaxSize uint32 = 1 << 30
 )
 
 // The LZF compression format is composed of::
@@ -42,6 +39,16 @@ const (
 // An upcoming back reference is indicated by control bytes which have their 3
 // most significant bits bits set to something other than ``000``. There are two
 // slightly different variants.
+//
+// The standard variant indicates the length of the back reference in the 3 most
+// significant bits and the rest of the byte and the proceeding byte provide the
+// offset value for the back reference.
+//
+// However, if the length is ``111``, that is 7, then it indicates the presence
+// of an extended back reference. For this the proceeding byte provides the full
+// value of the length and it's the next byte after that which together with the
+// remainder of the first gives the offset value for the back reference.
+//
 func Compress(input []byte) (output []byte) {
 
 	inputLength := uint32(len(input))
@@ -49,15 +56,15 @@ func Compress(input []byte) (output []byte) {
 		return nil
 	}
 
-	var backref int64
-	var diff, hslot, hval, iidx, length, literal, max, oidx, offset uint32
+	var offset int64
+	var backref, diff, hslot, hval, iidx, length, literal, max, oidx uint32
 
-	output = make([]byte, inputLength)
+	output = make([]byte, inputLength+4)
 	hashTable := make([]uint32, hashTableSize)
-	hval = uint32(input[0] << 8) | uint32(input[1])
+	hval = uint32(input[0]<<8) | uint32(input[1])
 	sentinel := inputLength - 2
 
-	oidx++
+	oidx = 5
 
 	for iidx < sentinel {
 
@@ -65,7 +72,7 @@ func Compress(input []byte) (output []byte) {
 		hslot = ((hval >> (24 - hashTableFactor)) - (hval * 5)) & (hashTableSize - 1)
 		backref = hashTable[hslot]
 		hashTable[hslot] = iidx
-		offset = iidx - backref - 1
+		offset = int64(iidx) - int64(backref) - 1
 
 		if (offset < maxOffset) &&
 			((iidx + 4) < inputLength) &&
@@ -81,26 +88,26 @@ func Compress(input []byte) (output []byte) {
 			}
 
 			// First, a faster conservative test.
-			if (oidx + 4) >= inputLength {
+			if (oidx) >= inputLength {
 				// And, if so, a second -- the exact but rare test.
 				if literal > 0 {
-					diff = 4
+					diff = 0
 				} else {
-					diff = 3
+					diff = 1
 				}
-				if (oidx + diff) >= inputLength {
+				if (oidx - diff) >= inputLength {
 					return nil
 				}
 			}
 
-			output[oidx - literal - 1] = byte(literal - 1)
+			output[oidx-literal-1] = byte(literal - 1)
 			if literal == 0 {
 				oidx--
 			}
 
 			for {
 				length++
-				if (length > max) || (input[backref+length] != input[iidx+length]) {
+				if (length >= max) || (input[backref+length] != input[iidx+length]) {
 					break
 				}
 			}
@@ -109,7 +116,7 @@ func Compress(input []byte) (output []byte) {
 			iidx++
 
 			if length < 7 {
-				output[oidx] = byte((offset >> 8) + (length << 5))
+				output[oidx] = byte(uint32(offset>>8) + (length << 5))
 				oidx++
 			} else {
 				output[oidx] = byte((offset >> 8) + (7 << 5))
@@ -122,13 +129,13 @@ func Compress(input []byte) (output []byte) {
 			oidx += 2
 			iidx += length + 1
 
-			if iidx > inputLength - 2 {
+			if iidx >= inputLength-2 {
 				break
 			}
 
 			iidx -= 2
 
-			hval = (uint32(input[iidx]) << 8 | uint32(input[iidx+1]) << 8) | uint32(input[iidx+2])
+			hval = (uint32(input[iidx])<<8 | uint32(input[iidx+1])<<8) | uint32(input[iidx+2])
 			hslot = ((hval >> (24 - hashTableFactor)) - (hval * 5)) & (hashTableSize - 1)
 			hashTable[hslot] = iidx
 			iidx++
@@ -138,28 +145,19 @@ func Compress(input []byte) (output []byte) {
 			hashTable[hslot] = iidx
 			iidx++
 
-			iidx -= length + 1
-
-			for length > 0 {
-				hval = (hval << 8) | uint32(input[iidx+2])
-				hslot = ((hval >> (24 - hashTableFactor)) - (hval * 5)) & (hashTableSize - 1)
-				hashTable[hslot] = iidx
-				iidx++
-				length -= 1
-			}
-
 		} else {
 
-			if oidx >= inputLength {
+			if oidx >= inputLength-4 {
 				return nil
 			}
 
-			literal++
+			output[oidx] = input[iidx]
 			iidx++
 			oidx++
+			literal++
 
 			if literal == maxLiteral {
-				output[oidx - literal - 1] = byte(literal - 1)
+				output[oidx-literal-1] = byte(literal - 1)
 				literal = 0
 				oidx++
 			}
@@ -168,56 +166,68 @@ func Compress(input []byte) (output []byte) {
 
 	}
 
-	if (oidx + 3) > inputLength {
+	if (oidx - 1) > inputLength {
 		return nil
 	}
 
-	for iidx <= inputLength {
-		literal++
+	for iidx < inputLength {
+		output[oidx] = input[iidx]
 		iidx++
 		oidx++
-		if (literal == maxLiteral) {
-			output[oidx - literal - 1] = byte(literal - 1)
+		literal++
+		if literal == maxLiteral {
+			output[oidx-literal-1] = byte(literal - 1)
 			literal = 0
 			oidx++
 		}
 	}
 
-	output[oidx - literal - 1] = byte(literal - 1)
+	output[oidx-literal-1] = byte(literal - 1)
 	if literal == 0 {
 		oidx -= 1
 	}
+
+	output[0] = byte((inputLength >> 24) & 255)
+	output[1] = byte((inputLength >> 16) & 255)
+	output[2] = byte((inputLength >> 8) & 255)
+	output[3] = byte((inputLength >> 0) & 255)
 
 	return output[0:oidx]
 
 }
 
 // The ``Decompress`` function.
-func Decompress(input []byte, size uint32) []byte {
+func Decompress(input []byte) (output []byte) {
 
-	output := make([]byte, size, size)
 	inputLength := uint32(len(input))
+	if inputLength <= 4 {
+		return nil
+	}
 
 	var backref int64
-	var ctrl, iidx, length, oidx uint32
+	var ctrl, iidx, length, oidx, outputLength uint32
 
-	for {
+	outputLength = ((uint32(input[0]) << 24) | (uint32(input[1]) << 16) | (uint32(input[2]) << 8) | uint32(input[3]))
+
+	output = make([]byte, outputLength, outputLength)
+	iidx = 4
+
+	for iidx < inputLength {
 
 		// Get the control byte.
 		ctrl = uint32(input[iidx])
 		iidx++
 
-		// The control byte indicates a literal reference.
 		if ctrl < (1 << 5) {
 
+			// The control byte indicates a literal reference.
 			ctrl++
-
-			if oidx + ctrl > size {
+			if oidx+ctrl > outputLength {
 				return nil
 			}
 
 			// Safety check.
-			if iidx + ctrl > inputLength {
+			if iidx+ctrl > inputLength {
 				return nil
 			}
 
@@ -231,9 +241,9 @@ func Decompress(input []byte, size uint32) []byte {
 				}
 			}
 
-		// The control byte indicates a back reference.
 		} else {
 
+			// The control byte indicates a back reference.
 			length = ctrl >> 5
 			backref = int64(oidx - ((ctrl & 31) << 8) - 1)
 
@@ -242,6 +252,8 @@ func Decompress(input []byte, size uint32) []byte {
 				return nil
 			}
 
+			// It's an extended back reference. Read the extended length before
+			// reading the full back reference location.
 			if length == 7 {
 				length += uint32(input[iidx])
 				iidx++
@@ -251,10 +263,11 @@ func Decompress(input []byte, size uint32) []byte {
 				}
 			}
 
+			// Put together the full back reference location.
 			backref -= int64(input[iidx])
 			iidx++
 
-			if oidx + length + 2 > size {
+			if oidx+length+2 > outputLength {
 				return nil
 			}
 
@@ -281,56 +294,36 @@ func Decompress(input []byte, size uint32) []byte {
 
 		}
 
-		if iidx >= inputLength {
-			break
-		}
-
 	}
 
 	return output
 
 }
 
-func iCompress(input []byte) (output []byte) {
+func Preset(dict []byte) (preset *lzfPreset) {
+	temp := Compress(dict)
+	if temp == nil {
+		return nil
+	}
+	preset = &lzfPreset{}
+	preset.dict = dict
+	preset.length = len(dict)
+	preset.compressed = temp
 	return
 }
 
 type lzfPreset struct {
-	codeBits []uint8
-	code     []uint16
+	dict       []byte
+	length     int
+	compressed []byte
 }
-
 
 func (preset *lzfPreset) Compress(input []byte) (output []byte) {
 	return
 }
 
 func (preset *lzfPreset) Decompress(input []byte) (output []byte) {
+	combined := make([]byte, preset.length+len(input))
+	_ = combined
 	return
-}
-
-// func DictionaryEncoder(dict []byte) {
-// 	preset := &lzfPreset{}
-// }
-
-// func DictionaryEncoder(dict []byte) {
-// 	preset := &lzfPreset{}
-// }
-
-func main() {
-	s := []byte("hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world hello world ")
-	out := Compress(s)
-	fmt.Println(out)
-	fmt.Println(len(s))
-	fmt.Println(len(out))
-
-	test := []byte{12, 104, 101, 108, 108, 111, 32, 119, 111, 114, 108, 100, 32, 104, 224, 132, 11, 1, 100, 32}
-
-	fmt.Println(string(test))
-	deOut := Decompress(test, 156)
-	if deOut == nil {
-		fmt.Println("DEDEEEEEE")
-	}
-	_ = deOut
-	fmt.Println(string(deOut))
 }
