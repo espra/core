@@ -2166,7 +2166,10 @@ class BuildHandler(BaseHandler):
             timings, traceback, has_failure
             )
         self.write('OK %s' % build)
-        invalidate('build', 'builds', 'activities', 'slave', 'slaves', 'commits', 'commit')
+        invalidate(
+            'build', 'builds', 'activities', 'slave', 'slaves', 'commits',
+            'commit', 'reviews', 'review'
+            )
 
 class JobHandler(BaseHandler):
 
