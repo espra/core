@@ -422,7 +422,7 @@ def apply(argv=None, completer=None):
         print "ERROR: You need to be on a git branch -- ideally 'master'."
         sys.exit(1)
 
-    exit_if_dirty()
+    # exit_if_dirty()
     setup_remote('gitreview'); update_remote('gitreview')
     setup_remote('upstream'); update_remote('upstream')
 
@@ -514,7 +514,7 @@ def submit(argv=None, completer=None):
 
     options, args = parse_options(op, argv, completer, False)
 
-    exit_if_dirty()
+    # exit_if_dirty()
     login, token, root = get_git_info()
 
     current_branch = get_current_branch()
