@@ -956,7 +956,7 @@ def create_build(
     if traceback:
         build.build_phases = ''
     else:
-        stderr, stdout = payload[1]
+        stderr, stdout = payload
         build_phases = []; add_phase = build_phases.append
         for idx, phase in enumerate(executed):
             if stdout[idx] or stderr[idx]:
