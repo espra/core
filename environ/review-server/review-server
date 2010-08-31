@@ -852,8 +852,8 @@ def get_slave_job(repo, slave_id, token, uname, span=timedelta(seconds=1)):
     slave = Slave.get_by_id(slave_id)
     if (not slave) or (not secure_string_comparison(slave.token, token)):
         raise ValueError("Couldn't verify slave %s" % slave_id)
-    if slave.disabled:
-        raise ValueError("Slave %s has been disabled." % slave_id)
+    if (not slave.authorised_repos) or (repo not in slave.authorised_repos):
+        raise ValueError("Slave %s is not authorised for this repo." % slave_id)
     slave.last_seen = datetime.now()
     slave.recent_platform = uname
     platform = repo_cache[repo]._unames.get(uname)
@@ -938,8 +938,8 @@ def create_build(
     slave = Slave.get_by_id(slave_id)
     if (not slave) or (not secure_string_comparison(slave.token, token)):
         raise ValueError("Couldn't verify slave %s" % slave_id)
-    if slave.disabled:
-        raise ValueError("Slave %s has been disabled." % slave_id)
+    if (not slave.authorised_repos) or (repo not in slave.authorised_repos):
+        raise ValueError("Slave %s is not authorised for this repo." % slave_id)
     target = db.get(get_key_for_version(repo, revision))
     if not target:
         raise ValueError("Unknown revision %r for %s" % (revision, repo))

@@ -280,7 +280,7 @@ def main():
     if not (slave_id and token):
         print "You can get a Slave ID and Token from:"
         print
-        print "    %s/slave" % review_server
+        print "    %s/slaves" % review_server
         print
         sys.exit(1)
 
