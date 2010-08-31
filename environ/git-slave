@@ -140,16 +140,21 @@ class Slave(Daemon):
         if self.debug:
             self.log("=> Fetching remote updates")
         self.git('remote', 'update', '--prune')
-        self.git('clean', '-fdx')
-        self.git('reset', '--hard')
-        for path in self.git('status', '--porcelain').splitlines():
-            if path.startswith('??'):
-                path = path.split('??', 1)[1].strip()
-                if isdir(path):
-                    rmtree(path)
-        self.git('submodule', 'foreach', 'git clean -fdx')
-        self.git('checkout', revision)
-        self.git('submodule', 'update', '--init')
+        _, retcode = self.git('checkout', revision, retcode=True)
+        if not retcode:
+            _, retcode = self.git('submodule', 'update', '--init', retcode=True)
+        if retcode:
+            self.log("=> Attempting to go back to a virgin state")
+            self.git('clean', '-fdx')
+            self.git('reset', '--hard')
+            for path in self.git('status', '--porcelain').splitlines():
+                if path.startswith('??'):
+                    path = path.split('??', 1)[1].strip()
+                    if isdir(path):
+                        rmtree(path)
+            self.git('submodule', 'foreach', 'git clean -fdx')
+            self.git('checkout', revision)
+            self.git('submodule', 'update', '--init')
 
     def execute_build(self, results):
         commands = self.get_build_commands()
