@@ -126,8 +126,7 @@ Get Involved
 * Sign up to GitHub if you don't have an `account
   <https://github.com/signup/free>`_ — it takes just a minute! You can then
   `fork <http://help.github.com/forking/>`_ the `ampify repository
-  <http://github.com/tav/ampify>`_ and send `pull requests
-  <http://github.com/guides/pull-requests>`_ with any changes you might have.
+  <http://github.com/tav/ampify>`_.
 
 .. syntax:: bash
 
@@ -138,26 +137,22 @@ Get Involved
   <http://www.espians.com/getting-started-with-git.html>`_ guide for Ampify
   Developers if you're new to git.
 
-* Familiarise yourself with the Ampify testing and review process.
+* Familiarise yourself with the Ampify testing and review process:
 
 .. syntax:: bash
 
-  # commit your changes to your local repository.
-  $ git commit
+  # Create a new branch for your patch:
 
-  # submit an issue to be reviewed on
-  # http://codereview.appspot.com — running this also
-  # checks with appropriate local revhooks before your
-  # submission is made.
-  $ git review submit 
+  $ git checkout -b name-for-your-patch
 
-  # make any changes and keep committing and submitting
-  # updates on the issue until the reviewers give a
-  # LGTM (Looks Good To Me) reply.
+  # Make the various changes you want to make and
+  # Submit it to be to be reviewed by running:
 
-  # once you have an okay, squash your various commits
-  # into a single commit and push to the remote
-  # repository.
-  $ git review push
+  $ git review submit
+
+  # Make any changes and submit updates until the
+  # reviewers give a LGTM (Looks Good To Me) reply
+  # on http://gitreview.com
+  # That's all!
 
 * Have fun!
