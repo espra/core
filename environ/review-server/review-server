@@ -2163,7 +2163,7 @@ class BuildHandler(BaseHandler):
             timings, traceback, has_failure
             )
         self.write('OK %s' % build)
-        invalidate('build', 'builds', 'activities')
+        invalidate('build', 'builds', 'activities', 'slave', 'slaves')
 
 class JobHandler(BaseHandler):
 
@@ -2190,6 +2190,7 @@ class JobHandler(BaseHandler):
             self.write(job)
         else:
             self.write('')
+        invalidate('slave', 'slaves')
 
 class ChartsHandler(BaseHandler):
     pass
