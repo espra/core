@@ -58,8 +58,8 @@ def git_submodule_status():
 
 def git_pull():
     run_command(
-        ['git', 'pull'], redirect_stdout=False, redirect_stderr=False,
-        exit_on_error=True
+        ['git', 'pull', 'origin', 'master'], redirect_stdout=False,
+        redirect_stderr=False, exit_on_error=True
         )
 
 # ------------------------------------------------------------------------------
