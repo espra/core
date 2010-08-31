@@ -1,6 +1,6 @@
 ![Ampify](http://cloud.github.com/downloads/tav/ampify/logo.ampify.smallest.png)
 
-This is the repo for Ampify — an open and decentralised application platform.  
+This is the repo for Ampify — an open and decentralised social platform.  
 For comparison, perhaps imagine a bastardised mix between Git, Facebook,  
 Unix, IRC, App Engine, [Xanadu] and Wikis.
 
@@ -12,9 +12,6 @@ release, `Ampify Zero`, for the end of this year — [see the planfile].
 
     $ make
     $ source environ/ampenv.sh
-    $ amp init kickass
-    $ amp run kickass
-    $ open https://localhost:9040
 
 **Resources**
 
@@ -27,9 +24,17 @@ For more info, please see the `doc` directory or visit:
 
 **Contribute**
 
-To contribute any patches, simply fork this repository using GitHub,  
-add yourself to the `AUTHORS` file and send a pull request to me —  
-[http://github.com/tav]. Thanks!
+To contribute any patches, simply fork this repository using GitHub  
+and create a new branch for your work:
+
+    $ git checkout -b name-for-your-patch
+
+And to submit it for review, make sure you've added yourself to the  
+`AUTHORS` file and then run:
+
+    $ git review submit
+
+That's it! Thanks.
 
 **Please Note**
 
