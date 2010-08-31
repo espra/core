@@ -47,7 +47,7 @@ func GetCPUCount() (count int) {
 		if err != nil {
 			return 1
 		}
-		for _, line := range strings.Split(output, "\n", 0) {
+		for _, line := range strings.Split(output, "\n", -1) {
 			if strings.HasPrefix(line, "processor") {
 				count += 1
 			}
