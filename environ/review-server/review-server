@@ -2180,7 +2180,7 @@ class JobHandler(BaseHandler):
         try:
             slave_id = int(slave_id)
         except Exception:
-            self.write("Invalid slave id: %r" % get('slave'))
+            self.write("Invalid slave id: %r" % slave_id)
             return
         try:
             job = yield get_slave_job(repo, slave_id, token, uname)
