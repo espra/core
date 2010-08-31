@@ -2001,7 +2001,7 @@ class ReviewsHandler(BaseHandler):
         review.user = user
         review.version = review_id
 
-        if user in settings['admins']:
+        if is_repo_dev(repo, user):
             review.stage = 'build'
         else:
             review.stage = 'pending'
