@@ -12,7 +12,7 @@ def jslint(changelist, files):
         if retcode:
             changelist.error(filename, stderr)
 
-@checker(include=['*.js', '*.go', '*.py'])
+@checker(include=['*.js', '*.go', '*.py', '*.coffee'])
 def stray_whitespace(changelist, files):
     """The following lines in %s have trailing whitespace:\n\n\t"""
 
