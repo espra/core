@@ -994,9 +994,9 @@ def update_build_target(target_key, platform, has_failure):
         if platform not in target.passed_builds:
             target.passed_builds.append(platform)
     to_save = [target]
-    if (not target.needed_builds) and target.stage == 'build':
-        target.stage = 'built'
-        if target.kind() == 'R':
+    if target.kind() == 'R':
+        if ((not target.needed_builds) and target.stage == 'build'):
+            target.stage = 'built'
             base = db.get(target_key.parent())
             if int(target_key.name()) == base.latest:
                 base.stage = 'built'
