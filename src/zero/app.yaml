@@ -27,5 +27,5 @@ handlers:
   secure: always
 
 - url: .*
-  script: tentapp.py
+  script: zero.py
   secure: optional

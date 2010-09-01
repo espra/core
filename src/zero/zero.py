@@ -2,12 +2,11 @@
 # Public Domain license that can be found in the root LICENSE file.
 
 """
-===========================
-Tent Collaboration Platform
-===========================
+==========
+Espra Zero
+==========
 
-Tent brings together IRC-like real-time collaboration with trust maps and
-structured data.
+A social collaboration platform.
 
 """
 
@@ -21,6 +20,7 @@ from binascii import hexlify
 from cgi import FieldStorage
 from datetime import datetime
 from hashlib import sha1
+from hmac import HMAC
 from md5 import md5
 from os import urandom
 from os.path import exists, join as join_path, getmtime
@@ -299,16 +299,16 @@ class OAuthClient(db.Model):
 
 class OAuthCode(db.Model):
     v = db.IntegerProperty(default=0, name='v')
-    created = db.DateTimeProperty(auto_now_add=True)
     client = db.StringProperty()
     expires = db.IntegerProperty()
     redirect = db.StringProperty(indexed=False)
     scope = db.StringProperty(indexed=False)
+    valid_until = db.IntegerProperty()
 
 class OAuthRequest(db.Model):
     v = db.IntegerProperty()
-    created = db.DateTimeProperty(auto_now_add=True)
     client = db.StringProperty()
+    created = db.IntegerProperty()
     redirect = db.StringProperty(indexed=False)
     scope = db.StringProperty(indexed=False)
     state = db.StringProperty(indexed=False)
@@ -320,6 +320,7 @@ class OAuthToken(db.Model):
     client = db.StringProperty()
     expires = db.IntegerProperty()
     scope = db.StringProperty()
+    valid_until = db.IntegerProperty()
 
 class Trend(db.Model):
     v = db.IntegerProperty(default=0, name='v')
@@ -327,6 +328,8 @@ class Trend(db.Model):
 class User(db.Model):
     v = db.IntegerProperty(default=0, name='v')
     created = db.DateTimeProperty(auto_now_add=True)
+    id = db.StringProperty()
+    password = db.ByteStringProperty(indexed=False)
 
 # ------------------------------------------------------------------------------
 # Parallel Query
@@ -1318,32 +1321,11 @@ def render_mako_template(template_name, **kwargs):
 # OAuth
 # ------------------------------------------------------------------------------
 
-# This implements a fairly conformant implementation of `OAuth 2.0
-# <http://tools.ietf.org/html/draft-ietf-oauth-v2-08>`_.
-#
-# We diverge from the still-being-defined standard by not supporting HTTP Basic
-# Authentication or the Authorization Request Header Field for the Client. It
-# just complicates the implementation needlessly -- not to mention the fact that
-# most OAuth 2.0 clients don't even support them!
-#
-# We also make life simpler for developers by providing additional informative
-# error messages (with an HTTP 500 response status) and relaxing a few REQUIRED
-# fields:
-#
-# * the ``type`` parameter doesn't need to be specified for the end-user
-#   authorisation endpoint -- a default of ``web_server`` is assumed.
-#
-# * the ``grant_type`` parameter doesn't need to be specified for the token
-#   endpoint -- a default of ``authorization_code`` is assumed.
-#
-# And like other implementations, e.g. Facebook, we use the more sensible
-# ``access_token`` parameter name as opposed to ``oauth_token`` as the spec
-# states for the purpose of validating access to protected resources. Hopefully
-# the spec will be updated to reflect this before it is finalised.
+# This is a fully conformant implementation of OAuth 3.0.
 @register_service('oauth.authorize', ['oauth.authorize', 'main'])
 def oauth_authorize(
     ctx, client_id=None, redirect_uri=None, scope=None, state=None,
-    type='web_server'
+    type='application'
     ):
 
     if not client_id:
@@ -1352,7 +1334,7 @@ def oauth_authorize(
     if not redirect_uri:
         raise ValueError("The redirect_uri parameter was not specified.")
 
-    if type not in ['web_server', 'user_agent']:
+    if type not in ['application', 'user_agent']:
         raise ValueError("Unknown OAuth request type: %r." % type)
 
     client = OAuthClient.get_by_key_name(client_id)
@@ -1365,7 +1347,7 @@ def oauth_authorize(
     # We enforce strict equality of the redirect URI and the use of HTTPS if
     # it's a ``user_agent`` request. Otherwise, as long as the client hasn't
     # specified a redirect URI, it can pass in wherever it wants.
-    if type == 'web_server':
+    if type == 'application':
         if client.redirect and redirect_uri != client.redirect:
             raise ValueError(
                 "The registered redirect URI and the redirect_uri parameter "
@@ -1387,11 +1369,12 @@ def oauth_authorize(
                 )
 
     scope = scope or ctx.get_user_id()
-    request_id = hexlify(urandom(12))
+    request_id = hexlify(urandom(18))
 
     request = OAuthRequest(
         key_name=request_id,
         client=client_id,
+        created=time(),
         redirect=redirect_uri,
         scope=scope,
         state=state,
@@ -1407,13 +1390,18 @@ def oauth_authorize(
         }
 
 @register_service('oauth.redirect', [])
-def oauth_redirect(grant, request_id, limit=None):
+def oauth_redirect(ctx, grant, request_id, limit=None):
+
+    ctx.set_to_not_cache_response()
 
     request = OAuthRequest.get_by_key_name(request_id)
     if not request:
-        raise ValueError(
-            "Could not find records for the OAuth request."
-            )
+        raise ValueError("Could not find records for the OAuth request.")
+
+    now = int(time())
+    if (now - request.created) > 1800: # half an hour
+        db.delete(request)
+        raise ValueError("Sorry, the OAuth request has expired.")
 
     if request.state:
         response = {'state': state}
@@ -1423,25 +1411,32 @@ def oauth_redirect(grant, request_id, limit=None):
     ua_request = request.type == 'user_agent'
 
     if grant == 'yes':
-        token_id = hexlify(urandom(12))
+        token_id = hexlify(urandom(18))
         if limit:
-            expiry = int(86400 * limit) # number of days
+            limit = abs(float(limit))
+            expires = int(86400 * limit) # number of days
         if ua_request:
             token = OAuthToken(
                 key_name=token_id, client=client_id, scope=request.scope
                 )
-            response['access_token'] = token_id
             if limit:
-                response['expires_in'] = str(expiry)
-                token.expires = time() + expiry
+                response['expires_in'] = expires
+                token.expires = now + expires
+            response['access_token'] = token_id
         else:
+            if limit:
+                valid_until = now + min(1800, expires) # half an hour
+            else:
+                valid_until = now + 1800
             token = OAuthCode(
                 key_name=token_id, client=client_id,
-                scope=request.scope, redirect=request.redirect
+                scope=request.scope, redirect=request.redirect,
+                valid_until=valid_until
                 )
             if limit:
                 token.expires = time() + expiry
             response['code'] = token_id
+        db.put(token)
     else:
         response['error'] = 'user_denied'
 
@@ -1513,7 +1508,7 @@ def oauth_token(
             return {
                 'error': 'authorization_expired', 'error_type': 'OAuthError'
                 }
-        token_id = hexlify(urandom(12))
+        token_id = hexlify(urandom(18))
         token = OAuthToken(
             key_name=token_id, client=client_id,
             expires=expires, scope=code.scope
@@ -1524,6 +1519,7 @@ def oauth_token(
             }
         if expires:
             response['expires_in'] = expires - now
+        db.delete(code)
         return response
     elif grant_type == "user_basic_credentials":
         if not username:
@@ -1535,12 +1531,12 @@ def oauth_token(
             raise ValueError(
                 "Could not find a record for the given username."
                 )
-        if user.password != password: # @/@ update to actual check later
+        if user.password != HMAC(PASSWORD_KEY, password).digest():
             ctx.set_response_status(400)
             return {
                 'error': 'invalid_user_credentials', 'error_type': 'OAuthError'
                 }
-        token_id = hexlify(urandom(12))
+        token_id = hexlify(urandom(18))
         token = OAuthToken(
             key_name=token_id, client=client_id, scope=username
             )
@@ -1579,26 +1575,16 @@ if DEBUG == 2:
     from cProfile import Profile
     from pstats import Stats
 
-    # This particular main function wraps the real runner within a profiler and
-    # dumps the profiled statistics to the logs for later inspection.
     def main():
-
         profiler = Profile()
         profiler = profiler.runctx("handle_http_request()", globals(), locals())
         iostream = StringIO()
-
         stats = Stats(profiler, stream=iostream)
-        stats.sort_stats("time")  # or cumulative
-        stats.print_stats(80)     # 80 == how many to print
-
-        # optional:
-        # stats.print_callees()
-        # stats.print_callers()
-
+        stats.sort_stats("time")
+        stats.print_stats(80)
         logging.info("Profile data:\n%s", iostream.getvalue())
 
 else:
-
     main = handle_http_request
 
 # ------------------------------------------------------------------------------
@@ -1664,16 +1650,9 @@ def harvest_words(
 
 replace_links = re.compile(r'\[(.*?)\]', re.DOTALL).sub
 
-def escape(s):
-    return s.replace(
-        "&", "&amp;"
-        ).replace(
-        "<", "&lt;"
-        ).replace(
-        ">", "&gt;"
-        ).replace(
-        '"', "&quot;"
-        )
+def escape(s)
+    return s.replace("&", "&amp;").replace("<", "&lt;").replace(
+        ">", "&gt;").replace('"', "&quot;")
 
 text = """
 

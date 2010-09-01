@@ -58,7 +58,9 @@ SITE_ADMINS = frozenset([
     'admin@googlemail.com'
     ])
 
-TAMPER_PROOF_KEY = "key"
+PASSWORD_KEY = "secret key"
+
+TAMPER_PROOF_KEY = "secret key"
 
 TAMPER_PROOF_DEFAULT_DURATION = timedelta(minutes=20)
 

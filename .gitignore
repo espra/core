@@ -23,10 +23,10 @@ src/jsutil/*.js
 src/instance/www/*.css
 src/instance/www/*.js
 
-src/tentapp/secret.py
-src/tentapp/static/*.css
-src/tentapp/static/*.js
-src/tentapp/updated.py
+src/zero/secret.py
+src/zero/static/*.css
+src/zero/static/*.js
+src/zero/updated.py
 
 # minified css/js files
 
