@@ -1254,6 +1254,11 @@ def format_diff(diff, strip_first=1, add_bubbles=None):
                     break
                 if line.startswith('new file mode'):
                     create = line
+                elif line.startswith('rename from'):
+                    filename = line.split('rename from ', 1)[1]
+                    create = "file renamed without changes"
+                elif line.startswith('rename to'):
+                    new_filename = line.split('rename to ', 1)[1]
                 elif line.startswith('Binary files'):
                     binary = 1
                 elif line.startswith('deleted file mode'):
