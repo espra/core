@@ -25,4 +25,4 @@ except ImportError:
     print
     print "    git submodule update --init third_party/pylibs"
     print
-    sys.exit()
+    sys.exit(1)
