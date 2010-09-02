@@ -18,6 +18,7 @@ environ/review-server/config.yaml
 environ/review-server/var
 
 src/amp/ampnode/ampnode
+src/amp/ampzero/ampzero
 src/amp/hubproxy/hubproxy
 src/jsutil/*.js
 src/instance/www/*.css

@@ -1,0 +1,140 @@
+// No Copyright (-) 2010 The Ampify Authors. This file is under the
+// Public Domain license that can be found in the root LICENSE file.
+
+// Espra Zero
+// ==========
+//
+// The ``ampzero`` app proxies requests to the Amp Hub backend. This is
+// needed as the backend is currently running on top of Google App Engine and
+// it doesn't support HTTPS requests on custom domains yet.
+package main
+
+import (
+	"amp/runtime"
+	"amp/optparse"
+	"amp/tlsconf"
+	"bufio"
+	"crypto/tls"
+	"fmt"
+	"http"
+	"io/ioutil"
+	"net"
+	"os"
+)
+
+var (
+	debugMode  bool
+	remoteAddr string
+	remoteHost string
+)
+
+type Proxy struct{}
+
+func (proxy *Proxy) ServeHTTP(conn *http.Conn, req *http.Request) {
+
+	// Open a connection to the App Engine server.
+	aeconn, err := net.Dial("tcp", "", remoteAddr)
+	if err != nil {
+		if debugMode {
+			fmt.Printf("Couldn't connect to remote %s: %v\n", remoteHost, err)
+		}
+		return
+	}
+
+	ae := tls.Client(aeconn, tlsconf.Config)
+	defer ae.Close()
+
+	// Modify the request Host: header.
+	req.Host = remoteHost
+
+	// Send the request to the App Engine server.
+	err = req.Write(ae)
+	if err != nil {
+		if debugMode {
+			fmt.Printf("Error writing to App Engine: %v\n", err)
+		}
+		return
+	}
+
+	// Parse the response from App Engine.
+	resp, err := http.ReadResponse(bufio.NewReader(ae), req.Method)
+	if err != nil {
+		if debugMode {
+			fmt.Printf("Error parsing response from App Engine: %v\n", err)
+		}
+		return
+	}
+
+	// Set the received headers back to the initial connection.
+	for k, v := range resp.Header {
+		conn.SetHeader(k, v)
+	}
+
+	// Read the full response body.
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		if debugMode {
+			fmt.Printf("Error reading response from App Engine: %v\n", err)
+		}
+		resp.Body.Close()
+		return
+	}
+
+	// Write the response body back to the initial connection.
+	resp.Body.Close()
+	conn.WriteHeader(resp.StatusCode)
+	conn.Write(body)
+
+}
+
+func main() {
+
+	opts := optparse.Parser("Usage: ampzero [options]\n", "ampzero 0.0.0")
+
+	port := opts.Int([]string{"-p", "--port"}, 8010,
+		"the port number to use [default: 8010]")
+
+	host := opts.String([]string{"--host"}, "localhost",
+		"the host to bind to")
+
+	remote := opts.String([]string{"-r", "--remote"}, "espra.appspot.com",
+		"the remote host to connect to [default: espra.appspot.com]")
+
+	debug := opts.Bool([]string{"--debug"}, false,
+		"enable debug mode")
+
+	os.Args[0] = "ampzero"
+	args := opts.Parse(os.Args)
+
+	if len(args) >= 1 {
+		if args[0] == "help" {
+			opts.PrintUsage()
+			os.Exit(1)
+		}
+	}
+
+	// Initialise the Ampify runtime -- which will run ``ampzero`` on multiple
+	// processors if possible.
+	runtime.Init()
+
+	// Initialise the TLS config.
+	tlsconf.Init()
+
+	debugMode = *debug
+	remoteHost = *remote
+	remoteAddr = *remote + ":443"
+	addr := fmt.Sprintf("%s:%d", *host, *port)
+
+	listener, err := net.Listen("tcp", addr)
+	if err != nil {
+		fmt.Printf("Cannot listen on %s: %v\n", addr, err)
+		os.Exit(1)
+	}
+
+	fmt.Printf("Running ampzero with %d CPUs on %s\n",
+		runtime.CPUCount, addr)
+
+	proxy := &Proxy{}
+	http.Serve(listener, proxy)
+
+}

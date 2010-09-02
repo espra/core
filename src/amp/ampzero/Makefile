@@ -3,8 +3,8 @@
 
 include $(GOROOT)/src/Make.inc
 
-TARG=ampnode
+TARG=ampzero
 GOFILES=\
-	ampnode.go\
+	ampzero.go\
 
 include $(GOROOT)/src/Make.cmd
