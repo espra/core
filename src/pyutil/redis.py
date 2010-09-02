@@ -185,7 +185,10 @@ class Redis(object):
 
         request = ['*%%i\r\n' %% len(args)]; out = request.append
         for arg in args:
-            arg = str(arg)
+            if isinstance(arg, unicode):
+                arg = arg.encode('utf-8')
+            else:
+                arg = str(arg)
             out('$%%i' %% len(arg))
             out('\r\n')
             out(arg)
