@@ -1,4 +1,4 @@
-#! /bin/sh
+#! /bin/bash
 
 # No Copyright (-) 2010 The Ampify Authors. This file is under the
 # Public Domain license that can be found in the root LICENSE file.
@@ -14,6 +14,6 @@ if [[ "x$AMPIFY_ROOT" == "x" ]]; then
 	echo "ERROR: Sorry, couldn't detect the Ampify Root Directory."
 fi
 
-source $AMPIFY_ROOT/environ/ampenv.sh
+. $AMPIFY_ROOT/environ/ampenv.sh
 
 python -m ampify.main $@
