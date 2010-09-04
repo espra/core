@@ -1,0 +1,17 @@
+# No Copyright (-) 2010 The Ampify Authors. This file is under the
+# Public Domain license that can be found in the root LICENSE file.
+
+mode = replicated
+
+paxos.nodeID = {node-id}
+paxos.endpoints = {host0}:{port0}, {host1}:{port1}, {host2}:{port2}
+
+database.dir = {path}/keyspace
+
+http.port = {http-port}
+keyspace.port = {keyspace-port}
+
+log.trace = false
+log.targets = stdout, file
+log.file = {path}/keyspace.log
+log.timestamping = false
