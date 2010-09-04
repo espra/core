@@ -2,8 +2,8 @@
 # Public Domain license that can be found in the root LICENSE file.
 
 def deploy():
-    """deploy ampify zero"""
+    """deploy ampify"""
 
 def run():
-    """run local version of ampify zero"""
+    """run local version of ampify"""
 
