@@ -75,7 +75,7 @@
 	{% if commit.has_failure %}
 	<td><a class="build-fail-bubble" href="/builds/{{commit.repo}}//{{url_escape(commit.version)}}">✗ &nbsp;fail</a></td>
 	{% elif not commit.needed_builds %}
-	<td><a class="build-pass-bubble" href="/builds/{{commit.repo}}//{{url_escape(commit.version)}}">✗ &nbsp;pass</a></td>
+	<td><a class="build-pass-bubble" href="/builds/{{commit.repo}}//{{url_escape(commit.version)}}">✓ &nbsp;pass</a></td>
 	{% else %}
 	<td>-</td>
 	{% end %}

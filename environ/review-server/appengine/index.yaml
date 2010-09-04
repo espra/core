@@ -235,3 +235,10 @@ indexes:
   - name: u
   - name: m
     direction: desc
+
+- kind: Q
+  properties:
+  - name: g
+  - name: m
+    direction: desc
+

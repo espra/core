@@ -58,7 +58,7 @@
 
 <a href="/slave/{{activity.slave}}"><img class="gravatar-activity" src="http://www.gravatar.com/avatar/040008bc083a22725f9f6df2eed1dcdc?s=32&d=http%3A%2F%2Fgithub.com%2Fimages%2Fgravatars%2Fgravatar-32.png" /> <a href="/slave/{{activity.slave}}" class="bold-link">slave-{{activity.slave}}</a> made <a href="/build/{{build_id = activity.key().id()}}">build {{build_id}}</a> from {% if '/' in activity.version %}<a href="/review/{{url_escape(activity.repo)}}/{{'/'.join(map(url_escape, activity.version.split('/')))}}">{{escape(activity.version)}}</a>{% else %}<a href="/commit/{{escape(url_escape(activity.repo))}}/{{escape(activity.version)}}"><code>{{escape(activity.version[:8])}}</code></a>{% end %} on <a href="/builds/*/{{url_escape(activity.build_platform)}}">{{escape(activity.build_platform.lower())}}</a> <span class="timestamp small-grey">{{ activity.d.strftime('%s') }}</span>
 
-<blockquote><table class="build-results" cellspacing="0px"><tr>
+{% if activity.has_failure %}<blockquote><table class="build-results" cellspacing="0px"><tr>
 {% if activity.build_phases %}
 {% for phase, failure in decode_json(activity.build_phases) %}
 <td class="{% if failure %}fail">✗ {% else %}pass">✓ {% end %}&nbsp;{{ escape(phase) }}</td>
@@ -67,7 +67,7 @@
 {% else %}
 <td class="fail">✗ &nbsp;git-slave failure</td>
 {% end %}
-</tr></table></blockquote>
+</tr></table></blockquote>{% end %}
 
 {% end %}
 </div>
