@@ -4,9 +4,14 @@
 // Zero Proxy
 // ==========
 //
-// The ``zeroproxy`` app proxies requests to the Amp Hub backend. This is
-// needed as the backend is currently running on top of Google App Engine and
-// it doesn't support HTTPS requests on custom domains yet.
+// The ``zeroproxy`` app proxies requests to:
+//
+// 1. Google App Engine -- this is needed as App Engine doesn't yet support
+//    HTTPS requests on custom domains.
+//
+// 2. The ``zerolive`` app -- which, in turn, interacts with Redis and Keyspace
+//    nodes.
+//
 package main
 
 import (
@@ -22,6 +27,38 @@ import (
 	"os"
 )
 
+const (
+	ContentType   = "Content-Type"
+	ContentLength = "Content-Length"
+	TextHTML      = "text/html"
+)
+
+var (
+	Error502       = []byte(`<!DOCTYPE html>
+<html>
+<head>
+<title>DoctError!</title>
+<link href="//fonts.googleapis.com/css?family=Josefin+Sans+Std+Light:regular" rel="stylesheet" type="text/css" >
+<style>
+body {
+font-family: 'Josefin Sans Std Light', serif;
+font-size: 28px;
+font-weight: 400;
+line-height: 40px;
+background: #ebf3f6;
+padding: 50px;
+margin: 0;
+}
+</style>
+</head>
+<body>
+Our servers ran into DoctError and are too frightened to continue.
+<br/>
+Help fight evil by waiting a moment and trying again. Thanks!
+</body></html>`)
+	Error502Length = fmt.Sprintf("%d", len(Error502))
+)
+
 var (
 	debugMode  bool
 	remoteAddr string
@@ -29,6 +66,13 @@ var (
 )
 
 type Proxy struct{}
+
+func serveError502(conn *http.Conn) {
+	conn.WriteHeader(502)
+	conn.SetHeader(ContentType, TextHTML)
+	conn.SetHeader(ContentLength, Error502Length)
+	conn.Write(Error502)
+}
 
 func (proxy *Proxy) ServeHTTP(conn *http.Conn, req *http.Request) {
 
@@ -38,6 +82,7 @@ func (proxy *Proxy) ServeHTTP(conn *http.Conn, req *http.Request) {
 		if debugMode {
 			fmt.Printf("Couldn't connect to remote %s: %v\n", remoteHost, err)
 		}
+		serveError502(conn)
 		return
 	}
 
@@ -53,6 +98,7 @@ func (proxy *Proxy) ServeHTTP(conn *http.Conn, req *http.Request) {
 		if debugMode {
 			fmt.Printf("Error writing to App Engine: %v\n", err)
 		}
+		serveError502(conn)
 		return
 	}
 
@@ -62,12 +108,8 @@ func (proxy *Proxy) ServeHTTP(conn *http.Conn, req *http.Request) {
 		if debugMode {
 			fmt.Printf("Error parsing response from App Engine: %v\n", err)
 		}
+		serveError502(conn)
 		return
-	}
-
-	// Set the received headers back to the initial connection.
-	for k, v := range resp.Header {
-		conn.SetHeader(k, v)
 	}
 
 	// Read the full response body.
@@ -76,8 +118,14 @@ func (proxy *Proxy) ServeHTTP(conn *http.Conn, req *http.Request) {
 		if debugMode {
 			fmt.Printf("Error reading response from App Engine: %v\n", err)
 		}
+		serveError502(conn)
 		resp.Body.Close()
 		return
+	}
+
+	// Set the received headers back to the initial connection.
+	for k, v := range resp.Header {
+		conn.SetHeader(k, v)
 	}
 
 	// Write the response body back to the initial connection.
@@ -91,14 +139,20 @@ func main() {
 
 	opts := optparse.Parser("Usage: zeroproxy [options]\n", "zeroproxy 0.0.0")
 
-	port := opts.Int([]string{"-p", "--port"}, 8010,
-		"the port number to use [default: 8010]")
-
 	host := opts.String([]string{"--host"}, "localhost",
-		"the host to bind to")
+		"the host to bind to [default: localhost]")
 
-	remote := opts.String([]string{"-r", "--remote"}, "espra.appspot.com",
-		"the remote host to connect to [default: espra.appspot.com]")
+	port := opts.Int([]string{"--port"}, 8010,
+		"the port to bind to [default: 8010]")
+
+	remoteHost := opts.String([]string{"--remote-host"}, "localhost",
+		"the remote host to connect to [default: localhost]")
+
+	remotePort := opts.Int([]string{"--remote-port"}, 8080,
+		"the remote port to connect to [default: 8080]")
+
+	tlsMode := opts.Bool([]string{"--tls"}, false,
+		"enable TLS (SSL) mode when connecting to the remote host")
 
 	debug := opts.Bool([]string{"--debug"}, false,
 		"enable debug mode")
@@ -113,6 +167,8 @@ func main() {
 		}
 	}
 
+	_ = tlsMode
+
 	// Initialise the Ampify runtime -- which will run ``zeroproxy`` on multiple
 	// processors if possible.
 	runtime.Init()
@@ -121,8 +177,7 @@ func main() {
 	tlsconf.Init()
 
 	debugMode = *debug
-	remoteHost = *remote
-	remoteAddr = *remote + ":443"
+	remoteAddr = fmt.Sprintf("%s:%d", *remoteHost, *remotePort)
 	addr := fmt.Sprintf("%s:%d", *host, *port)
 
 	listener, err := net.Listen("tcp", addr)
