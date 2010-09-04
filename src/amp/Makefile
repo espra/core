@@ -63,19 +63,19 @@ test.dirs: $(addsuffix .test, $(TEST))
 bench: bench.dirs
 
 clean: clean.dirs
-	@cd ampnode && $(make) clean
 	@cd hubproxy && $(make) clean
+	@cd zeroproxy && $(make) clean
 
 distclean: nuke
 
 nuke: nuke.dirs
 	@echo rm -rf $(QUOTED_GOROOT)/pkg/amp
-	@cd ampnode && $(make) nuke
 	@cd hubproxy && $(make) nuke
+	@cd zeroproxy && $(make) nuke
 
 install: install.dirs
-	@cd ampnode && $(make) install
 	@cd hubproxy && $(make) install
+	@cd zeroproxy && $(make) nuke
 
 test: test.dirs
 

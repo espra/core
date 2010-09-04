@@ -3,8 +3,8 @@
 
 include $(GOROOT)/src/Make.inc
 
-TARG=ampzero
+TARG=zeroproxy
 GOFILES=\
-	ampzero.go\
+	zeroproxy.go\
 
 include $(GOROOT)/src/Make.cmd

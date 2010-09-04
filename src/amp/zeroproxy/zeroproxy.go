@@ -1,10 +1,10 @@
 // No Copyright (-) 2010 The Ampify Authors. This file is under the
 // Public Domain license that can be found in the root LICENSE file.
 
-// Espra Zero
+// Zero Proxy
 // ==========
 //
-// The ``ampzero`` app proxies requests to the Amp Hub backend. This is
+// The ``zeroproxy`` app proxies requests to the Amp Hub backend. This is
 // needed as the backend is currently running on top of Google App Engine and
 // it doesn't support HTTPS requests on custom domains yet.
 package main
@@ -89,7 +89,7 @@ func (proxy *Proxy) ServeHTTP(conn *http.Conn, req *http.Request) {
 
 func main() {
 
-	opts := optparse.Parser("Usage: ampzero [options]\n", "ampzero 0.0.0")
+	opts := optparse.Parser("Usage: zeroproxy [options]\n", "zeroproxy 0.0.0")
 
 	port := opts.Int([]string{"-p", "--port"}, 8010,
 		"the port number to use [default: 8010]")
@@ -103,7 +103,7 @@ func main() {
 	debug := opts.Bool([]string{"--debug"}, false,
 		"enable debug mode")
 
-	os.Args[0] = "ampzero"
+	os.Args[0] = "zeroproxy"
 	args := opts.Parse(os.Args)
 
 	if len(args) >= 1 {
@@ -113,7 +113,7 @@ func main() {
 		}
 	}
 
-	// Initialise the Ampify runtime -- which will run ``ampzero`` on multiple
+	// Initialise the Ampify runtime -- which will run ``zeroproxy`` on multiple
 	// processors if possible.
 	runtime.Init()
 
@@ -131,7 +131,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	fmt.Printf("Running ampzero with %d CPUs on %s\n",
+	fmt.Printf("Running zeroproxy with %d CPUs on %s\n",
 		runtime.CPUCount, addr)
 
 	proxy := &Proxy{}
