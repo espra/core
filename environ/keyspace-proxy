@@ -40,8 +40,7 @@ deserialisers = {
 # Serialisation
 # ------------------------------------------------------------------------------
 
-def pack_positive_integer(value, write, chr=chr):
-    write('\x02')
+def pack_size(value, write, chr=chr):
     while 1:
         left_bits = value & 127
         value >>= 7
@@ -51,29 +50,33 @@ def pack_positive_integer(value, write, chr=chr):
         if not value:
             break
 
+def pack_integer(value, write):
+    write('\x02')
+    pack_size(value, write)
+
 def pack_bytestream(value, write):
     write('\x03')
-    pack_positive_integer(len(value), write)
+    pack_size(len(value), write)
     write(value)
 
 def pack_list(value, write):
     write('\x04')
-    pack_positive_integer(len(value), write)
+    pack_size(len(value), write)
     for item in value:
-        pack_positive_integer(len(item), write)
+        pack_size(len(item), write)
         write(item)
 
 def pack_dict(value, write):
     write('\x05')
-    pack_positive_integer(len(value), write)
+    pack_size(len(value), write)
     for k, v in value.iteritems():
-        pack_positive_integer(len(k), write)
+        pack_size(len(k), write)
         write(k)
-        pack_positive_integer(len(v), write)
+        pack_size(len(v), write)
         write(v)
 
 serialisers = {
-    int: pack_positive_integer,
+    int: pack_integer,
     str: pack_bytestream,
     list: pack_list,
     dict: pack_dict
