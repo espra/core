@@ -1,0 +1,220 @@
+#! /usr/bin/env python
+
+# No Copyright (-) 2010 The Ampify Authors. This file is under the
+# Public Domain license that can be found in the root LICENSE file.
+
+"""Keyspace Proxy."""
+
+import pylibs
+import sys
+
+import keyspace
+
+# ------------------------------------------------------------------------------
+# Deserialisation
+# ------------------------------------------------------------------------------
+
+def unpack_integer(read):
+    result = bit_shift = 0
+    lowest_byte = 1
+    while lowest_byte:
+        value = ord(read(1))
+        lowest_byte = value & 128
+        result += (value & 127) << bit_shift
+        bit_shift += 7
+    return result
+
+def unpack_bytestream(read):
+    return read(unpack_integer(read))
+
+deserialisers = {
+    '\x00': None,
+    '\x01': True,
+    '\x02': False,
+    '\x03': '',
+    '\x04': unpack_integer,
+    '\x05': unpack_bytestream
+    }
+
+# ------------------------------------------------------------------------------
+# Serialisation
+# ------------------------------------------------------------------------------
+
+def pack_positive_integer(value, write, chr=chr):
+    write('\x02')
+    while 1:
+        left_bits = value & 127
+        value >>= 7
+        if value:
+            left_bits += 128
+        write(chr(left_bits))
+        if not value:
+            break
+
+def pack_bytestream(value, write):
+    write('\x03')
+    pack_positive_integer(len(value), write)
+    write(value)
+
+def pack_list(value, write):
+    write('\x04')
+    pack_positive_integer(len(value), write)
+    for item in value:
+        pack_positive_integer(len(item), write)
+        write(item)
+
+def pack_dict(value, write):
+    write('\x05')
+    pack_positive_integer(len(value), write)
+    for k, v in value.iteritems():
+        pack_positive_integer(len(k), write)
+        write(k)
+        pack_positive_integer(len(v), write)
+        write(v)
+
+serialisers = {
+    int: pack_positive_integer,
+    str: pack_bytestream,
+    list: pack_list,
+    dict: pack_dict
+    }
+
+# ------------------------------------------------------------------------------
+# Main Runner
+# ------------------------------------------------------------------------------
+
+def main(argv=None, deserialisers=deserialisers, serialisers=serialisers):
+
+    nodes = argv or sys.argv[1:]
+
+    if (not nodes) or '-h' in nodes or '--help' in nodes:
+        sys.stderr.write(
+            "Usage: keyspace-proxy <host1:port1> <host2:port2> <host3:port3>\n"
+            )
+        sys.exit()
+
+    if len(nodes) < 3:
+        sys.stderr.write("ERROR: Less than 3 Keyspace nodes specified.\n")
+        sys.exit(1)
+
+    status_codes = {}; get_status = status_codes.get
+    for attr in dir(keyspace):
+        if attr.startswith('KEYSPACE_'):
+            status_codes[getattr(keyspace, attr)] = attr
+
+    client = keyspace.Client(nodes)
+    client.set_global_timeout(9*1000)
+
+    KEYSPACE_SUCCESS = keyspace.KEYSPACE_SUCCESS
+    KEYSPACE_NOSERVICE = keyspace.KEYSPACE_NOSERVICE
+    KEYSPACE_FAILED = keyspace.KEYSPACE_FAILED
+
+    client.get('ping')
+
+    if client.result.connectivity_status() == keyspace.KEYSPACE_NOCONNECTION:
+        sys.stderr.write(
+            "ERROR: Could not connect to any of the keyspace nodes.\n"
+            )
+        sys.exit(1)
+
+    read, readline = sys.stdin.read, sys.stdin.readline
+    write, flush = sys.stdout.write, sys.stdout.flush
+
+    def get_batched_reads():
+        return client.result.key_values()
+
+    commands = {
+        '\x00': (client.begin, 0, None),
+        '\x01': (client.submit, 0, None),
+        '\x02': (get_batched_reads, 0, dict),
+        '\x03': (client.get, 1, str),
+        '\x04': (client.dirty_get, 1, str),
+        '\x05': (client.set, 1, None),
+        '\x06': (client.test_and_set, 1, None),
+        '\x07': (client.rename, 1, None),
+        '\x08': (client.add, 1, int),
+        '\x09': (client.delete, 1, None),
+        '\x0a': (client.remove, 1, str),
+        '\x0b': (client.prune, 1, None),
+        '\x0c': (client.set_expiry, 1, None),
+        '\x0d': (client.remove_expiry, 1, None),
+        '\x0e': (client.clear_expiries, 0, None),
+        '\x0f': (client.list_keys, 1, list),
+        '\x10': (client.dirty_list_keys, 1, list),
+        '\x11': (client.list_key_values, 1, dict),
+        '\x12': (client.dirty_list_key_values, 1, dict),
+        '\x13': (client.count, 1, int),
+        '\x14': (client.dirty_count, 1, int)
+    }
+
+    batch_start = '\x00'
+    batch_end = '\x01'
+    batch_sentinel = '\x02'
+    inside_batch = 0
+
+    SUCCESS = '\x00'
+    RESPONSE_NONE = '\x01'
+    FAILED = '\xf1'
+    NO_SERVICE = '\xf2'
+    UNKNOWN_ERROR = '\xf3'
+    UNEXPECTED_TYPE = '\xf4'
+
+    while 1:
+        command = read(1)
+        if command < batch_sentinel:
+            if command == batch_start:
+                inside_batch = 1
+            elif command == batch_end:
+                inside_batch = 0
+        method, has_args, response_type = commands[command]
+        if has_args:
+            args = []
+            arg_count = unpack_integer(read)
+            for i in range(arg_count):
+                arg_type = read(1)
+                deserialiser = deserialisers[arg_type]
+                if hasattr(deserialiser, '__call__'):
+                    arg = deserialiser(read)
+                else:
+                    arg = deserialiser
+                args.append(arg)
+            response = method(*args)
+        else:
+            response = method()
+        if inside_batch:
+            continue
+        status = client.result.command_status()
+        if status != KEYSPACE_SUCCESS:
+            if status == KEYSPACE_FAILED:
+                write(FAILED)
+                flush()
+                continue
+            if status == KEYSPACE_NOSERVICE:
+                write(NO_SERVICE)
+                flush()
+                continue
+            write(UNKNOWN_ERROR)
+            flush()
+            continue
+        if not response_type:
+            write(SUCCESS)
+            flush()
+            continue
+        if response is None:
+            write(RESPONSE_NONE)
+            flush()
+            continue
+        if type(response) != response_type:
+            write(UNEXPECTED_TYPE)
+            flush()
+            continue
+        serialiser = serialisers[response_type]
+        serialiser(response, write)
+        flush()
+
+# ------------------------------------------------------------------------------
+# Self Runner
+# ------------------------------------------------------------------------------
+
+if __name__ == '__main__':
+    main()
