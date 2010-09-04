@@ -18,3 +18,16 @@ func AppendString(slice *[]string, s string) {
 	*slice = (*slice)[0 : length+1]
 	(*slice)[length] = s
 }
+
+func AppendByte(slice *[]byte, b byte) {
+	length := len(*slice)
+	if cap(*slice) == length {
+		temp := make([]byte, length, 2*(length+1))
+		for idx, item := range *slice {
+			temp[idx] = item
+		}
+		*slice = temp
+	}
+	*slice = (*slice)[0 : length+1]
+	(*slice)[length] = b
+}
