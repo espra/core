@@ -204,6 +204,9 @@ func main() {
 	officialHost := opts.String([]string{"--official"}, "",
 		"if specified, limit the Proxy Frontend to just this host", "HOST")
 
+	useHTTP := opts.Bool([]string{"--use-http"}, false,
+		"use HTTP instead of HTTPS for the Proxy Frontend")
+
 	httpHost := opts.String([]string{"--http-host"}, "",
 		"the host to bind the HTTP Redirector to", "HOST")
 
@@ -281,20 +284,24 @@ func main() {
 		os.Exit(1)
 	}
 
-	tlsConfig := &tls.Config{
-		NextProtos: []string{"http/1.1"},
-		Rand:       rand.Reader,
-		Time:       time.Seconds,
-	}
+	var proxyListener net.Listener
 
-	tlsConfig.Certificates = make([]tls.Certificate, 1)
-	tlsConfig.Certificates[0], err = tls.LoadX509KeyPair(*certFile, *keyFile)
-	if err != nil {
-		fmt.Printf("Error loading certificate/key pair: %s\n", err)
-		os.Exit(1)
+	if *useHTTP {
+		proxyListener = proxyConn
+	} else {
+		tlsConfig := &tls.Config{
+			NextProtos: []string{"http/1.1"},
+			Rand:       rand.Reader,
+			Time:       time.Seconds,
+		}
+		tlsConfig.Certificates = make([]tls.Certificate, 1)
+		tlsConfig.Certificates[0], err = tls.LoadX509KeyPair(*certFile, *keyFile)
+		if err != nil {
+			fmt.Printf("Error loading certificate/key pair: %s\n", err)
+			os.Exit(1)
+		}
+		proxyListener = tls.NewListener(proxyConn, tlsConfig)
 	}
-
-	proxyListener := tls.NewListener(proxyConn, tlsConfig)
 
 	var httpAddr string
 	var httpListener net.Listener
@@ -314,16 +321,26 @@ func main() {
 
 	if len(*officialHost) != 0 {
 		enforceHost = true
-		officialRedirectURL = "https://" + *officialHost + "/"
+		if *useHTTP {
+			officialRedirectURL = "http://" + *officialHost + "/"
+		} else {
+			officialRedirectURL = "https://" + *officialHost + "/"
+		}
 		officialRedirectHTML = []byte(fmt.Sprintf(redirectHTML, officialRedirectURL))
 	}
 
-	var proxyAddrURL, httpAddrURL string
+	var proxyScheme, proxyAddrURL, httpAddrURL string
+
+	if *useHTTP {
+		proxyScheme = "http://"
+	} else {
+		proxyScheme = "https://"
+	}
 
 	if len(*proxyHost) == 0 {
-		proxyAddrURL = fmt.Sprintf("https://localhost:%d", *proxyPort)
+		proxyAddrURL = fmt.Sprintf("%slocalhost:%d", proxyScheme, *proxyPort)
 	} else {
-		proxyAddrURL = fmt.Sprintf("https://%s:%d", *proxyHost, *proxyPort)
+		proxyAddrURL = fmt.Sprintf("%s%s:%d", proxyScheme, *proxyHost, *proxyPort)
 	}
 
 	if len(*httpHost) == 0 {
