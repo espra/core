@@ -15,16 +15,18 @@
 package main
 
 import (
-	"amp/runtime"
 	"amp/optparse"
+	"amp/runtime"
 	"amp/tlsconf"
 	"bufio"
+	"crypto/rand"
 	"crypto/tls"
 	"fmt"
 	"http"
 	"io/ioutil"
 	"net"
 	"os"
+	"time"
 )
 
 const (
@@ -37,9 +39,7 @@ const (
 )
 
 var (
-	debugMode  bool
-	remoteAddr string
-	remoteHost string
+	debugMode bool
 )
 
 var (
@@ -93,29 +93,37 @@ func (redirector *Redirector) ServeHTTP(conn *http.Conn, req *http.Request) {
 
 
 type Proxy struct {
-	tlsMode bool
+	gaeAddr string
+	gaeHost string
+	gaeTLS  bool
 }
 
 func (proxy *Proxy) ServeHTTP(conn *http.Conn, req *http.Request) {
 
 	// Open a connection to the App Engine server.
-	aeconn, err := net.Dial("tcp", "", remoteAddr)
+	gaeConn, err := net.Dial("tcp", "", proxy.gaeAddr)
 	if err != nil {
 		if debugMode {
-			fmt.Printf("Couldn't connect to remote %s: %v\n", remoteHost, err)
+			fmt.Printf("Couldn't connect to remote %s: %v\n", proxy.gaeHost, err)
 		}
 		serveError502(conn)
 		return
 	}
 
-	ae := tls.Client(aeconn, tlsconf.Config)
-	defer ae.Close()
+	var gae net.Conn
+
+	if proxy.gaeTLS {
+		gae = tls.Client(gaeConn, tlsconf.Config)
+		defer gae.Close()
+	} else {
+		gae = gaeConn
+	}
 
 	// Modify the request Host: header.
-	req.Host = remoteHost
+	req.Host = proxy.gaeHost
 
 	// Send the request to the App Engine server.
-	err = req.Write(ae)
+	err = req.Write(gae)
 	if err != nil {
 		if debugMode {
 			fmt.Printf("Error writing to App Engine: %v\n", err)
@@ -125,7 +133,7 @@ func (proxy *Proxy) ServeHTTP(conn *http.Conn, req *http.Request) {
 	}
 
 	// Parse the response from App Engine.
-	resp, err := http.ReadResponse(bufio.NewReader(ae), req.Method)
+	resp, err := http.ReadResponse(bufio.NewReader(gae), req.Method)
 	if err != nil {
 		if debugMode {
 			fmt.Printf("Error parsing response from App Engine: %v\n", err)
@@ -170,14 +178,17 @@ func main() {
 		"Usage: zeroproxy <zerolive-config.yaml> [options]\n",
 		"zeroproxy 0.0.0")
 
-	host := opts.String([]string{"--host"}, "",
-		"the host to bind the HTTPS server to", "HOST")
+	proxyHost := opts.String([]string{"--host"}, "",
+		"the host to bind the proxy server to", "HOST")
 
-	port := opts.Int([]string{"--port"}, 9443,
-		"the port to bind the HTTPS server to [default: 9443]", "PORT")
+	proxyPort := opts.Int([]string{"--port"}, 9443,
+		"the port to bind the proxy server to [default: 9443]", "PORT")
 
 	certFile := opts.String([]string{"--cert-file"}, "",
-		"the path to the TLS certificate for the HTTPS server", "FILE")
+		"the path to the TLS certificate for the proxy server", "PATH")
+
+	keyFile := opts.String([]string{"--key-file"}, "",
+		"the path to the TLS key for the proxy server", "PATH")
 
 	httpHost := opts.String([]string{"--http-host"}, "",
 		"the host to bind the HTTP server to", "HOST")
@@ -190,14 +201,17 @@ func main() {
 		"the redirect for HTTP requests [default: https://localhost:9443]",
 		"URL")
 
-	remoteHost := opts.String([]string{"--gae-host"}, "localhost",
+	disableHTTP := opts.Bool([]string{"--disable-http"}, false,
+		"disable the HTTP redirector")
+
+	gaeHost := opts.String([]string{"--gae-host"}, "localhost",
 		"the App Engine host to connect to [default: localhost]", "HOST")
 
-	remotePort := opts.Int([]string{"--gae-port"}, 8080,
+	gaePort := opts.Int([]string{"--gae-port"}, 8080,
 		"the App Engine port to connect to [default: 8080]", "PORT")
 
-	tlsMode := opts.Bool([]string{"--tls-proxy"}, false,
-		"proxy to App Engine using TLS [default: false]")
+	gaeTLS := opts.Bool([]string{"--gae-tls"}, false,
+		"use TLS when connecting to App Engine [default: false]")
 
 	debug := opts.Bool([]string{"-d", "--debug"}, false,
 		"enable debug mode")
@@ -218,6 +232,23 @@ func main() {
 		os.Exit(0)
 	}
 
+	var exitProcess bool
+
+	if len(*certFile) == 0 {
+		fmt.Printf("ERROR: The required --cert-file parameter hasn't been provided.\n")
+		exitProcess = true
+	}
+
+	if len(*keyFile) == 0 {
+		fmt.Printf("ERROR: The required --key-file parameter hasn't been provided.\n")
+		exitProcess = true
+	}
+
+	if exitProcess {
+		os.Exit(1)
+	}
+
+	_ = disableHTTP
 	_ = liveConfig
 	_ = certFile
 
@@ -229,28 +260,48 @@ func main() {
 	tlsconf.Init()
 
 	debugMode = *debug
-	remoteAddr = fmt.Sprintf("%s:%d", *remoteHost, *remotePort)
+	gaeAddr := fmt.Sprintf("%s:%d", *gaeHost, *gaePort)
 
-	addr := fmt.Sprintf("%s:%d", *host, *port)
-	listener, err := net.Listen("tcp", addr)
+	proxyAddr := fmt.Sprintf("%s:%d", *proxyHost, *proxyPort)
+	proxyConn, err := net.Listen("tcp", proxyAddr)
 	if err != nil {
-		fmt.Printf("Cannot listen on %s: %v\n", addr, err)
+		fmt.Printf("Cannot listen on %s: %v\n", proxyAddr, err)
 		os.Exit(1)
 	}
 
-	httpAddr := fmt.Sprintf("%s:%d", *httpHost, *httpPort)
-	httpListener, err := net.Listen("tcp", httpAddr)
+	tlsConfig := &tls.Config{
+		NextProtos: []string{"http/1.1"},
+		Rand:       rand.Reader,
+		Time:       time.Seconds,
+	}
+
+	tlsConfig.Certificates = make([]tls.Certificate, 1)
+	tlsConfig.Certificates[0], err = tls.LoadX509KeyPair(*certFile, *keyFile)
 	if err != nil {
-		fmt.Printf("Cannot listen on %s: %v\n", httpAddr, err)
+		fmt.Printf("Error loading certificate/key pair: %s\n", err)
 		os.Exit(1)
 	}
 
-	var addrURL, httpAddrURL string
+	proxyListener := tls.NewListener(proxyConn, tlsConfig)
 
-	if len(*host) == 0 {
-		addrURL = fmt.Sprintf("https://localhost:%d", *port)
+	var httpAddr string
+	var httpListener net.Listener
+
+	if !*disableHTTP {
+		httpAddr = fmt.Sprintf("%s:%d", *httpHost, *httpPort)
+		httpListener, err = net.Listen("tcp", httpAddr)
+		if err != nil {
+			fmt.Printf("Cannot listen on %s: %v\n", httpAddr, err)
+			os.Exit(1)
+		}
+	}
+
+	var proxyAddrURL, httpAddrURL string
+
+	if len(*proxyHost) == 0 {
+		proxyAddrURL = fmt.Sprintf("https://localhost:%d", *proxyPort)
 	} else {
-		addrURL = fmt.Sprintf("https://%s:%d", *host, *port)
+		proxyAddrURL = fmt.Sprintf("https://%s:%d", *proxyHost, *proxyPort)
 	}
 
 	if len(*httpHost) == 0 {
@@ -260,15 +311,31 @@ func main() {
 	}
 
 	fmt.Printf("Running zeroproxy with %d CPUs:\n", runtime.CPUCount)
-	fmt.Printf("* Frontend proxy running on %s\n", addrURL)
-	fmt.Printf("* HTTP Redirector running on %s -> %s\n", httpAddrURL, *httpRedirect)
 
-	redirector := &Redirector{url: *httpRedirect}
-	http.Serve(httpListener, redirector)
+	if !*disableHTTP {
+		redirector := &Redirector{url: *httpRedirect}
+		go func() {
+			err = http.Serve(httpListener, redirector)
+			if err != nil {
+				fmt.Printf("ERROR serving HTTP Redirector: %s\n", err)
+				os.Exit(1)
+			}
+		}()
+		fmt.Printf("* HTTP Redirector running on %s -> %s\n", httpAddrURL, *httpRedirect)
+	}
 
 	proxy := &Proxy{
-		tlsMode: *tlsMode,
+		gaeAddr: gaeAddr,
+		gaeHost: *gaeHost,
+		gaeTLS:  *gaeTLS,
 	}
-	http.Serve(listener, proxy)
+
+	fmt.Printf("* Frontend Proxy running on %s\n", proxyAddrURL)
+
+	err = http.Serve(proxyListener, proxy)
+	if err != nil {
+		fmt.Printf("ERROR serving Frontend Proxy: %s\n", err)
+		os.Exit(1)
+	}
 
 }
