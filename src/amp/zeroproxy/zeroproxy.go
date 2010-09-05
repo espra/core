@@ -93,12 +93,23 @@ func (redirector *Redirector) ServeHTTP(conn *http.Conn, req *http.Request) {
 
 
 type Proxy struct {
-	gaeAddr string
-	gaeHost string
-	gaeTLS  bool
+	gaeAddr              string
+	gaeHost              string
+	gaeTLS               bool
+	officialHost         string
+	officialRedirectURL  string
+	officialRedirectHTML []byte
+	enforceHost          bool
 }
 
 func (proxy *Proxy) ServeHTTP(conn *http.Conn, req *http.Request) {
+
+	if proxy.enforceHost && req.Host != proxy.officialHost {
+		conn.SetHeader("Location", proxy.officialRedirectURL)
+		conn.WriteHeader(http.StatusMovedPermanently)
+		conn.Write(proxy.officialRedirectHTML)
+		return
+	}
 
 	// Open a connection to the App Engine server.
 	gaeConn, err := net.Dial("tcp", "", proxy.gaeAddr)
@@ -179,22 +190,25 @@ func main() {
 		"zeroproxy 0.0.0")
 
 	proxyHost := opts.String([]string{"--host"}, "",
-		"the host to bind the proxy server to", "HOST")
+		"the host to bind the Proxy Frontend to", "HOST")
 
 	proxyPort := opts.Int([]string{"--port"}, 9443,
-		"the port to bind the proxy server to [default: 9443]", "PORT")
+		"the port to bind the Proxy Frontend to [default: 9443]", "PORT")
 
 	certFile := opts.String([]string{"--cert-file"}, "",
-		"the path to the TLS certificate for the proxy server", "PATH")
+		"the path to the TLS certificate for the Proxy Frontend", "PATH")
 
 	keyFile := opts.String([]string{"--key-file"}, "",
-		"the path to the TLS key for the proxy server", "PATH")
+		"the path to the TLS key for the Proxy Frontend", "PATH")
+
+	officialHost := opts.String([]string{"--official"}, "",
+		"if specified, limit the Proxy Frontend to just this host", "HOST")
 
 	httpHost := opts.String([]string{"--http-host"}, "",
-		"the host to bind the HTTP server to", "HOST")
+		"the host to bind the HTTP Redirector to", "HOST")
 
 	httpPort := opts.Int([]string{"--http-port"}, 9080,
-		"the port to bind the HTTP server to [default: 9080]", "PORT")
+		"the port to bind the HTTP Redirector to [default: 9080]", "PORT")
 
 	httpRedirect := opts.String([]string{"--redirect"},
 		"https://localhost:9443",
@@ -248,9 +262,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	_ = disableHTTP
 	_ = liveConfig
-	_ = certFile
 
 	// Initialise the Ampify runtime -- which will run ``zeroproxy`` on multiple
 	// processors if possible.
@@ -296,6 +308,16 @@ func main() {
 		}
 	}
 
+	var enforceHost bool
+	var officialRedirectURL string
+	var officialRedirectHTML []byte
+
+	if len(*officialHost) != 0 {
+		enforceHost = true
+		officialRedirectURL = "https://" + *officialHost + "/"
+		officialRedirectHTML = []byte(fmt.Sprintf(redirectHTML, officialRedirectURL))
+	}
+
 	var proxyAddrURL, httpAddrURL string
 
 	if len(*proxyHost) == 0 {
@@ -325,9 +347,13 @@ func main() {
 	}
 
 	proxy := &Proxy{
-		gaeAddr: gaeAddr,
-		gaeHost: *gaeHost,
-		gaeTLS:  *gaeTLS,
+		gaeAddr:              gaeAddr,
+		gaeHost:              *gaeHost,
+		gaeTLS:               *gaeTLS,
+		officialHost:         *officialHost,
+		officialRedirectURL:  officialRedirectURL,
+		officialRedirectHTML: officialRedirectHTML,
+		enforceHost:          enforceHost,
 	}
 
 	fmt.Printf("* Frontend Proxy running on %s\n", proxyAddrURL)
