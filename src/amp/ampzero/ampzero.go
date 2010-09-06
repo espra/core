@@ -183,24 +183,6 @@ func serveError502(conn *http.Conn) {
 	conn.Write(error502)
 }
 
-func createPidfile(runPath string) {
-
-	pidFile, err := os.Open(path.Join(runPath, "ampzero.pid"), os.O_CREAT|os.O_WRONLY, 0666)
-	if err != nil {
-		fmt.Printf("ERROR: %s\n", err)
-		os.Exit(1)
-	}
-
-	fmt.Fprintf(pidFile, "%d", os.Getpid())
-
-	err = pidFile.Close()
-	if err != nil {
-		fmt.Printf("ERROR: %s\n", err)
-		os.Exit(1)
-	}
-
-}
-
 func main() {
 
 	opts := optparse.Parser(
@@ -300,7 +282,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	go createPidfile(runPath)
+	go runtime.CreatePidFile(path.Join(runPath, "ampzero.pid"))
 
 	if *frontendTLS {
 		var exitProcess bool

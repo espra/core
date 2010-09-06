@@ -25,6 +25,20 @@ var (
 	CPUCount   int
 )
 
+func CreatePidFile(path string) {
+	pidFile, err := os.Open(path, os.O_CREAT|os.O_WRONLY, 0666)
+	if err != nil {
+		fmt.Printf("ERROR: %s\n", err)
+		os.Exit(1)
+	}
+	fmt.Fprintf(pidFile, "%d", os.Getpid())
+	err = pidFile.Close()
+	if err != nil {
+		fmt.Printf("ERROR: %s\n", err)
+		os.Exit(1)
+	}
+}
+
 // The ``runtime.GetCPUCount`` function tries to detect the number of CPUs on
 // the current machine.
 func GetCPUCount() (count int) {
