@@ -7,6 +7,7 @@ package optparse
 
 import (
 	"amp/slice"
+	"amp/yaml"
 	"fmt"
 	"os"
 	"strconv"
@@ -14,46 +15,56 @@ import (
 )
 
 type option struct {
-	shortflag   string
-	longflag    string
-	dest        string
-	usage       string
-	valueType   string
-	intValue    *int
-	boolValue   *bool
-	stringValue *string
+	configflag     string
+	shortflag      string
+	longflag       string
+	dest           string
+	usage          string
+	requiredFlag   bool
+	requiredConfig bool
+	defined        bool
+	valueType      string
+	intValue       *int
+	boolValue      *bool
+	stringValue    *string
 }
 
 type OptionParser struct {
-	Usage         string
-	Version       string
-	ParseHelp     bool
-	ParseVersion  bool
-	Autocomplete  bool
-	options       []*option
-	short2options map[string]*option
-	shortflags    []string
-	long2options  map[string]*option
-	longflags     []string
-	helpAdded     bool
-	versionAdded  bool
+	Usage          string
+	Version        string
+	ParseHelp      bool
+	ParseVersion   bool
+	Autocomplete   bool
+	options        []*option
+	config2options map[string]*option
+	configflags    []string
+	short2options  map[string]*option
+	shortflags     []string
+	long2options   map[string]*option
+	longflags      []string
+	helpAdded      bool
+	versionAdded   bool
 }
 
 func (opt *option) String() (output string) {
 	output = "  "
-	if opt.shortflag != "" {
-		output += opt.shortflag
+	if opt.configflag != "" {
+		output += opt.configflag
+		output += ": "
+	} else {
+		if opt.shortflag != "" {
+			output += opt.shortflag
+			if opt.longflag != "" {
+				output += ", "
+			}
+		}
 		if opt.longflag != "" {
-			output += ", "
+			output += opt.longflag
+		}
+		if opt.dest != "" {
+			output += " " + opt.dest
 		}
 	}
-	if opt.longflag != "" {
-		output += opt.longflag
-	}
-	if opt.dest != "" {
-		output += " " + opt.dest
-	}
-
 	length := len(output)
 	if length >= 19 {
 		output += "\n                    "
@@ -69,7 +80,7 @@ func (opt *option) String() (output string) {
 	return
 }
 
-func (op *OptionParser) computeFlags(flags []string, opt *option) (shortflag, longflag string) {
+func (op *OptionParser) computeFlags(flags []string, opt *option) (configflag, shortflag, longflag string) {
 	for _, flag := range flags {
 		if strings.HasPrefix(flag, "--") {
 			longflag = flag
@@ -79,6 +90,10 @@ func (op *OptionParser) computeFlags(flags []string, opt *option) (shortflag, lo
 			shortflag = flag
 			op.short2options[shortflag] = opt
 			slice.AppendString(&op.shortflags, shortflag)
+		} else if strings.HasSuffix(flag, ":") {
+			configflag = flag[0 : len(flag)-1]
+			op.config2options[configflag] = opt
+			slice.AppendString(&op.configflags, configflag)
 		} else {
 			longflag = flag
 			op.long2options[longflag] = opt
@@ -88,14 +103,30 @@ func (op *OptionParser) computeFlags(flags []string, opt *option) (shortflag, lo
 	return
 }
 
-func (op *OptionParser) Default(flags []string, usage string, displayDest bool, dest ...string) (opt *option) {
+func (op *OptionParser) Default(flags []string, usage string, displayDest bool, info ...interface{}) (opt *option) {
 	opt = &option{}
 	opt.usage = usage
-	opt.shortflag, opt.longflag = op.computeFlags(flags, opt)
-	destSlice := []string(dest)
+	opt.configflag, opt.shortflag, opt.longflag = op.computeFlags(flags, opt)
+	var required bool
+	var dest string
+	for _, prop := range info {
+		switch prop := prop.(type) {
+		case bool:
+			required = prop
+		case string:
+			dest = prop
+		}
+	}
+	if required {
+		if opt.configflag == "" {
+			opt.requiredFlag = true
+		} else {
+			opt.requiredConfig = true
+		}
+	}
 	if displayDest {
-		if len(destSlice) > 0 {
-			opt.dest = destSlice[0]
+		if dest != "" {
+			opt.dest = dest
 		} else {
 			if opt.longflag != "" {
 				opt.dest = strings.ToUpper(strings.TrimLeft(opt.longflag, "-"))
@@ -117,15 +148,15 @@ func (op *OptionParser) Default(flags []string, usage string, displayDest bool, 
 	return
 }
 
-func (op *OptionParser) Int(flags []string, value int, usage string, dest ...string) (result *int) {
-	opt := op.Default(flags, usage, true, dest)
+func (op *OptionParser) Int(flags []string, value int, usage string, info ...interface{}) (result *int) {
+	opt := op.Default(flags, usage, true, info)
 	opt.valueType = "int"
 	opt.intValue = &value
 	return &value
 }
 
-func (op *OptionParser) String(flags []string, value string, usage string, dest ...string) (result *string) {
-	opt := op.Default(flags, usage, true, dest)
+func (op *OptionParser) String(flags []string, value string, usage string, info ...interface{}) (result *string) {
+	opt := op.Default(flags, usage, true, info)
 	opt.valueType = "string"
 	opt.stringValue = &value
 	return &value
@@ -133,6 +164,27 @@ func (op *OptionParser) String(flags []string, value string, usage string, dest 
 
 func (op *OptionParser) Bool(flags []string, value bool, usage string) (result *bool) {
 	opt := op.Default(flags, usage, false)
+	opt.valueType = "bool"
+	opt.boolValue = &value
+	return &value
+}
+
+func (op *OptionParser) IntConfig(flag string, value int, usage string, info ...interface{}) (result *int) {
+	opt := op.Default([]string{flag + ":", "--" + flag}, usage, false, info)
+	opt.valueType = "int"
+	opt.intValue = &value
+	return &value
+}
+
+func (op *OptionParser) StringConfig(flag string, value string, usage string, info ...interface{}) (result *string) {
+	opt := op.Default([]string{flag + ":", "--" + flag}, usage, false, info)
+	opt.valueType = "string"
+	opt.stringValue = &value
+	return &value
+}
+
+func (op *OptionParser) BoolConfig(flag string, value bool, usage string) (result *bool) {
+	opt := op.Default([]string{flag + ":", "--" + flag}, usage, false)
 	opt.valueType = "bool"
 	opt.boolValue = &value
 	return &value
@@ -258,14 +310,12 @@ func (op *OptionParser) Parse(args []string) (remainder []string) {
 			}
 		}
 		if noOpt {
-			fmt.Printf("%s: error: no such option: %s\n\n", args[0], arg)
-			op.PrintUsage()
+			fmt.Printf("%s: error: no such option: %s\n", args[0], arg)
 			os.Exit(1)
 		}
 		if opt.dest != "" {
 			if idx == argLength {
-				fmt.Printf("%s: error: %s option requires an argument\n\n", args[0], arg)
-				op.PrintUsage()
+				fmt.Printf("%s: error: %s option requires an argument\n", args[0], arg)
 				os.Exit(1)
 			}
 		}
@@ -278,18 +328,28 @@ func (op *OptionParser) Parse(args []string) (remainder []string) {
 				os.Exit(0)
 			}
 			*opt.boolValue = true
+			opt.defined = true
 			idx += 1
 		} else if opt.valueType == "string" {
+			if idx == argLength {
+				fmt.Printf("%s: error: no value specified for %s\n", args[0], arg)
+				os.Exit(1)
+			}
 			*opt.stringValue = args[idx+1]
+			opt.defined = true
 			idx += 2
 		} else if opt.valueType == "int" {
+			if idx == argLength {
+				fmt.Printf("%s: error: no value specified for %s\n", args[0], arg)
+				os.Exit(1)
+			}
 			intValue, err := strconv.Atoi(args[idx+1])
 			if err != nil {
-				fmt.Printf("%s: error: couldn't convert %s value '%s' to an integer\n\n", args[0], arg, args[idx+1])
-				op.PrintUsage()
+				fmt.Printf("%s: error: couldn't convert %s value '%s' to an integer\n", args[0], arg, args[idx+1])
 				os.Exit(1)
 			}
 			*opt.intValue = intValue
+			opt.defined = true
 			idx += 2
 		}
 		if idx > argLength {
@@ -297,17 +357,79 @@ func (op *OptionParser) Parse(args []string) (remainder []string) {
 		}
 	}
 
+	for _, opt := range op.options {
+		if opt.requiredFlag && !opt.defined {
+			fmt.Printf("%s: error: required: %s", args[0], opt)
+			os.Exit(1)
+		}
+	}
+
 	return
+
+}
+
+func (op *OptionParser) ParseConfig(filename string, args []string) (err os.Error) {
+
+	data, err := yaml.ParseFile(filename)
+	if err != nil {
+		return err
+	}
+
+	for config, opt := range op.config2options {
+		if opt.defined {
+			continue
+		}
+		value, ok := data[config]
+		if !ok {
+			if opt.requiredConfig {
+				fmt.Printf("%s: error: required: %s", args[0], opt)
+				os.Exit(1)
+			} else {
+				continue
+			}
+		}
+		if opt.valueType == "bool" {
+			if value == "true" || value == "on" || value == "yes" {
+				*opt.boolValue = true
+			} else if value == "false" || value == "off" || value == "no" {
+				*opt.boolValue = false
+			} else {
+				fmt.Printf("%s: error: invalid boolean value for %s: %q\n", args[0], config, value)
+				os.Exit(1)
+			}
+		} else if opt.valueType == "string" {
+			*opt.stringValue = value
+		} else if opt.valueType == "int" {
+			intValue, err := strconv.Atoi(value)
+			if err != nil {
+				fmt.Printf("%s: error: couldn't convert the %s value %q to an integer\n", args[0], config, value)
+				os.Exit(1)
+			}
+			*opt.intValue = intValue
+		}
+	}
+
+	return nil
 
 }
 
 func (op *OptionParser) PrintUsage() {
 	fmt.Print(op.Usage)
+	if len(op.configflags) > 0 {
+		fmt.Print("\nConfig File Options:\n")
+	}
+	for _, opt := range op.options {
+		if opt.configflag != "" {
+			fmt.Printf("%v", opt)
+		}
+	}
 	if len(op.options) > 0 {
 		fmt.Print("\nOptions:\n")
 	}
 	for _, opt := range op.options {
-		fmt.Printf("%v", opt)
+		if opt.configflag == "" {
+			fmt.Printf("%v", opt)
+		}
 	}
 }
 
@@ -316,6 +438,7 @@ func Parser(usage string, version ...string) (op *OptionParser) {
 	op = &OptionParser{}
 	op.long2options = make(map[string]*option)
 	op.short2options = make(map[string]*option)
+	op.config2options = make(map[string]*option)
 	op.Usage = usage
 	op.Autocomplete = true
 	op.ParseHelp = true
