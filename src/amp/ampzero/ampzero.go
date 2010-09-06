@@ -1,10 +1,10 @@
 // No Copyright (-) 2010 The Ampify Authors. This file is under the
 // Public Domain license that can be found in the root LICENSE file.
 
-// Zero Proxy
-// ==========
+// Ampify Zero
+// ===========
 //
-// The ``zeroproxy`` app proxies requests to:
+// The ``ampzero`` app proxies requests to:
 //
 // 1. Google App Engine -- this is needed as App Engine doesn't yet support
 //    HTTPS requests on custom domains.
@@ -92,8 +92,7 @@ func (redirector *Redirector) ServeHTTP(conn *http.Conn, req *http.Request) {
 
 }
 
-
-type Proxy struct {
+type Frontend struct {
 	gaeAddr              string
 	gaeHost              string
 	gaeTLS               bool
@@ -103,20 +102,20 @@ type Proxy struct {
 	enforceHost          bool
 }
 
-func (proxy *Proxy) ServeHTTP(conn *http.Conn, req *http.Request) {
+func (frontend *Frontend) ServeHTTP(conn *http.Conn, req *http.Request) {
 
-	if proxy.enforceHost && req.Host != proxy.officialHost {
-		conn.SetHeader("Location", proxy.officialRedirectURL)
+	if frontend.enforceHost && req.Host != frontend.officialHost {
+		conn.SetHeader("Location", frontend.officialRedirectURL)
 		conn.WriteHeader(http.StatusMovedPermanently)
-		conn.Write(proxy.officialRedirectHTML)
+		conn.Write(frontend.officialRedirectHTML)
 		return
 	}
 
 	// Open a connection to the App Engine server.
-	gaeConn, err := net.Dial("tcp", "", proxy.gaeAddr)
+	gaeConn, err := net.Dial("tcp", "", frontend.gaeAddr)
 	if err != nil {
 		if debugMode {
-			fmt.Printf("Couldn't connect to remote %s: %v\n", proxy.gaeHost, err)
+			fmt.Printf("Couldn't connect to remote %s: %v\n", frontend.gaeHost, err)
 		}
 		serveError502(conn)
 		return
@@ -124,7 +123,7 @@ func (proxy *Proxy) ServeHTTP(conn *http.Conn, req *http.Request) {
 
 	var gae net.Conn
 
-	if proxy.gaeTLS {
+	if frontend.gaeTLS {
 		gae = tls.Client(gaeConn, tlsconf.Config)
 		defer gae.Close()
 	} else {
@@ -132,7 +131,7 @@ func (proxy *Proxy) ServeHTTP(conn *http.Conn, req *http.Request) {
 	}
 
 	// Modify the request Host: header.
-	req.Host = proxy.gaeHost
+	req.Host = frontend.gaeHost
 
 	// Send the request to the App Engine server.
 	err = req.Write(gae)
@@ -186,7 +185,7 @@ func serveError502(conn *http.Conn) {
 
 func createPidfile(runPath string) {
 
-	pidFile, err := os.Open(path.Join(runPath, "zeroproxy.pid"), os.O_CREAT|os.O_WRONLY, 0666)
+	pidFile, err := os.Open(path.Join(runPath, "ampzero.pid"), os.O_CREAT|os.O_WRONLY, 0666)
 	if err != nil {
 		fmt.Printf("ERROR: %s\n", err)
 		os.Exit(1)
@@ -205,54 +204,52 @@ func createPidfile(runPath string) {
 func main() {
 
 	opts := optparse.Parser(
-		"Usage: zeroproxy </path/to/instance/directory> [options]\n",
-		"zeroproxy 0.0.0")
-
-	proxyHost := opts.String([]string{"--host"}, "",
-		"the host to bind the Proxy Frontend to", "HOST")
-
-	proxyPort := opts.Int([]string{"--port"}, 9443,
-		"the port to bind the Proxy Frontend to [default: 9443]", "PORT")
-
-	certFile := opts.String([]string{"--cert-file"}, "",
-		"the path to the TLS certificate for the Proxy Frontend", "PATH")
-
-	keyFile := opts.String([]string{"--key-file"}, "",
-		"the path to the TLS key for the Proxy Frontend", "PATH")
-
-	officialHost := opts.String([]string{"--official"}, "",
-		"if specified, limit the Proxy Frontend to just this host", "HOST")
-
-	useHTTP := opts.Bool([]string{"--use-http"}, false,
-		"use HTTP instead of HTTPS for the Proxy Frontend")
-
-	httpHost := opts.String([]string{"--http-host"}, "",
-		"the host to bind the HTTP Redirector to", "HOST")
-
-	httpPort := opts.Int([]string{"--http-port"}, 9080,
-		"the port to bind the HTTP Redirector to [default: 9080]", "PORT")
-
-	httpRedirect := opts.String([]string{"--redirect"},
-		"https://localhost:9443",
-		"the redirect for HTTP requests [default: https://localhost:9443]",
-		"URL")
-
-	disableHTTP := opts.Bool([]string{"--disable-http"}, false,
-		"disable the HTTP redirector")
-
-	gaeHost := opts.String([]string{"--gae-host"}, "localhost",
-		"the App Engine host to connect to [default: localhost]", "HOST")
-
-	gaePort := opts.Int([]string{"--gae-port"}, 8080,
-		"the App Engine port to connect to [default: 8080]", "PORT")
-
-	gaeTLS := opts.Bool([]string{"--gae-tls"}, false,
-		"use TLS when connecting to App Engine [default: false]")
+		"Usage: ampzero </path/to/instance/directory> [options]\n",
+		"ampzero 0.0.0")
 
 	debug := opts.Bool([]string{"-d", "--debug"}, false,
 		"enable debug mode")
 
-	os.Args[0] = "zeroproxy"
+	frontendHost := opts.StringConfig("frontend-host", "",
+		"the host to bind the Frontend Server to")
+
+	frontendPort := opts.IntConfig("frontend-port", 9080,
+		"the port to bind the Frontend Server to [default: 9080]")
+
+	frontendTLS := opts.BoolConfig("frontend-tls", false,
+		"use TLS (HTTPS) for the Frontend Server [default: false]")
+
+	certFile := opts.StringConfig("cert-file", "",
+		"the path to the TLS certificate for the Frontend Server")
+
+	keyFile := opts.StringConfig("key-file", "",
+		"the path to the TLS key for the Frontend Server")
+
+	officialHost := opts.StringConfig("official-host", "",
+		"if set, limit the Frontend Server to the specified host")
+
+	enableRedirector := opts.BoolConfig("redirector", false,
+		"enable the HTTP Redirector [default: false]")
+
+	httpHost := opts.StringConfig("http-host", "",
+		"the host to bind the HTTP Redirector to")
+
+	httpPort := opts.IntConfig("http-port", 9081,
+		"the port to bind the HTTP Redirector to [default: 9081]")
+
+	redirectURL := opts.StringConfig("redirect-url", "",
+		"the URL that the HTTP Redirector redirects to")
+
+	gaeHost := opts.StringConfig("gae-host", "localhost",
+		"the App Engine host to connect to [default: localhost]")
+
+	gaePort := opts.IntConfig("gae-port", 8080,
+		"the App Engine port to connect to [default: 8080]")
+
+	gaeTLS := opts.BoolConfig("gae-tls", false,
+		"use TLS when connecting to App Engine [default: false]")
+
+	os.Args[0] = "ampzero"
 	args := opts.Parse(os.Args)
 
 	var instanceDirectory string
@@ -268,22 +265,6 @@ func main() {
 		os.Exit(0)
 	}
 
-	var exitProcess bool
-
-	if len(*certFile) == 0 {
-		fmt.Printf("ERROR: The required --cert-file parameter hasn't been provided.\n")
-		exitProcess = true
-	}
-
-	if len(*keyFile) == 0 {
-		fmt.Printf("ERROR: The required --key-file parameter hasn't been provided.\n")
-		exitProcess = true
-	}
-
-	if exitProcess {
-		os.Exit(1)
-	}
-
 	rootInfo, err := os.Stat(instanceDirectory)
 	if err == nil {
 		if !rootInfo.IsDirectory() {
@@ -293,6 +274,16 @@ func main() {
 	} else {
 		fmt.Printf("ERROR: %s\n", err)
 		os.Exit(1)
+	}
+
+	configPath := path.Join(instanceDirectory, "ampzero.yaml")
+	_, err = os.Stat(configPath)
+	if err == nil {
+		err = opts.ParseConfig(configPath, os.Args)
+		if err != nil {
+			fmt.Printf("ERROR: %s\n", err)
+			os.Exit(1)
+		}
 	}
 
 	logPath := path.Join(instanceDirectory, "log")
@@ -311,7 +302,22 @@ func main() {
 
 	go createPidfile(runPath)
 
-	// Initialise the Ampify runtime -- which will run ``zeroproxy`` on multiple
+	if *frontendTLS {
+		var exitProcess bool
+		if len(*certFile) == 0 {
+			fmt.Printf("ERROR: The cert-file config value hasn't been specified.\n")
+			exitProcess = true
+		}
+		if len(*keyFile) == 0 {
+			fmt.Printf("ERROR: The key-file config value hasn't been specified.\n")
+			exitProcess = true
+		}
+		if exitProcess {
+			os.Exit(1)
+		}
+	}
+
+	// Initialise the Ampify runtime -- which will run ``ampzero`` on multiple
 	// processors if possible.
 	runtime.Init()
 
@@ -321,18 +327,16 @@ func main() {
 	debugMode = *debug
 	gaeAddr := fmt.Sprintf("%s:%d", *gaeHost, *gaePort)
 
-	proxyAddr := fmt.Sprintf("%s:%d", *proxyHost, *proxyPort)
-	proxyConn, err := net.Listen("tcp", proxyAddr)
+	frontendAddr := fmt.Sprintf("%s:%d", *frontendHost, *frontendPort)
+	frontendConn, err := net.Listen("tcp", frontendAddr)
 	if err != nil {
-		fmt.Printf("Cannot listen on %s: %v\n", proxyAddr, err)
+		fmt.Printf("Cannot listen on %s: %v\n", frontendAddr, err)
 		os.Exit(1)
 	}
 
-	var proxyListener net.Listener
+	var frontendListener net.Listener
 
-	if *useHTTP {
-		proxyListener = proxyConn
-	} else {
+	if *frontendTLS {
 		tlsConfig := &tls.Config{
 			NextProtos: []string{"http/1.1"},
 			Rand:       rand.Reader,
@@ -344,13 +348,19 @@ func main() {
 			fmt.Printf("Error loading certificate/key pair: %s\n", err)
 			os.Exit(1)
 		}
-		proxyListener = tls.NewListener(proxyConn, tlsConfig)
+		frontendListener = tls.NewListener(frontendConn, tlsConfig)
+	} else {
+		frontendListener = frontendConn
 	}
 
 	var httpAddr string
 	var httpListener net.Listener
 
-	if !*disableHTTP {
+	if *enableRedirector {
+		if *redirectURL == "" {
+			fmt.Printf("ERROR: The redirect-url config value hasn't been specified.\n")
+			os.Exit(1)
+		}
 		httpAddr = fmt.Sprintf("%s:%d", *httpHost, *httpPort)
 		httpListener, err = net.Listen("tcp", httpAddr)
 		if err != nil {
@@ -365,26 +375,26 @@ func main() {
 
 	if len(*officialHost) != 0 {
 		enforceHost = true
-		if *useHTTP {
-			officialRedirectURL = "http://" + *officialHost + "/"
-		} else {
+		if *frontendTLS {
 			officialRedirectURL = "https://" + *officialHost + "/"
+		} else {
+			officialRedirectURL = "http://" + *officialHost + "/"
 		}
 		officialRedirectHTML = []byte(fmt.Sprintf(redirectHTML, officialRedirectURL))
 	}
 
-	var proxyScheme, proxyAddrURL, httpAddrURL string
+	var frontendScheme, frontendAddrURL, httpAddrURL string
 
-	if *useHTTP {
-		proxyScheme = "http://"
+	if *frontendTLS {
+		frontendScheme = "https://"
 	} else {
-		proxyScheme = "https://"
+		frontendScheme = "http://"
 	}
 
-	if len(*proxyHost) == 0 {
-		proxyAddrURL = fmt.Sprintf("%slocalhost:%d", proxyScheme, *proxyPort)
+	if len(*frontendHost) == 0 {
+		frontendAddrURL = fmt.Sprintf("%slocalhost:%d", frontendScheme, *frontendPort)
 	} else {
-		proxyAddrURL = fmt.Sprintf("%s%s:%d", proxyScheme, *proxyHost, *proxyPort)
+		frontendAddrURL = fmt.Sprintf("%s%s:%d", frontendScheme, *frontendHost, *frontendPort)
 	}
 
 	if len(*httpHost) == 0 {
@@ -393,10 +403,10 @@ func main() {
 		httpAddrURL = fmt.Sprintf("http://%s:%d", *httpHost, *httpPort)
 	}
 
-	fmt.Printf("Running zeroproxy with %d CPUs:\n", runtime.CPUCount)
+	fmt.Printf("Running ampzero with %d CPUs:\n", runtime.CPUCount)
 
-	if !*disableHTTP {
-		redirector := &Redirector{url: *httpRedirect}
+	if *enableRedirector {
+		redirector := &Redirector{url: *redirectURL}
 		go func() {
 			err = http.Serve(httpListener, redirector)
 			if err != nil {
@@ -404,10 +414,10 @@ func main() {
 				os.Exit(1)
 			}
 		}()
-		fmt.Printf("* HTTP Redirector running on %s -> %s\n", httpAddrURL, *httpRedirect)
+		fmt.Printf("* HTTP Redirector running on %s -> %s\n", httpAddrURL, *redirectURL)
 	}
 
-	proxy := &Proxy{
+	frontend := &Frontend{
 		gaeAddr:              gaeAddr,
 		gaeHost:              *gaeHost,
 		gaeTLS:               *gaeTLS,
@@ -417,11 +427,11 @@ func main() {
 		enforceHost:          enforceHost,
 	}
 
-	fmt.Printf("* Frontend Proxy running on %s\n", proxyAddrURL)
+	fmt.Printf("* Frontend Server running on %s\n", frontendAddrURL)
 
-	err = http.Serve(proxyListener, proxy)
+	err = http.Serve(frontendListener, frontend)
 	if err != nil {
-		fmt.Printf("ERROR serving Frontend Proxy: %s\n", err)
+		fmt.Printf("ERROR serving Frontend Server: %s\n", err)
 		os.Exit(1)
 	}
 

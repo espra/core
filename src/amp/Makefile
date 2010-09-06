@@ -8,6 +8,7 @@ PACKAGES=\
 	runtime\
 	slice\
 	tlsconf\
+	yaml\
 
 NOBENCH=\
 	command\
@@ -15,6 +16,7 @@ NOBENCH=\
 	optparse\
 	slice\
 	tlsconf\
+	yaml\
 
 NOTEST=\
 	command\
@@ -64,18 +66,18 @@ bench: bench.dirs
 
 clean: clean.dirs
 	@cd hubproxy && $(make) clean
-	@cd zeroproxy && $(make) clean
+	@cd ampzero && $(make) clean
 
 distclean: nuke
 
 nuke: nuke.dirs
 	@echo rm -rf $(QUOTED_GOROOT)/pkg/amp
 	@cd hubproxy && $(make) nuke
-	@cd zeroproxy && $(make) nuke
+	@cd ampzero && $(make) nuke
 
 install: install.dirs
 	@cd hubproxy && $(make) install
-	@cd zeroproxy && $(make) nuke
+	@cd ampzero && $(make) nuke
 
 test: test.dirs
 
