@@ -26,6 +26,7 @@ import (
 	"io/ioutil"
 	"net"
 	"os"
+	"path"
 	"time"
 )
 
@@ -183,10 +184,28 @@ func serveError502(conn *http.Conn) {
 	conn.Write(error502)
 }
 
+func createPidfile(runPath string) {
+
+	pidFile, err := os.Open(path.Join(runPath, "zeroproxy.pid"), os.O_CREAT|os.O_WRONLY, 0666)
+	if err != nil {
+		fmt.Printf("ERROR: %s\n", err)
+		os.Exit(1)
+	}
+
+	fmt.Fprintf(pidFile, "%d", os.Getpid())
+
+	err = pidFile.Close()
+	if err != nil {
+		fmt.Printf("ERROR: %s\n", err)
+		os.Exit(1)
+	}
+
+}
+
 func main() {
 
 	opts := optparse.Parser(
-		"Usage: zeroproxy <zerolive-config.yaml> [options]\n",
+		"Usage: zeroproxy </path/to/instance/directory> [options]\n",
 		"zeroproxy 0.0.0")
 
 	proxyHost := opts.String([]string{"--host"}, "",
@@ -236,14 +255,14 @@ func main() {
 	os.Args[0] = "zeroproxy"
 	args := opts.Parse(os.Args)
 
-	var liveConfig string
+	var instanceDirectory string
 
 	if len(args) >= 1 {
 		if args[0] == "help" {
 			opts.PrintUsage()
 			os.Exit(0)
 		}
-		liveConfig = args[0]
+		instanceDirectory = args[0]
 	} else {
 		opts.PrintUsage()
 		os.Exit(0)
@@ -265,7 +284,32 @@ func main() {
 		os.Exit(1)
 	}
 
-	_ = liveConfig
+	rootInfo, err := os.Stat(instanceDirectory)
+	if err == nil {
+		if !rootInfo.IsDirectory() {
+			fmt.Printf("ERROR: %q is not a directory\n", instanceDirectory)
+			os.Exit(1)
+		}
+	} else {
+		fmt.Printf("ERROR: %s\n", err)
+		os.Exit(1)
+	}
+
+	logPath := path.Join(instanceDirectory, "log")
+	err = os.MkdirAll(logPath, 0755)
+	if err != nil {
+		fmt.Printf("ERROR: %s\n", err)
+		os.Exit(1)
+	}
+
+	runPath := path.Join(instanceDirectory, "run")
+	err = os.MkdirAll(runPath, 0755)
+	if err != nil {
+		fmt.Printf("ERROR: %s\n", err)
+		os.Exit(1)
+	}
+
+	go createPidfile(runPath)
 
 	// Initialise the Ampify runtime -- which will run ``zeroproxy`` on multiple
 	// processors if possible.
