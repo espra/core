@@ -3,24 +3,30 @@
 
 PACKAGES=\
 	command\
+	logging\
 	lzf\
 	optparse\
 	runtime\
 	slice\
+	encoding\
 	tlsconf\
 	yaml\
 
 NOBENCH=\
 	command\
+	logging\
 	lzf\
 	optparse\
 	slice\
 	tlsconf\
+	encoding\
 	yaml\
 
 NOTEST=\
 	command\
+	logging\
 	slice\
+	encoding\
 	tlsconf\
 
 ifeq ($(shell uname),FreeBSD)
@@ -86,4 +92,5 @@ test: test.dirs
 # ------------------------------------------------------------------------------
 
 runtime.install: command.install
-optparse.install: slice.install
+optparse.install: slice.install yaml.install
+logging.install: encoding.install
