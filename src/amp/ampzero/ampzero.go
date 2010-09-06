@@ -282,6 +282,11 @@ func main() {
 		os.Exit(1)
 	}
 
+	if runtime.AcquireLock(path.Join(runPath, "ampzero.lock")) != 0 {
+		fmt.Printf("ERROR: Another ampzero process is already running in %s\n", instanceDirectory)
+		os.Exit(1)
+	}
+
 	go runtime.CreatePidFile(path.Join(runPath, "ampzero.pid"))
 
 	if *frontendTLS {

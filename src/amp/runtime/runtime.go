@@ -20,9 +20,19 @@ import (
 
 const Platform = syscall.OS
 
+var runtimeLocks = make(map[string]*os.File)
+
 var (
 	AmpifyRoot string
 	CPUCount   int
+)
+
+// The constants defined in ``sys/fcntl.h`` on Linux and OS X.
+const (
+	LOCK_SH = 1 << iota
+	LOCK_EX
+	LOCK_NB
+	LOCK_UN
 )
 
 func CreatePidFile(path string) {
@@ -37,6 +47,20 @@ func CreatePidFile(path string) {
 		fmt.Printf("ERROR: %s\n", err)
 		os.Exit(1)
 	}
+}
+
+func AcquireLock(path string) int {
+	lockFile, err := os.Open(path, os.O_CREAT|os.O_WRONLY, 0666)
+	if err != nil {
+		fmt.Printf("ERROR: %s\n", err)
+		os.Exit(1)
+	}
+	runtimeLocks[path] = lockFile
+	return syscall.Flock(lockFile.Fd(), LOCK_EX|LOCK_NB)
+}
+
+func ReleaseLock(path string) {
+	runtimeLocks[path].Close()
 }
 
 // The ``runtime.GetCPUCount`` function tries to detect the number of CPUs on
