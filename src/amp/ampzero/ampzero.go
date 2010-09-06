@@ -213,29 +213,29 @@ func main() {
 	frontendHost := opts.StringConfig("frontend-host", "",
 		"the host to bind the Frontend Server to")
 
-	frontendPort := opts.IntConfig("frontend-port", 9080,
-		"the port to bind the Frontend Server to [default: 9080]")
+	frontendPort := opts.IntConfig("frontend-port", 9040,
+		"the port to bind the Frontend Server to [default: 9040]")
 
 	frontendTLS := opts.BoolConfig("frontend-tls", false,
 		"use TLS (HTTPS) for the Frontend Server [default: false]")
 
-	certFile := opts.StringConfig("cert-file", "",
-		"the path to the TLS certificate for the Frontend Server")
+	certFile := opts.StringConfig("cert-file", "cert/frontend.cert",
+		"the path to the TLS certificate [default: cert/frontend.cert]")
 
-	keyFile := opts.StringConfig("key-file", "",
-		"the path to the TLS key for the Frontend Server")
+	keyFile := opts.StringConfig("key-file", "cert/frontend.key",
+		"the path to the TLS key [default: cert/frontend.key]")
 
 	officialHost := opts.StringConfig("official-host", "",
 		"if set, limit the Frontend Server to the specified host")
 
-	enableRedirector := opts.BoolConfig("redirector", false,
-		"enable the HTTP Redirector [default: false]")
+	noRedirect := opts.BoolConfig("no-redirect", false,
+		"disable the HTTP Redirector [default: false]")
 
 	httpHost := opts.StringConfig("http-host", "",
 		"the host to bind the HTTP Redirector to")
 
-	httpPort := opts.IntConfig("http-port", 9081,
-		"the port to bind the HTTP Redirector to [default: 9081]")
+	httpPort := opts.IntConfig("http-port", 9080,
+		"the port to bind the HTTP Redirector to [default: 9080]")
 
 	redirectURL := opts.StringConfig("redirect-url", "",
 		"the URL that the HTTP Redirector redirects to")
@@ -337,13 +337,15 @@ func main() {
 	var frontendListener net.Listener
 
 	if *frontendTLS {
+		certPath := path.Join(instanceDirectory, *certFile)
+		keyPath := path.Join(instanceDirectory, *keyFile)
 		tlsConfig := &tls.Config{
 			NextProtos: []string{"http/1.1"},
 			Rand:       rand.Reader,
 			Time:       time.Seconds,
 		}
 		tlsConfig.Certificates = make([]tls.Certificate, 1)
-		tlsConfig.Certificates[0], err = tls.LoadX509KeyPair(*certFile, *keyFile)
+		tlsConfig.Certificates[0], err = tls.LoadX509KeyPair(certPath, keyPath)
 		if err != nil {
 			fmt.Printf("Error loading certificate/key pair: %s\n", err)
 			os.Exit(1)
@@ -351,22 +353,6 @@ func main() {
 		frontendListener = tls.NewListener(frontendConn, tlsConfig)
 	} else {
 		frontendListener = frontendConn
-	}
-
-	var httpAddr string
-	var httpListener net.Listener
-
-	if *enableRedirector {
-		if *redirectURL == "" {
-			fmt.Printf("ERROR: The redirect-url config value hasn't been specified.\n")
-			os.Exit(1)
-		}
-		httpAddr = fmt.Sprintf("%s:%d", *httpHost, *httpPort)
-		httpListener, err = net.Listen("tcp", httpAddr)
-		if err != nil {
-			fmt.Printf("Cannot listen on %s: %v\n", httpAddr, err)
-			os.Exit(1)
-		}
 	}
 
 	var enforceHost bool
@@ -403,9 +389,24 @@ func main() {
 		httpAddrURL = fmt.Sprintf("http://%s:%d", *httpHost, *httpPort)
 	}
 
+	var httpAddr string
+	var httpListener net.Listener
+
+	if !*noRedirect {
+		if *redirectURL == "" {
+			*redirectURL = frontendAddrURL
+		}
+		httpAddr = fmt.Sprintf("%s:%d", *httpHost, *httpPort)
+		httpListener, err = net.Listen("tcp", httpAddr)
+		if err != nil {
+			fmt.Printf("Cannot listen on %s: %v\n", httpAddr, err)
+			os.Exit(1)
+		}
+	}
+
 	fmt.Printf("Running ampzero with %d CPUs:\n", runtime.CPUCount)
 
-	if *enableRedirector {
+	if !*noRedirect {
 		redirector := &Redirector{url: *redirectURL}
 		go func() {
 			err = http.Serve(httpListener, redirector)
