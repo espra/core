@@ -83,7 +83,7 @@ nuke: nuke.dirs
 
 install: install.dirs
 	@cd hubproxy && $(make) install
-	@cd ampzero && $(make) nuke
+	@cd ampzero && $(make) install
 
 test: test.dirs
 
