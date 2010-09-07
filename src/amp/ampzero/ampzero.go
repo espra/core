@@ -15,6 +15,7 @@
 package main
 
 import (
+	"amp/logging"
 	"amp/optparse"
 	"amp/runtime"
 	"amp/tlsconf"
@@ -27,6 +28,7 @@ import (
 	"net"
 	"os"
 	"path"
+	"strings"
 	"time"
 )
 
@@ -41,6 +43,7 @@ const (
 
 var (
 	debugMode bool
+	log       *logging.Logger
 )
 
 var (
@@ -89,6 +92,7 @@ func (redirector *Redirector) ServeHTTP(conn *http.Conn, req *http.Request) {
 	conn.SetHeader("Location", url)
 	conn.WriteHeader(http.StatusMovedPermanently)
 	fmt.Fprintf(conn, redirectHTML, url)
+	logRequest(http.StatusMovedPermanently, conn)
 
 }
 
@@ -108,6 +112,7 @@ func (frontend *Frontend) ServeHTTP(conn *http.Conn, req *http.Request) {
 		conn.SetHeader("Location", frontend.officialRedirectURL)
 		conn.WriteHeader(http.StatusMovedPermanently)
 		conn.Write(frontend.officialRedirectHTML)
+		logRequest(http.StatusMovedPermanently, conn)
 		return
 	}
 
@@ -174,6 +179,21 @@ func (frontend *Frontend) ServeHTTP(conn *http.Conn, req *http.Request) {
 	conn.WriteHeader(resp.StatusCode)
 	conn.Write(body)
 
+	logRequest(resp.StatusCode, conn)
+
+}
+
+func logRequest(status int, conn *http.Conn) {
+	var ip string
+	splitPoint := strings.LastIndex(conn.RemoteAddr, ":")
+	if splitPoint == -1 {
+		ip = conn.RemoteAddr
+	} else {
+		ip = conn.RemoteAddr[0:splitPoint]
+	}
+	request := conn.Req
+	log.Log("fe", status, request.Method, request.Host, request.RawURL,
+		ip, request.UserAgent, request.Referer)
 }
 
 func serveError502(conn *http.Conn) {
@@ -181,6 +201,7 @@ func serveError502(conn *http.Conn) {
 	conn.SetHeader(contentType, textHTML)
 	conn.SetHeader(contentLength, error502Length)
 	conn.Write(error502)
+	logRequest(http.StatusBadGateway, conn)
 }
 
 func main() {
@@ -231,6 +252,12 @@ func main() {
 	gaeTLS := opts.BoolConfig("gae-tls", false,
 		"use TLS when connecting to App Engine [default: false]")
 
+	logRotate := opts.StringConfig("log-rotate", "never",
+		"specify one of 'hourly', 'daily' or 'never' [default: never]")
+
+	noConsoleLog := opts.BoolConfig("no-console-log", false,
+		"disable logging to stdout/stderr [default: false]")
+
 	os.Args[0] = "ampzero"
 	args := opts.Parse(os.Args)
 
@@ -241,7 +268,7 @@ func main() {
 			opts.PrintUsage()
 			os.Exit(0)
 		}
-		instanceDirectory = args[0]
+		instanceDirectory = path.Clean(args[0])
 	} else {
 		opts.PrintUsage()
 		os.Exit(0)
@@ -317,7 +344,7 @@ func main() {
 	frontendAddr := fmt.Sprintf("%s:%d", *frontendHost, *frontendPort)
 	frontendConn, err := net.Listen("tcp", frontendAddr)
 	if err != nil {
-		fmt.Printf("Cannot listen on %s: %v\n", frontendAddr, err)
+		fmt.Printf("ERROR: Cannot listen on %s: %v\n", frontendAddr, err)
 		os.Exit(1)
 	}
 
@@ -334,7 +361,7 @@ func main() {
 		tlsConfig.Certificates = make([]tls.Certificate, 1)
 		tlsConfig.Certificates[0], err = tls.LoadX509KeyPair(certPath, keyPath)
 		if err != nil {
-			fmt.Printf("Error loading certificate/key pair: %s\n", err)
+			fmt.Printf("ERROR: Couldn't load certificate/key pair: %s\n", err)
 			os.Exit(1)
 		}
 		frontendListener = tls.NewListener(frontendConn, tlsConfig)
@@ -386,9 +413,29 @@ func main() {
 		httpAddr = fmt.Sprintf("%s:%d", *httpHost, *httpPort)
 		httpListener, err = net.Listen("tcp", httpAddr)
 		if err != nil {
-			fmt.Printf("Cannot listen on %s: %v\n", httpAddr, err)
+			fmt.Printf("ERROR: Cannot listen on %s: %v\n", httpAddr, err)
 			os.Exit(1)
 		}
+	}
+
+	var rotate int
+
+	switch *logRotate {
+	case "daily":
+		rotate = logging.RotateDaily
+	case "hourly":
+		rotate = logging.RotateHourly
+	case "never":
+		rotate = logging.RotateNever
+	default:
+		fmt.Printf("ERROR: Unknown log rotation format %q\n", *logRotate)
+		os.Exit(1)
+	}
+
+	log, err = logging.New("ampzero", logPath, rotate, !*noConsoleLog)
+	if err != nil {
+		fmt.Printf("ERROR: Couldn't initialise logfile: %s\n", err)
+		os.Exit(1)
 	}
 
 	fmt.Printf("Running ampzero with %d CPUs:\n", runtime.CPUCount)

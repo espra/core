@@ -27,12 +27,22 @@ const (
 
 var (
 	endOfLogLine = []byte{'\xff', '\n'}
-	typeLog      = []byte{'L'}
-	typeInfo     = []byte{'I'}
-	typeDebug    = []byte{'D'}
-	typeError    = []byte{'E'}
 	stdReceiver  = make(chan *Line)
 )
+
+var (
+	typeLog   = 0
+	typeInfo  = 1
+	typeDebug = 2
+	typeError = 3
+)
+
+var typeStrings = map[int][]byte{
+	typeLog:   []byte{'L'},
+	typeInfo:  []byte{'I'},
+	typeDebug: []byte{'D'},
+	typeError: []byte{'E'},
+}
 
 type Logger struct {
 	name      string
@@ -45,7 +55,7 @@ type Logger struct {
 }
 
 type Line struct {
-	format []byte
+	format int
 	error  bool
 	items  []interface{}
 }
@@ -74,7 +84,7 @@ func (logger *Logger) log() {
 	timestamp := time.Seconds()
 	go func() {
 		for {
-			time.Sleep(1000000)
+			time.Sleep(1000000000)
 			timestamp = time.Seconds()
 		}
 	}()
@@ -101,8 +111,11 @@ func (logger *Logger) log() {
 				}
 			}
 		case line = <-logger.receiver:
+			if logger.stdout {
+				stdReceiver <- line
+			}
 			argLength := len(line.items)
-			logger.file.Write(line.format)
+			logger.file.Write(typeStrings[line.format])
 			fmt.Fprintf(logger.file, "%v", timestamp)
 			for i := 0; i < argLength; i++ {
 				fmt.Fprintf(logger.file, "\xfe%v", line.items[i])
@@ -120,21 +133,40 @@ func stdlog() {
 
 	go func() {
 		for {
-			time.Sleep(1000000)
+			time.Sleep(1000000000)
 			timestamp = time.UTC()
 		}
 	}()
 
+	var file *os.File
+
 	for {
 		line = <-stdReceiver
 		argLength := len(line.items)
-		_ = argLength
-		// 		logger.file.Write(line.format)
-		// 		logger.file.Write([]byte("2010-02"))
-		// 		for i := 0; i < argLength; i++ {
-		// 			fmt.Fprintf(logger.file, "\xfe%v", line.items[i])
-		// 		}
-		// 		logger.file.Write(endOfLogLine)
+		if line.error {
+			file = os.Stderr
+		} else {
+			file = os.Stdout
+		}
+		modeLine := ""
+		switch line.format {
+		case typeLog:
+			modeLine = "LOG"
+		case typeInfo:
+			modeLine = "INFO"
+		case typeDebug:
+			modeLine = "DEBUG"
+		case typeError:
+			modeLine = "ERROR"
+		}
+		fmt.Fprintf(file, "%s [%s-%s-%s %s:%s:%s]", modeLine,
+			encoding.PadInt64(timestamp.Year, 4), encoding.PadInt(timestamp.Month, 2),
+			encoding.PadInt(timestamp.Day, 2), encoding.PadInt(timestamp.Hour, 2),
+			encoding.PadInt(timestamp.Minute, 2), encoding.PadInt(timestamp.Second, 2))
+		for i := 0; i < argLength; i++ {
+			fmt.Fprintf(file, " %v", line.items[i])
+		}
+		file.Write([]byte("\n"))
 	}
 
 }
@@ -193,7 +225,6 @@ func fixUpLog(filename string) (pointer int) {
 			seenTerminal = false
 		}
 	}
-	fmt.Printf("TERMINAL: %v\n", pointer)
 	os.Truncate(filename, int64(pointer))
 	return pointer
 }
