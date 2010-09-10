@@ -88,6 +88,8 @@ test: test.dirs
 # Package Dependencies
 # ------------------------------------------------------------------------------
 
-runtime.install: command.install
-optparse.install: slice.install yaml.install
+keyspace.install: runtime.install slice.install
 logging.install: encoding.install
+optparse.install: runtime.install slice.install yaml.install
+runtime.install: command.install
+tlsconf.install: runtime.install
