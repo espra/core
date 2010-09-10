@@ -10,7 +10,6 @@ import (
 	"amp/runtime"
 	"crypto/rand"
 	"crypto/tls"
-	"fmt"
 	"io/ioutil"
 	"os"
 	"time"
@@ -39,7 +38,6 @@ func Init() {
 	var err os.Error
 	Config, err = GenConfig(path)
 	if err != nil {
-		fmt.Printf("ERROR: Couldn't load %s: %s\n", path, err)
-		os.Exit(1)
+		runtime.Error("ERROR: Couldn't load %s: %s\n", path, err)
 	}
 }

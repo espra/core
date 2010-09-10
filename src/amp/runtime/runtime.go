@@ -12,6 +12,8 @@ import (
 	"amp/command"
 	"fmt"
 	"os"
+	"os/signal"
+	"path"
 	"runtime"
 	"strconv"
 	"strings"
@@ -20,47 +22,103 @@ import (
 
 const Platform = syscall.OS
 
-var runtimeLocks = make(map[string]*os.File)
-
 var (
 	AmpifyRoot string
 	CPUCount   int
 )
 
-// The constants defined in ``sys/fcntl.h`` on Linux and OS X.
-const (
-	LOCK_SH = 1 << iota
-	LOCK_EX
-	LOCK_NB
-	LOCK_UN
-)
+var exitHandlers = []func(){}
+
+func handleExitSignals() {
+	var sig signal.Signal
+	SIGTERM := signal.Signal(signal.SIGTERM)
+	SIGINT := signal.Signal(signal.SIGINT)
+	for {
+		sig = <-signal.Incoming
+		if sig == SIGTERM || sig == SIGINT {
+			RunExitHandlers()
+			os.Exit(0)
+			break
+		}
+	}
+}
+
+func RunExitHandlers() {
+	for _, handler := range exitHandlers {
+		handler()
+	}
+}
+
+func RegisterExitHandler(handler func()) {
+	length := len(exitHandlers)
+	temp := make([]func(), length+1, length+1)
+	for idx, item := range exitHandlers {
+		temp[idx] = item
+	}
+	temp[length] = handler
+	exitHandlers = temp
+}
+
+func Exit(code int) {
+	RunExitHandlers()
+	os.Exit(code)
+}
+
+func Error(message string, v ...interface{}) {
+	if len(v) == 0 {
+		fmt.Fprint(os.Stderr, message)
+	} else {
+		fmt.Fprintf(os.Stderr, message, v)
+	}
+	RunExitHandlers()
+	os.Exit(1)
+}
 
 func CreatePidFile(path string) {
 	pidFile, err := os.Open(path, os.O_CREAT|os.O_WRONLY, 0666)
 	if err != nil {
-		fmt.Printf("ERROR: %s\n", err)
-		os.Exit(1)
+		Error("ERROR: %s\n", err)
 	}
 	fmt.Fprintf(pidFile, "%d", os.Getpid())
 	err = pidFile.Close()
 	if err != nil {
-		fmt.Printf("ERROR: %s\n", err)
-		os.Exit(1)
+		Error("ERROR: %s\n", err)
 	}
 }
 
-func AcquireLock(path string) int {
-	lockFile, err := os.Open(path, os.O_CREAT|os.O_WRONLY, 0666)
+type Lock struct {
+	link     string
+	file     string
+	acquired bool
+}
+
+func GetLock(directory string, name string) (lock *Lock, err os.Error) {
+	file := path.Join(directory, fmt.Sprintf("%s-%d.lock", name, os.Getpid()))
+	lockFile, err := os.Open(file, os.O_CREAT|os.O_WRONLY, 0666)
 	if err != nil {
-		fmt.Printf("ERROR: %s\n", err)
-		os.Exit(1)
+		return lock, err
 	}
-	runtimeLocks[path] = lockFile
-	return syscall.Flock(lockFile.Fd(), LOCK_EX|LOCK_NB)
+	lockFile.Close()
+	link := path.Join(directory, name+".lock")
+	err = os.Link(file, link)
+	if err == nil {
+		lock = &Lock{
+			link:     link,
+			file:     file,
+			acquired: true,
+		}
+		RegisterExitHandler(func() { lock.ReleaseLock() })
+	} else {
+		os.Remove(file)
+	}
+	return lock, err
 }
 
-func ReleaseLock(path string) {
-	runtimeLocks[path].Close()
+func (lock *Lock) ReleaseLock() {
+	if lock.acquired {
+		os.Remove(lock.file)
+		os.Remove(lock.link)
+	}
 }
 
 // The ``runtime.GetCPUCount`` function tries to detect the number of CPUs on
@@ -114,8 +172,7 @@ func init() {
 	CPUCount = GetCPUCount()
 	AmpifyRoot = os.Getenv("AMPIFY_ROOT")
 	if AmpifyRoot == "" {
-		fmt.Print(
-			"ERROR: The AMPIFY_ROOT environment variable hasn't been set.\n")
-		os.Exit(1)
+		Error("ERROR: The AMPIFY_ROOT environment variable hasn't been set.\n")
 	}
+	go handleExitSignals()
 }

@@ -106,7 +106,7 @@ func main() {
 	if len(args) >= 1 {
 		if args[0] == "help" {
 			opts.PrintUsage()
-			os.Exit(1)
+			runtime.Exit(1)
 		}
 	}
 
@@ -124,8 +124,7 @@ func main() {
 
 	listener, err := net.Listen("tcp", addr)
 	if err != nil {
-		fmt.Printf("Cannot listen on %s: %v\n", addr, err)
-		os.Exit(1)
+		runtime.Error("Cannot listen on %s: %v\n", addr, err)
 	}
 
 	fmt.Printf("Running hubproxy with %d CPUs on %s\n",

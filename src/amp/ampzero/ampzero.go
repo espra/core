@@ -15,7 +15,7 @@
 package main
 
 import (
-	"amp/logging"
+	//	"amp/logging"
 	"amp/optparse"
 	"amp/runtime"
 	"amp/tlsconf"
@@ -43,7 +43,7 @@ const (
 
 var (
 	debugMode bool
-	log       *logging.Logger
+	//	log       *logging.Logger
 )
 
 var (
@@ -191,9 +191,10 @@ func logRequest(status int, conn *http.Conn) {
 	} else {
 		ip = conn.RemoteAddr[0:splitPoint]
 	}
-	request := conn.Req
-	log.Log("fe", status, request.Method, request.Host, request.RawURL,
-		ip, request.UserAgent, request.Referer)
+	_ = ip
+	//	request := conn.Req
+	// 	log.Log("fe", status, request.Method, request.Host, request.RawURL,
+	// 		ip, request.UserAgent, request.Referer)
 }
 
 func serveError502(conn *http.Conn) {
@@ -266,23 +267,21 @@ func main() {
 	if len(args) >= 1 {
 		if args[0] == "help" {
 			opts.PrintUsage()
-			os.Exit(0)
+			runtime.Exit(0)
 		}
 		instanceDirectory = path.Clean(args[0])
 	} else {
 		opts.PrintUsage()
-		os.Exit(0)
+		runtime.Exit(0)
 	}
 
 	rootInfo, err := os.Stat(instanceDirectory)
 	if err == nil {
 		if !rootInfo.IsDirectory() {
-			fmt.Printf("ERROR: %q is not a directory\n", instanceDirectory)
-			os.Exit(1)
+			runtime.Error("ERROR: %q is not a directory\n", instanceDirectory)
 		}
 	} else {
-		fmt.Printf("ERROR: %s\n", err)
-		os.Exit(1)
+		runtime.Error("ERROR: %s\n", err)
 	}
 
 	configPath := path.Join(instanceDirectory, "ampzero.yaml")
@@ -290,28 +289,25 @@ func main() {
 	if err == nil {
 		err = opts.ParseConfig(configPath, os.Args)
 		if err != nil {
-			fmt.Printf("ERROR: %s\n", err)
-			os.Exit(1)
+			runtime.Error("ERROR: %s\n", err)
 		}
 	}
 
 	logPath := path.Join(instanceDirectory, "log")
 	err = os.MkdirAll(logPath, 0755)
 	if err != nil {
-		fmt.Printf("ERROR: %s\n", err)
-		os.Exit(1)
+		runtime.Error("ERROR: %s\n", err)
 	}
 
 	runPath := path.Join(instanceDirectory, "run")
 	err = os.MkdirAll(runPath, 0755)
 	if err != nil {
-		fmt.Printf("ERROR: %s\n", err)
-		os.Exit(1)
+		runtime.Error("ERROR: %s\n", err)
 	}
 
-	if runtime.AcquireLock(path.Join(runPath, "ampzero.lock")) != 0 {
-		fmt.Printf("ERROR: Another ampzero process is already running in %s\n", instanceDirectory)
-		os.Exit(1)
+	_, err = runtime.GetLock(runPath, "ampzero")
+	if err != nil {
+		runtime.Error("ERROR: Couldn't successfully acquire a process lock:\n\n\t%s\n\n", err)
 	}
 
 	go runtime.CreatePidFile(path.Join(runPath, "ampzero.pid"))
@@ -327,7 +323,7 @@ func main() {
 			exitProcess = true
 		}
 		if exitProcess {
-			os.Exit(1)
+			runtime.Exit(1)
 		}
 	}
 
@@ -344,8 +340,7 @@ func main() {
 	frontendAddr := fmt.Sprintf("%s:%d", *frontendHost, *frontendPort)
 	frontendConn, err := net.Listen("tcp", frontendAddr)
 	if err != nil {
-		fmt.Printf("ERROR: Cannot listen on %s: %v\n", frontendAddr, err)
-		os.Exit(1)
+		runtime.Error("ERROR: Cannot listen on %s: %v\n", frontendAddr, err)
 	}
 
 	var frontendListener net.Listener
@@ -361,8 +356,7 @@ func main() {
 		tlsConfig.Certificates = make([]tls.Certificate, 1)
 		tlsConfig.Certificates[0], err = tls.LoadX509KeyPair(certPath, keyPath)
 		if err != nil {
-			fmt.Printf("ERROR: Couldn't load certificate/key pair: %s\n", err)
-			os.Exit(1)
+			runtime.Error("ERROR: Couldn't load certificate/key pair: %s\n", err)
 		}
 		frontendListener = tls.NewListener(frontendConn, tlsConfig)
 	} else {
@@ -413,30 +407,32 @@ func main() {
 		httpAddr = fmt.Sprintf("%s:%d", *httpHost, *httpPort)
 		httpListener, err = net.Listen("tcp", httpAddr)
 		if err != nil {
-			fmt.Printf("ERROR: Cannot listen on %s: %v\n", httpAddr, err)
-			os.Exit(1)
+			runtime.Error("ERROR: Cannot listen on %s: %v\n", httpAddr, err)
 		}
 	}
 
 	var rotate int
 
-	switch *logRotate {
-	case "daily":
-		rotate = logging.RotateDaily
-	case "hourly":
-		rotate = logging.RotateHourly
-	case "never":
-		rotate = logging.RotateNever
-	default:
-		fmt.Printf("ERROR: Unknown log rotation format %q\n", *logRotate)
-		os.Exit(1)
-	}
+	// 	switch *logRotate {
+	// 	case "daily":
+	// 		rotate = logging.RotateDaily
+	// 	case "hourly":
+	// 		rotate = logging.RotateHourly
+	// 	case "never":
+	// 		rotate = logging.RotateNever
+	// 	default:
+	// 		fmt.Printf("ERROR: Unknown log rotation format %q\n", *logRotate)
+	// 		os.Exit(1)
+	// 	}
 
-	log, err = logging.New("ampzero", logPath, rotate, !*noConsoleLog)
-	if err != nil {
-		fmt.Printf("ERROR: Couldn't initialise logfile: %s\n", err)
-		os.Exit(1)
-	}
+	// 	log, err = logging.New("ampzero", logPath, rotate, !*noConsoleLog)
+	// 	if err != nil {
+	// 		fmt.Printf("ERROR: Couldn't initialise logfile: %s\n", err)
+	// 		os.Exit(1)
+	// 	}
+	_ = logRotate
+	_ = noConsoleLog
+	_ = rotate
 
 	fmt.Printf("Running ampzero with %d CPUs:\n", runtime.CPUCount)
 
@@ -445,8 +441,7 @@ func main() {
 		go func() {
 			err = http.Serve(httpListener, redirector)
 			if err != nil {
-				fmt.Printf("ERROR serving HTTP Redirector: %s\n", err)
-				os.Exit(1)
+				runtime.Error("ERROR serving HTTP Redirector: %s\n", err)
 			}
 		}()
 		fmt.Printf("* HTTP Redirector running on %s -> %s\n", httpAddrURL, *redirectURL)
@@ -466,8 +461,7 @@ func main() {
 
 	err = http.Serve(frontendListener, frontend)
 	if err != nil {
-		fmt.Printf("ERROR serving Frontend Server: %s\n", err)
-		os.Exit(1)
+		runtime.Error("ERROR serving Frontend Server: %s\n", err)
 	}
 
 }

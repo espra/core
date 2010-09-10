@@ -6,6 +6,7 @@
 package optparse
 
 import (
+	"amp/runtime"
 	"amp/slice"
 	"amp/yaml"
 	"fmt"
@@ -213,18 +214,18 @@ func (op *OptionParser) Parse(args []string) (remainder []string) {
 			// COMP_LINE for now...
 			compWords = os.Getenv("COMP_LINE")
 			if compWords == "" {
-				os.Exit(1)
+				runtime.Exit(1)
 			}
 		}
 		compWordsList := strings.Split(compWords, " ", -1)
 		compLine := os.Getenv("COMP_LINE")
 		compPoint, err := strconv.Atoi(os.Getenv("COMP_POINT"))
 		if err != nil {
-			os.Exit(1)
+			runtime.Exit(1)
 		}
 		compWord, err := strconv.Atoi(os.Getenv("COMP_CWORD"))
 		if err != nil {
-			os.Exit(1)
+			runtime.Exit(1)
 		}
 
 		prefix := ""
@@ -247,14 +248,14 @@ func (op *OptionParser) Parse(args []string) (remainder []string) {
 				opt, ok := op.long2options[prev]
 				if ok {
 					if opt.dest != "" {
-						os.Exit(1)
+						runtime.Exit(1)
 					}
 				}
 			} else if strings.HasPrefix(prev, "-") {
 				opt, ok := op.short2options[prev]
 				if ok {
 					if opt.dest != "" {
-						os.Exit(1)
+						runtime.Exit(1)
 					}
 				}
 			}
@@ -274,7 +275,7 @@ func (op *OptionParser) Parse(args []string) (remainder []string) {
 		}
 
 		fmt.Print(strings.Join(completions, " "))
-		os.Exit(1)
+		runtime.Exit(1)
 
 	}
 
@@ -310,43 +311,38 @@ func (op *OptionParser) Parse(args []string) (remainder []string) {
 			}
 		}
 		if noOpt {
-			fmt.Printf("%s: error: no such option: %s\n", args[0], arg)
-			os.Exit(1)
+			runtime.Error("%s: error: no such option: %s\n", args[0], arg)
 		}
 		if opt.dest != "" {
 			if idx == argLength {
-				fmt.Printf("%s: error: %s option requires an argument\n", args[0], arg)
-				os.Exit(1)
+				runtime.Error("%s: error: %s option requires an argument\n", args[0], arg)
 			}
 		}
 		if opt.valueType == "bool" {
 			if opt.longflag == "--help" && op.ParseHelp {
 				op.PrintUsage()
-				os.Exit(1)
+				runtime.Exit(1)
 			} else if opt.longflag == "--version" && op.ParseVersion {
 				fmt.Printf("%s\n", op.Version)
-				os.Exit(0)
+				runtime.Exit(0)
 			}
 			*opt.boolValue = true
 			opt.defined = true
 			idx += 1
 		} else if opt.valueType == "string" {
 			if idx == argLength {
-				fmt.Printf("%s: error: no value specified for %s\n", args[0], arg)
-				os.Exit(1)
+				runtime.Error("%s: error: no value specified for %s\n", args[0], arg)
 			}
 			*opt.stringValue = args[idx+1]
 			opt.defined = true
 			idx += 2
 		} else if opt.valueType == "int" {
 			if idx == argLength {
-				fmt.Printf("%s: error: no value specified for %s\n", args[0], arg)
-				os.Exit(1)
+				runtime.Error("%s: error: no value specified for %s\n", args[0], arg)
 			}
 			intValue, err := strconv.Atoi(args[idx+1])
 			if err != nil {
-				fmt.Printf("%s: error: couldn't convert %s value '%s' to an integer\n", args[0], arg, args[idx+1])
-				os.Exit(1)
+				runtime.Error("%s: error: couldn't convert %s value '%s' to an integer\n", args[0], arg, args[idx+1])
 			}
 			*opt.intValue = intValue
 			opt.defined = true
@@ -359,8 +355,7 @@ func (op *OptionParser) Parse(args []string) (remainder []string) {
 
 	for _, opt := range op.options {
 		if opt.requiredFlag && !opt.defined {
-			fmt.Printf("%s: error: required: %s", args[0], opt)
-			os.Exit(1)
+			runtime.Error("%s: error: required: %s", args[0], opt)
 		}
 	}
 
@@ -382,8 +377,7 @@ func (op *OptionParser) ParseConfig(filename string, args []string) (err os.Erro
 		value, ok := data[config]
 		if !ok {
 			if opt.requiredConfig {
-				fmt.Printf("%s: error: required: %s", args[0], opt)
-				os.Exit(1)
+				runtime.Error("%s: error: required: %s", args[0], opt)
 			} else {
 				continue
 			}
@@ -394,16 +388,14 @@ func (op *OptionParser) ParseConfig(filename string, args []string) (err os.Erro
 			} else if value == "false" || value == "off" || value == "no" {
 				*opt.boolValue = false
 			} else {
-				fmt.Printf("%s: error: invalid boolean value for %s: %q\n", args[0], config, value)
-				os.Exit(1)
+				runtime.Error("%s: error: invalid boolean value for %s: %q\n", args[0], config, value)
 			}
 		} else if opt.valueType == "string" {
 			*opt.stringValue = value
 		} else if opt.valueType == "int" {
 			intValue, err := strconv.Atoi(value)
 			if err != nil {
-				fmt.Printf("%s: error: couldn't convert the %s value %q to an integer\n", args[0], config, value)
-				os.Exit(1)
+				runtime.Error("%s: error: couldn't convert the %s value %q to an integer\n", args[0], config, value)
 			}
 			*opt.intValue = intValue
 		}
