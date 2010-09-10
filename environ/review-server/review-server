@@ -673,7 +673,7 @@ def update_and_email_review(base, review, cc, n=3):
                 if user:
                     login = needed_emails[idx]
                     # email = '"%s" <%s>' % (user.name or login, user.email)
-                    email = user.email
+                    email = user.emails[0]
                     USERS2EMAILS[login] = email
                     emails.add(email)
                 else:
