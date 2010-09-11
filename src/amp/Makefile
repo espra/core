@@ -10,16 +10,18 @@ PACKAGES=\
 	slice\
 	encoding\
 	tlsconf\
+	url\
 	yaml\
 
 NOBENCH=\
 	command\
+	encoding\
 	logging\
 	lzf\
 	optparse\
 	slice\
 	tlsconf\
-	encoding\
+	url\
 	yaml\
 
 NOTEST=\
