@@ -1176,6 +1176,10 @@ def get_activities(
     submissions = submissions.order('-d').fetch(n)
     comments = comments.order('-d').fetch(n)
     activities = commits + builds + submissions + comments
+    for idx, activity in enumerate(activities[:]):
+        if not activity.d:
+            logging.error("Couldn't find a valid .d for %r" % activity.key())
+            del activities[idx]
     activities = sorted(activities, key=lambda i: i.d, reverse=1)
     if activities:
         if len(activities) >= n:
