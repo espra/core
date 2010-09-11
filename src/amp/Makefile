@@ -3,6 +3,7 @@
 
 PACKAGES=\
 	command\
+	logging\
 	lzf\
 	optparse\
 	runtime\
@@ -13,6 +14,7 @@ PACKAGES=\
 
 NOBENCH=\
 	command\
+	logging\
 	lzf\
 	optparse\
 	slice\
@@ -22,6 +24,7 @@ NOBENCH=\
 
 NOTEST=\
 	command\
+	logging\
 	slice\
 	encoding\
 	tlsconf\

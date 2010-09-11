@@ -15,7 +15,7 @@
 package main
 
 import (
-	//	"amp/logging"
+	"amp/logging"
 	"amp/optparse"
 	"amp/runtime"
 	"amp/tlsconf"
@@ -43,7 +43,6 @@ const (
 
 var (
 	debugMode bool
-	//	log       *logging.Logger
 )
 
 var (
@@ -92,7 +91,7 @@ func (redirector *Redirector) ServeHTTP(conn *http.Conn, req *http.Request) {
 	conn.SetHeader("Location", url)
 	conn.WriteHeader(http.StatusMovedPermanently)
 	fmt.Fprintf(conn, redirectHTML, url)
-	logRequest(http.StatusMovedPermanently, conn)
+	logRequest(http.StatusMovedPermanently, req.Host, conn)
 
 }
 
@@ -112,9 +111,11 @@ func (frontend *Frontend) ServeHTTP(conn *http.Conn, req *http.Request) {
 		conn.SetHeader("Location", frontend.officialRedirectURL)
 		conn.WriteHeader(http.StatusMovedPermanently)
 		conn.Write(frontend.officialRedirectHTML)
-		logRequest(http.StatusMovedPermanently, conn)
+		logRequest(http.StatusMovedPermanently, req.Host, conn)
 		return
 	}
+
+	originalHost := req.Host
 
 	// Open a connection to the App Engine server.
 	gaeConn, err := net.Dial("tcp", "", frontend.gaeAddr)
@@ -122,7 +123,7 @@ func (frontend *Frontend) ServeHTTP(conn *http.Conn, req *http.Request) {
 		if debugMode {
 			fmt.Printf("Couldn't connect to remote %s: %v\n", frontend.gaeHost, err)
 		}
-		serveError502(conn)
+		serveError502(conn, originalHost)
 		return
 	}
 
@@ -144,7 +145,7 @@ func (frontend *Frontend) ServeHTTP(conn *http.Conn, req *http.Request) {
 		if debugMode {
 			fmt.Printf("Error writing to App Engine: %v\n", err)
 		}
-		serveError502(conn)
+		serveError502(conn, originalHost)
 		return
 	}
 
@@ -154,7 +155,7 @@ func (frontend *Frontend) ServeHTTP(conn *http.Conn, req *http.Request) {
 		if debugMode {
 			fmt.Printf("Error parsing response from App Engine: %v\n", err)
 		}
-		serveError502(conn)
+		serveError502(conn, originalHost)
 		return
 	}
 
@@ -164,7 +165,7 @@ func (frontend *Frontend) ServeHTTP(conn *http.Conn, req *http.Request) {
 		if debugMode {
 			fmt.Printf("Error reading response from App Engine: %v\n", err)
 		}
-		serveError502(conn)
+		serveError502(conn, originalHost)
 		resp.Body.Close()
 		return
 	}
@@ -179,11 +180,11 @@ func (frontend *Frontend) ServeHTTP(conn *http.Conn, req *http.Request) {
 	conn.WriteHeader(resp.StatusCode)
 	conn.Write(body)
 
-	logRequest(resp.StatusCode, conn)
+	logRequest(resp.StatusCode, originalHost, conn)
 
 }
 
-func logRequest(status int, conn *http.Conn) {
+func logRequest(status int, host string, conn *http.Conn) {
 	var ip string
 	splitPoint := strings.LastIndex(conn.RemoteAddr, ":")
 	if splitPoint == -1 {
@@ -191,18 +192,30 @@ func logRequest(status int, conn *http.Conn) {
 	} else {
 		ip = conn.RemoteAddr[0:splitPoint]
 	}
-	_ = ip
-	//	request := conn.Req
-	// 	log.Log("fe", status, request.Method, request.Host, request.RawURL,
-	// 		ip, request.UserAgent, request.Referer)
+	request := conn.Req
+	logging.Info("fe", status, request.Method, host, request.RawURL,
+		ip, request.UserAgent, request.Referer)
 }
 
-func serveError502(conn *http.Conn) {
+func filterRequestLog(record *logging.Record) (write bool, data []interface{}) {
+	itemLength := len(record.Items)
+	if itemLength > 1 {
+		switch record.Items[0].(type) {
+		case string:
+			if record.Items[0].(string) == "fe" {
+				return true, record.Items[1 : itemLength-2]
+			}
+		}
+	}
+	return true, data
+}
+
+func serveError502(conn *http.Conn, host string) {
 	conn.WriteHeader(http.StatusBadGateway)
 	conn.SetHeader(contentType, textHTML)
 	conn.SetHeader(contentLength, error502Length)
 	conn.Write(error502)
-	logRequest(http.StatusBadGateway, conn)
+	logRequest(http.StatusBadGateway, host, conn)
 }
 
 func main() {
@@ -413,26 +426,26 @@ func main() {
 
 	var rotate int
 
-	// 	switch *logRotate {
-	// 	case "daily":
-	// 		rotate = logging.RotateDaily
-	// 	case "hourly":
-	// 		rotate = logging.RotateHourly
-	// 	case "never":
-	// 		rotate = logging.RotateNever
-	// 	default:
-	// 		fmt.Printf("ERROR: Unknown log rotation format %q\n", *logRotate)
-	// 		os.Exit(1)
-	// 	}
+	switch *logRotate {
+	case "daily":
+		rotate = logging.RotateDaily
+	case "hourly":
+		rotate = logging.RotateHourly
+	case "never":
+		rotate = logging.RotateNever
+	default:
+		runtime.Error("ERROR: Unknown log rotation format %q\n", *logRotate)
+	}
 
-	// 	log, err = logging.New("ampzero", logPath, rotate, !*noConsoleLog)
-	// 	if err != nil {
-	// 		fmt.Printf("ERROR: Couldn't initialise logfile: %s\n", err)
-	// 		os.Exit(1)
-	// 	}
-	_ = logRotate
-	_ = noConsoleLog
-	_ = rotate
+	if !*noConsoleLog {
+		logging.AddConsoleLogger()
+		logging.AddFilter(filterRequestLog)
+	}
+
+	_, err = logging.AddFileLogger("ampzero", logPath, rotate)
+	if err != nil {
+		runtime.Error("ERROR: Couldn't initialise logfile: %s\n", err)
+	}
 
 	fmt.Printf("Running ampzero with %d CPUs:\n", runtime.CPUCount)
 

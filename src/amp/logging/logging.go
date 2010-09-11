@@ -6,6 +6,7 @@ package logging
 import (
 	"amp/encoding"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
 	"path"
@@ -21,46 +22,48 @@ const (
 )
 
 const (
-	endOfLine    = '\n'
+	endOfRecord  = '\n'
 	terminalByte = '\xff'
 )
 
 var (
-	endOfLogLine = []byte{'\xff', '\n'}
-	stdReceiver  = make(chan *Line)
+	endOfLogRecord = []byte{'\xff', '\n'}
 )
 
 var (
-	typeLog   = 0
-	typeInfo  = 1
-	typeDebug = 2
-	typeError = 3
+	Now            = time.Seconds()
+	UTC            = time.UTC()
+	Receivers      = make([]chan *Record, 0)
+	ConsoleFilters = make([]Filter, 0)
 )
 
-var typeStrings = map[int][]byte{
-	typeLog:   []byte{'L'},
-	typeInfo:  []byte{'I'},
-	typeDebug: []byte{'D'},
-	typeError: []byte{'E'},
+type Filter func(record *Record) (write bool, data []interface{})
+
+type ConsoleLogger struct {
+	receiver chan *Record
 }
 
-type Logger struct {
+type FileLogger struct {
 	name      string
 	directory string
 	rotate    int
 	file      *os.File
-	stdout    bool
-	receiver  chan *Line
 	filename  string
+	receiver  chan *Record
 }
 
-type Line struct {
-	format int
-	error  bool
-	items  []interface{}
+type NetworkLogger struct {
+	fallback *FileLogger
+	stream   *io.Writer
+	receiver chan *Record
 }
 
-func signalRotation(logger *Logger, signalChannel chan string) {
+type Record struct {
+	Error bool
+	Items []interface{}
+}
+
+func signalRotation(logger *FileLogger, signalChannel chan string) {
 	var interval int64
 	var filename string
 	if logger.rotate == RotateDaily {
@@ -71,7 +74,7 @@ func signalRotation(logger *Logger, signalChannel chan string) {
 		interval = 3000000000
 	}
 	for {
-		filename = logger.GetFilename(time.UTC())
+		filename = logger.GetFilename(UTC)
 		if filename != logger.filename {
 			signalChannel <- filename
 		}
@@ -79,22 +82,14 @@ func signalRotation(logger *Logger, signalChannel chan string) {
 	}
 }
 
-func (logger *Logger) log() {
-
-	timestamp := time.Seconds()
-	go func() {
-		for {
-			time.Sleep(1000000000)
-			timestamp = time.Seconds()
-		}
-	}()
+func (logger *FileLogger) log() {
 
 	rotateSignal := make(chan string)
 	if logger.rotate > 0 {
 		go signalRotation(logger, rotateSignal)
 	}
 
-	var line *Line
+	var record *Record
 	var filename string
 
 	for {
@@ -107,87 +102,101 @@ func (logger *Logger) log() {
 					logger.file = file
 					logger.filename = filename
 				} else {
-					fmt.Printf("ERROR: Couldn't rotate log: %s\n", err)
+					fmt.Fprintf(os.Stderr, "ERROR: Couldn't rotate log: %s\n", err)
 				}
 			}
-		case line = <-logger.receiver:
-			if logger.stdout {
-				stdReceiver <- line
+		case record = <-logger.receiver:
+			argLength := len(record.Items)
+			if record.Error {
+				logger.file.Write([]byte{'E'})
+			} else {
+				logger.file.Write([]byte{'I'})
 			}
-			argLength := len(line.items)
-			logger.file.Write(typeStrings[line.format])
-			fmt.Fprintf(logger.file, "%v", timestamp)
+			fmt.Fprintf(logger.file, "%v", Now)
 			for i := 0; i < argLength; i++ {
-				fmt.Fprintf(logger.file, "\xfe%v", line.items[i])
+				fmt.Fprintf(logger.file, "\xfe%v", record.Items[i])
 			}
-			logger.file.Write(endOfLogLine)
+			logger.file.Write(endOfLogRecord)
 		}
 	}
 
 }
 
-func stdlog() {
+func (logger *ConsoleLogger) log() {
 
-	var line *Line
-	timestamp := time.UTC()
-
-	go func() {
-		for {
-			time.Sleep(1000000000)
-			timestamp = time.UTC()
-		}
-	}()
-
+	var record *Record
 	var file *os.File
+	var items []interface{}
+	var status string
+	var write bool
 
 	for {
-		line = <-stdReceiver
-		argLength := len(line.items)
-		if line.error {
+		record = <-logger.receiver
+		items = record.Items
+		write = true
+		for _, filter := range ConsoleFilters {
+			write, data := filter(record)
+			if !write {
+				break
+			}
+			if data != nil {
+				items = data
+				break
+			}
+		}
+		if !write {
+			continue
+		}
+		argLength := len(items)
+		if record.Error {
 			file = os.Stderr
 		} else {
 			file = os.Stdout
 		}
-		modeLine := ""
-		switch line.format {
-		case typeLog:
-			modeLine = "LOG"
-		case typeInfo:
-			modeLine = "INFO"
-		case typeDebug:
-			modeLine = "DEBUG"
-		case typeError:
-			modeLine = "ERROR"
+		if record.Error {
+			status = "ERROR"
+		} else {
+			status = "INFO"
 		}
-		fmt.Fprintf(file, "%s [%s-%s-%s %s:%s:%s]", modeLine,
-			encoding.PadInt64(timestamp.Year, 4), encoding.PadInt(timestamp.Month, 2),
-			encoding.PadInt(timestamp.Day, 2), encoding.PadInt(timestamp.Hour, 2),
-			encoding.PadInt(timestamp.Minute, 2), encoding.PadInt(timestamp.Second, 2))
+		fmt.Fprintf(file, "%s [%s-%s-%s %s:%s:%s]", status,
+			encoding.PadInt64(UTC.Year, 4), encoding.PadInt(UTC.Month, 2),
+			encoding.PadInt(UTC.Day, 2), encoding.PadInt(UTC.Hour, 2),
+			encoding.PadInt(UTC.Minute, 2), encoding.PadInt(UTC.Second, 2))
 		for i := 0; i < argLength; i++ {
-			fmt.Fprintf(file, " %v", line.items[i])
+			fmt.Fprintf(file, " %v", items[i])
 		}
 		file.Write([]byte("\n"))
 	}
 
 }
 
-func (logger *Logger) Log(v ...interface{}) {
-	logger.receiver <- &Line{typeLog, false, v}
+func Log(message string, v ...interface{}) {
+	if len(v) > 0 {
+		message = fmt.Sprintf(message, v)
+	}
+	items := make([]interface{}, 1)
+	items[0] = message
+	record := &Record{false, v}
+	for _, receiver := range Receivers {
+		receiver <- record
+	}
 }
 
-func (logger *Logger) Info(v ...interface{}) {
-	logger.receiver <- &Line{typeInfo, false, v}
+func Info(v ...interface{}) {
+	record := &Record{false, v}
+	for _, receiver := range Receivers {
+		receiver <- record
+	}
 }
 
-func (logger *Logger) Debug(v ...interface{}) {
-	logger.receiver <- &Line{typeDebug, false, v}
+func Error(v ...interface{}) {
+	record := &Record{true, v}
+	for _, receiver := range Receivers {
+		receiver <- record
+	}
 }
 
-func (logger *Logger) Error(v ...interface{}) {
-	logger.receiver <- &Line{typeError, true, v}
-}
-
-func (logger *Logger) GetFilename(timestamp *time.Time) string {
+func (logger *FileLogger) GetFilename(timestamp *time.Time) string {
 	var suffix string
 	switch logger.rotate {
 	case RotateNever:
@@ -209,7 +218,7 @@ func (logger *Logger) GetFilename(timestamp *time.Time) string {
 	return path.Join(logger.directory, filename)
 }
 
-func fixUpLog(filename string) (pointer int) {
+func FixUpLog(filename string) (pointer int) {
 	content, err := ioutil.ReadFile(filename)
 	if err != nil {
 		return
@@ -219,7 +228,7 @@ func fixUpLog(filename string) (pointer int) {
 		if char == terminalByte {
 			seenTerminal = true
 		} else if seenTerminal {
-			if char == endOfLine {
+			if char == endOfRecord {
 				pointer = idx + 1
 			}
 			seenTerminal = false
@@ -229,17 +238,16 @@ func fixUpLog(filename string) (pointer int) {
 	return pointer
 }
 
-func New(name string, directory string, rotate int, stdout bool) (logger *Logger, err os.Error) {
-	receiver := make(chan *Line)
-	logger = &Logger{
+func AddFileLogger(name string, directory string, rotate int) (logger *FileLogger, err os.Error) {
+	receiver := make(chan *Record)
+	logger = &FileLogger{
 		name:      name,
 		directory: directory,
 		rotate:    rotate,
-		stdout:    stdout,
 		receiver:  receiver,
 	}
-	filename := logger.GetFilename(time.UTC())
-	pointer := fixUpLog(filename)
+	filename := logger.GetFilename(UTC)
+	pointer := FixUpLog(filename)
 	file, err := os.Open(filename, os.O_CREAT|os.O_WRONLY, 0666)
 	if err != nil {
 		return logger, err
@@ -250,9 +258,47 @@ func New(name string, directory string, rotate int, stdout bool) (logger *Logger
 	logger.file = file
 	logger.filename = filename
 	go logger.log()
+	AddReceiver(logger.receiver)
 	return logger, nil
 }
 
+func AddConsoleLogger() {
+	stdReceiver := make(chan *Record)
+	console := &ConsoleLogger{
+		receiver: stdReceiver,
+	}
+	go console.log()
+	AddReceiver(console.receiver)
+}
+
+func AddReceiver(receiver chan *Record) {
+	length := len(Receivers)
+	temp := make([]chan *Record, length+1, length+1)
+	for idx, item := range Receivers {
+		temp[idx] = item
+	}
+	temp[length] = receiver
+	Receivers = temp
+}
+
+func AddFilter(filter Filter) {
+	length := len(ConsoleFilters)
+	temp := make([]Filter, length+1, length+1)
+	for idx, item := range ConsoleFilters {
+		temp[idx] = item
+	}
+	temp[length] = filter
+	ConsoleFilters = temp
+}
+
 func init() {
-	go stdlog()
+
+	go func() {
+		for {
+			time.Sleep(1000000000)
+			Now = time.Seconds()
+			UTC = time.UTC()
+		}
+	}()
+
 }
