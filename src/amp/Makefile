@@ -3,9 +3,11 @@
 
 PACKAGES=\
 	command\
+	keyspace\
 	logging\
 	lzf\
 	optparse\
+	pyksproxy\
 	runtime\
 	slice\
 	encoding\
@@ -16,9 +18,11 @@ PACKAGES=\
 NOBENCH=\
 	command\
 	encoding\
+	keyspace\
 	logging\
 	lzf\
 	optparse\
+	pyksproxy\
 	slice\
 	tlsconf\
 	url\
@@ -26,7 +30,9 @@ NOBENCH=\
 
 NOTEST=\
 	command\
+	keyspace\
 	logging\
+	pyksproxy\
 	slice\
 	encoding\
 	tlsconf\
@@ -96,5 +102,6 @@ test: test.dirs
 keyspace.install: runtime.install slice.install
 logging.install: encoding.install
 optparse.install: runtime.install slice.install yaml.install
+pyksproxy.install: runtime.install slice.install
 runtime.install: command.install
 tlsconf.install: runtime.install
