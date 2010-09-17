@@ -13,10 +13,6 @@ if [[ "x$BASH_SOURCE" == "x" ]]; then
 fi
 
 _OS_NAME=$(uname -s | tr [[:upper:]] [[:lower:]])
-_OS_ARCH=$(uname -m)
-
-$((echo $_OS_ARCH | grep "64") > /dev/null) && _OS_ARCH_64=true
-$((echo $_OS_ARCH | grep "i386") > /dev/null) && _OS_ARCH_386=true
 
 # ------------------------------------------------------------------------------
 # exit if we're not sourced and echo usage example if possible
@@ -188,19 +184,6 @@ fi
 export GOROOT=$AMPIFY_ROOT/third_party/go
 export GOBIN=$AMPIFY_LOCAL/bin
 
-if [ "x$_OS_ARCH_64" != "x" ]; then
-	export GOARCH="amd64"
-else
-	if [ "x$_OS_ARCH_386" != "x" ]; then
-		export GOARCH="386"
-	else
-		case _OS_ARCH in
-			arm) export GOARCH="arm";;
-			*) echo "ERROR: Unknown system architecture: ${_OS_ARCH}"
-		esac
-	fi
-fi
-
 case $_OS_NAME in
 	darwin) export GOOS="darwin";;
 	freebsd) export GOOS="freebsd";;
@@ -260,7 +243,7 @@ fi
 # clean up after ourselves
 # ------------------------------------------------------------------------------
 
-unset _OS_NAME _OS_ARCH _OS_ARCH_64 _OS_ARCH_386
+unset _OS_NAME
 unset _BASH_VERSION _BASH_MAJOR_VERSION _BASH_MINOR_VERSION
 unset _have _INTERACTIVE_SHELL
 unset _THIRD_PARTY _ENV_VAL
