@@ -608,7 +608,6 @@ def uninstall_packages(uninstall, installed):
             if not path:
                 continue
             path = join(LOCAL, path)
-            print "PATH:", path
             if not islink(path):
                 if not exists(path):
                     continue

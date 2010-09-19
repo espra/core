@@ -377,13 +377,13 @@ def py_tests(modules, verbose):
 
 # These, along with other strings, should perhaps be internationalised at a
 # later date.
-build.help = "download and build the ampify zero dependencies"
+build.help = "download and build the ampify dependencies"
 check.help = "check if your checkout is up-to-date"
 deploy.help = "deploy an instance to remote hosts"
 hub.help = "interact with amphub"
 init.help = "initialise a new amp instance"
 run.help = "run the components for an amp instance"
-test.help = "run the ampify zero test suite"
+test.help = "run the ampify test suite"
 
 # ------------------------------------------------------------------------------
 # Command Mapping

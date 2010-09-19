@@ -2,12 +2,11 @@
 # Public Domain license that can be found in the root LICENSE file.
 
 """
-===================
-Ampify Zero Package
-===================
+======
+Ampify
+======
 
-This package implements version ``Zero`` of Ampify, a decentralised social
-platform.
+Ampify, a decentralised social platform.
 
 ::
 
