@@ -30,6 +30,26 @@ func TestWriteSize(t *testing.T) {
 
 }
 
+func TestWriteIntOrdering(t *testing.T) {
+
+	buf := Buffer()
+	WriteInt(-10258176, buf)
+	prev := string(buf.Bytes())
+
+	var i int64
+
+	for i = -10258175; i < 10258175; i++ {
+		buf.Reset()
+		WriteInt(i, buf)
+		cur := string(buf.Bytes())
+		if prev >= cur {
+			t.Errorf("Lexicographical ordering failure for %d -- %q >= %q", i, prev, cur)
+		}
+		prev = cur
+	}
+
+}
+
 func BenchmarkWriteSize(b *testing.B) {
 	buf := Buffer()
 	for i := 0; i < b.N; i++ {
