@@ -25,6 +25,7 @@ func TestDecimal(t *testing.T) {
 		"0.":        "0",
 		"5":         "5",
 		"1":         "1",
+		"1.2":       "1.2",
 		"-5":        "-5",
 		"10":        "10",
 		"-0.1":      "-0.1",
@@ -227,6 +228,28 @@ func TestDecimalCmp(t *testing.T) {
 	compare(t, testGreater, 1)
 	compare(t, testLesser, -1)
 	compare(t, testEqual, 0)
+
+}
+
+func TestDecimalComponents(t *testing.T) {
+
+	tests := [][]string{
+		[]string{"0.1", "0", "1100000000000000000000000000000000000000"},
+		[]string{"-0.1", "-0", "1100000000000000000000000000000000000000"},
+		[]string{"-1.2", "-1", "1200000000000000000000000000000000000000"},
+	}
+
+	for _, test := range tests {
+		value := test[0]
+		expLeft := test[1]
+		expRight := test[2]
+		left, right := decimal(value).Components()
+		if left.String() != expLeft || right.String() != expRight {
+			t.Errorf("Expected: %s -> (%s, %s)\n", value, expLeft, expRight)
+			t.Errorf("Got (%s, %s)\n", left.String(), right.String())
+			return
+		}
+	}
 
 }
 

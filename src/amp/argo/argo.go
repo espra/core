@@ -15,13 +15,14 @@ const (
 )
 
 var (
-	bigintMagicNumber, _ = big.NewIntString("8258175")
-	bigint1, _           = big.NewIntString("1")
-	bigint253, _         = big.NewIntString("253")
-	bigint254, _         = big.NewIntString("254")
-	bigint255, _         = big.NewIntString("255")
-	zero                 = []byte{'\x01', '\x80', '\x01', '\x01'}
-	zeroBase             = []byte{'\x80', '\x01', '\x01'}
+	bigintMagicNumber1, _ = big.NewIntString("8258175")
+	bigintMagicNumber2, _ = big.NewIntString("8323072")
+	bigint1, _            = big.NewIntString("1")
+	bigint253, _          = big.NewIntString("253")
+	bigint254, _          = big.NewIntString("254")
+	bigint255, _          = big.NewIntString("255")
+	zero                  = []byte{'\x01', '\x80', '\x01', '\x01'}
+	zeroBase              = []byte{'\x80', '\x01', '\x01'}
 )
 
 type EncodingError string
@@ -174,21 +175,31 @@ func WriteNumber(value string, buffer *bytes.Buffer) os.Error {
 
 func WriteDecimal(value *big.Decimal, buffer *bytes.Buffer) {
 	buffer.WriteByte('\x01')
+	left, right := value.Components()
+	positive := writeBigInt(left, buffer, bigintMagicNumber1)
+	if right != nil {
+		if positive {
+			buffer.WriteByte('\x00')
+		} else {
+			buffer.WriteByte('\xff')
+		}
+		writeBigInt(right, buffer, bigintMagicNumber2)
+	}
 }
 
 func WriteBigInt(value *big.Int, buffer *bytes.Buffer) {
 	buffer.WriteByte('\x01')
-	writeBigInt(value, buffer)
+	writeBigInt(value, buffer, bigintMagicNumber1)
 }
 
-func writeBigInt(value *big.Int, buffer *bytes.Buffer) (positive bool) {
+func writeBigInt(value *big.Int, buffer *bytes.Buffer, cutoff *big.Int) (positive bool) {
 	if value.IsZero() {
 		buffer.Write(zeroBase)
-		return
+		return !value.RawNeg()
 	}
-	if value.Sign() == 1 {
+	if !value.RawNeg() {
 		positive = true
-		if value.Cmp(bigintMagicNumber) == -1 {
+		if value.Cmp(cutoff) == -1 {
 			encoding := []byte{'\x80', '\x01', '\x01'}
 			mod := big.NewInt(0)
 			div, mod := value.DivMod(value, bigint255, mod)
@@ -202,7 +213,7 @@ func writeBigInt(value *big.Int, buffer *bytes.Buffer) (positive bool) {
 			}
 			buffer.Write(encoding)
 		} else {
-			value = value.Sub(value, bigintMagicNumber)
+			value = value.Sub(value, cutoff)
 			buffer.WriteByte('\xff')
 			left := big.NewInt(0)
 			lead, left := value.DivMod(value, bigint255, left)
@@ -236,7 +247,7 @@ func writeBigInt(value *big.Int, buffer *bytes.Buffer) (positive bool) {
 		}
 	} else {
 		value = value.Neg(value)
-		if value.Cmp(bigintMagicNumber) == -1 {
+		if value.Cmp(cutoff) == -1 {
 			encoding := []byte{'\x7f', '\xfe', '\xfe'}
 			mod := big.NewInt(0)
 			div, mod := value.DivMod(value, bigint255, mod)
@@ -250,7 +261,7 @@ func writeBigInt(value *big.Int, buffer *bytes.Buffer) (positive bool) {
 			}
 			buffer.Write(encoding)
 		} else {
-			value = value.Sub(value, bigintMagicNumber)
+			value = value.Sub(value, cutoff)
 			buffer.WriteByte('\x00')
 			left := big.NewInt(0)
 			lead, left := value.DivMod(value, bigint254, left)

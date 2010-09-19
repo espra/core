@@ -87,6 +87,41 @@ func testWriteBigIntOrdering(t *testing.T) {
 
 }
 
+func decimal(value string) *big.Decimal {
+	dec, _ := big.NewDecimal(value)
+	return dec
+}
+
+func TestWriteDecimalOrdering(t *testing.T) {
+
+	buf := Buffer()
+	WriteDecimal(decimal("0"), buf)
+	prev := string(buf.Bytes())
+
+	tests := []string{
+		"0.02",
+		"0.0201",
+		"0.05",
+		"2",
+		"2.30001",
+		"2.30002",
+	}
+
+	for _, value := range tests {
+		buf.Reset()
+		WriteDecimal(decimal(value), buf)
+		cur := string(buf.Bytes())
+		if prev >= cur {
+			left, right := decimal(value).Components()
+			t.Errorf("Lexicographical ordering failure for %s (%s, %s) -- %q >= %q",
+				value, left, right, prev, cur)
+		}
+		prev = cur
+	}
+
+}
+
+
 func BenchmarkWriteSize(b *testing.B) {
 	buf := Buffer()
 	for i := 0; i < b.N; i++ {

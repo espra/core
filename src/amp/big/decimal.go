@@ -9,7 +9,6 @@ import (
 
 var (
 	nat40    nat
-	nat39    nat
 	Decimal0 *Decimal
 	Decimal1 *Decimal
 )
@@ -52,10 +51,10 @@ func NewDecimal(value string) (*Decimal, bool) {
 	var n int
 	if set {
 		if point != valsize-1 {
-			value = value[0:point] + value[point+1:]
+			value = value[:point] + value[point+1:]
 			n = valsize - point - 1
 		} else {
-			value = value[0:point]
+			value = value[:point]
 		}
 		valsize = len(value)
 	}
@@ -106,14 +105,11 @@ func (d *Decimal) String() (s string) {
 		s = "-"
 	}
 	value := d.a.string10()
-	valsize := len(value)
 	multiplier := len(d.b.string10())
 	if multiplier == 1 {
 		return s + value
 	}
-	if multiplier == valsize {
-		return s + "0." + strings.TrimRight(value, "0")
-	}
+	valsize := len(value)
 	diff := multiplier - valsize
 	if diff > 0 {
 		s += "0"
@@ -125,14 +121,59 @@ func (d *Decimal) String() (s string) {
 		if len(rhs) > 0 {
 			return s + "." + rhs
 		}
-		return s
+		return "0"
 	}
-	diff = valsize - multiplier
+	diff = valsize - multiplier + 1
 	rhs := strings.TrimRight(value[diff:], "0")
 	if len(rhs) > 0 {
-		return s + value[0:diff] + "." + rhs
+		return s + value[:diff] + "." + rhs
 	}
-	return s + value[0:diff]
+	return s + value[:diff]
+}
+
+func (d *Decimal) Components() (*Int, *Int) {
+	if len(d.a) == 0 {
+		return NewIntComponent("0", false), nil
+	}
+	value := d.a.string10()
+	multiplier := len(d.b.string10())
+	if multiplier == 1 {
+		return NewIntComponent(value, d.neg), nil
+	}
+	valsize := len(value)
+	diff := multiplier - valsize
+	if diff > 0 {
+		rhs := ""
+		for i := 0; i < diff-1; i++ {
+			rhs += "0"
+		}
+		rhs = strings.TrimRight(rhs+value, "0")
+		if len(rhs) > 0 {
+			return NewIntComponent("0", d.neg), NewIntComponent(pad40("1"+rhs), false)
+		}
+		return NewIntComponent("0", false), nil
+	}
+	diff = valsize - multiplier + 1
+	rhs := strings.TrimRight(value[diff:], "0")
+	if len(rhs) > 0 {
+		return NewIntComponent(value[:diff], d.neg), NewIntComponent(pad40("1"+rhs), false)
+	}
+	return NewIntComponent(value[:diff], false), nil
+}
+
+func pad40(s string) string {
+	length := len(s)
+	if length > 40 {
+		s = s[0:40]
+	}
+	value := make([]byte, 40)
+	for i := 0; i < length; i++ {
+		value[i] = s[i]
+	}
+	for i := length; i < 40; i++ {
+		value[i] = '0'
+	}
+	return string(value)
 }
 
 func (d *Decimal) Copy() *Decimal {
@@ -290,7 +331,7 @@ func (x *Decimal) Div(y *Decimal) *Decimal {
 	if r == 1 {
 		return &Decimal{
 			a:   a,
-			b:   b.set(nat39),
+			b:   b.set(nat40),
 			neg: x.neg != y.neg,
 		}
 	}
@@ -317,16 +358,63 @@ func (x nat) string10() string {
 	return string(s[i:])
 }
 
+func (x *Int) IsZero() bool {
+	return len(x.abs) == 0
+}
+
+func (x *Int) RawNeg() bool {
+	return x.neg
+}
+
+func NewIntString(value string) (*Int, bool) {
+	valsize := len(value)
+	if valsize == 0 {
+		return nil, false
+	}
+	neg := value[0] == '-'
+	if neg || value[0] == '+' {
+		value = value[1:]
+		valsize = len(value)
+		if valsize == 0 {
+			return nil, false
+		}
+	}
+	a := nat{}.make(0)
+	for i := 0; i < valsize; i++ {
+		d := hexValue(value[i])
+		if 0 <= d && d < 10 {
+			a = a.mulAddWW(a, Word(10), Word(d))
+		} else {
+			return nil, false
+		}
+	}
+	return &Int{
+		abs: a,
+		neg: len(a) > 0 && neg,
+	},
+		true
+}
+
+func NewIntComponent(value string, neg bool) *Int {
+	valsize := len(value)
+	a := nat{}.make(0)
+	for i := 0; i < valsize; i++ {
+		d := hexValue(value[i])
+		if 0 <= d && d < 10 {
+			a = a.mulAddWW(a, Word(10), Word(d))
+		}
+	}
+	return &Int{
+		abs: a,
+		neg: neg,
+	}
+}
+
 func init() {
 	nat40 = nat{}.make(0)
 	nat40 = nat40.mulAddWW(nat40, Word(10), Word(1))
 	for i := 0; i < 40; i++ {
 		nat40 = nat40.mulAddWW(nat40, Word(10), Word(0))
-	}
-	nat39 = nat{}.make(0)
-	nat39 = nat39.mulAddWW(nat39, Word(10), Word(1))
-	for i := 0; i < 39; i++ {
-		nat39 = nat39.mulAddWW(nat39, Word(10), Word(0))
 	}
 	Decimal0, _ = NewDecimal("0")
 	Decimal1, _ = NewDecimal("1")
