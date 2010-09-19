@@ -51,7 +51,7 @@ else:
 
 RECIPES['bzip2'] = [{
     'version': '1.0.5',
-    'hash': '55ccfb2d9323cd758c2b87408e7f13082b792d1789a66c8a8e6063769de92657',
+    'hash': 'edda8d2c38106dfd88a2fc4610d2aa85d869effc0a30f206c78100bf99703585',
     'commands': [
         [MAKE, 'install', 'PREFIX=%s' % LOCAL],
         [MAKE, 'clean'],

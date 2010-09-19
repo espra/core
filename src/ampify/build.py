@@ -481,6 +481,8 @@ def get_ampify_env(environ):
     for key in environ:
         if key.startswith('AMPIFY'):
             new[key] = environ[key]
+        if key.startswith('JAVA') or key.endswith('JAVA'):
+            new[key] = environ[key]
     for var in [
         'PATH', 'LD_LIBRARY_PATH',
         'DYLD_FALLBACK_LIBRARY_PATH',
