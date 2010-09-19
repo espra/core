@@ -7,6 +7,13 @@ import (
 	"strings"
 )
 
+var (
+	nat40    nat
+	nat39    nat
+	Decimal0 *Decimal
+	Decimal1 *Decimal
+)
+
 type Decimal struct {
 	a   nat
 	b   nat
@@ -64,8 +71,8 @@ func NewDecimal(value string) (*Decimal, bool) {
 	}
 
 	b := nat{}.make(0)
+	b = b.mulAddWW(b, Word(10), Word(1))
 	if n > 0 {
-		b = b.mulAddWW(b, Word(10), Word(1))
 		for i := 0; i < n; i++ {
 			b = b.mulAddWW(b, Word(10), Word(0))
 		}
@@ -92,48 +99,48 @@ func DecimalZero() *Decimal {
 }
 
 func (d *Decimal) String() (s string) {
+	if len(d.a) == 0 {
+		return "0"
+	}
 	if d.neg {
 		s = "-"
 	}
-	if len(d.b) > 0 {
-		value := d.a.string(10)
-		valsize := len(value)
-		multiplier := len(d.b.string(10))
-		if multiplier == valsize {
-			return s + "0." + strings.TrimRight(value, "0")
-		}
-		diff := multiplier - valsize
-		if diff > 0 {
-			s += "0"
-			rhs := ""
-			for i := 0; i < diff-1; i++ {
-				rhs += "0"
-			}
-			rhs = strings.TrimRight(rhs+value, "0")
-			if len(rhs) > 0 {
-				return s + "." + rhs
-			}
-			return s
-		}
-		diff = valsize - multiplier
-		rhs := strings.TrimRight(value[diff:], "0")
-		if len(rhs) > 0 {
-			return s + value[0:diff] + "." + rhs
-		} else {
-			return s + value[0:diff]
-		}
+	value := d.a.string10()
+	valsize := len(value)
+	multiplier := len(d.b.string10())
+	if multiplier == 1 {
+		return s + value
 	}
-	return s + d.a.string(10)
+	if multiplier == valsize {
+		return s + "0." + strings.TrimRight(value, "0")
+	}
+	diff := multiplier - valsize
+	if diff > 0 {
+		s += "0"
+		rhs := ""
+		for i := 0; i < diff-1; i++ {
+			rhs += "0"
+		}
+		rhs = strings.TrimRight(rhs+value, "0")
+		if len(rhs) > 0 {
+			return s + "." + rhs
+		}
+		return s
+	}
+	diff = valsize - multiplier
+	rhs := strings.TrimRight(value[diff:], "0")
+	if len(rhs) > 0 {
+		return s + value[0:diff] + "." + rhs
+	}
+	return s + value[0:diff]
 }
 
 func (d *Decimal) Copy() *Decimal {
-	a := nat{}.make(0)
-	b := nat{}.make(0)
-	a.set(d.a)
-	b.set(d.b)
+	a := nat{}
+	b := nat{}
 	return &Decimal{
-		a:   a,
-		b:   b,
+		a:   a.set(d.a),
+		b:   b.set(d.b),
 		neg: d.neg,
 	}
 }
@@ -154,58 +161,173 @@ func (d *Decimal) Sign() int {
 	return 1
 }
 
-func (d *Decimal) Abs() {
-	d.neg = false
+func (d *Decimal) Abs() *Decimal {
+	a := nat{}
+	b := nat{}
+	return &Decimal{
+		a:   a.set(d.a),
+		b:   b.set(d.b),
+		neg: false,
+	}
 }
 
-func (d *Decimal) Neg() {
-	d.neg = len(d.a) > 0 && !d.neg
+func (d *Decimal) Neg() *Decimal {
+	a := nat{}
+	b := nat{}
+	return &Decimal{
+		a:   a.set(d.a),
+		b:   b.set(d.b),
+		neg: len(d.a) > 0 && !d.neg,
+	}
 }
 
 func (d *Decimal) IsInt() bool {
 	return len(d.b) == 0
 }
 
-func (d *Decimal) Add(x *Decimal, y *Decimal) *Decimal {
-	x1 := nat{}.make(0)
-	x1 = x1.mul(x.a, y.b)
-	neg1 := len(x1) > 0 && x.neg
-	y1 := nat{}.make(0)
-	y1 = y1.mul(y.a, x.b)
-	neg2 := len(y1) > 0 && y.neg
-	if neg1 == neg2 {
-		d.a = d.a.add(x1, y1)
-	} else {
-		if x1.cmp(y1) >= 0 {
-			d.a = d.a.sub(x1, y1)
-		} else {
-			neg1 = !neg1
-			d.a = d.a.sub(y1, x1)
-		}
-	}
-	d.b = d.b.mul(x.b, y.b)
-	d.neg = len(d.a) > 0 && neg1
-	return d
+func (d *Decimal) IsZero() bool {
+	return len(d.a) == 0
 }
 
-func (d *Decimal) Sub(x *Decimal, y *Decimal) *Decimal {
-	x1 := nat{}.make(0)
-	x1 = x1.mul(x.a, y.b)
-	neg1 := len(x1) > 0 && x.neg
-	y1 := nat{}.make(0)
-	y1 = y1.mul(y.a, x.b)
-	neg2 := len(y1) > 0 && y.neg
-	if neg1 != neg2 {
-		d.a = d.a.add(x1, y1)
+// Cmp compares x and y and returns:
+//
+//   -1 if x <  y
+//    0 if x == y
+//   +1 if x >  y
+//
+func (x *Decimal) Cmp(y *Decimal) (r int) {
+	switch {
+	case x.neg == y.neg:
+		a := nat{}.mul(x.a, y.b)
+		b := nat{}.mul(y.a, x.b)
+		r = a.cmp(b)
+		if x.neg {
+			r = -r
+		}
+	case x.neg:
+		r = -1
+	default:
+		r = 1
+	}
+	return
+}
+
+func (x *Decimal) Add(y *Decimal) *Decimal {
+	m := nat{}
+	m = m.mul(x.a, y.b)
+	neg1 := len(m) > 0 && x.neg
+	n := nat{}
+	n = n.mul(y.a, x.b)
+	neg2 := len(n) > 0 && y.neg
+	if neg1 == neg2 {
+		m = m.add(m, n)
 	} else {
-		if x1.cmp(y1) >= 0 {
-			d.a = d.a.sub(x1, y1)
+		if m.cmp(n) >= 0 {
+			m = m.sub(m, n)
 		} else {
 			neg1 = !neg1
-			d.a = d.a.sub(y1, x1)
+			m = m.sub(n, m)
 		}
 	}
-	d.b = d.b.mul(x.b, y.b)
-	d.neg = len(d.a) > 0 && neg1
-	return d
+	return &Decimal{
+		a:   m,
+		b:   nat{}.mul(x.b, y.b),
+		neg: len(m) > 0 && neg1,
+	}
+}
+
+func (x *Decimal) Sub(y *Decimal) *Decimal {
+	m := nat{}
+	m = m.mul(x.a, y.b)
+	neg1 := len(m) > 0 && x.neg
+	n := nat{}
+	n = n.mul(y.a, x.b)
+	neg2 := len(n) > 0 && y.neg
+	if neg1 != neg2 {
+		m = m.add(m, n)
+	} else {
+		if m.cmp(n) >= 0 {
+			m = m.sub(m, n)
+		} else {
+			neg1 = !neg1
+			m = m.sub(n, m)
+		}
+	}
+	return &Decimal{
+		a:   m,
+		b:   nat{}.mul(x.b, y.b),
+		neg: len(m) > 0 && neg1,
+	}
+}
+
+func (x *Decimal) Mul(y *Decimal) *Decimal {
+	a := nat{}.mul(x.a, y.a)
+	return &Decimal{
+		a:   a,
+		b:   nat{}.mul(x.b, y.b),
+		neg: len(a) > 0 && x.neg != y.neg,
+	}
+}
+
+func (x *Decimal) Div(y *Decimal) *Decimal {
+	if len(y.a) == 0 {
+		panic("division by zero")
+	}
+	a := nat{}.mul(x.a, y.b)
+	b := nat{}.mul(y.a, x.b)
+	r := a.cmp(b)
+	if r == 0 {
+		res := Decimal1.Copy()
+		res.neg = x.neg != y.neg
+		return res
+	}
+	a = a.mul(a, nat40)
+	if len(b) == 1 {
+		a, _ = nat{}.divW(a, b[0])
+	} else {
+		a, _ = nat{}.divLarge(nat{}, a, b)
+	}
+	if r == 1 {
+		return &Decimal{
+			a:   a,
+			b:   b.set(nat39),
+			neg: x.neg != y.neg,
+		}
+	}
+	return &Decimal{
+		a:   a,
+		b:   b.set(nat40),
+		neg: x.neg != y.neg,
+	}
+}
+
+func (x nat) string10() string {
+	if len(x) == 0 {
+		return "0"
+	}
+	i := x.bitLen()/log2(Word(10)) + 1
+	s := make([]byte, i)
+	q := nat(nil).set(x)
+	for len(q) > 0 {
+		i--
+		var r Word
+		q, r = q.divW(q, Word(10))
+		s[i] = "0123456789"[r]
+	}
+	return string(s[i:])
+}
+
+func init() {
+	nat40 = nat{}.make(0)
+	nat40 = nat40.mulAddWW(nat40, Word(10), Word(1))
+	for i := 0; i < 40; i++ {
+		nat40 = nat40.mulAddWW(nat40, Word(10), Word(0))
+	}
+	nat39 = nat{}.make(0)
+	nat39 = nat39.mulAddWW(nat39, Word(10), Word(1))
+	for i := 0; i < 39; i++ {
+		nat39 = nat39.mulAddWW(nat39, Word(10), Word(0))
+	}
+	Decimal0, _ = NewDecimal("0")
+	Decimal1, _ = NewDecimal("1")
 }
