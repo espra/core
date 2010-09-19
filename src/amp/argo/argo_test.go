@@ -4,7 +4,9 @@
 package argo
 
 import (
+	"amp/big"
 	"bytes"
+	"fmt"
 	"testing"
 )
 
@@ -30,7 +32,22 @@ func TestWriteSize(t *testing.T) {
 
 }
 
-func TestWriteIntOrdering(t *testing.T) {
+func testWriteInt(t *testing.T) {
+	N := int64(8322944)
+	buf := Buffer()
+	WriteInt(N, buf)
+	fmt.Printf("%q\n", string(buf.Bytes()))
+}
+
+func testWriteBigInt(t *testing.T) {
+	N := big.NewInt(8322944)
+	buf := Buffer()
+	WriteBigInt(N, buf)
+	fmt.Printf("%q\n", string(buf.Bytes()))
+}
+
+
+func testWriteIntOrdering(t *testing.T) {
 
 	buf := Buffer()
 	WriteInt(-10258176, buf)
@@ -41,6 +58,26 @@ func TestWriteIntOrdering(t *testing.T) {
 	for i = -10258175; i < 10258175; i++ {
 		buf.Reset()
 		WriteInt(i, buf)
+		cur := string(buf.Bytes())
+		if prev >= cur {
+			t.Errorf("Lexicographical ordering failure for %d -- %q >= %q", i, prev, cur)
+		}
+		prev = cur
+	}
+
+}
+
+func testWriteBigIntOrdering(t *testing.T) {
+
+	buf := Buffer()
+	WriteBigInt(big.NewInt(-10258176), buf)
+	prev := string(buf.Bytes())
+
+	var i int64
+
+	for i = -10258175; i < 10258175; i++ {
+		buf.Reset()
+		WriteBigInt(big.NewInt(i), buf)
 		cur := string(buf.Bytes())
 		if prev >= cur {
 			t.Errorf("Lexicographical ordering failure for %d -- %q >= %q", i, prev, cur)
