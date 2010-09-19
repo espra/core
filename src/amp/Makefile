@@ -2,6 +2,8 @@
 # Public Domain license that can be found in the root LICENSE file.
 
 PACKAGES=\
+	argo\
+	big\
 	command\
 	keyspace\
 	logging\
@@ -99,6 +101,7 @@ test: test.dirs
 # Package Dependencies
 # ------------------------------------------------------------------------------
 
+argo.install: big.install
 keyspace.install: runtime.install slice.install
 logging.install: encoding.install
 optparse.install: runtime.install slice.install yaml.install
