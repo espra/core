@@ -153,6 +153,7 @@ class Slave(Daemon):
                     if isdir(path):
                         rmtree(path)
             self.git('submodule', 'foreach', 'git clean -fdx')
+            self.git('submodule', 'sync')
             self.git('checkout', revision)
             self.git('submodule', 'update', '--init')
 
