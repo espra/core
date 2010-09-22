@@ -10,7 +10,6 @@ from datetime import date, datetime, timedelta
 from decimal import Decimal, getcontext, ROUND_DOWN
 from struct import pack as struct_pack, unpack as struct_unpack
 
-from pyutil.optimise import optimise
 from simplejson import dumps as encode_json, loads as decode_json
 
 
@@ -32,13 +31,13 @@ def register_serialiser(argo_type, type, cache=True, cache_size=1000):
         serialisation_map[type] = (argo_type, serialiser, cache)
         if argo_type not in serialisation_cache:
             serialisation_cache[argo_type] = CachingDict(cache_size)
-        return optimise()(serialiser)
+        return serialiser
     return _register_serialiser
 
 def register_deserialiser(argo_type):
     def _register_deserialiser(deserialiser):
         deserialisation_map[type_string2id_map[argo_type]] = deserialiser
-        return optimise()(deserialiser)
+        return deserialiser
     return _register_deserialiser
 
 def pack(object, stream=None, retval=False):
@@ -53,7 +52,7 @@ def pack(object, stream=None, retval=False):
 # IPv4Address(struct.unpack('!I', data)[0])
 
 decimal_context = getcontext()
-decimal_context.prec = 20
+decimal_context.prec = 40
 decimal_context.rounding = ROUND_DOWN
 
 # print decimal_context
@@ -67,7 +66,6 @@ def parse_constant(s):
         return Infinity
     if s == '-Infinity':
         return -Infinity
-
 
 # print parse_constant('Infinity')
 # print Decimal('901234567890123456.123459') / Decimal(1)
@@ -165,8 +163,26 @@ def pack_small_negative_int(num):
 
 _pack_cache = {}
 
-def pack_number(num, frac=0):
+def pack_number(num, frac=None):
     """Encode a number according to the Argonought spec."""
+
+    if isinstance(num, (basestring, Decimal)):
+        split_num = str(num).split('.')
+        if len(split_num) == 1:
+            num = int(split_num[0])
+        elif len(split_num) == 2:
+            num = int(split_num[0])
+            frac = '1' + split_num[1]
+            frac_len = len(frac)
+            if not frac_len == 41:
+                frac = frac + ('0' * (41 - frac_len))
+            frac = int(frac)
+        else:
+            raise ValueError("Invalid number %r" % num)
+    elif frac:
+        frac_check = str(frac)
+        if not (frac_check.startswith('1') and len(frac_check) == 41):
+            raise ValueError("Invalid fractional part %r" % frac)
 
     if (num, frac) in _pack_cache:
         return _pack_cache[(num, frac)]
