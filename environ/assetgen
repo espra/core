@@ -66,7 +66,7 @@ def convert_to_url(match):
 # Asset Generator
 # ------------------------------------------------------------------------------
 
-def assetgen(config_path, clean):
+def assetgen(config_path, clean, minify=True):
 
     config_file = open(config_path, 'rb')
     config = decode_yaml(config_file.read())
@@ -225,14 +225,15 @@ def assetgen(config_path, clean):
         if not break_printed:
             break_printed = 1
             print
-        print "=> Minifying %s -> %s" % (input, output)
-        if do(
-            'java', '-jar', CSS_COMPRESSOR, '--charset', 'utf-8', input, '-o',
-            output
-            ):
+        if minify:
+            print "=> Minifying %s -> %s" % (input, output)
+            if do(
+                'java', '-jar', CSS_COMPRESSOR, '--charset', 'utf-8', input, '-o',
+                output
+                ):
+                print
+                exit("Couldn't successfully minify %s" % input)
             print
-            exit("Couldn't successfully minify %s" % input)
-        print
 
     if coffee_input_files and not break_printed:
         break_printed = 1
@@ -294,14 +295,15 @@ def assetgen(config_path, clean):
             if not break_printed:
                 break_printed = 1
                 print
-            print "=> Minifying %s -> %s" % (input, output)
-            if do(
-                'java', '-jar', JS_COMPRESSOR, '--js', input,
-                '--js_output_file', output
-                ):
+            if minify:
+                print "=> Minifying %s -> %s" % (input, output)
+                if do(
+                    'java', '-jar', JS_COMPRESSOR, '--js', input,
+                    '--js_output_file', output
+                    ):
+                    print
+                    exit("Couldn't successfully minify %s" % input)
                 print
-                exit("Couldn't successfully minify %s" % input)
-            print
 
     for file in remove_files:
         if not break_printed:
@@ -365,6 +367,7 @@ def main():
 
     files = sys.argv[1:]
     clean = 0
+    minify = 1
 
     if files:
         if ('-h' in files) or ('help' in files) or ('--help' in files):
@@ -372,6 +375,9 @@ def main():
         while '--clean' in files:
             files.remove('--clean')
             clean = 1
+        while '--dev' in files:
+            files.remove('--dev')
+            minify = 0
         for file in files:
             if not isfile(file):
                 exit("Could not find %s" % file)
@@ -387,7 +393,7 @@ def main():
         files = [join(root, file) for file in files]
 
     for file in files:
-        assetgen(realpath(file), clean)
+        assetgen(realpath(file), clean, minify)
 
 # ------------------------------------------------------------------------------
 # Self Runner
