@@ -5,5 +5,47 @@
 # ========================
 
 # The client has a number of default parameters, e.g.
-HOST_URL = "https://espra.com"
+HOST_URL = "https://espra.com/"
 EVENTROUTE_URL = "https://sensor.espra.com"
+
+# The ``validateBrowserSupport`` function checks if certain "modern" browser
+# features are available and prompts the user to upgrade if not.
+validateBrowserSupport = ->
+  updateBrowser() if not WebSocket? or not postMessage?
+
+# The various modern HTML5 browsers that are supported. It's quite possible that
+# other popular browsers like Opera are also compatible, but testing is needed
+# before adding them to this list.
+supportedBrowsers = [
+  ["chrome", "Chrome", "http://www.google.com/chrome"]
+  ["firefox", "Firefox", "http://www.mozilla.com/en-US/firefox/all-beta.html"]
+  ["safari", "Safari", "http://www.apple.com/safari/"]
+]
+
+updateBrowser = ->
+  $container = $ '''
+    <div class="update-browser">
+      <h1>Please Upgrade to a Recent Browser</h1>
+    </div>
+    '''
+  $browserListDiv = $ '<div class="listing"></div>'
+  $browserList = $ '<ul></ul>'
+  for [id, name, url] in supportedBrowsers
+    $browser = $ """
+      <li>
+        <a href="#{url}" title="Upgrade to #{name}" class="img">
+          <img src="#{HOST_URL}static/gfx/browser.#{id}.png" alt="#{name}" />
+        </a>
+        <div>
+          <a href="#{url}" title="Upgrade to #{name}">
+            #{name}
+          </a>
+        </div>
+        </a>
+      </li>
+      """ # emacs "
+    $browser.appendTo $browserList
+  $browserList.appendTo $browserListDiv
+  $browserListDiv.appendTo $container
+  $container.appendTo $('body')
+  return true
