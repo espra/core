@@ -91,36 +91,39 @@ String::startswith = (prefix) ->
 # Google Analytics
 # ------------------------------------------------------------------------------
 
-setupGoogleAnalytics = () ->
+setupGoogleAnalytics = ->
 
-    # Don't load Google Analytics if it looks like this is being loaded from a
-    # nodejs process, local file or localhost.
-    if exports?
-        return
+  # Don't load Google Analytics if it looks like this is being loaded from a
+  # nodejs process, local file or localhost.
+  if exports?
+    return
 
-    if document.location.protocol is 'file:'
-        return
+  if document.location.protocol is 'file:'
+    return
 
-    if document.location.hostname is 'localhost'
-        return
+  if document.location.hostname is 'localhost'
+    return
 
-    if GoogleAnalyticsID?
+  if GoogleAnalyticsID?
 
-        _gaq = []
-        _gaq.push ['_setAccount', GoogleAnalyticsID]
-        _gaq.push ['_setDomainName', GoogleAnalyticsHost]
-        _gaq.push ['_trackPageview']
+    _gaq = []
+    _gaq.push ['_setAccount', GoogleAnalyticsID]
+    _gaq.push ['_setDomainName', GoogleAnalyticsHost]
+    _gaq.push ['_trackPageview']
 
-        root._gaq = _gaq
+    root._gaq = _gaq
 
-        (() ->
-            ga = document.createElement 'script'
-            ga.type = 'text/javascript'
-            ga.async = true
-            if document.location.protocol is 'https:'
-                ga.src = 'https://ssl.google-analytics.com/ga.js'
-            else
-                ga.src = 'http://www.google-analytics.com/ga.js'
-            s = document.getElementsByTagName('script')[0]
-            s.parentNode.insertBefore(ga, s)
-        )()
+    (->
+      ga = document.createElement 'script'
+      ga.type = 'text/javascript'
+      ga.async = true
+      if document.location.protocol is 'https:'
+        ga.src = 'https://ssl.google-analytics.com/ga.js'
+      else
+        ga.src = 'http://www.google-analytics.com/ga.js'
+      s = document.getElementsByTagName('script')[0]
+      s.parentNode.insertBefore(ga, s)
+      return
+    )()
+
+  return
