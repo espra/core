@@ -6,7 +6,7 @@ Unix, IRC, App Engine, [Xanadu] and Wikis.
 
 The goal for the final 1.0 release is to have a fully decentralised "internet  
 operating system" style platform. We're currently working towards an initial  
-release, `Ampify Zero`, for the end of this year — [see the planfile].
+release for the end of this year — [see the planfile].
 
 **Getting Started**
 
