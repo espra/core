@@ -5,6 +5,7 @@
 
 """Javascript, CSS and Images Assets Builder."""
 
+import os
 import pylibs
 import sys
 
@@ -12,11 +13,14 @@ from base64 import b64encode
 from glob import glob
 from hashlib import sha1
 from mimetypes import guess_type
+from optparse import OptionParser
 from os import chdir, remove, stat
 from os.path import dirname, exists, isfile, join, realpath, split, splitext
 from re import compile as compile_regex
 from stat import ST_MTIME
+from time import sleep
 
+from optcomplete import autocomplete
 from pyutil.env import run_command
 from pyutil.scm import is_git, SCMConfig
 from yaml import safe_load as decode_yaml
@@ -69,7 +73,8 @@ def convert_to_url(match):
 def assetgen(config_path, clean, minify=True):
 
     config_file = open(config_path, 'rb')
-    config = decode_yaml(config_file.read())
+    config_data = config_file.read() % os.environ
+    config = decode_yaml(config_data)
     config_file.close()
     if not config:
         exit("No config found in %s" % config_path)
@@ -347,53 +352,70 @@ def exit(msg):
     print "ERROR:", msg
     sys.exit(1)
 
-def print_help():
-    print "Usage: assetgen [<path/to/assetgen.yaml> ...]"
-    print
-    print "Note:"
-    print
-    print "    If you don't specify assetgen.yaml file paths, then `git"
-    print "    ls-files *assetgen.yaml` will be used to detect all config"
-    print "    files in the current repository. So you need to be inside"
-    print "    a git repository's working tree."
-    print
-    sys.exit()
-
 # ------------------------------------------------------------------------------
 # Main Runner
 # ------------------------------------------------------------------------------
 
-def main():
+def main(argv=None):
 
-    files = sys.argv[1:]
-    clean = 0
-    minify = 1
+    argv = argv or sys.argv[1:]
+    op = OptionParser(usage=(
+        "Usage: assetgen [<path/to/assetgen.yaml> ...] [options]\n\n"
+        "Note:\n"
+        "    If you don't specify assetgen.yaml file paths, then `git\n"
+        "    ls-files *assetgen.yaml` will be used to detect all config\n"
+        "    files in the current repository. So you need to be inside\n"
+        "    a git repository's working tree."
+        ))
+
+    op.add_option(
+        '--clean', action='store_true', help="remove all generated files"
+        )
+
+    op.add_option(
+        '--dev', action='store_true', help="do not minify files"
+        )
+
+    op.add_option(
+        '--watch', action='store_true', help="keep running assetgen on a loop"
+        )
+
+    autocomplete(op)
+    options, files = op.parse_args(argv)
+
+    clean = options.clean
+    dev = options.dev
+    watch = options.watch
 
     if files:
-        if ('-h' in files) or ('help' in files) or ('--help' in files):
-            print_help()
-        while '--clean' in files:
-            files.remove('--clean')
-            clean = 1
-        while '--dev' in files:
-            files.remove('--dev')
-            minify = 0
         for file in files:
             if not isfile(file):
                 exit("Could not find %s" % file)
+
     if not files:
         if not is_git():
-            print_help()
+            op.print_help()
+            sys.exit()
         root = SCMConfig().root
         files = run_command(
             ['git', 'ls-files', '*assetgen.yaml'], cwd=root
             ).strip().splitlines()
         if not files:
-            print_help()
+            op.print_help()
+            sys.exit()
         files = [join(root, file) for file in files]
 
-    for file in files:
-        assetgen(realpath(file), clean, minify)
+    while 1:
+        for file in files:
+            try:
+                assetgen(realpath(file), clean, not dev)
+            except SystemExit:
+                if not watch:
+                    raise
+        if watch:
+            sleep(0.8)
+        else:
+            break
 
 # ------------------------------------------------------------------------------
 # Self Runner

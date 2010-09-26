@@ -1,23 +1,23 @@
 coffee2js:
-- ../../third_party/coffee-script/examples/underscore.coffee
-- ../jsutil/*.coffee
+- %(AMPIFY_ROOT)s/third_party/coffee-script/examples/underscore.coffee
+- %(AMPIFY_ROOT)s/src/jsutil/*.coffee
 
-coffee2js_output_path: ../jsutil
+coffee2js_output_path: %(AMPIFY_ROOT)s/src/jsutil
 
 compile_js:
 
   static/base.js:
-    - ../../third_party/jslibs/json.js
-    - ../../third_party/jslibs/modernizr.js
-    - ../../third_party/jslibs/jquery.js
-    - ../../third_party/jslibs/raphael.js
-    - ../jsutil/underscore.js
+    - %(AMPIFY_ROOT)s/third_party/jslibs/json.js
+    - %(AMPIFY_ROOT)s/third_party/jslibs/modernizr.js
+    - %(AMPIFY_ROOT)s/third_party/jslibs/jquery.js
+    - %(AMPIFY_ROOT)s/third_party/jslibs/raphael.js
+    - %(AMPIFY_ROOT)s/src/jsutil/underscore.js
 
-  static/tentapp.js:
-    - ../jsutil/tentapp.js
+  static/amp.js:
+    - %(AMPIFY_ROOT)s/src/jsutil/amp.js
 
 sass2css:
 - static/site.sass
 
-css_embed_url_template: "/static/%(path)s?%(hash)s"
+css_embed_url_template: "/static/%%(path)s?%%(hash)s"
 css_embed_root_path: static
