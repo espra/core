@@ -1,13 +1,10 @@
 requires: base
 packages:
-- berkeleydb
 - closure
 - go
-- keyspace
 - libnatpmp
 - makeucd
 - miniupnpc
-- nginx
 - pyampify
 - pylibs
 - node
