@@ -11,7 +11,7 @@ EVENTROUTE_URL = "https://sensor.espra.com"
 # The ``validateBrowserSupport`` function checks if certain "modern" browser
 # features are available and prompts the user to upgrade if not.
 validateBrowserSupport = ->
-  updateBrowser() if not WebSocket? or not postMessage?
+  updateBrowser() if not WebSocket? or not postMessage? or not Object.defineProperty?
 
 # The various modern HTML5 browsers that are supported. It's quite possible that
 # other popular browsers like IE and Opera will also be compatible at some point
