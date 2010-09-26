@@ -1,14 +1,79 @@
+#! /usr/bin/env python
+
 # No Copyright (-) 2008-2010 The Ampify Authors. This file is under the
 # Public Domain license that can be found in the root LICENSE file.
 
 """
-==========
-Espra Zero
-==========
-
-A social collaboration platform.
+========================
+Python Nodule for Ampify
+========================
 
 """
+
+import ctypes
+import sys
+
+from pyutil.io import DEVNULL
+
+NODULE_API_VERSION = 0
+
+# A global ``SERVICE_REGISTRY`` object holds the mappings between service names
+# and the representative functions.
+SERVICE_REGISTRY = {}
+
+# The constant defined in /usr/include/linux/prctl.h
+PR_SET_SECCOMP = 22
+
+# A super simple decorator is defined to make it easy it "register" services in
+# the ``SERVICE_REGISTRY``. This function will be passed along when evaluating
+# other scripts that might have been specified.
+def register(name):
+    def __wrapper(func):
+        SERVICE_REGISTRY[name] = func
+        return func
+    return __wrapper
+
+@register('test')
+def test():
+    return
+
+# ------------------------------------------------------------------------------
+# Main Runner
+# ------------------------------------------------------------------------------
+
+def main():
+
+    from darwinsandbox import sandbox
+
+    sandbox('PureComputation')
+    # sandbox('NoNetwork')
+    print "Sandbox enabled"
+
+    x = 'a' * (100000000)
+
+    f = open('/tmp/foo.txt', 'wb')
+
+    stdin, stdout, stderr = sys.stdin, sys.stdout, sys.stderr
+    sys.stdin, sys.stdout, sys.stderr = DEVNULL, DEVNULL, DEVNULL
+
+    platform = sys.platform
+
+    if platform.startswith('darwin'):
+        print "Sandbox enabled"
+    elif platform.startswith('linux'):
+        libc = ctypes.CDLL('libc.so.6')
+        libc.prctl(PR_SET_SECCOMP, 1)
+
+    while 1:
+        stdin.read()
+    print "Hello"
+
+    if not isinstance(result, dict):
+        result = {'result': result}
+
+    return result
+
+main()
 
 import logging
 import os

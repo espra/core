@@ -22,13 +22,8 @@ src/amp/ampzero/ampzero
 src/amp/zeroproxy/zeroproxy
 src/amp/hubproxy/hubproxy
 src/jsutil/*.js
-src/instance/www/*.css
-src/instance/www/*.js
-
-src/zero/secret.py
-src/zero/static/*.css
-src/zero/static/*.js
-src/zero/updated.py
+src/instance/www/static/*.css
+src/instance/www/static/*.js
 
 # minified css/js files
 
