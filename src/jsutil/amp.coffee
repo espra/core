@@ -14,8 +14,8 @@ validateBrowserSupport = ->
   updateBrowser() if not WebSocket? or not postMessage?
 
 # The various modern HTML5 browsers that are supported. It's quite possible that
-# other popular browsers like Opera are also compatible, but testing is needed
-# before adding them to this list.
+# other popular browsers like IE and Opera will also be compatible at some point
+# soon, but testing is needed before adding them to this list.
 supportedBrowsers = [
   ["chrome", "Chrome", "http://www.google.com/chrome"]
   ["firefox", "Firefox", "http://www.mozilla.com/en-US/firefox/all-beta.html"]
@@ -47,5 +47,5 @@ updateBrowser = ->
     $browser.appendTo $browserList
   $browserList.appendTo $browserListDiv
   $browserListDiv.appendTo $container
-  $container.appendTo $('body')
+  $container.appendTo 'body'
   return true
