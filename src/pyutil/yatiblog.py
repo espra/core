@@ -245,6 +245,13 @@ for lang_settings in PROGLANGS.values():
 
 del comment_symbol, lang_settings
 
+SHEBANGS = [
+    ('bash', '.sh'),
+    ('node', '.js'),
+    ('python', '.py'),
+    ('ruby', '.rb')
+    ]
+
 # ------------------------------------------------------------------------------
 # Our Main Script Function
 # ------------------------------------------------------------------------------
@@ -333,8 +340,23 @@ def main(argv=None):
 
         for output_filename, input_pattern in code_paths.items():
 
+            ignore_pattern = None
+            if isinstance(input_pattern, dict):
+                definition = input_pattern
+                input_pattern = definition['pattern']
+                if 'ignore' in definition:
+                    ignore_pattern = definition['ignore']
+
             files = run_command(['git', 'ls-files', input_pattern], cwd=git_root)
             files = filter(None, files.splitlines())
+
+            if ignore_pattern is not None:
+                ignore_files = run_command(
+                    ['git', 'ls-files', ignore_pattern], cwd=git_root
+                    )
+                for file in ignore_files.splitlines():
+                    if file in files:
+                        files.remove(file)
 
             if '%' in output_filename:
                 output_pattern = True
@@ -352,7 +374,7 @@ def main(argv=None):
                     dest = output_filename
                 code_files[
                     join_path(output_directory, dest + '.html')
-                    ] = join_path(git_root, file)
+                    ] = [file, join_path(git_root, file)]
 
     else:
         code_files = {}
@@ -457,7 +479,7 @@ def main(argv=None):
         init_rst_source(source_file)
 
     # And likewise for any source code files.
-    def init_rst_source_code(source_path, destname):
+    def init_rst_source_code(relative_source_path, source_path, destname):
 
         source_file_obj = open(source_path, 'rb')
         content = source_file_obj.read()
@@ -466,11 +488,27 @@ def main(argv=None):
         filebase, filetype = splitext(basename(source_path))
         filebase = filebase.lower()
 
+        if not filetype:
+            if content.startswith('#!'):
+                content = content.split('\n', 1)
+                if len(content) == 2:
+                    shebang, content = content
+                else:
+                    shebang = content[0]
+                    content = ''
+                for interp, ext in SHEBANGS:
+                    if interp in shebang:
+                        filetype = ext
+                        break
+            if not filetype:
+                raise ValueError("Unknown file type: %s" % source_path)
+
         sources[source_path] = {
             '__content__': content,
             '__deps__': [],
             '__env__': {'title': filebase},
             '__genfile__': destname,
+            '__gitpath__': relative_source_path,
             '__id__': source_path,
             '__layout__': code_layout,
             '__lead__': '',
@@ -486,8 +524,8 @@ def main(argv=None):
     if code_layout and code_layout not in layouts:
         load_layout(code_layout, source_directory, layouts)
 
-    for destname, source_path in code_files.items():
-        init_rst_source_code(source_path, destname)
+    for destname, (relative_source_path, source_path) in code_files.items():
+        init_rst_source_code(relative_source_path, source_path, destname)
 
     # And likewise for the ``index_pages``.
     render_last = set()
