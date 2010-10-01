@@ -3,10 +3,11 @@
 # No Copyright (-) 2010 The Ampify Authors. This file is under the
 # Public Domain license that can be found in the root LICENSE file.
 
-import ampify
+import pyutil
 import sys
 
 from distutils.core import Extension, setup
+from Cython.Distutils import build_ext
 
 # ------------------------------------------------------------------------------
 # the extensions
@@ -14,15 +15,15 @@ from distutils.core import Extension, setup
 
 extensions = [
     Extension(
-        "ampify.lzf",
-        ["ampify/lzf.c", "ampify/lzf/lzf_c.c", "ampify/lzf/lzf_d.c"],
-        include_dirs=["ampify/lzf"],
+        "pyutil.lzf",
+        ["pyutil/lzf.pyx", "pyutil/lzf/lzf_c.c", "pyutil/lzf/lzf_d.c"],
+        include_dirs=["pyutil/lzf"],
         )
     ]
 
 if sys.platform == 'darwin':
     extensions.append(
-        Extension("ampify.darwinsandbox", ["ampify/darwinsandbox.c"])
+        Extension("pyutil.darwinsandbox", ["pyutil/darwinsandbox.pyx"])
         )
 
 # ------------------------------------------------------------------------------
@@ -33,8 +34,9 @@ if not sys.argv[1:]:
     sys.argv.extend(['build_ext', '-i'])
 
 setup(
-    name="ampify",
-    version=ampify.__release__,
-    description="Ampify: A decentralised social platform",
+    name="pyutil",
+    version="git",
+    description="Pyutil: A collection of useful Python modules",
+    cmdclass=dict(build_ext=build_ext),
     ext_modules=extensions,
     )

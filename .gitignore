@@ -24,6 +24,9 @@ src/amp/hubproxy/hubproxy
 src/jsutil/*.js
 src/instance/www/static/*.css
 src/instance/www/static/*.js
+src/pyutil/*.c
+src/zerodata/updated.py
+src/zerodata/secret.py
 
 # minified css/js files
 
