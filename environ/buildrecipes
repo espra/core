@@ -231,24 +231,26 @@ RECIPES['pcre'] = [{
     }]
 
 # ------------------------------------------------------------------------------
-# pyampify
+# pyutil
 # ------------------------------------------------------------------------------
 
-PYAMP_C_FILES = glob(join(SRC, 'ampify', '*.c'))
+PYUTIL_PYX_FILES = glob(join(SRC, 'pyutil', '*.pyx'))
 if PLATFORM != 'darwin':
-    PYAMP_C_FILES.remove(join(SRC, 'ampify', 'darwinsandbox.c'))
+    PYUTIL_PYX_FILES.remove(join(SRC, 'pyutil', 'darwinsandbox.pyx'))
 
-PYAMP_SO_FILES = [file.rsplit('.c', 1)[0] + '.so' for file in PYAMP_C_FILES]
+PYUTIL_SO_FILES = [
+    file.rsplit('.pyx', 1)[0] + '.so' for file in PYUTIL_PYX_FILES
+    ]
 
-RECIPES['pyampify'] = [{
+RECIPES['pyutil'] = [{
     'requires': ['python'],
     'type': 'makelike',
     'before': lambda: chdir(SRC),
-    'depends': PYAMP_C_FILES + [join(ROOT, 'src', 'setup.py')],
-    'outputs': PYAMP_SO_FILES,
+    'depends': PYUTIL_PYX_FILES + [join(ROOT, 'src', 'setup.py')],
+    'outputs': PYUTIL_SO_FILES,
     'after': lambda: rmdir('build'),
     'generators': [
-        lambda: [remove(path) for path in PYAMP_SO_FILES if isfile(path)],
+        lambda: [remove(path) for path in PYUTIL_SO_FILES if isfile(path)],
         [sys.executable, 'setup.py', 'build_ext', '-i']
         ]
     }]

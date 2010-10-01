@@ -5,8 +5,8 @@ packages:
 - libnatpmp
 - makeucd
 - miniupnpc
-- pyampify
 - pylibs
+- pyutil
 - node
 - redis
 - ucd
