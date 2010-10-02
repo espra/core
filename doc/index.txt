@@ -20,14 +20,14 @@ Get Started With Ampify Development
 -----------------------------------
 
 You need to have `Git <http://git-scm.com/>`_, a Unix-like OS, a bash shell, a
-recent Python 2.x and general dev tools (gcc, make, etc.) installed.
+recent Python 2.x, Java and general dev tools (gcc, make, ant, etc.) installed.
 
 .. syntax:: bash
 
   $ git clone https://github.com/tav/ampify.git  # (1)
   $ cd ampify
   $ make                                         # (2)
-  $ source environ/ampenv.sh                     # (3)
+  $ . environ/ampenv.sh                          # (3)
   $ amp init kickass                             # (4)
   $ amp run kickass                              # (5)
   $ open https://localhost:9040                  # (6)
@@ -47,7 +47,7 @@ recent Python 2.x and general dev tools (gcc, make, etc.) installed.
 
    Please note that running ``make`` for the first time currently takes around
    20 minutes, so you might want to grab something to drink and do something
-   else like read `HN <http://news.ycombinator.com/>`_ or `xkcd
+   else like read `Hacker News <http://news.ycombinator.com/>`_ or `xkcd
    <http://xkcd.com/>`_ -- with an eye on your terminal for any errors that
    might occur.
 
@@ -62,7 +62,7 @@ recent Python 2.x and general dev tools (gcc, make, etc.) installed.
 
    .. syntax:: bash
 
-     source /home/tav/ampify/environ/ampenv.sh
+     . /home/tav/ampify/environ/ampenv.sh
 
 4. You should read the `Running Ampify Zero <running-ampify-zero.html>`_
    document for these last steps. As it states, Ampify Zero doesn't work yet,
@@ -142,17 +142,14 @@ Get Involved
 .. syntax:: bash
 
   # Create a new branch for your patch:
-
   $ git checkout -b name-for-your-patch
 
   # Make the various changes you want to make and
   # Submit it to be to be reviewed by running:
-
   $ git review submit
 
   # Make any changes and submit updates until the
   # reviewers give a LGTM (Looks Good To Me) reply
-  # on http://gitreview.com
-  # That's all!
+  # on http://gitreview.com -- that's all!
 
 * Have fun!

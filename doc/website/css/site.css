@@ -126,6 +126,10 @@ pre code {
 	padding: 0;
 }
 
+pre.literal-block {
+	line-height: 1em;
+}
+
 select {
 	max-width: 200px;
 }
