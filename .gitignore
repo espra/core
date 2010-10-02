@@ -13,7 +13,7 @@ environ/local
 environ/receipts
 
 environ/review-server/appengine/config.py
-environ/review-server/appengine/updated.py
+environ/review-server/appengine/env.py
 environ/review-server/config.yaml
 environ/review-server/var
 
@@ -25,8 +25,7 @@ src/jsutil/*.js
 src/instance/www/static/*.css
 src/instance/www/static/*.js
 src/pyutil/*.c
-src/zerodata/updated.py
-src/zerodata/secret.py
+src/zerodata/env.py
 
 # minified css/js files
 
