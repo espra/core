@@ -1203,7 +1203,6 @@ def run(argv=None, completer=None):
 # ------------------------------------------------------------------------------
 
 PYTHON_TEST_MODULES = [
-    'pyutil.exception',
     'pyutil.rst'
     ]
 
