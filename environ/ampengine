@@ -669,7 +669,7 @@ def uninstall_packages(uninstall, installed):
                 os.remove(path)
         for path in reversed(sorted(directories)):
             if not listdir(path):
-                print "Removing Direcotry:", path
+                print "Removing Directory:", path
                 rmtree(path)
         receipt.close()
         os.remove(receipt_path)
@@ -1133,6 +1133,44 @@ def init(argv=None, completer=None):
     print(DEBUG)
 
 # ------------------------------------------------------------------------------
+# Install Command
+# ------------------------------------------------------------------------------
+
+def install(argv=None, completer=None):
+
+    op = OptionParser(
+        usage="Usage: amp install <package-1> <package-2> ...",
+        add_help_option=False
+        )
+
+    init_build_recipes()
+    if completer:
+        return op, ListCompleter(RECIPES)
+
+    options, args = parse_options(op, argv, completer, True)
+    for package in args:
+        install_package(package)
+
+    install_packages()
+
+# ------------------------------------------------------------------------------
+# Uninstall Command
+# ------------------------------------------------------------------------------
+
+def uninstall(argv=None, completer=None):
+
+    op = OptionParser(
+        usage="Usage: amp uninstall <package>", add_help_option=False
+        )
+
+    init_build_recipes()
+    if completer:
+        return op, ListCompleter(RECIPES)
+
+    options, args = parse_options(op, argv, completer, True)
+    uninstall_package(args[0])
+
+# ------------------------------------------------------------------------------
 # Run Command
 # ------------------------------------------------------------------------------
 
@@ -1244,8 +1282,10 @@ check.help = "check if your checkout is up-to-date"
 deploy.help = "deploy an instance to remote hosts"
 hub.help = "interact with amphub"
 init.help = "initialise a new amp instance"
+install.help = "install specific amp build packages"
 run.help = "run the components for an amp instance"
 test.help = "run the ampify test suite"
+uninstall.help = "uninstall specific amp build packages"
 
 # ------------------------------------------------------------------------------
 # Command Mapping
@@ -1257,8 +1297,10 @@ COMMANDS = {
     'deploy': deploy,
     'hub': hub,
     'init': init,
+    'install': install,
     'run': run,
-    'test': test
+    'test': test,
+    'uninstall': uninstall
     }
 
 # ------------------------------------------------------------------------------
