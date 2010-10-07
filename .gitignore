@@ -1,6 +1,5 @@
 # specific files/directories
 
-.appengine_python_sdk
 .articlestore
 .build
 .build-lock
@@ -12,20 +11,13 @@ doc/website/*.html
 environ/local
 environ/receipts
 
-environ/review-server/appengine/config.py
-environ/review-server/appengine/env.py
-environ/review-server/config.yaml
-environ/review-server/var
-
 src/amp/ampnode/ampnode
 src/amp/ampzero/ampzero
-src/amp/zeroproxy/zeroproxy
 src/amp/hubproxy/hubproxy
 src/jsutil/*.js
 src/instance/www/static/*.css
 src/instance/www/static/*.js
 src/pyutil/*.c
-src/zerodata/env.py
 
 # minified css/js files
 

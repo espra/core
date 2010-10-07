@@ -92,14 +92,17 @@ function _have () {
 
 export AMPIFY_LOCAL=$AMPIFY_ROOT/environ/local
 
+_THIRD_PARTY=$AMPIFY_ROOT/third_party
+_ENV_VAL=$AMPIFY_ROOT/environ:$AMPIFY_LOCAL/bin:$_THIRD_PARTY/git-review/bin
+
 if [ "x$PRE_AMPENV_PATH" != "x" ]; then
-	export PATH=$AMPIFY_ROOT/environ:$AMPIFY_LOCAL/bin:$PRE_AMPENV_PATH
+	export PATH=$_ENV_VAL:$PRE_AMPENV_PATH
 else
 	if [ "x$PATH" != "x" ]; then
 		export PRE_AMPENV_PATH=$PATH
-		export PATH=$AMPIFY_ROOT/environ:$AMPIFY_LOCAL/bin:$PATH
+		export PATH=$_ENV_VAL:$PATH
 	else
-		export PATH=$AMPIFY_ROOT/environ:$AMPIFY_LOCAL/bin
+		export PATH=$_ENV_VAL
 	fi
 fi
 
@@ -152,7 +155,6 @@ else
 	fi
 fi
 
-_THIRD_PARTY=$AMPIFY_ROOT/third_party
 _ENV_VAL=$_THIRD_PARTY/vows/lib:$_THIRD_PARTY/jslibs:$_THIRD_PARTY/coffee-script/lib
 
 if [ "x$PRE_AMPENV_NODE_PATH" != "x" ]; then
@@ -247,4 +249,4 @@ fi
 unset _OS_NAME
 unset _BASH_VERSION _BASH_MAJOR_VERSION _BASH_MINOR_VERSION
 unset _have _INTERACTIVE_SHELL
-unset _THIRD_PARTY _ENV_VAL
+unset _ENV_VAL _THIRD_PARTY
