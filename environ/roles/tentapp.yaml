@@ -1,0 +1,10 @@
+requires: base
+packages:
+- closure
+- keyspace
+- makeucd
+- pylibs
+- pyutil
+- redis
+- ucd
+- yuicompressor
