@@ -172,7 +172,7 @@ func (logger *ConsoleLogger) log() {
 
 func Log(message string, v ...interface{}) {
 	if len(v) > 0 {
-		message = fmt.Sprintf(message, v)
+		message = fmt.Sprintf(message, v...)
 	}
 	items := make([]interface{}, 1)
 	items[0] = message

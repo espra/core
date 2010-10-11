@@ -68,7 +68,7 @@ func Error(message string, v ...interface{}) {
 	if len(v) == 0 {
 		fmt.Fprint(os.Stderr, message)
 	} else {
-		fmt.Fprintf(os.Stderr, message, v)
+		fmt.Fprintf(os.Stderr, message, v...)
 	}
 	RunExitHandlers()
 	os.Exit(1)

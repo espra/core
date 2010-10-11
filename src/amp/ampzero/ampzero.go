@@ -49,7 +49,7 @@ var (
 	error502       = []byte(`<!DOCTYPE html>
 <html>
 <head>
-<title>DoctError!</title>
+<title>DoctError! Couldn't connect to an upstream server.</title>
 <link href="//fonts.googleapis.com/css?family=Josefin+Sans+Std+Light:regular" rel="stylesheet" type="text/css" >
 <style>
 body {
@@ -75,7 +75,7 @@ type Redirector struct {
 	url string
 }
 
-func (redirector *Redirector) ServeHTTP(conn *http.Conn, req *http.Request) {
+func (redirector *Redirector) ServeHTTP(conn http.ResponseWriter, req *http.Request) {
 
 	var url string
 	if len(req.URL.RawQuery) > 0 {
@@ -91,7 +91,7 @@ func (redirector *Redirector) ServeHTTP(conn *http.Conn, req *http.Request) {
 	conn.SetHeader("Location", url)
 	conn.WriteHeader(http.StatusMovedPermanently)
 	fmt.Fprintf(conn, redirectHTML, url)
-	logRequest(http.StatusMovedPermanently, req.Host, conn)
+	logRequest(http.StatusMovedPermanently, req.Host, conn, req)
 
 }
 
@@ -105,13 +105,13 @@ type Frontend struct {
 	enforceHost          bool
 }
 
-func (frontend *Frontend) ServeHTTP(conn *http.Conn, req *http.Request) {
+func (frontend *Frontend) ServeHTTP(conn http.ResponseWriter, req *http.Request) {
 
 	if frontend.enforceHost && req.Host != frontend.officialHost {
 		conn.SetHeader("Location", frontend.officialRedirectURL)
 		conn.WriteHeader(http.StatusMovedPermanently)
 		conn.Write(frontend.officialRedirectHTML)
-		logRequest(http.StatusMovedPermanently, req.Host, conn)
+		logRequest(http.StatusMovedPermanently, req.Host, conn, req)
 		return
 	}
 
@@ -123,7 +123,7 @@ func (frontend *Frontend) ServeHTTP(conn *http.Conn, req *http.Request) {
 		if debugMode {
 			fmt.Printf("Couldn't connect to remote %s: %v\n", frontend.gaeHost, err)
 		}
-		serveError502(conn, originalHost)
+		serveError502(conn, originalHost, req)
 		return
 	}
 
@@ -145,7 +145,7 @@ func (frontend *Frontend) ServeHTTP(conn *http.Conn, req *http.Request) {
 		if debugMode {
 			fmt.Printf("Error writing to App Engine: %v\n", err)
 		}
-		serveError502(conn, originalHost)
+		serveError502(conn, originalHost, req)
 		return
 	}
 
@@ -155,7 +155,7 @@ func (frontend *Frontend) ServeHTTP(conn *http.Conn, req *http.Request) {
 		if debugMode {
 			fmt.Printf("Error parsing response from App Engine: %v\n", err)
 		}
-		serveError502(conn, originalHost)
+		serveError502(conn, originalHost, req)
 		return
 	}
 
@@ -165,7 +165,7 @@ func (frontend *Frontend) ServeHTTP(conn *http.Conn, req *http.Request) {
 		if debugMode {
 			fmt.Printf("Error reading response from App Engine: %v\n", err)
 		}
-		serveError502(conn, originalHost)
+		serveError502(conn, originalHost, req)
 		resp.Body.Close()
 		return
 	}
@@ -180,19 +180,18 @@ func (frontend *Frontend) ServeHTTP(conn *http.Conn, req *http.Request) {
 	conn.WriteHeader(resp.StatusCode)
 	conn.Write(body)
 
-	logRequest(resp.StatusCode, originalHost, conn)
+	logRequest(resp.StatusCode, originalHost, conn, req)
 
 }
 
-func logRequest(status int, host string, conn *http.Conn) {
+func logRequest(status int, host string, conn http.ResponseWriter, request *http.Request) {
 	var ip string
-	splitPoint := strings.LastIndex(conn.RemoteAddr, ":")
+	splitPoint := strings.LastIndex(conn.RemoteAddr(), ":")
 	if splitPoint == -1 {
-		ip = conn.RemoteAddr
+		ip = conn.RemoteAddr()
 	} else {
-		ip = conn.RemoteAddr[0:splitPoint]
+		ip = conn.RemoteAddr()[0:splitPoint]
 	}
-	request := conn.Req
 	logging.Info("fe", status, request.Method, host, request.RawURL,
 		ip, request.UserAgent, request.Referer)
 }
@@ -210,12 +209,12 @@ func filterRequestLog(record *logging.Record) (write bool, data []interface{}) {
 	return true, data
 }
 
-func serveError502(conn *http.Conn, host string) {
+func serveError502(conn http.ResponseWriter, host string, request *http.Request) {
 	conn.WriteHeader(http.StatusBadGateway)
 	conn.SetHeader(contentType, textHTML)
 	conn.SetHeader(contentLength, error502Length)
 	conn.Write(error502)
-	logRequest(http.StatusBadGateway, host, conn)
+	logRequest(http.StatusBadGateway, host, conn, request)
 }
 
 func main() {
@@ -244,6 +243,14 @@ func main() {
 
 	officialHost := opts.StringConfig("official-host", "",
 		"if set, limit the Frontend Server to the specified host")
+
+	// masterHosts := opts.BoolConfig("master-hosts", false,
+	// 	"disable the HTTP Redirector [default: false]")
+
+	keyspaceMaster := opts.BoolConfig("master", false,
+		"disable the HTTP Redirector [default: false]")
+
+	_ = keyspaceMaster
 
 	noRedirect := opts.BoolConfig("no-redirect", false,
 		"disable the HTTP Redirector [default: false]")

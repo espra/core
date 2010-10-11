@@ -3,6 +3,10 @@
 
 package encoding
 
+func EncodeBase32(src []byte) (result []byte) {
+	return
+}
+
 // Cheap integer to fixed-width decimal ASCII. Use a negative width to avoid
 // zero-padding.
 func PadInt(i int, width int) string {

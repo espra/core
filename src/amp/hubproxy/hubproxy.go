@@ -27,7 +27,7 @@ var (
 
 type Proxy struct{}
 
-func (proxy *Proxy) ServeHTTP(conn *http.Conn, req *http.Request) {
+func (proxy *Proxy) ServeHTTP(conn http.ResponseWriter, req *http.Request) {
 
 	// Open a connection to the Hub.
 	hubconn, err := net.Dial("tcp", "", remoteAddr)

@@ -150,14 +150,14 @@ func (op *OptionParser) Default(flags []string, usage string, displayDest bool, 
 }
 
 func (op *OptionParser) Int(flags []string, value int, usage string, info ...interface{}) (result *int) {
-	opt := op.Default(flags, usage, true, info)
+	opt := op.Default(flags, usage, true, info...)
 	opt.valueType = "int"
 	opt.intValue = &value
 	return &value
 }
 
 func (op *OptionParser) String(flags []string, value string, usage string, info ...interface{}) (result *string) {
-	opt := op.Default(flags, usage, true, info)
+	opt := op.Default(flags, usage, true, info...)
 	opt.valueType = "string"
 	opt.stringValue = &value
 	return &value
@@ -171,14 +171,14 @@ func (op *OptionParser) Bool(flags []string, value bool, usage string) (result *
 }
 
 func (op *OptionParser) IntConfig(flag string, value int, usage string, info ...interface{}) (result *int) {
-	opt := op.Default([]string{flag + ":", "--" + flag}, usage, false, info)
+	opt := op.Default([]string{flag + ":", "--" + flag}, usage, false, info...)
 	opt.valueType = "int"
 	opt.intValue = &value
 	return &value
 }
 
 func (op *OptionParser) StringConfig(flag string, value string, usage string, info ...interface{}) (result *string) {
-	opt := op.Default([]string{flag + ":", "--" + flag}, usage, false, info)
+	opt := op.Default([]string{flag + ":", "--" + flag}, usage, false, info...)
 	opt.valueType = "string"
 	opt.stringValue = &value
 	return &value
