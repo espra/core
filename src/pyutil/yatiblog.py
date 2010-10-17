@@ -615,6 +615,8 @@ def main(argv=None):
             for source in remaining.intersection(no_regen):
                 del sources[source]
 
+    BLANK_CODE_LINE = '<div class="syntax"><pre><div class="syntax"><pre></pre></div>'
+
     # Regenerate!
     items = sorted(sources.items(), key=lambda x: x[1]['__rst__'] == False)
 
@@ -721,6 +723,10 @@ def main(argv=None):
                     else:
                         code = u'<div class="syntax"><pre>' + code + "</pre></div>"
                 out((docs_split[i], code))
+
+            while output and output[0][1] == BLANK_CODE_LINE:
+                if not output[0][0]:
+                    output.pop(0)
 
         elif info['__rst__']:
             with_props = info.get('with_props', False)

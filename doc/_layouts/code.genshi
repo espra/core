@@ -24,6 +24,9 @@ license: Public Domain
 	line-height: 2em;
 	font-size: 0.9em;
 }
+#main h1, #main h2, #main h3 {
+	margin-left: 0px;
+}
 </style>
 <div id="main">
 <table>

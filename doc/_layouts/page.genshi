@@ -25,14 +25,16 @@ ${Markup(content)}
   </li>
   <li>
 	<a href="planfile.html">Planfile</a>
-	<div>The planfile for Ampify.</div>
+	<div>The technical architecture and planfile for Ampify.</div>
   </li>
-  <!--
   <li>
-	<a href="code.html">Code Documentation</a>
+	<a href="rationale.html">Rationale</a>
+	<div>Why is Ampify needed?</div>
+  </li>
+  <li>
+	<a href="code.html">Code</a>
 	<div>Documentation for various source files.</div>
   </li>
-  -->
   <li>
 	<a href="license.html">Public Domain License</a>
 	<div>The super permissive open source license for Ampify.</div>

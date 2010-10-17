@@ -148,7 +148,7 @@ table, table.docutils {
 }
 
 table.docutils {
-	margin: 5px 40px 10px 30px;
+	margin: 5px 30px 10px 10px;
 }
 
 /*
@@ -266,9 +266,9 @@ body > #body-outer {
 
 #main {
 	float: left;
-	padding: 10px 30px 0 10px;
-	width: 630px;
-	line-height: 2em;
+	padding: 10px 30px 0 30px;
+	width: 610px;
+	line-height: 2.2em;
 	font-size: 0.9em;
 }
 
@@ -276,16 +276,19 @@ body > #body-outer {
 	padding-left: 20px;
 }
 
+#main h1, #main h2, #main h3 {
+	margin-left: -20px;
+}
+
 #main h1 {
 	font-size: 1.5em;
 	padding-top: 20px;
-	padding-bottom: 0;
+	padding-bottom: 6px;
 }
 
 #main h1.title {
 	font-size: 1.8em;
 	padding-top: 0;
-	padding-bottom: 10px;
 }
 
 #main p {
@@ -1404,7 +1407,7 @@ a.buttondown span {
 }
 
 .container {
-	padding-left: 20px;
+	padding-left: 0px;
 }
 
 .container blockquote {
