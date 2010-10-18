@@ -351,9 +351,12 @@ e.g.
   # reviewers give a LGTM (Looks Good To Me) reply
   # on http://gitreview.com -- that's all!
 
+.. raw:: html
 
--- Thanks, tav <tav@espians.com>
-
+  <p>
+    &mdash;<br/>
+    Thanks, tav &lt;<a href="mailto:tav@espians.com">tav@espians.com</a>&gt;
+  </p>
 
 .. |contents| raw:: html
 

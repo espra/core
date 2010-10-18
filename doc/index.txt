@@ -6,10 +6,10 @@ license: Public Domain
 Ampify
 ======
 
-.. class:: big
-
-The open source Ampify Platform provides you with a web application framework
-that enables you to create social apps on top of a secure, decentralised core.
+Ampify is an open source, decentralised, social platform. We are working towards
+an initial release for the end of this year which will provide you with a web
+application framework to create social apps on top of a secure, decentralised
+core.
 
 .. raw:: html
 
@@ -20,9 +20,12 @@ that enables you to create social apps on top of a secure, decentralised core.
   </div>
   <hr class="clear" />
 
-We are working towards a first working release for the end of 2010. If you've
-already read the `building Ampify <building-ampify.html>`_ guide, run the
-following to build the current code:
+
+Quick Start
+-----------
+
+If you've already read the `building Ampify <building-ampify.html>`_ guide, run
+the following to build the current code:
 
 .. syntax:: bash
 
@@ -35,8 +38,8 @@ following to build the current code:
 
   <div style="margin-top: 10px"></div>
 
-Come by and introduce yourself on the ``#esp`` channel on ``irc.freenode.net``
--- we're a friendly bunch!
+And, most importantly, come by and introduce yourself on the ``#esp`` channel on
+``irc.freenode.net`` -- we're a friendly bunch!
 
 .. raw:: html
 
@@ -67,4 +70,19 @@ e.g.
 
   # Make any changes and submit updates until the
   # reviewers give a LGTM (Looks Good To Me) reply
-  # on http://gitreview.com -- that's all!
+  # on http://gitreview.com
+
+That's it!
+
+We specifically developed `git-review <http://github.com/tav/git-review>`_ so
+that it'd be this easy. It combines code review, build and automated testing so
+as to make life easy and pleasant for everyone. Have a look at the review server:
+
+*  http://gitreview.com/activity/ampify
+
+.. raw:: html
+
+  <p>
+    &mdash;<br/>
+    Thanks, tav &lt;<a href="mailto:tav@espians.com">tav@espians.com</a>&gt;
+  </p>

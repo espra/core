@@ -7,7 +7,7 @@ title: Getting Involved
 Getting Involved
 ================
 
-|*| Come by and say hello and introduce yourself on `IRC
+|*| Come by, say hello and introduce yourself on `IRC
 <irc://irc.freenode.net/esp>`_ -- we're a friendly bunch!
 
 .. raw:: html
@@ -44,7 +44,7 @@ Getting Involved
 if you're new to Git.
 
 |*| Get a GitHub account and `fork <http://help.github.com/forking/>`_ the
-`Ampify repository <http://github.com/tav/ampify>`_ on GitHub.
+`Ampify repository <http://github.com/tav/ampify>`_.
 
 |*| Familiarise yourself with the Ampify testing and review process:
 
@@ -61,8 +61,14 @@ if you're new to Git.
   # reviewers give a LGTM (Looks Good To Me) reply
   # on http://gitreview.com -- that's all!
 
-|*| Have fun!
 
+.. raw:: html
+
+  <p>
+    &mdash;<br/>
+    Enjoy,
+    tav &lt;<a href="mailto:tav@espians.com">tav@espians.com</a>&gt;
+  </p>
 
 .. |*| raw:: html
 
