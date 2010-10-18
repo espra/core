@@ -6,92 +6,37 @@ license: Public Domain
 Ampify
 ======
 
-Ampify is a vision of an open and decentralised social platform. For comparison,
-perhaps imagine a bastardised mix between Git, Facebook, Unix, IRC, App Engine,
-Xanadu and Wikis.
+.. class:: big
 
-The goal for the final 1.0 release is to have a fully decentralised "internet
-operating system" style platform. We're currently working towards an initial
-release, ``Ampify Zero``, for the end of this year -- `see the planfile
-<planfile.html>`_ for more info.
+The open source Ampify Platform provides you with a web application framework
+that enables you to create social apps on top of a secure, decentralised core.
 
+.. raw:: html
 
-Get Started With Ampify Development
------------------------------------
+  <div class="lead-button">
+    <a href="building-ampify.html">INSTALL AMPIFY</a>
+    <a href="planfile.html">PLANFILE</a>
+    <a href="getting-involved.html">GET INVOLVED</a>
+  </div>
+  <hr class="clear" />
 
-You need to have `Git <http://git-scm.com/>`_, a Unix-like OS, a bash shell, a
-recent Python 2.x, Java and general dev tools (gcc, make, ant, etc.) installed.
+We are working towards a first working release for the end of 2010. If you've
+already read the `building Ampify <building-ampify.html>`_ guide, run the
+following to build the current code:
 
 .. syntax:: bash
 
-  $ git clone https://github.com/tav/ampify.git  # (1)
+  $ git clone https://github.com/tav/ampify.git
   $ cd ampify
-  $ make                                         # (2)
-  $ . environ/ampenv.sh                          # (3)
-  $ amp init kickass                             # (4)
-  $ amp run kickass                              # (5)
-  $ open https://localhost:9040                  # (6)
+  $ make
+  $ . environ/ampenv.sh
 
-1. Clone the repository. You need to have Git 1.7+ in order to use the smart
-   HTTP protocol.
+.. raw:: html
 
-2. Running ``make`` updates the submodules, builds various dependencies like
-   Keyspace and Node.js, compiles CoffeeScript/Sass files and minifies the
-   resulting JavaScript/CSS files. All builds are self-contained within the
-   ``environ/local`` sub-directory that will be automatically created.
+  <div style="margin-top: 10px"></div>
 
-   You can run ``make clean`` to remove everything except the built
-   dependencies, which you can also remove using the full ``make distclean``. Be
-   sure to re-run ``make`` after you do a git pull or update -- this will keep
-   the generated files up-to-date.
-
-   Please note that running ``make`` for the first time currently takes around
-   20 minutes, so you might want to grab something to drink and do something
-   else like read `Hacker News <http://news.ycombinator.com/>`_ or `xkcd
-   <http://xkcd.com/>`_ -- with an eye on your terminal for any errors that
-   might occur.
-
-3. The ``ampenv.sh`` script adds command line auto-completion support on bash
-   shells and extends a number of environment variables like ``$PATH``. As a
-   result, a number of new commands will now be available to you -- including
-   the core ``amp`` command.
-
-   You might want to add this line to your ``~/.bashrc`` file or equivalent. So
-   if you'd cloned the repository into ``/home/tav/ampify``, then you would add
-   the following line to your ``~/.bashrc`` file:
-
-   .. syntax:: bash
-
-     . /home/tav/ampify/environ/ampenv.sh
-
-4. You should read the `Running Ampify Zero <running-ampify-zero.html>`_
-   document for these last steps. As it states, Ampify Zero doesn't work yet,
-   but it goes into detail of how an instance is meant to be setup and run.
-
-   You first initialise an instance using the ``amp`` utility script. This asks
-   you a few questions and generates the appropriate files in a sibling
-   directory to your Ampify repository. So, if you wanted to create an instance
-   called ``kickass``, you'd:
-
-   .. syntax:: bash
-
-     $ amp init kickass
-
-   Then, you'd run the various component processes of Ampify Zero with:
-
-   .. syntax:: bash
-
-     $ amp run kickass
-
-   Do read the `Running Ampify Zero <running-ampify-zero.html>`_ doc for more
-   info.
-
-
-Get Involved
-------------
-
-* Come by and say hello and introduce yourself on `IRC
-  <irc://irc.freenode.net/esp>`_ -- we're a friendly bunch!
+Come by and introduce yourself on the ``#esp`` channel on ``irc.freenode.net``
+-- we're a friendly bunch!
 
 .. raw:: html
 
@@ -102,42 +47,14 @@ Get Involved
      </form>
   </div>
 
-  <pre>
-  server: irc.freenode.net
-  channel: #esp
-  chatlogs: <a href="http://irclogs.ampify.it">irclogs.ampify.it</a>
-  </pre>
 
-* Subscribe to the `Ampify mailing list
-  <http://groups.google.com/group/ampify>`_.
+Contribute
+----------
 
-.. raw:: html
-
-  <div style="text-align: center; margin-top: 5px; margin-bottom: 15px">
-    <a href="http://groups.google.com/group/ampify"><img
-       src="http://groups.google.com/intl/en/images/logos/groups_logo_sm.gif"
-       height="30px" width="140px" alt="Google Groups"></a>
-    <form action="http://groups.google.com/group/ampify/boxsubscribe">
-      <input type="text" name="email" value="" size="20" placeholder="Your email address" > &nbsp;
-      <input type="submit" name="sub" value="Subscribe">
-    </form>
-  </div>
-
-* Sign up to GitHub if you don't have an `account
-  <https://github.com/signup/free>`_ — it takes just a minute! You can then
-  `fork <http://help.github.com/forking/>`_ the `ampify repository
-  <http://github.com/tav/ampify>`_.
-
-.. syntax:: bash
-
-  $ git clone git@github.com:yourUsername/ampify.git
-  $ git remote add upstream https://github.com/tav/ampify.git
-
-* Read the `getting started with git
-  <http://www.espians.com/getting-started-with-git.html>`_ guide for Ampify
-  Developers if you're new to git.
-
-* Familiarise yourself with the Ampify testing and review process:
+To contribute any patches, simply fork `the repository
+<http://github.com/tav/ampify>`_ using GitHub, create a new branch with your
+patch, add yourself to the ``AUTHORS`` file and then run ``git review submit``,
+e.g.
 
 .. syntax:: bash
 
@@ -145,11 +62,9 @@ Get Involved
   $ git checkout -b name-for-your-patch
 
   # Make the various changes you want to make and
-  # Submit it to be to be reviewed by running:
+  # submit it to be to be reviewed by running:
   $ git review submit
 
   # Make any changes and submit updates until the
   # reviewers give a LGTM (Looks Good To Me) reply
   # on http://gitreview.com -- that's all!
-
-* Have fun!

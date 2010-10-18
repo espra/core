@@ -1,0 +1,54 @@
+---
+layout: page
+license: Public Domain
+title: Building Ampify
+---
+
+Building Ampify
+===============
+
+You need to have `Git <http://git-scm.com/>`_, a Unix-like OS, a bash shell, a
+recent Python 2.x, Java and general dev tools (gcc, make, ant, etc.) installed.
+
+.. syntax:: bash
+
+  $ git clone https://github.com/tav/ampify.git  # (1)
+  $ cd ampify
+  $ make                                         # (2)
+  $ . environ/ampenv.sh                          # (3)
+
+1. Clone the repository. You need to have Git 1.7+ in order to use the smart
+   HTTP protocol.
+
+2. Running ``make`` updates the submodules, builds various dependencies like Go
+   and Node.js, compiles CoffeeScript/Sass files and minifies the resulting
+   JavaScript/CSS files. All builds are self-contained within the
+   ``environ/local`` sub-directory that will be automatically created.
+
+   You can run ``make clean`` to remove everything except the built
+   dependencies, which you can also remove using the full ``make distclean``. Be
+   sure to re-run ``make`` after you do a git pull or update -- this will keep
+   the generated files up-to-date.
+
+   Please note that running ``make`` for the first time currently takes around
+   20 minutes, so you might want to grab something to drink and do something
+   else like read `Hacker News <http://news.ycombinator.com/>`_ or `xkcd
+   <http://xkcd.com/>`_ -- with an eye on your terminal for any errors that
+   might occur.
+
+3. The ``ampenv.sh`` script adds command line auto-completion support on bash
+   shells and extends a number of environment variables like ``$PATH``. As a
+   result, a number of new commands will now be available to you -- including
+   the core ``amp`` command.
+
+   You might want to add this line to your ``~/.bashrc`` file or equivalent. So
+   if you'd cloned the repository into ``/home/tav/ampify``, then you would add
+   the following line to your ``~/.bashrc`` file:
+
+   .. syntax:: bash
+
+     . /home/tav/ampify/environ/ampenv.sh
+
+Once you've successfully built Ampify, you should read the `Running Ampify
+<running-ampify.html>`_ document. As it states, Ampify doesn't work yet, but
+it'll help you understand how an instance is meant to be setup and run.

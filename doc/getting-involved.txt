@@ -1,0 +1,70 @@
+---
+layout: page
+license: Public Domain
+title: Getting Involved
+---
+
+Getting Involved
+================
+
+|*| Come by and say hello and introduce yourself on `IRC
+<irc://irc.freenode.net/esp>`_ -- we're a friendly bunch!
+
+.. raw:: html
+
+  <div style="text-align: center; margin-top: 5px; margin-bottom: 15px">
+      <form action="http://webchat.freenode.net/" method="get">
+        <button style="padding: 2px 6px 3px;">Click to join #esp</button>
+        <input type="hidden" name="channels" value="esp" />
+     </form>
+  </div>
+
+  <pre>
+  server: irc.freenode.net
+  channel: #esp
+  chatlogs: <a href="http://irclogs.ampify.it">irclogs.ampify.it</a>
+  </pre>
+
+|*| Subscribe to the `Ampify Mailing List
+<http://groups.google.com/group/ampify>`_.
+
+.. raw:: html
+
+  <div style="text-align: center; margin-top: 5px; margin-bottom: 15px">
+    <a href="http://groups.google.com/group/ampify"><img
+       src="http://groups.google.com/intl/en/images/logos/groups_logo_sm.gif"
+       height="30px" width="140px" alt="Google Groups"></a>
+    <form action="http://groups.google.com/group/ampify/boxsubscribe">
+      <input type="text" name="email" value="" size="20" placeholder="Your email address" > &nbsp;
+      <input type="submit" name="sub" value="Subscribe">
+    </form>
+  </div>
+
+|*| Read our `Getting Started with Git <getting-started-with-git.html>`_ guide
+if you're new to Git.
+
+|*| Get a GitHub account and `fork <http://help.github.com/forking/>`_ the
+`Ampify repository <http://github.com/tav/ampify>`_ on GitHub.
+
+|*| Familiarise yourself with the Ampify testing and review process:
+
+.. syntax:: bash
+
+  # Create a new branch for your patch:
+  $ git checkout -b name-for-your-patch
+
+  # Make the various changes you want to make and
+  # submit it to be to be reviewed by running:
+  $ git review submit
+
+  # Make any changes and submit updates until the
+  # reviewers give a LGTM (Looks Good To Me) reply
+  # on http://gitreview.com -- that's all!
+
+|*| Have fun!
+
+
+.. |*| raw:: html
+
+  *&nbsp;
+

@@ -16,11 +16,15 @@ ${Markup(content)}
 <h3>Resources</h3>
 <ul>
   <li>
-	<a href="http://ampify.it/#get-started-with-ampify-development">Getting Started</a>
-	<div>A quickstart guide to setting up the environment for Ampify development.</div>
+	<a href="building-ampify.html">Building Ampify</a>
+	<div>A guide to building Ampify from source.</div>
   </li>
   <li>
-	<a href="http://ampify.it/#get-involved">Getting Involved</a>
+	<a href="running-ampify.html">Running Ampify</a>
+	<div>A guide to running an Ampify host.</div>
+  </li>
+  <li>
+	<a href="getting-involved.html">Getting Involved</a>
 	<div>A brief overview of how to get involved with Ampify development.</div>
   </li>
   <li>
@@ -32,12 +36,24 @@ ${Markup(content)}
 	<div>Why is Ampify needed?</div>
   </li>
   <li>
+	<a href="license.html">Public Domain License</a>
+	<div>The super permissive open source license for Ampify.</div>
+  </li>
+  <li>
 	<a href="code.html">Code</a>
 	<div>Documentation for various source files.</div>
   </li>
   <li>
-	<a href="license.html">Public Domain License</a>
-	<div>The super permissive open source license for Ampify.</div>
+	<a href="getting-started-with-git.html">Getting Started With Git</a>
+	<div>A guide for developers who are new to the Git version control system.</div>
+  </li>
+  <li>
+	<a href="history.html">History</a>
+	<div>A highlight of Ampify's history.</div>
+  </li>
+  <li>
+	<a href="distfiles.html">Distfiles</a>
+	<div>The custom third party package files used by the Ampify build system.</div>
   </li>
   <li>
 	<a href="authors.html">Authors</a>

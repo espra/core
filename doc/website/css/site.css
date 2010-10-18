@@ -16,7 +16,7 @@ body {
 	background-color: #000;
 	background-image: url(http://static1.ampify.it/gfx.bokehplex.jpg);
 	background-repeat: repeat;
-	font: 90%/1em 'Lucida Grande', 'Lucida Sans Unicode', Optima, Verdana, sans-serif;
+	font: 14px/19px Verdana, Verdana, Arial, sans-serif;
 	height: 100%;
 	width: 100%;
 }
@@ -66,7 +66,7 @@ blockquote, p, dl, h1, h2, h3, h4, h5, h6, ol, ul {
 code, .literal {
 	background-color: #f0f0f0;
 	border: 1px solid #dadada;
-	padding: 1px 3px;
+	padding: 0px 2px;
 	font-family: Monaco, "DejaVu Sans Mono", "Bitstream Vera Sans Mono", monospace;
 	font-size: 12px;
 }
@@ -266,9 +266,9 @@ body > #body-outer {
 
 #main {
 	float: left;
-	padding: 10px 30px 0 30px;
+	padding: 10px 30px 0 25px;
 	width: 610px;
-	line-height: 2em;
+	line-height: 22px;
 	font-size: 0.9em;
 }
 
@@ -277,7 +277,7 @@ body > #body-outer {
 }
 
 #main h1, #main h2, #main h3 {
-	margin-left: -20px;
+	margin-left: -15px;
 }
 
 #main h1 {
@@ -428,7 +428,7 @@ body > #body-outer {
 
 #menu-sub {
 	font-size: 1em;
-	padding-bottom: 10px;
+	padding-top: 10px;
 	text-align: center;
 }
 
@@ -461,6 +461,13 @@ body > #body-outer {
 
 .align-right {
 	text-align: right;
+}
+
+.big {
+	font-size: 26px;
+	line-height: 32px;
+	font-family: "refrigerator-deluxe-1", "refrigerator-deluxe-2", Optima, sans-serif;
+	color: #1f1f1f;
 }
 
 .boxed {
@@ -569,17 +576,48 @@ body > #body-outer {
 .footer-menu {
 	float: right;
 	margin: 17px 50px 0 0;
-	font-size: 10px;
+	font-size: 9px;
 }
 
 .footer-menu a {
 	color: #fff;
 	padding-left: 5px;
 	padding-right: 5px;
+	text-decoration: none;
+}
+
+.footer-menu a:hover {
+	text-decoration: underline;
 }
 
 .footer-text {
 	text-align: left;
+}
+
+.lead-button a {
+	font-size: 30px;
+	text-decoration: none;
+	padding: 12px;
+	background-color: #f3c1c2;
+	background-color: #f9ddde;
+	background-color: #fefafa;
+	color: #d83235;
+	color: #000;
+	font-family: "refrigerator-deluxe-1", "refrigerator-deluxe-2", 'Lucida Grande', 'Lucida Sans Unicode', Optima, Verdana, sans-serif;
+	float: left;
+	margin: 20px;
+	/*
+	border: 1px solid #ccc;
+	-moz-border-radius: 10px;
+	-webkit-border-radius: 10px;
+	border-radius: 10px;
+	*/
+}
+
+.lead-button a:hover {
+	border: 1px solid #d83235;
+	background-color: #d83235;
+	color: #fff;
 }
 
 /* math-like variables */
@@ -630,6 +668,10 @@ body > #body-outer {
 }
 
 /* Source code syntax highlighting */
+
+.syntax {
+	line-height: 14px;
+}
 
 .syntax .c { color: #919191 } /* Comment */
 .syntax .cm { color: #919191 } /* Comment.Multiline */
@@ -724,6 +766,8 @@ body > #body-outer {
 .syntax .w { color: #101010 } /* Text.Whitespace */
 .syntax .x { color: #101010 } /* Other */
 
+.syntax.bash .err { color: #000; background-color: transparent; }
+.syntax.bash .k { color: #000 }
 .syntax.bash .nb { color: #101010 }
 .syntax.bash .nv { color: #c32528 }
 
@@ -731,6 +775,8 @@ body > #body-outer {
 .syntax.css .nc { color: #c32528 }
 .syntax.css .nf { color: #c32528 }
 .syntax.css .nt { color: #c32528 }
+
+.syntax.ini .na { color: #000 }
 
 .syntax.rst .k { color: #5d90cd }
 .syntax.rst .ow { color: #5d90cd }
