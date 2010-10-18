@@ -598,20 +598,12 @@ body > #body-outer {
 	font-size: 30px;
 	text-decoration: none;
 	padding: 12px;
-	background-color: #f3c1c2;
-	background-color: #f9ddde;
 	background-color: #fefafa;
-	color: #d83235;
 	color: #000;
 	font-family: "refrigerator-deluxe-1", "refrigerator-deluxe-2", 'Lucida Grande', 'Lucida Sans Unicode', Optima, Verdana, sans-serif;
 	float: left;
 	margin: 20px;
-	/*
-	border: 1px solid #ccc;
-	-moz-border-radius: 10px;
-	-webkit-border-radius: 10px;
-	border-radius: 10px;
-	*/
+	border: 1px solid #fefafa;
 }
 
 .lead-button a:hover {
