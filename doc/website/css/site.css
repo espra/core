@@ -612,6 +612,12 @@ body > #body-outer {
 	color: #fff;
 }
 
+.wf-inactive .lead-button a {
+	font-size: 24px;
+	margin: 10px;
+	padding: 9px;
+}
+
 /* math-like variables */
 
 .math cite {
