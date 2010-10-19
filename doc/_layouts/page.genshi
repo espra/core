@@ -16,6 +16,10 @@ ${Markup(content)}
 <h3>Resources</h3>
 <ul>
   <li>
+	<a href="rationale.html">Rationale</a>
+	<div>Why is Ampify needed?</div>
+  </li>
+  <li>
 	<a href="building-ampify.html">Building Ampify</a>
 	<div>A guide to building Ampify from source.</div>
   </li>
@@ -30,10 +34,6 @@ ${Markup(content)}
   <li>
 	<a href="planfile.html">Planfile</a>
 	<div>The technical architecture and planfile for Ampify.</div>
-  </li>
-  <li>
-	<a href="rationale.html">Rationale</a>
-	<div>Why is Ampify needed?</div>
   </li>
   <li>
 	<a href="license.html">Public Domain License</a>
