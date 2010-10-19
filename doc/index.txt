@@ -14,7 +14,7 @@ core.
 .. raw:: html
 
   <div class="lead-button">
-    <a href="building-ampify.html">INSTALL AMPIFY</a>
+    <a href="building-ampify.html">BUILD AMPIFY</a>
     <a href="planfile.html">PLANFILE</a>
     <a href="getting-involved.html">GET INVOLVED</a>
   </div>
