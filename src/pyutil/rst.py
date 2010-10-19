@@ -387,12 +387,16 @@ class TagDirective(Directive):
 
         content = u'\n'.join(self.content)
         if content.startswith(TODO):
+            if self.content:
+                self.content[0] = self.content[0].replace(TODO, u'*%s*' % TODO, 1)
             if 'todo' not in implicit_tags:
                 add(
                     u'<span class="tag tag-type-1 tag-val-todo" '
                      'tagname="TODO" tagnorm="todo">TODO</span> '
                     )
         elif content.startswith(DONE):
+            if self.content:
+                self.content[0] = self.content[0].replace(DONE, u'*%s*' % DONE, 1)
             if 'done' not in implicit_tags:
                 add(
                     u'<span class="tag tag-type-1 tag-val-done" '

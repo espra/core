@@ -7,9 +7,9 @@ title: Planfile
 Planfile
 ========
 
-This planfile documents the various steps towards the initial ``Ampify Zero``
-release in late 2010. If you'd like to help make it a reality, do join us on the
-``#esp`` channel on ``irc.freenode.net``. |contents|
+This planfile documents the various steps towards the initial release of Ampify.
+If you'd like to help make it a reality, do join us on the ``#esp`` channel on
+``irc.freenode.net``. |contents|
 
 .. contents::   Table of Contents
                 :depth: 2
@@ -17,7 +17,7 @@ release in late 2010. If you'd like to help make it a reality, do join us on the
 
 .. class:: align-right
 
-  -- Thanks, tav@espians.com
+  -- Thanks, tav <tav@espians.com>
 
 .. raw:: html
 
@@ -31,9 +31,36 @@ release in late 2010. If you'd like to help make it a reality, do join us on the
 CoffeeScript
 ------------
 
-listBrowsers = ->
-  for [id, name, url] in supportedBrowsers
-    $("""<li id="{id}"><a href="{url}">{name}</a></li>""")
+Ampify will support custom services written in CoffeeScript_ syntax. This is
+seen as a better alternative to offering JavaScript directly. For example,
+compare:
+
+.. syntax:: coffeescript
+
+  listBrowsers = (browsers) ->
+    list = $('<ul />')
+    for [id, name, url] in browsers
+      $("""<li id="#{id}"><a href="#{url}">#{name}</a></li>""").appendTo list
+    return list
+
+With the resulting JavaScript:
+
+.. syntax:: javascript
+
+  var listBrowsers;
+  listBrowsers = function(browsers) {
+    var _a, _b, _c, _d, id, list, name, url;
+    list = $('<ul />');
+    _b = browsers;
+    for (_a = 0, _d = _b.length; _a < _d; _a++) {
+      _c = _b[_a];
+      id = _c[0];
+      name = _c[1];
+      url = _c[2];
+      $("<li id=\"" + (id) + "\"><a href=\"" + (url) + "\">" + (name) + "</a></li>").appendTo(list);
+    }
+    return list;
+  };
 
 
 Overview of the Architecture

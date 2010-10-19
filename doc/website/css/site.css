@@ -1464,6 +1464,13 @@ a.buttondown span {
 	padding-bottom: 0;
 }
 
+.container > p:first-child em {
+	font-weight: bold;
+	font-family: Verdana, sans-serif;
+	margin-right: 7px;
+	font-style: normal;
+}
+
 /* ignore this support */
 
 #ignore-this {
