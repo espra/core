@@ -119,8 +119,8 @@ Ampify Core
 ✓ yaml parser nodule
 ✓ yaml parser caller
 
-✗ verify support for modern browser
-✗ browser update view
+✓ verify support for modern browser
+✓ browser update view
 
 ✗ design: site css
 ✗ design: general layout
@@ -785,10 +785,10 @@ Ampify Core
 ✗ argonought: quasi
 ✗ naaga argo: quasi
 ✗ naaga object: quasi
-✗ argonought: number
+✓ argonought: number
 ✗ naaga argo: number
 ✗ naaga object: number
-✗ argonought: integer
+✓ argonought: integer
 ✗ naaga argo: integer
 ✗ naaga object: integer
 ✗ argonought: float
@@ -1122,6 +1122,11 @@ Ampify Core
 ✓ optparse
 ✓ hubproxy
 ✓ amp test
+
+# magic db
+# magic detector -> mimetype
+# geoip data
+# geoip parser/lookup
 
 ✗ charts
 ✗ base32
