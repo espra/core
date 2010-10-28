@@ -424,9 +424,10 @@ def get_dependencies(package, gathered=None):
 # ------------------------------------------------------------------------------
 
 def ensure_gcc_version(version=(4, 0)):
+    gcc = environ.get('CC', 'gcc')
     try:
         ver = do(
-            'gcc', '-dumpversion', redirect_stdout=True, reterror=True
+            gcc, '-dumpversion', redirect_stdout=True, reterror=True
             )
         ver = tuple(map(int, ver[0].strip().split('.')))
         if ver < version:
@@ -447,14 +448,14 @@ def ensure_git_version(version=(1, 7)):
     except Exception:
         exit('ERROR: Git %s+ not found!' % '.'.join(map(str, version)))
 
-def ensure_java_version(version=(1, 6), title='Java 6 runtime'):
+def ensure_java_version(version=(1, 6), title='Java 6+ runtime'):
     try:
         ver = do(
             'java', '-version', redirect_stdout=True,
             redirect_stderr=True, reterror=True
             )
         ver = ver[1].splitlines()[0].split()[-1][1:-1]
-        if not ver.startswith('.'.join(map(str, version))):
+        if not ver >= '.'.join(map(str, version)):
             raise RuntimeError("Invalid version")
     except Exception:
         exit('ERROR: %s not found!' % title)
