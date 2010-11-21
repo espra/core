@@ -413,7 +413,7 @@ def main(argv=None):
                 if not watch:
                     raise
         if watch:
-            sleep(0.8)
+            sleep(1)
         else:
             break
 
