@@ -8,6 +8,8 @@
 import os
 import sys
 
+sys.skip_pylibs_check = 1
+
 import pylibs
 
 from pyutil.env import run_command

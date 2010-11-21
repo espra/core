@@ -16,16 +16,17 @@ if THIRD_PARTY_LIBS_PATH not in sys.path:
 if SRC_PATH not in sys.path:
     sys.path.insert(0, SRC_PATH)
 
-try:
-    import optcomplete
-except ImportError:
-    print
-    print "You need to checkout the third_party/pylibs submodule."
-    print
-    print "Run the following command from inside %s" % AMPIFY_ROOT
-    print
-    print "    git submodule update --init third_party/pylibs"
-    print
-    sys.exit(1)
+if not hasattr(sys, 'skip_pylibs_check'):
+    try:
+        import optcomplete
+    except ImportError:
+        print
+        print "You need to checkout the third_party/pylibs submodule."
+        print
+        print "Run the following command from inside %s" % AMPIFY_ROOT
+        print
+        print "    git submodule update --init third_party/pylibs"
+        print
+        sys.exit(1)
 
 os.environ.setdefault('AMPIFY_ROOT', AMPIFY_ROOT)
