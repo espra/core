@@ -7,15 +7,52 @@ title: Building Ampify
 Building Ampify
 ===============
 
-You need to have `Git <http://git-scm.com/>`_, a Unix-like OS, a bash shell, a
-recent Python 2.x, Java and general dev tools (gcc, make, ant, etc.) installed.
+You need to have `Git 1.7+ <http://git-scm.com/>`_, a Unix-like OS, a bash
+shell, a recent Python 2.x, Java and general dev tools (gcc, make, ant, etc.)
+installed.
 
 .. syntax:: bash
+
+  # install the various dependencies
 
   $ git clone https://github.com/tav/ampify.git  # (1)
   $ cd ampify
   $ make                                         # (2)
   $ . environ/ampenv.sh                          # (3)
+
+.. raw:: html
+
+  <div style="margin-bottom: 10px;"></div>
+
+**Dependencies: Mac OS X**
+
+You need to be on Leopard (10.5) or a more recent system:
+
+1. `Install XCode <http://developer.apple.com/technologies/xcode.html>`_.
+   Unfortunately Apple force you to sign up as an Apple Developer in order to
+   download XCode, but this is free and should only take a minute or so.
+
+2. `Install Git
+   <http://code.google.com/p/git-osx-installer/downloads/list?can=3>`_.
+
+3. And, finally, you might want to consider installing and `using iTerm
+   <http://iterm.sourceforge.net/>`_ (or something better) instead of the
+   default Terminal app that comes with OS X.
+
+**Dependencies: Debian Linux**
+
+1. Install any of the following packages that you don't already have:
+
+.. syntax:: bash
+
+   $ sudo apt-get install autoconf automake bison build-essential curl gcc git libltdl3 libtool lsof make openjdk-6-jre openjdk-6-jre openssl ruby ruby-dev python2.5 python2.5-dev
+
+In older Debian releases, the ``git`` package might either point to a different
+app or be severely outdated. So if running ``git --version`` doesn't give you a
+1.7+ version, e.g. ``git version 1.7.1``, then install it from `backports
+<http://www.backports.org/dokuwiki/doku.php?id=instructions>`_.
+
+**Build Process**
 
 1. Clone the repository. You need to have Git 1.7+ in order to use the smart
    HTTP protocol.
