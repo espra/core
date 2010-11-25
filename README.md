@@ -1,4 +1,4 @@
-![Ampify](http://cloud.github.com/downloads/tav/ampify/logo.ampify.smallest.png)
+![Ampify](https://github.com/downloads/tav/ampify/logo.ampify.smallest.png)
 
 This is the repo for Ampify — an open and decentralised social platform.  
 For comparison, perhaps imagine a bastardised mix between Git, Facebook,  
