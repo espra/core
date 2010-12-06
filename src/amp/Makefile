@@ -82,18 +82,18 @@ bench: bench.dirs
 
 clean: clean.dirs
 	@cd hubproxy && $(make) clean
-	@cd ampzero && $(make) clean
+	@cd tentproxy && $(make) clean
 
 distclean: nuke
 
 nuke: nuke.dirs
 	@echo rm -rf $(QUOTED_GOROOT)/pkg/amp
 	@cd hubproxy && $(make) nuke
-	@cd ampzero && $(make) nuke
+	@cd tentproxy && $(make) nuke
 
 install: install.dirs
 	@cd hubproxy && $(make) install
-	@cd ampzero && $(make) install
+	@cd tentproxy && $(make) install
 
 test: test.dirs
 

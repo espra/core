@@ -1,15 +1,15 @@
 // No Copyright (-) 2010 The Ampify Authors. This file is under the
 // Public Domain license that can be found in the root LICENSE file.
 
-// Ampify Zero
-// ===========
+// Tent Proxy
+// ==========
 //
-// The ``ampzero`` app proxies requests to:
+// The ``tentproxy`` app proxies requests to:
 //
-// 1. Google App Engine -- this is needed as App Engine doesn't yet support
-//    HTTPS requests on custom domains.
+// 1. A ``tentapp`` instance running on Google App Engine -- this is needed as
+//    App Engine doesn't yet support HTTPS requests on custom domains.
 //
-// 2. The ``zerolive`` app -- which, in turn, interacts with Redis and Keyspace
+// 2. The ``airbeam`` app -- which, in turn, interacts with Redis and Keyspace
 //    nodes.
 //
 package main
