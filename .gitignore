@@ -12,8 +12,8 @@ environ/local
 environ/receipts
 
 src/amp/ampnode/ampnode
-src/amp/ampzero/ampzero
 src/amp/hubproxy/hubproxy
+src/amp/tentproxy/tentproxy
 src/jsutil/*.js
 src/instance/www/static/*.css
 src/instance/www/static/*.js
