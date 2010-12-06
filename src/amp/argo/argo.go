@@ -90,7 +90,7 @@ func WriteInt(value int64, buffer *bytes.Buffer) {
 					break
 				}
 				lead, mod = lead/253, lead%253
-				leadChars = bytes.AddByte(leadChars, byte(mod)+2)
+				leadChars = append(leadChars, byte(mod)+2)
 			}
 			lenLead := len(leadChars)
 			if lenLead > 0 {
@@ -135,7 +135,7 @@ func WriteInt(value int64, buffer *bytes.Buffer) {
 					break
 				}
 				lead, mod = lead/253, lead%253
-				leadChars = bytes.AddByte(leadChars, 253-byte(mod))
+				leadChars = append(leadChars, 253-byte(mod))
 			}
 			lenLead := len(leadChars)
 			if lenLead > 0 {
@@ -232,7 +232,7 @@ func writeBigInt(value *big.Int, buffer *bytes.Buffer, cutoff *big.Int) (positiv
 					break
 				}
 				lead, mod = lead.DivMod(lead, bigint253, mod)
-				leadChars = bytes.AddByte(leadChars, byte(mod.Int64())+2)
+				leadChars = append(leadChars, byte(mod.Int64())+2)
 			}
 			lenLead := len(leadChars)
 			if lenLead > 0 {
@@ -280,7 +280,7 @@ func writeBigInt(value *big.Int, buffer *bytes.Buffer, cutoff *big.Int) (positiv
 					break
 				}
 				lead, mod = lead.DivMod(lead, bigint253, mod)
-				leadChars = bytes.AddByte(leadChars, byte(253-mod.Int64()))
+				leadChars = append(leadChars, byte(253-mod.Int64()))
 			}
 			lenLead := len(leadChars)
 			if lenLead > 0 {
