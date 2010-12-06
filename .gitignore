@@ -26,6 +26,8 @@ src/pyutil/*.c
 
 # hidden files/directories
 
+.bzr
+.bzrignore
 .DS_Store
 .lock-wscript
 .sass-cache
@@ -57,6 +59,8 @@ src/pyutil/*.c
 *.tbz2
 *.tgz
 *.rdb
+
+_testmain.go
 
 # file patterns (xcode)
 

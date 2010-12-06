@@ -1,5 +1,16 @@
 package sre2
 
+// Describes a string parser type. Notably, allows users to examine the current
+// rune, peek at the next rune, consume literals between prefix/suffix, and
+// rebase the cursor in an absolute fashion within the underlying string. On
+// instantiation, this string parser is focused 'before' the initial string:
+// calling curr() will return -1, and peek() will return the first rune.
+//
+// Within sre2, this is used for both the parser as well as matchers to
+// traverse through the input string. The curr()/peek() semantics are most
+// useful for identifying conditions between runes, such as '\W', '\w' or '$'
+// and '^' in multiline mode.
+
 import (
 	"strings"
 	"utf8"

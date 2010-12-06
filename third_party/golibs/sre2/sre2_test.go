@@ -32,12 +32,12 @@ func checkIntSlice(t *testing.T, expected []int, result []int, err string) {
 // Run a selection of basic regular expressions against this package.
 func TestSimpleRe(t *testing.T) {
 	r := MustParse("")
-	checkState(t, r.NumAlts() == 0, "blank re should have no alts")
+	checkState(t, r.NumSubexps() == 0, "blank re should have no alts")
 	checkState(t, r.Match(""), "everything should match")
 	checkState(t, r.Match("fadsnjkflsdafnas"), "everything should match")
 
 	r = MustParse("^(a|b)+c*$")
-	checkState(t, r.NumAlts() == 1, "simple re should have single alt")
+	checkState(t, r.NumSubexps() == 1, "simple re should have single alt")
 	checkState(t, !r.Match("abd"), "not a valid match")
 	checkState(t, r.Match("a"), "basic string should match")
 	checkState(t, !r.Match(""), "empty string should not match")

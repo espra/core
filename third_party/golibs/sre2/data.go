@@ -5,6 +5,8 @@ import (
 	"unicode"
 )
 
+// RuneFilter is a unique method signature for matching true/false over a given
+// unicode rune.
 type RuneFilter func(rune int) bool
 
 // Generate a RuneFilter matching a single rune.
@@ -79,7 +81,7 @@ func MergeFilter(filters vector.Vector) RuneFilter {
 	return func(rune int) bool {
 		if len(filters) > 0 {
 			for _, raw := range filters {
-				filter, _ := raw.(RuneFilter)
+				filter := raw.(RuneFilter)
 				if filter(rune) {
 					return true
 				}

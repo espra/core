@@ -1,5 +1,19 @@
 package sre2
 
+// Core regexp definitions. Provides the public interface Re for use of sre2.
+// Internally, this file defines the sregexp struct and its list of states.
+//
+// Each state is an instruction satisfying one of six modes-
+//    iSplit: branching operation
+//    iIndexCap: index capture, e.g. due to start/end parenthesis
+//    iBoundaryCase: non-consuming matcher for left/right runes, such as '\w'
+//    iRuneClass: consuming matcher for current rune
+//    iMatch: terminal success state
+//
+// This file also describes Parse() which builds the regexp as a NFA, or
+// provides a human-readable error of the failure. MustParse() is a variation
+// which panics on an error condition.
+
 import (
 	"container/vector"
 	"fmt"
@@ -9,40 +23,46 @@ import (
 	"unicode"
 )
 
-// Regexp definition. Simple, just a list of states and a number of alts.
+// sregexp struct. Just a list of states and a number of subexpressions.
 type sregexp struct {
-	prog []*instr // list of states
-	alts int      // number of marked alts [()'s] in this regexp
+	prog []*instr // List of instruction states that comprise this RE.
+
+	// Number of paired subexpressions [()'s], including the outermost brackets
+	// (i.e. which match the entire string).
+	caps int
 }
 
-// Writes the given regexp to Stderr, for debugging.
+// DebugOut writes the given regexp to Stderr, for debugging.
 func (r *sregexp) DebugOut() {
 	for i := 0; i < len(r.prog); i++ {
 		fmt.Fprintln(os.Stderr, i, r.prog[i].String())
 	}
 }
 
-// Provide the number of marked alts [()'s] in this regexp.
-func (r *sregexp) NumAlts() int {
+// NumSubexps returns the number of paired subexpressions [()'s] in this regexp.
+func (r *sregexp) NumSubexps() int {
 	// we always have an outer () to match the whole re, subtract it
-	return r.alts - 1
+	return r.caps - 1
 }
 
-// Instruction type definitions, for "instr.mode".
+// instrMode describes a particular instruction type for the regexp internal
+// state machine.
 type instrMode byte
 
+// Enum-style definitions for the instrMode type.
 const (
-	kSplit        instrMode = iota // proceed down out & out1
-	kAltBegin                      // begin of alt section, i.e. '('
-	kAltEnd                        // end of alt section, i.e. ')'
-	kBoundaryCase                  // match left/right runes here
-	kRuneClass                     // if match rune, proceed down out
-	kMatch                         // success state!
+	iSplit        instrMode = iota // proceed down out & out1
+	iIndexCap                      // capturing start/end parenthesis
+	iBoundaryCase                  // match left/right runes here
+	iRuneClass                     // if match rune, proceed down out
+	iMatch                         // success state!
 )
 
-// Constants for kBoundaryCase, stored in 'instr.lr'.
+// boundaryMode describes a boundary matcher type, for instructions of type
+// iBoundaryCase.
 type boundaryMode byte
 
+// Enum-style definitions for the the boundaryMode type.
 const (
 	bNone            boundaryMode = iota
 	bBeginText                    // beginning of text
@@ -53,50 +73,46 @@ const (
 	bNotWordBoundary              // inverse of above, not ascii word boundary
 )
 
-// Represents a single instruction in any regexp.
+// instr represents a single instruction in any regexp.
 type instr struct {
 	idx  int       // index of this instr
 	mode instrMode // mode (as above)
 	out  *instr    // next instr to process
 
-	// alternate path, for kSplit
+	// alternate path, for iSplit
 	out1 *instr
 
-	// boundary mode, for kBoundaryCase
+	// boundary mode, for iBoundaryCase
 	lr boundaryMode
 
-	// rune class to match against, for kRuneClass
+	// rune class to match against, for iRuneClass
 	rune RuneFilter
 
-	// identifier of submatch for kAltBegin and kAltEnd
-	alt    int    // numbered index
-	alt_id string // string identifier (blank=none)
+	// identifier of submatch for iIndexCap
+	cid   int    // numbered index
+	cname string // string identifier (blank=none)
 }
 
-// This provides a string-representation of any given instruction.
+// Describes the given instr in a human-readable format for debugging.
 func (i *instr) String() string {
+	// TODO: Build the output string using a bytes.Buffer.
 	str := fmt.Sprintf("{%d", i.idx)
 	out := ""
 	if i.out != nil {
 		out += fmt.Sprintf(" out=%d", i.out.idx)
 	}
 	switch i.mode {
-	case kSplit:
-		str += " kSplit"
+	case iSplit:
+		str += " iSplit"
 		if i.out1 != nil {
 			out += fmt.Sprintf(" out1=%d", i.out1.idx)
 		}
-	case kAltBegin, kAltEnd:
-		if i.mode == kAltBegin {
-			str += " kAltBegin"
-		} else {
-			str += " kAltEnd"
+	case iIndexCap:
+		str += fmt.Sprintf("iIndexCap cid=%d", i.cid)
+		if len(i.cname) != 0 {
+			str += fmt.Sprintf(" cname=%s", i.cname)
 		}
-		str += fmt.Sprintf(" alt=%d", i.alt)
-		if len(i.alt_id) != 0 {
-			str += fmt.Sprintf(" alt_id=%s", i.alt_id)
-		}
-	case kBoundaryCase:
+	case iBoundaryCase:
 		var mode string
 		switch i.lr {
 		case bBeginText:
@@ -112,24 +128,24 @@ func (i *instr) String() string {
 		case bNotWordBoundary:
 			mode = "bNotWordBoundary"
 		}
-		str += fmt.Sprintf(" kBoundaryCase [%s]", mode)
-	case kRuneClass:
-		str += fmt.Sprint(" kRuneClass ", i.rune)
-	case kMatch:
-		str += " kMatch"
+		str += fmt.Sprintf(" iBoundaryCase [%s]", mode)
+	case iRuneClass:
+		str += fmt.Sprint(" iRuneClass ", i.rune)
+	case iMatch:
+		str += " iMatch"
 	}
 	return str + out + "}"
 }
 
-// Matcher method for consuming runes, thus only matches kRuneClass.
+// Matcher method for consuming runes, thus only matches iRuneClass.
 func (s *instr) match(rune int) bool {
-	return s.mode == kRuneClass && s.rune(rune)
+	return s.mode == iRuneClass && s.rune(rune)
 }
 
-// Matcher method for kBoundaryCase. If either left or right is not within the
+// Matcher method for iBoundaryCase. If either left or right is not within the
 // target string, then -1 should be provided.
 func (s *instr) matchBoundaryMode(left int, right int) bool {
-	if s.mode != kBoundaryCase {
+	if s.mode != iBoundaryCase {
 		return false
 	}
 	switch s.lr {
@@ -168,7 +184,7 @@ type parser struct {
 }
 
 // Generate a new instruction struct for use in regexp. By default, the instr
-// will be of type 'kSplit'.
+// will be of type 'iSplit'.
 func (p *parser) instr() *instr {
 	pos := len(p.re.prog)
 	if pos == cap(p.re.prog) {
@@ -180,7 +196,7 @@ func (p *parser) instr() *instr {
 		copy(p.re.prog, local)
 	}
 	p.re.prog = p.re.prog[0 : pos+1]
-	i := &instr{pos, kSplit, nil, nil, bNone, nil, -1, ""}
+	i := &instr{pos, iSplit, nil, nil, bNone, nil, -1, ""}
 	p.re.prog[pos] = i
 	return i
 }
@@ -199,7 +215,7 @@ func (p *parser) flag(flag int) bool {
 func (p *parser) out(from *instr, to *instr) {
 	if from.out == nil {
 		from.out = to
-	} else if from.mode == kSplit && from.out1 == nil {
+	} else if from.mode == iSplit && from.out1 == nil {
 		from.out1 = to
 	} else {
 		panic("can't out")
@@ -209,7 +225,7 @@ func (p *parser) out(from *instr, to *instr) {
 // Consume some alternate regexps. That is, (regexp[|regexp][|regexp]...).
 // This method will return when it encounters an outer ')', and the cursor
 // will rest on that character.
-func (p *parser) alt(alt_id string, capture bool) (start *instr, end *instr) {
+func (p *parser) alt(cname string, capture bool) (start *instr, end *instr) {
 	// Hold onto the current set of flags; reset after.
 	old_flags := p.flags
 	defer func() {
@@ -221,16 +237,16 @@ func (p *parser) alt(alt_id string, capture bool) (start *instr, end *instr) {
 
 	// Optionally mark this as a capturing group.
 	if capture {
-		alt_begin.mode = kAltBegin
-		alt_begin.alt = p.re.alts
-		end.mode = kAltEnd
-		end.alt = p.re.alts
+		alt_begin.mode = iIndexCap
+		alt_begin.cid = p.re.caps * 2
+		alt_begin.cname = cname
 
-		alt_begin.alt_id = alt_id
-		end.alt_id = alt_id
+		end.mode = iIndexCap
+		end.cid = alt_begin.cid + 1
+		end.cname = cname
 
 		// Increment alt counter.
-		p.re.alts += 1
+		p.re.caps += 1
 	}
 
 	b_start, b_end := p.regexp()
@@ -425,7 +441,7 @@ func (p *parser) class(within_class bool) (filter RuneFilter) {
 // Build a left-right matcher of the given mode.
 func (p *parser) makeBoundaryInstr(mode boundaryMode) *instr {
 	instr := p.instr()
-	instr.mode = kBoundaryCase
+	instr.mode = iBoundaryCase
 	instr.lr = mode
 	return instr
 }
@@ -513,19 +529,20 @@ func (p *parser) term() (start *instr, end *instr) {
 		start = p.makeBoundaryInstr(mode)
 		return start, start
 	case '\\':
-		// Peek forward to match backslash-escaped terms which are not character classes.
-		// If any of these branches trigger, they will return past the consumed 'term'.
+		// Peek forward to match backslash-escaped terms which are not character
+		// classes. If any of these branches trigger, they will return past the
+		// consumed 'term'.
 		switch p.src.peek() {
 		case 'Q':
-			// Match a complete string literal, contained between '\Q' and the nearest '\E'.
-			// Note that we don't use p.single_rune() to retrieve runes here, because this
-			// works on literals exclusively and does not interpret e.g. \x00 or \] (punct).
+			// Match a complete string literal, contained between '\Q' and the nearest
+			// '\E'. Use p.src.literal() since we're not interested in interpreting any
+			// unique characters, such as e.g. \x00 or \] (punct).
 			literal := p.src.literal("\\Q", "\\E")
 			start = p.instr()
 			end = start
 			for _, ch := range literal {
 				instr := p.instr()
-				instr.mode = kRuneClass
+				instr.mode = iRuneClass
 				instr.rune = MatchRune(ch)
 				p.out(end, instr)
 				end = instr
@@ -556,7 +573,7 @@ func (p *parser) term() (start *instr, end *instr) {
 
 	// Try to consume a rune class.
 	start = p.instr()
-	start.mode = kRuneClass
+	start.mode = iRuneClass
 	start.rune = p.class(false)
 
 	if p.flag('i') {
@@ -576,7 +593,7 @@ func (p *parser) safe_term(src SafeReader, alt int, first *bool, start **instr, 
 		return
 	}
 	p.src = src
-	p.re.alts = alt
+	p.re.caps = alt
 	*start, *end = p.term()
 }
 
@@ -585,7 +602,7 @@ func (p *parser) safe_term(src SafeReader, alt int, first *bool, start **instr, 
 func (p *parser) closure() (start *instr, end *instr) {
 
 	// Store state of pos/alts in case we have to reparse term.
-	revert_alts := p.re.alts
+	revert_alts := p.re.caps
 	revert := p.src
 
 	// Grab first term.
@@ -719,20 +736,20 @@ func (p *parser) regexp() (start *instr, end *instr) {
 // Returns a similarly flat slice containing no nil instructions, however the
 // slice may potentially be smaller.
 func cleanup(prog []*instr) []*instr {
-	// Detect kSplit recursion. We can remove this and convert it to a single path.
+	// Detect iSplit recursion. We can remove this and convert it to a single path.
 	// This might happen in cases where we loop over some instructions which are
 	// not matchers, e.g. \Q\E*.
-	states := NewStateSet(len(prog), len(prog))
 	for i := 1; i < len(prog); i++ {
-		states.Clear()
+		states := make(map[int]bool)
 		pi := prog[i]
 		var fn func(ci *instr) bool
 		fn = func(ci *instr) bool {
-			if ci != nil && ci.mode == kSplit {
-				if states.Put(ci.idx) {
+			if ci != nil && ci.mode == iSplit {
+				if _, exists := states[ci.idx]; exists {
 					// We've found a recursion.
 					return true
 				}
+				states[ci.idx] = true
 				if fn(ci.out) {
 					ci.out = nil
 				}
@@ -746,11 +763,11 @@ func cleanup(prog []*instr) []*instr {
 		fn(pi)
 	}
 
-	// Iterate through the program, and remove single-instr kSplits.
+	// Iterate through the program, and remove single-instr iSplits.
 	// NB: Don't parse the first instr, it will always be single.
 	for i := 1; i < len(prog); i++ {
 		pi := prog[i]
-		if pi.mode == kSplit && (pi.out1 == nil || pi.out == pi.out1) {
+		if pi.mode == iSplit && (pi.out1 == nil || pi.out == pi.out1) {
 			for j := 0; j < len(prog); j++ {
 				if prog[j] == nil {
 					continue
@@ -797,7 +814,7 @@ func cleanup(prog []*instr) []*instr {
 
 // Public interface to a compiled regexp.
 type Re interface {
-	NumAlts() int
+	NumSubexps() int
 	Match(s string) bool
 	MatchIndex(s string) []int
 }
@@ -822,7 +839,7 @@ func Parse(src string) (re Re, err *string) {
 	p := parser{&sregexp{make([]*instr, 0, 1), 0}, NewSafeReader(".*?(" + src + ").*?"), 0}
 	begin := p.instr()
 	match := p.instr()
-	match.mode = kMatch
+	match.mode = iMatch
 
 	p.src.nextCh()
 	start, end := p.regexp()

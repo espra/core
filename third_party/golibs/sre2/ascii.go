@@ -1,5 +1,16 @@
 package sre2
 
+// This file describes ASCII character ranges as per "Perl character classes"
+// and "ASCII character classes" on the RE2 syntax page, found here:
+// http://code.google.com/p/re2/wiki/Syntax
+//
+// Notably, Perl character classes should match the following ASCII classes:
+//    '\d' => [:digit:]
+//    '\s' => [:whitespace:]*
+//    '\w' => [:word:]
+//
+// NB: [:whitespace:] is [:space:] with the addition of the runes "\f\r".
+
 import "unicode"
 
 var _alnum = []unicode.Range{
@@ -65,7 +76,8 @@ var _word = []unicode.Range{
 	unicode.Range{'a', 'z', 1},
 }
 
-var _whitespace = []unicode.Range{ // Matches Perl "\s".
+// [:whitespace:] matches Perl's definition of '\s'.
+var _whitespace = []unicode.Range{
 	unicode.Range{'\t', '\n', 1},
 	unicode.Range{'\f', '\r', 1},
 	unicode.Range{' ', ' ', 1},
