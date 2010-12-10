@@ -18,7 +18,7 @@ from os import chdir, remove, stat
 from os.path import dirname, exists, isfile, join, realpath, split, splitext
 from re import compile as compile_regex
 from stat import ST_MTIME
-from time import sleep
+from time import sleep, time
 
 from optcomplete import autocomplete
 from pyutil.env import run_command
@@ -51,7 +51,12 @@ def convert_to_data_uri(match):
     ctype = guess_type(path)[0]
     if not ctype:
         exit("Could not detect the content type of: %s" % path)
-    data = open(join(css_embed_root_path, path), 'rb').read()
+    try:
+        data = open(join(css_embed_root_path, path), 'rb').read()
+    except IOError:
+        print "!! Couldn't find %s" % join(css_embed_root_path, path)
+        url = css_embed_url_template % {'path': path, 'hash': time()}
+        return 'url("%s")' % url
     hash = sha1(data).hexdigest()
     data = b64encode(data)
     if len(data) > 32000:
@@ -61,9 +66,14 @@ def convert_to_data_uri(match):
 
 def convert_to_url(match):
     path = match.group(1)
-    data = open(join(css_embed_root_path, path), 'rb').read()
-    hash = sha1(data).hexdigest()
-    url = css_embed_url_template % {'path': path, 'hash': hash[:18]}
+    try:
+        data = open(join(css_embed_root_path, path), 'rb').read()
+    except IOError:
+        print "!! Couldn't find %s" % join(css_embed_root_path, path)
+        hash = time()
+    else:
+        hash = sha1(data).hexdigest()[:18]
+    url = css_embed_url_template % {'path': path, 'hash': hash}
     return 'url("%s")' % url
 
 # ------------------------------------------------------------------------------
@@ -327,7 +337,10 @@ def newer(input, output, cache={}):
     if input in cache:
         input_mtime = cache[input]
     else:
-        input_mtime = stat(input)[ST_MTIME]
+        try:
+            input_mtime = stat(input)[ST_MTIME]
+        except OSError:
+            return
     try:
         if output in cache:
             output_mtime = cache[output]
