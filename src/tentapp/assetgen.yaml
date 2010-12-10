@@ -1,0 +1,21 @@
+coffee2js:
+- %(AMPIFY_ROOT)s/third_party/coffee-script/examples/underscore.coffee
+- static/js/tentapp.coffee
+
+coffee2js_output_path: static/js/
+
+compile_js:
+
+  static/js/base.js:
+    - %(AMPIFY_ROOT)s/third_party/jslibs/json.js
+    - %(AMPIFY_ROOT)s/third_party/jslibs/modernizr.js
+    - static/js/underscore.js
+
+  static/js/site.js:
+    - static/js/tentapp.js
+
+sass2css:
+- static/css/tentapp.sass
+
+css_embed_url_template: "/static/%%(path)s?%%(hash)s"
+css_embed_root_path: static

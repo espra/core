@@ -18,6 +18,10 @@ src/jsutil/*.js
 src/instance/www/static/*.css
 src/instance/www/static/*.js
 src/pyutil/*.c
+src/tentapp/env.py
+src/tentapp/secret.py
+src/tentapp/static/css/*.css
+src/tentapp/static/js/*.js
 
 # minified css/js files
 
