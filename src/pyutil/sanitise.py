@@ -266,7 +266,8 @@ def sanitise(
     valid_css_keywords=VALID_CSS_KEYWORDS,
     valid_css_classes=VALID_CSS_CLASSES,
     secure_id_prefix='local-', strip_cdata=True, strip_comments=True,
-    strip_pi=True, rel_whitelist=None, second_run=False
+    strip_pi=True, rel_whitelist=None, second_run=False,
+    allow_relative_urls=False, encoding='utf-8'
     ):
     """Return a sanitised version of the provided HTML."""
 
@@ -304,8 +305,8 @@ def sanitise(
                     continue
             elif attr == 'style':
                 new_style = []; add_style = new_style.append
-                for style in val.split(';'):
-                    style = style.strip().split(':', 1)
+                for style in val.split(u';'):
+                    style = style.strip().split(u':', 1)
                     if len(style) != 2:
                         continue
                     prop, value = style
@@ -313,7 +314,7 @@ def sanitise(
                     if prop not in valid_css_properties:
                         continue
                     components = []; add_component = components.append
-                    segments = filter(None, value.split(','))
+                    segments = filter(None, value.split(u','))
                     segcount = len(segments) - 1
                     for idx, segment in enumerate(segments):
                         current = None
@@ -324,7 +325,7 @@ def sanitise(
                                     continue
                                 if char == '"' or char == "'":
                                     in_quotes = 1
-                                    current = ''
+                                    current = u''
                                 else:
                                     current = char
                                 continue
@@ -344,42 +345,43 @@ def sanitise(
                         if current:
                             add_component(current)
                         if idx != segcount:
-                            add_component(',')
+                            add_component(u',')
                     valid = True
                     new_value = []; add_part = new_value.append
                     for component in components:
-                        if component == ',':
-                            add_part(', ')
+                        if component == u',':
+                            add_part(u', ')
                             continue
-                        norm = '-'.join(component.lower().split())
+                        norm = u'-'.join(component.lower().split())
                         if norm not in valid_css_keywords:
                             if not match_valid_css_value(norm):
                                 valid = False
                                 break
-                        if ' ' in component:
-                            add_part(' "%s"' % component)
+                        if u' ' in component:
+                            add_part(u' "%s"' % component)
                         else:
-                            add_part(' %s' % component)
+                            add_part(u' %s' % component)
                     if not valid:
                         continue
-                    add_style("%s: %s;" % (prop, ''.join(new_value)))
+                    add_style(u"%s: %s;" % (prop, ''.join(new_value)))
                 if not new_style:
                     continue
-                val = ''.join(new_style)
+                val = u''.join(new_style)
             elif attr == 'class':
-                val = ' '.join(
+                val = u' '.join(
                     klass for klass in val.split()
                     if klass in valid_css_classes
                     )
                 if not val:
                     continue
             elif attr in attrs_with_uri_refs:
-                if not match_valid_uri_scheme(val):
-                    continue
-                elif match_js_in_uri_ref(val):
+                if allow_relative_urls:
+                    if match_js_in_uri_ref(val):
+                        continue
+                elif not match_valid_uri_scheme(val):
                     continue
             elif (attr == 'rel') and rel_whitelist:
-                if val.split(':')[0] not in rel_whitelist:
+                if val.split(u':')[0] not in rel_whitelist:
                     continue
             append((attr, val))
 
@@ -389,13 +391,14 @@ def sanitise(
 
     if not second_run:
         return sanitise(
-            soup.renderContents(), valid_tags, valid_attrs, valid_attr_prefixes,
-            attrs_with_uri_refs, valid_css_properties, valid_css_keywords,
-            valid_css_classes, secure_id_prefix, strip_cdata, strip_comments,
-            strip_pi, rel_whitelist, True
+            unicode(soup.renderContents(), encoding), valid_tags, valid_attrs,
+            valid_attr_prefixes, attrs_with_uri_refs, valid_css_properties,
+            valid_css_keywords, valid_css_classes, secure_id_prefix,
+            strip_cdata, strip_comments, strip_pi, rel_whitelist, True,
+            allow_relative_urls, encoding
             )
 
-    return soup.renderContents()
+    return unicode(soup.renderContents(), encoding)
 
 # ------------------------------------------------------------------------------
 # Run Tests

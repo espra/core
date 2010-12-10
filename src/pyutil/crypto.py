@@ -43,10 +43,10 @@ def create_tamper_proof_string(
     ):
     """Return a tamper proof version of the passed in string value."""
 
-    if not isinstance(name, str):
+    if not isinstance(name, basestring):
         raise ValueError("You can only tamper-proof str name/values.")
 
-    if not isinstance(value, str):
+    if not isinstance(value, basestring):
         raise ValueError("You can only tamper-proof str name/values.")
 
     if duration:
@@ -65,10 +65,10 @@ def validate_tamper_proof_string(
     ):
     """Validate that the given value hasn't been tampered with."""
 
-    if not isinstance(name, str):
+    if not isinstance(name, basestring):
         raise ValueError("You can only tamper-proof str name/values.")
 
-    if not isinstance(value, str):
+    if not isinstance(value, basestring):
         raise ValueError("You can only tamper-proof str name/values.")
 
     try:
