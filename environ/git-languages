@@ -35,9 +35,8 @@ for file in run_command(['git', 'ls-files']).strip().splitlines():
 if sys.argv[-1] == 'all':
     sys.argv.pop()
 else:
-    # Ignored files
     valid_exts = [
-        'awk', 'c', 'coffee', 'cpp', 'el', 'go', 'h', 'js',
+        'awk', 'c', 'coffee', 'cpp', 'el', 'go', 'h', 'java', 'js',
         'rb', 'pl', 'py', 'sh', 'tcl', 'vim'
         ]
     for ext in files.keys():
