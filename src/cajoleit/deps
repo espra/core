@@ -1,0 +1,47 @@
+#! /usr/bin/env bash
+
+# No Copyright (-) 2010 The Ampify Authors. This file is under the
+# Public Domain license that can be found in the root LICENSE file.
+
+# ------------------------------------------------------------------------------
+# Some Constants
+# ------------------------------------------------------------------------------
+
+SDK_VERSION="1.4.0"
+
+SDK_HOST="http://googleappengine.googlecode.com/files"
+SDK_BASE="appengine-java-sdk-${SDK_VERSION}"
+SDK_FILE="${SDK_BASE}.zip"
+
+SDK_URL="${SDK_HOST}/${SDK_FILE}"
+
+# ------------------------------------------------------------------------------
+# Exit if $AMPIFY_ROOT is not set
+# ------------------------------------------------------------------------------
+
+if [ "x$AMPIFY_ROOT" == "x" ]; then
+	echo "ERROR: Sorry, couldn't detect the Ampify Root directory."
+	exit
+fi
+
+# ------------------------------------------------------------------------------
+# Download the App Engine SDK
+# ------------------------------------------------------------------------------
+
+if [ ! -d $AMPIFY_ROOT/.appengine_java_sdk ]; then
+	if [ ! -f $SDK_FILE ]; then
+		echo
+		echo "# Downloading the App Engine SDK..."
+		echo
+		curl -O $SDK_URL
+	fi
+	echo
+	echo "# Installing the App Engine SDK..."
+	echo
+	unzip $SDK_FILE
+	mv $SDK_BASE $AMPIFY_ROOT/.appengine_java_sdk
+fi
+
+if [ -f $SDK_FILE ]; then
+	rm $SDK_FILE
+fi
