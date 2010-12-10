@@ -1,5 +1,6 @@
 # specific files/directories
 
+.appengine_java_sdk
 .articlestore
 .build
 .build-lock
@@ -14,6 +15,8 @@ environ/receipts
 src/amp/ampnode/ampnode
 src/amp/hubproxy/hubproxy
 src/amp/tentproxy/tentproxy
+src/cajoleit/lib
+src/cajoleit/war
 src/jsutil/*.js
 src/instance/www/static/*.css
 src/instance/www/static/*.js
