@@ -29,6 +29,12 @@
     <mkdir dir="${war.dir}/WEB-INF"/>
     <copy file="appengine.xml" tofile="${war.dir}/WEB-INF/appengine-web.xml" />
     <copy file="web.xml" todir="${war.dir}/WEB-INF" />
+    <mkdir dir="${war.dir}/WEB-INF/lib"/>
+    <copy todir="${war.dir}/WEB-INF/lib">
+      <fileset dir="lib">
+        <include name="*.jar"/>
+      </fileset>
+    </copy>
     <enhance_war war="${war.dir}"/>
   </target>
 
@@ -42,7 +48,11 @@
     <mkdir dir="${war.dir}/WEB-INF/classes"/>
     <mkdir dir="${war.dir}/WEB-INF/lib"/>
     <javac srcdir="." destdir="${war.dir}/WEB-INF/classes" includeantruntime="false">
+      <compilerarg value="-Xlint:deprecation"/>
       <classpath>
+        <fileset dir="lib">
+          <include name="*.jar"/>
+        </fileset>
         <fileset dir="${appengine.sdk}/lib/user">
           <include name="*.jar"/>
         </fileset>
@@ -51,6 +61,7 @@
         </fileset>
       </classpath>
     </javac>
+    <copy file="../../third_party/coffee-script/extras/coffee-script.js" todir="${war.dir}/WEB-INF/classes/com/espians/cajoleit" />
   </target>
 
   <target name="clean"
