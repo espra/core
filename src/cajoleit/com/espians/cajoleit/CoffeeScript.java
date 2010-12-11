@@ -11,7 +11,6 @@ import java.io.UnsupportedEncodingException;
 
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.ContextFactory;
-import org.mozilla.javascript.JavaScriptException;
 import org.mozilla.javascript.Scriptable;
 
 // -----------------------------------------------------------------------------

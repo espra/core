@@ -45,3 +45,13 @@ fi
 if [ -f $SDK_FILE ]; then
 	rm $SDK_FILE
 fi
+
+# ------------------------------------------------------------------------------
+# Download the Jar Files
+# ------------------------------------------------------------------------------
+
+if [ ! -d lib ]; then
+	curl -O http://cloud.github.com/downloads/tav/ampify/cajoleit-jars.tar.bz2
+	tar xjvf cajoleit-jars.tar.bz2
+	rm cajoleit-jars.tar.bz2
+fi
