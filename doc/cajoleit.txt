@@ -1,0 +1,111 @@
+---
+layout: page
+license: Public Domain
+title: Cajoleit API Server
+---
+
+Cajoleit API Server
+===================
+
+`Cajoleit <https://cajoleit.appspot.com>`_ provides an easy to use HTTP API for
+`Google Caja <http://code.google.com/p/google-caja/>`_. It transforms raw
+JavaScript or `CoffeeScript <http://jashkenas.github.com/coffee-script/>`_ into
+"cajoled" JavaScript for use in your web applications.
+
+To use, simply ``POST`` to the ``/cajole`` endpoint of the Cajoleit server with
+the following parameters:
+
+* ``source`` — the data that you want to cajole
+
+* ``input_type=coffee`` or ``input_type=js``
+
+In addition, you can also specify the optional parameter:
+
+* ``pretty=1`` to enable the pretty printer at the cost of additional bandwidth
+  usage.
+
+..  * ``mode=es5/3`` will enable the ES5/3 transformer in place of the default
+    Cajita transformer.
+
+
+Try It Out
+----------
+
+
+  .. raw:: html
+
+    <form action="https://cajoleit.appspot.com/cajole" method="post"><div>
+    <textarea name="source" rows="10" cols="50"
+              style="border: 1px solid #ccc; width: 500px; margin: 10px0;"
+              >square = (x) -> x * x</textarea>
+    <br />
+    <input type="checkbox" name="pretty" value="1" checked="checked" id="form-pretty-print" />
+    <label for="form-pretty-print">Pretty Print</label>&nbsp;
+    <select name="input_type">
+      <option value="coffee">CoffeeScript Input</option>
+      <option value="js">JavaScript Input</option>
+    </select>&nbsp;&nbsp;
+    <input type="submit" value=" Cajoleit " />
+    </div></form>
+
+
+Example Code
+------------
+
+Here's an example Python implementation to call the Cajoleit service:
+
+.. syntax:: python
+
+    from urllib import urlencode
+    from urllib2 import HTTPError, Request, urlopen
+
+    ENDPOINT = "https://cajoleit.appspot.com/cajole"
+
+    class CajoleitError(Exception):
+        """Exception thrown for errors raised by the Cajoleit service."""
+
+    def cajoleit(source, input_type="coffee", pretty=None, endpoint=ENDPOINT):
+        payload = {'source': source, 'input_type': input_type}
+        if pretty:
+            payload['pretty'] = '1'
+        try:
+            response = urlopen(Request(endpoint, data=urlencode(payload)))
+        except HTTPError, error:
+            if error.code == 500:
+                message = error.read()
+                if message.startswith("ERROR: "):
+                    raise CajoleitError(message.split("ERROR: ", 1)[1])
+            raise
+        return response.read()
+
+You would use it like:
+
+.. syntax:: pycon
+
+  >>> cajoled = cajoleit("square = (x) -> x * x")
+
+Set the ``js`` input type with:
+
+.. syntax:: pycon
+
+  >>> cajoled = cajoleit("function square(x) { return x * x; }", "js")
+
+And get prettified output with:
+
+.. syntax:: pycon
+
+  >>> cajoled = cajoleit("square = (x) -> x * x", pretty=True)
+
+
+Experimental Server
+-------------------
+
+A public Cajoleit server is currently running at:
+
+* https://cajoleit.appspot.com
+
+It's open for experimental usage. But, for production use, `please grab the
+source <https://github.com/tav/ampify/tree/master/src/cajoleit>`_ and run your
+own instance...
+
+-- Enjoy, tav <tav@espians.com>
