@@ -1014,7 +1014,7 @@ def check(argv=None, completer=None):
 
     log("Checking the latest commits on GitHub.", PROGRESS)
     commit_info = urlopen(
-        'http://github.com/api/v2/json/commits/list/tav/ampify/master'
+        'https://github.com/api/v2/json/commits/list/tav/ampify/master'
         ).read()
 
     latest_revision_id = decode_json(commit_info)['commits'][0]['id']

@@ -47,7 +47,7 @@ You need to be on Leopard (10.5) or a more recent system:
 
    $ sudo apt-get install autoconf automake bison build-essential curl gcc git libltdl3 libtool lsof make openjdk-6-jre openjdk-6-jre openssl ruby ruby-dev python2.5 python2.5-dev
 
-In older Debian releases, the ``git`` package might either point to a different
+On older Debian releases, the ``git`` package might either point to a different
 app or be severely outdated. So if running ``git --version`` doesn't give you a
 1.7+ version, e.g. ``git version 1.7.1``, then install it from `backports
 <http://www.backports.org/dokuwiki/doku.php?id=instructions>`_.

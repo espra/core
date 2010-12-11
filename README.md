@@ -94,7 +94,6 @@ Enjoy, tav <<tav@espians.com>>
 [credits]: http://ampify.it/credits.html
 [pecu allocations]: http://tav.espians.com/pecu-allocations-by-tav.html
 
-[http://github.com/tav]: http://github.com/tav
 [http://ampify.it]: http://ampify.it
 [http://ampify.it/planfile.html]: http://ampify.it/planfile.html
 [http://groups.google.com/group/ampify]: http://groups.google.com/group/ampify
@@ -106,7 +105,7 @@ Enjoy, tav <<tav@espians.com>>
 [Jeff Archambeault]: http://www.openideaproject.org/jeffspace
 [Maciej Fijalkowski]: http://morepypy.blogspot.com/
 [Mamading Ceesay]: http://twitter.com/evangineer
-[Mathew Ryden]: http://github.com/oierw
+[Mathew Ryden]: https://github.com/oierw
 [Øyvind Selbek]: http://twitter.com/talonlzr
 [Sean B. Palmer]: http://inamidst.com
 [tav]: http://tav.espians.com

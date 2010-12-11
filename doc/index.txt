@@ -55,7 +55,7 @@ Contribute
 ----------
 
 To contribute any patches, simply fork `the repository
-<http://github.com/tav/ampify>`_ using GitHub, create a new branch with your
+<https://github.com/tav/ampify>`_ using GitHub, create a new branch with your
 patch, add yourself to the ``AUTHORS`` file and then run ``git review submit``,
 e.g.
 
@@ -74,9 +74,10 @@ e.g.
 
 That's it!
 
-We specifically developed `git-review <http://github.com/tav/git-review>`_ so
+We specifically developed `git-review <https://github.com/tav/git-review>`_ so
 that it'd be this easy. It combines code review, build and automated testing so
-as to make life easy and pleasant for everyone. Have a look at the review server:
+as to make life easy and pleasant for everyone. Have a look at the review
+server:
 
 *  http://gitreview.com/activity/ampify
 

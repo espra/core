@@ -4,7 +4,7 @@
 
   section_data = [
       ('Home', 'http://ampify.it', True, True),
-      ('Source Code', 'http://github.com/tav/ampify', True, True),
+      ('Source Code', 'https://github.com/tav/ampify', True, True),
       ('Bug Tracker', 'http://githubissues.heroku.com/#tav/ampify', True, True),
       ('Mailing List', 'http://groups.google.com/group/ampify', True, True),
       ('IRC Logs', 'http://irclogs.ampify.it', True, True),
@@ -52,7 +52,7 @@
 	<div id="menu-follow">
 		<div><a href="http://www.facebook.com/Espians" title="Join Espians on Facebook"><img src="http://static.ampify.it/icon.facebook.gif" alt="Join Espians on Facebook" width="15px" height="15px" /></a></div>
 		<div><a href="http://twitter.com/tav" title="Follow @tav on Twitter"><img src="http://static.ampify.it/icon.twitter.gif" alt="Follow @tav on Twitter" width="14px" height="14px" /></a></div>
-		<div><a href="http://github.com/tav/ampify" title="Fork Ampify on GitHub"><img src="http://static.ampify.it/icon.github.png" alt="Fork Ampify on GitHub" width="15px" height="15px" /></a></div>
+		<div><a href="https://github.com/tav/ampify" title="Fork Ampify on GitHub"><img src="http://static.ampify.it/icon.github.png" alt="Fork Ampify on GitHub" width="15px" height="15px" /></a></div>
 		<div><a href="http://feeds.feedburner.com/ampify" title="Subscribe to the RSS Feed"><img src="http://static.ampify.it/icon.rss.png" alt="Subscribe to the RSS Feed" width="14px" height="14px" /></a></div>
 	</div>
 	<div id="logo"><a href="http://ampify.it"><img src="http://static1.ampify.it/logo.ampify.smallerstill.png" alt="Ampify" width="250px" height="56px" /></a></div>

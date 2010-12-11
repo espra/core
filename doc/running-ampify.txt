@@ -334,7 +334,7 @@ Contribute
 ----------
 
 To contribute any patches, simply fork `the repository
-<http://github.com/tav/ampify>`_ using GitHub, create a new branch with your
+<https://github.com/tav/ampify>`_ using GitHub, create a new branch with your
 patch, add yourself to the ``AUTHORS`` file and then run ``git review submit``,
 e.g.
 

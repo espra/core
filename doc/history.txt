@@ -142,7 +142,7 @@ History
   the domain ``ampify.it`` was promptly registered.
 
 * Development officially started with a public `Ampify
-  repository <http://github.com/tav/ampify>`_ on GitHub.
+  repository <https://github.com/tav/ampify>`_ on GitHub.
 
 **2010-01-12**
 

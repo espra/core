@@ -44,7 +44,7 @@ Getting Involved
 if you're new to Git.
 
 |*| Get a GitHub account and `fork <http://help.github.com/forking/>`_ the
-`Ampify repository <http://github.com/tav/ampify>`_.
+`Ampify repository <https://github.com/tav/ampify>`_.
 
 |*| Familiarise yourself with the Ampify testing and review process:
 

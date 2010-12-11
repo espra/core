@@ -25,7 +25,7 @@ Why Git?
 --------
 
 The main reason that we've decided to use Git is because of `GitHub
-<http://github.com>`_, which -- unlike predecessors like `Sourceforge
+<https://github.com>`_, which -- unlike predecessors like `Sourceforge
 <http://sourceforge.net/>`_ and `Google Code <http://code.google.com/>`_ --
 recognises that coding is very much a social endeavour and provides a number of
 features to facilitate this.
@@ -98,7 +98,7 @@ First Steps
 -----------
 
 If you don't have an account already, go sign up on `GitHub
-<http://github.com>`_. It only takes a minute and they provide a very generous
+<https://github.com>`_. It only takes a minute and they provide a very generous
 `free account <https://github.com/signup/free>`_. Whilst a pain, please also add
 a profile image for the email address you signed up with using GitHub's sister
 service `Gravatar <http://www.gravatar.com/>`_. And, finally, upload your SSH
@@ -168,14 +168,14 @@ the best pastebin out there, with all of your pastes automatically becoming Git
 repositories! Gist also has a number of command line and editor interfaces:
 
 * `Gist command-line (Ruby version)
-  <http://github.com/defunkt/gist/tree/master>`_
+  <https://github.com/defunkt/gist/tree/master>`_
 
 * `Gist command-line (Python version)
-  <http://github.com/davglass/gist/tree/master>`_
+  <https://github.com/davglass/gist/tree/master>`_
 
-* `Emacs M gist-buffer@ support <http://github.com/defunkt/gist.el>`_
+* `Emacs M gist-buffer@ support <https://github.com/defunkt/gist.el>`_
 
-* `Vim :Gist support <http://github.com/mattn/gist-vim/tree/master>`_
+* `Vim :Gist support <https://github.com/mattn/gist-vim/tree/master>`_
 
 A ``core.autocrlf = true`` setting would tell Git to convert newlines to the
 system’s standard when checking out files, and to LF newlines when committing in
@@ -213,7 +213,7 @@ Cloning
 One usually starts off by cloning a Git repository. GitHub provides a range of
 different access methods (transport protocols) which support either read-only or
 read/write access. For example, if we take the `Ampify repository
-<http://github.com/tav/ampify/>`_, some of the access URIs are:
+<https://github.com/tav/ampify/>`_, some of the access URIs are:
 
 .. syntax:: bash
 
@@ -295,9 +295,9 @@ set up as many of these as is relevant without affecting anyone else's setup.
 Now you might wonder why you need multiple remotes to be configured. For this,
 let's take a look at the ``webkit`` repository.
 
-Our `webkit <http://github.com/tav/webkit/>`_ repository is actually a fork of:
+Our `webkit <https://github.com/tav/webkit/>`_ repository is actually a fork of:
 
-* http://github.com/appcelerator/webkit_titanium
+* https://github.com/appcelerator/webkit_titanium
 
 Just like other developers would have to with *our* respositories, we had to
 fork ``appcelerator/webkit_titanium`` since we only have read-only access to it.
@@ -1617,8 +1617,8 @@ The Git `Release
 a very good source of info. If neither of those help, then you might find the
 following web guides useful:
 
-* http://learn.github.com/
-* http://github.com/guides/home
+* http://gitref.org/
+* https://github.com/guides/home
 * http://www.kernel.org/pub/software/scm/git/docs/gittutorial.html
 * http://www.kernel.org/pub/software/scm/git/docs/user-manual.html
 * http://book.git-scm.com/
