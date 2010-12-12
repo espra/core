@@ -1,9 +1,55 @@
 <!DOCTYPE html>
 <html>
 <head>
-	<meta http-equiv="refresh" content="0;url=http://ampify.it/cajoleit.html" />
+	<title>Cajoleit!</title>
+	<link href='http://fonts.googleapis.com/css?family=Yanone+Kaffeesatz' rel='stylesheet' type='text/css' />
+	<style type="text/css">
+		body {
+			padding: 10px;
+		}
+		a {
+			color: blue;
+			text-decoration: underline;
+		}
+		a:hover {
+			text-decoration: none;
+		}
+		h1 {
+			background: #d6f0d8;
+			font-family: 'Yanone Kaffeesatz', arial, sans-serif;
+			margin: 0 0 15px 0;
+			padding: 8px 10px;
+		}
+		#main {
+			margin: 30px;
+		}
+		#form {
+			margin: 30px 50px;
+		}
+	</style>
 </head>
 <body>
-<a href="http://ampify.it/cajoleit.html">Cajoleit documentation</a>
+<h1>Cajoleit API Server</h1>
+<div id="main">
+	<p>✓ &nbsp; <a href="http://ampify.it/cajoleit.html">Read the Cajoleit documentation</a></p>
+	<p>
+		✓ &nbsp; Try it:
+
+    <form action="http://localhost:8070/cajole" method="post"><div id="form">
+    <textarea name="source" rows="10" cols="50"
+              style="border: 1px solid #ccc; width: 500px; margin: 10px0;"
+              >square = (x) -> x * x</textarea>
+    <br />
+    <input type="checkbox" name="pretty" value="1" checked="checked" id="form-pretty-print" />
+    <label for="form-pretty-print">Pretty Print</label>&nbsp;
+    <select name="input_type">
+      <option value="coffee">CoffeeScript Input</option>
+      <option value="js">JavaScript Input</option>
+    </select>&nbsp;&nbsp;
+    <input type="submit" value=" Cajoleit " />
+    </div></form>
+
+	</p>
+</div>
 </body>
 </html>
