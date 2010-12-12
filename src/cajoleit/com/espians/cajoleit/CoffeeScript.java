@@ -22,7 +22,7 @@ public class CoffeeScript {
 	private static final String coffeeJS = "com/espians/cajoleit/coffee-script.js";
 	private static final String compileJS = "CoffeeScript.compile(source, {bare: true});";
 	private static final ContextFactory contextFactory = new ContextFactory();
-	private Scriptable parent;
+	private static Scriptable parent;
 
 	public CoffeeScript() {
 

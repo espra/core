@@ -69,7 +69,12 @@ public class CajoleitServlet extends HttpServlet {
 	private void errorResponse(Integer statusCode, String errorMessage)
 		throws IOException {
 		resp.setStatus(statusCode);
-		resp.getWriter().println("ERROR: " + errorMessage);
+		resp.getWriter().print("ERROR: " + errorMessage);
+	}
+
+	public void doGet(HttpServletRequest req, HttpServletResponse resp)
+		throws IOException {
+		resp.sendRedirect("/");
 	}
 
 	public void doPost(HttpServletRequest req, HttpServletResponse resp)
@@ -77,24 +82,11 @@ public class CajoleitServlet extends HttpServlet {
 
 		this.resp = resp;
 
-		BuildInfo buildInfo;
-		CajoledModule cajoledModule;
-		Concatenator concatenator;
-		CharProducer inputStream;
-		MessageQueue messageQueue;
-		Block parsedBlock;
-		boolean pretty;
-		IOCallback renderCallback;
-		RenderContext renderContext;
-		Rewriter rewriter;
-		StringBuilder stringBuilder;
-		TokenConsumer tokenConsumer;
-		JsTokenQueue tokenQueue;
-		UncajoledModule uncajoledModule;
+		String prettyParam, source, inputType;
 
-		String source = req.getParameter("source");
-		String type = req.getParameter("input_type");
-		String prettyParam = req.getParameter("pretty");
+		prettyParam = req.getParameter("pretty");
+		source = req.getParameter("source");
+		inputType = req.getParameter("input_type");
 
 		resp.setContentType("text/plain; charset=utf-8");
 
@@ -108,27 +100,37 @@ public class CajoleitServlet extends HttpServlet {
 			return;
 		}
 
-		if (type == null) {
-			badRequest("The `type` parameter was not specified.");
+		if (inputType == null) {
+			badRequest("The `input_type` parameter was not specified.");
 			return;
 		}
 
-		if (type.equals("coffee")) {
+		if (inputType.equals("coffee")) {
 			try {
 				source = getCompiler().compile(source);
 			} catch (JavaScriptException e) {
 				error(e.getValue().toString());
 				return;
 			}
+			if (req.getParameter("coffee") != null) {
+				resp.getWriter().print(source);
+				return;
+			}
 		} else {
-			if (!type.equals("js")) {
-				badRequest("Unknown `type` parameter value.");
+			if (!inputType.equals("js")) {
+				badRequest("Unknown `input_type` parameter value.");
 				return;
 			}
 		}
 
-		cajoledModule = null;
-		messageQueue = new SimpleMessageQueue();
+		BuildInfo buildInfo;
+		CajoledModule cajoledModule = null;
+		CharProducer inputStream;
+		MessageQueue messageQueue = new SimpleMessageQueue();
+		Block parsedBlock;
+		Rewriter rewriter;
+		JsTokenQueue tokenQueue;
+		UncajoledModule uncajoledModule;
 
 		try {
 			buildInfo = BuildInfo.getInstance();
@@ -144,29 +146,37 @@ public class CajoleitServlet extends HttpServlet {
 		}
 
 		if (messageQueue.hasMessageAtLevel(MessageLevel.ERROR)) {
+
+			StringBuilder errorMessage;
+			String inputSourceString;
+
 			cajoledModule = null;
-			String errorMessage = "Couldn't cajole the source.\n\n";
-			String inputSourceString = InputSource.PREDEFINED.toString() + ":";
+			errorMessage = new StringBuilder("Couldn't cajole the source.\n\n");
+			inputSourceString = InputSource.PREDEFINED.toString() + ":";
 			for (Message m: messageQueue.getMessages()) {
-				errorMessage += m.toString().replace(inputSourceString, "Line: ") + "\n\n";
+				errorMessage.append(m.toString().replace(inputSourceString, "Line: "));
+				errorMessage.append("\n\n");
 			}
-			error(errorMessage);
+			error(errorMessage.toString());
 			return;
+
 		}
 
-		stringBuilder = new StringBuilder();
+		boolean pretty;
+		Concatenator concatenator;
+		IOCallback renderCallback;
+		RenderContext renderContext;
+		StringBuilder stringBuilder;
+		TokenConsumer tokenConsumer;
+
+		pretty = false;
+		if ((prettyParam != null) && prettyParam.equals("1")) {
+			pretty = true;
+		}
+
 		renderCallback = new IOCallback();
+		stringBuilder = new StringBuilder();
 		concatenator = new Concatenator(stringBuilder, renderCallback);
-
-		if (prettyParam == null) {
-			pretty = false;
-		} else {
-			if (prettyParam.equals("1")) {
-				pretty = true;
-			} else {
-				pretty = false;
-			}
-		}
 
 		if (pretty) {
 			tokenConsumer = new JsPrettyPrinter(concatenator);
@@ -183,8 +193,7 @@ public class CajoleitServlet extends HttpServlet {
 		}
 
 		source = stringBuilder.toString();
-		resp.setContentType("text/plain; charset=utf-8");
-		resp.getWriter().println(source);
+		resp.getWriter().print(source);
 
 	}
 
