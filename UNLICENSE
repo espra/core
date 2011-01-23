@@ -1,5 +1,5 @@
-Public Domain License
-=====================
+Unlicense
+=========
 
 .. contents::   Table of Contents
                 :depth: 1
@@ -10,10 +10,10 @@ under law, the Ampify Authors ("The Authors") have waived all copyright, patent
 and related or neighboring rights to their Contributions to Ampify ("The Work").
 
 This does not apply to works authored by third parties ("Third Party Works")
-which have their own copyright and licensing terms. These terms may be defined
-in explicit files within the `third_party` directories or specified as part of
-the contents of a licensed file. We recommend you read them as their terms
-may differ from the terms below.
+which come with their own copyright and licensing terms. These terms may be
+defined in explicit files within the `third_party` directories or specified as
+part of the contents of licensed files. We recommend you read them as their
+terms may differ from the terms below.
 
 All trademarks and registered trademarks mentioned in The Work are the property
 of their respective owners.
@@ -22,17 +22,17 @@ of their respective owners.
 Usage
 -----
 
-To affirm that a Contribution to The Work is covered by this Public Domain
-License, add an informative header like::
+To affirm that a Contribution to The Work is covered by this Unlicense, add an
+informative header like::
 
-    # No Copyright (-) 2011 The Ampify Authors. This file is under the
-    # Public Domain license that can be found in the root LICENSE file.
+    # Public Domain (-) 2011 The Ampify Authors.
+    # See the UNLICENSE file for details.
 
-If the Public Domain Contribution is to an already existing Third Party Work,
-then it can be affirmed as such with an informative header like::
+If the Contribution is to an existing Third Party Work, then it can be affirmed
+with an informative header like::
 
-    # Changes to this file by The Ampify Authors are according to the
-    # Public Domain license that can be found in the root LICENSE file.
+    # Changes to this file by The Ampify Authors are in the Public Domain.
+    # See the UNLICENSE file for details.
 
 
 Statement of Purpose
@@ -56,52 +56,44 @@ or to gain reputation or greater distribution for their Work in part through the
 use and efforts of others.
 
 For these and/or other purposes and motivations, and without any expectation of
-additional consideration or compensation, the person associating the Public
-Domain License with a Work (the "Affirmer"), to the extent that he or she is an
-owner of Copyright and Related Rights in the Work, voluntarily elects to apply
-the Public Domain License to the Work and publicly distribute the Work under its
-terms, with knowledge of his or her Copyright and Related Rights in the Work and
-the meaning and intended legal effect of the Public Domain License on those
-rights.
+additional consideration or compensation, the person associating the Unlicense
+with a Work (the "Affirmer"), to the extent that he or she is an owner of
+Copyright and Related Rights in the Work, voluntarily elects to apply the
+Unlicense to the Work and publicly distribute the Work under its terms, with
+knowledge of his or her Copyright and Related Rights in the Work and the meaning
+and intended legal effect of the Unlicense on those rights.
 
 
 Definitions
 -----------
 
-The term "Distribute" has the same meaning here as under U.S. copyright law. A
-"Contribution" is the original Work, or any additions or changes to it. A
-"Contributor" is any person that affirms their contribution under this license.
-"Licensed Patents" are a Contributor's patent claims that read directly on any
-Contribution.
+The term "distribute" has the same meaning here as under U.S. copyright law. A
+"Contribution" is the original Work, or any additions or changes to it.
 
-A Work made available under the Public Domain License may be protected by
-copyright, patent and related or neighboring rights ("Copyright and Related
-Rights"). Copyright and Related Rights include, but are not limited to, the
-following:
+A Work made available under the Unlicense may be protected by copyright and
+related or neighboring rights ("Copyright and Related Rights"). Copyright and
+Related Rights include, but are not limited to, the following:
 
 1. the right to reproduce, adapt, distribute, perform, display, communicate, and
    translate a Work;
 
-2. any and all patent rights relating to the material of a Work, including
-   Licensed Patents;
+2. moral rights retained by the original author(s) and/or performer(s);
 
-3. moral rights retained by the original author(s) and/or performer(s);
-
-4. publicity and privacy rights pertaining to a person's image or likeness
+3. publicity and privacy rights pertaining to a person's image or likeness
    depicted in a Work;
 
-5. rights protecting against unfair competition in regards to a Work, subject to
+4. rights protecting against unfair competition in regards to a Work, subject to
    the Limitations and Disclaimers, below;
 
-6. rights protecting the extraction, dissemination, use and reuse of data in a
+5. rights protecting the extraction, dissemination, use and reuse of data in a
    Work;
 
-7. database rights (such as those arising under Directive 96/9/EC of the
+6. database rights (such as those arising under Directive 96/9/EC of the
    European Parliament and of the Council of 11 March 1996 on the legal
    protection of databases, and under any national implementation thereof,
    including any amended or successor version of such directive); and
 
-8. other similar, equivalent or corresponding rights throughout the world based
+7. other similar, equivalent or corresponding rights throughout the world based
    on applicable law or treaty, and any national implementations thereof.
 
 
@@ -143,30 +135,29 @@ for any number of copies, and (iv) for any purpose whatsoever, including without
 limitation commercial, advertising or promotional purposes (the "Public
 License").
 
-The Public License shall be deemed effective as of the date the Public Domain
-License was applied by Affirmer to the Work. Should any part of the License for
-any reason be judged legally invalid or ineffective under applicable law, such
+The Public License shall be deemed effective as of the date the Unlicense was
+applied by Affirmer to the Work. Should any part of the Public License for any
+reason be judged legally invalid or ineffective under applicable law, such
 partial invalidity or ineffectiveness shall not invalidate the remainder of the
-License, and in such case Affirmer hereby affirms that he or she will not (i)
-exercise any of his or her remaining Copyright and Related Rights in the Work or
-(ii) assert any associated claims and causes of action with respect to the Work,
-in either case contrary to Affirmer's express Statement of Purpose.
+Public License, and in such case Affirmer hereby affirms that he or she will not
+(i) exercise any of his or her remaining Copyright and Related Rights in the
+Work or (ii) assert any associated claims and causes of action with respect to
+the Work, in either case contrary to Affirmer's express Statement of Purpose.
 
 
 Grant of Patent Rights
 ----------------------
 
-Subject to the terms and conditions of this License, the Affirmer hereby grants
-to You a perpetual, worldwide, non-exclusive, no-charge, royalty-free,
-irrevocable (except as stated in this section) patent license to make, have
-made, use, offer to sell, sell, import, and otherwise transfer this Work, where
-such license applies only to those patent claims licensable by the Affirmer that
-are necessarily infringed by use of this Work. If You institute patent
-litigation against any entity (including a cross-claim or counterclaim in a
-lawsuit) alleging that this Work or a Contribution incorporated within the Work
-constitutes direct or contributory patent infringement, then any patent licenses
-granted to You under this License for the Work shall terminate as of the date
-such litigation is filed.
+Affirmer hereby grants to You a perpetual, worldwide, non-exclusive, no-charge,
+royalty-free, irrevocable (except as stated in this section) patent license to
+make, have made, use, offer to sell, sell, import, and otherwise transfer this
+Work, where such license applies only to those patent claims licensable by the
+Affirmer that are necessarily infringed by use of this Work. If You institute
+patent litigation against any entity (including a cross-claim or counterclaim in
+a lawsuit) alleging that this Work or a Contribution incorporated within the
+Work constitutes direct or contributory patent infringement, then any patent
+licenses granted to You under this Grant of Patent Rights for the Work shall
+terminate as of the date such litigation is filed.
 
 
 Limitations and Disclaimers
@@ -201,12 +192,10 @@ Appendix
 --------
 
 * The text of this document is derived from `Creative Commons CC0 1.0
-  Universal`_, the `Microsoft Public License`_ and the `BSD style license`_ that
-  ships with Google Go.
+  Universal`_ and the `BSD style license`_ that ships with Google Go.
 
-* This Public Domain License is seen as a mere transitional requirement until
-  international law adapts to the post intellectual property reality.
+* This Unlicense is seen as a mere transitional requirement until international
+  law adapts to the post intellectual property reality.
 
 .. _Creative Commons CC0 1.0 Universal: http://creativecommons.org/publicdomain/zero/1.0/legalcode
-.. _Microsoft Public License: http://www.opensource.org/licenses/ms-pl.html
 .. _BSD style license: http://go.googlecode.com/hg/LICENSE

@@ -88,7 +88,7 @@ Enjoy, tav <<tav@espians.com>>
 [see the planfile]: http://ampify.it/planfile.html
 
 [Ampify Authors]: http://ampify.it/authors.html
-[public domain]: http://ampify.it/license.html
+[public domain]: http://ampify.it/unlicense.html
 
 [authors]: http://ampify.it/authors.html
 [credits]: http://ampify.it/credits.html

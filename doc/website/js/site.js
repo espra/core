@@ -260,8 +260,11 @@ try {
   BrowserDetect.init();
 } catch (err) {};
 
-/* No Copyright (-) 2009-2010 The Ampify Authors. The rest of this file is under
- * under the Public Domain license that can be found in the root LICENSE file.
+/* The rest of this file is:
+ *
+ * Public Domain (-) 2009-2011 The Ampify Authors.
+ * See the UNLICENSE file for details.
+ *
  */
 
 // some konstants

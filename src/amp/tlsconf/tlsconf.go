@@ -1,5 +1,5 @@
-// No Copyright (-) 2010 The Ampify Authors. This file is under the
-// Public Domain license that can be found in the root LICENSE file.
+// Public Domain (-) 2010-2011 The Ampify Authors.
+// See the UNLICENSE file for details.
 
 // The tls package provides utilities to support TLS connections. When the
 // package is initialised via ``tlsconf.Init()``, it generates a default

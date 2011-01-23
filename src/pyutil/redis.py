@@ -1,5 +1,5 @@
-# No Copyright (-) 2010 The Ampify Authors. This file is under the
-# Public Domain license that can be found in the root LICENSE file.
+# Public Domain (-) 2010-2011 The Ampify Authors.
+# See the UNLICENSE file for details.
 
 import logging
 import socket
@@ -322,7 +322,7 @@ class Redis(object):
 
 if __name__ == '__main__':
 
-    from adisp import process
+    from pyutil.async import async
 
     def constructor():
         return Redis(unix_socket='/tmp/redis.sock')
@@ -337,7 +337,7 @@ if __name__ == '__main__':
     N = 200
     set_max_connections(5)
 
-    @process
+    @async
     def test_set(i):
         redis = constructor()
         x = yield redis.send_request('set', 'foo', i)
@@ -365,7 +365,7 @@ if __name__ == '__main__':
         #_ = yield redis.set('foo', i)
         # print _, i
 
-    @process
+    @async
     def test_get():
         redis = constructor()
         result = yield redis.send_request('get', 'foo')

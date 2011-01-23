@@ -1,10 +1,10 @@
 #! /bin/sh
 
-# No Copyright (-) 2010 The Ampify Authors. This file is under the
-# Public Domain license that can be found in the root LICENSE file.
+# Public Domain (-) 2010-2011 The Ampify Authors.
+# See the UNLICENSE file for details.
 
 if [ "x$1" == "xignored" ]; then
-	grep "^#" $0 | grep -v "bin/sh" | grep -v "No Copyright" | grep -v LICENSE
+	grep "^#" $0 | grep -v "bin/sh" | grep -v "Public Domain" | grep -v UNLICENSE
 	exit
 fi
 

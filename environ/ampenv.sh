@@ -1,7 +1,7 @@
 #! /bin/bash
 
-# No Copyright (-) 2010 The Ampify Authors. This file is under the
-# Public Domain license that can be found in the root LICENSE file.
+# Public Domain (-) 2010-2011 The Ampify Authors.
+# See the UNLICENSE file for details.
 
 # NOTE: This script has only been tested in the context of a modern Bash Shell
 # on Ubuntu Linux and OS X. Any patches to make it work under alternative Unix

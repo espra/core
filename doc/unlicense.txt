@@ -4,4 +4,4 @@ license: Public Domain
 title: Public Domain License
 ---
 
-.. include:: ../LICENSE
+.. include:: ../UNLICENSE
