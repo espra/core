@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 # Public Domain (-) 2004-2011 The Ampify Authors.
-# See the UNLICENSE file for details.
+# See the Ampify UNLICENSE file for details.
 
 r"""
 ================

@@ -1,5 +1,5 @@
 // Public Domain (-) 2010-2011 The Ampify Authors.
-// See the UNLICENSE file for details.
+// See the Ampify UNLICENSE file for details.
 
 // The pyksproxy package provides a client library to interact with Scalien's
 // Keyspace nodes via the Python ``keyspace-proxy``.

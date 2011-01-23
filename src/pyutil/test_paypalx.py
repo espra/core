@@ -1,5 +1,5 @@
 # Public Domain (-) 2010-2011 The Ampify Authors.
-# See the UNLICENSE file for details.
+# See the Ampify UNLICENSE file for details.
 
 from pyutil.paypalx import AdaptivePayment, PayRequest
 from ampify.core.config import (

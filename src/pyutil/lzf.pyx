@@ -1,5 +1,5 @@
 # Public Domain (-) 2009-2011 The Ampify Authors.
-# See the UNLICENSE file for details.
+# See the Ampify UNLICENSE file for details.
 
 """Wrapper extension for the super fast LZF library."""
 

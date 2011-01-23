@@ -1,7 +1,7 @@
 #! /bin/sh
 
 # Public Domain (-) 2010-2011 The Ampify Authors.
-# See the UNLICENSE file for details.
+# See the Ampify UNLICENSE file for details.
 
 if [ "x$1" == "xignored" ]; then
 	grep "^#" $0 | grep -v "bin/sh" | grep -v "Public Domain" | grep -v UNLICENSE

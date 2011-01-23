@@ -1,5 +1,5 @@
 # Public Domain (-) 2010-2011 The Ampify Authors.
-# See the UNLICENSE file for details.
+# See the Ampify UNLICENSE file for details.
 
 COFFEE_FILES := $(wildcard *.coffee)
 JS_FILES := $(subst .coffee,.js,$(COFFEE_FILES))

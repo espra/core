@@ -1,7 +1,7 @@
 #! /bin/bash
 
 # Public Domain (-) 2010-2011 The Ampify Authors.
-# See the UNLICENSE file for details.
+# See the Ampify UNLICENSE file for details.
 
 # NOTE: This script has only been tested in the context of a modern Bash Shell
 # on Ubuntu Linux and OS X. Any patches to make it work under alternative Unix
