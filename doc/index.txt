@@ -7,7 +7,7 @@ Ampify
 ======
 
 Ampify is an open source, decentralised, social platform. We are working towards
-an initial release in **May 2011** which will provide you with a web application
+an initial release in May 2011 which will provide you with a web application
 framework to create social apps on top of a secure, decentralised core.
 
 .. raw:: html
