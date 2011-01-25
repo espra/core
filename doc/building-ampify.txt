@@ -24,33 +24,35 @@ installed.
 
   <div style="margin-bottom: 10px;"></div>
 
-**Dependencies: Mac OS X**
+**Dependencies for various Platforms**
 
-You need to be on Leopard (10.5) or a more recent system:
+  **Mac OS X**
 
-1. `Install XCode <http://developer.apple.com/technologies/xcode.html>`_.
-   Unfortunately Apple force you to sign up as an Apple Developer in order to
-   download XCode, but this is free and should only take a minute or so.
+  You need to be on Leopard (10.5) or a more recent system:
 
-2. `Install Git
-   <http://code.google.com/p/git-osx-installer/downloads/list?can=3>`_.
+  1. `Install XCode <http://developer.apple.com/technologies/xcode.html>`_.
+     Unfortunately Apple force you to sign up as an Apple Developer in order to
+     download XCode, but this is free and should only take a minute or so.
 
-3. And, finally, you might want to consider installing and `using iTerm
-   <http://iterm.sourceforge.net/>`_ (or something better) instead of the
-   default Terminal app that comes with OS X.
+  2. `Install Git
+     <http://code.google.com/p/git-osx-installer/downloads/list?can=3>`_.
 
-**Dependencies: Debian Linux**
+  3. And, finally, you might want to consider installing and `using iTerm2
+     <http://sites.google.com/site/iterm2home/>`_ (or something better) instead
+     of the default Terminal app that comes with OS X.
 
-1. Install any of the following packages that you don't already have:
+  **Debian Linux**
 
-.. syntax:: bash
+  1. Install any of the following packages that you don't already have:
 
-   $ sudo apt-get install autoconf automake bison build-essential curl gcc git libltdl3 libtool lsof make openjdk-6-jre openjdk-6-jre openssl ruby ruby-dev python2.5 python2.5-dev
+  .. syntax:: bash
 
-On older Debian releases, the ``git`` package might either point to a different
-app or be severely outdated. So if running ``git --version`` doesn't give you a
-1.7+ version, e.g. ``git version 1.7.1``, then install it from `backports
-<http://www.backports.org/dokuwiki/doku.php?id=instructions>`_.
+     $ sudo apt-get install autoconf automake bison build-essential curl gcc git libltdl3 libtool lsof make openjdk-6-jre openjdk-6-jre openssl ruby ruby-dev python2.5 python2.5-dev
+
+  On older Debian releases, the ``git`` package might either point to a
+  different app or be severely outdated. So if running ``git --version`` doesn't
+  give you a 1.7+ version, e.g. ``git version 1.7.1``, then install it from
+  `backports <http://www.backports.org/dokuwiki/doku.php?id=instructions>`_.
 
 **Build Process**
 

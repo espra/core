@@ -1,7 +1,7 @@
 ---
 layout: page
 license: Public Domain
-title: Public Domain License
+title: Unlicense
 ---
 
 .. include:: ../UNLICENSE
