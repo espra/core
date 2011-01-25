@@ -678,7 +678,7 @@ def uninstall_packages(uninstall, installed):
 
 # A utility function to uninstall a single package.
 def uninstall_package(package):
-    installed = dict(f.rsplit('-', 1) for f in listdir(RECEIPTS))
+    installed = dict(f.split('-', 1) for f in listdir(RECEIPTS))
     if package in installed:
         data = {package: installed[package]}
         uninstall_packages(data, data)
