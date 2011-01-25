@@ -1,6 +1,7 @@
 # specific files/directories
 
 .appengine_java_sdk
+.appengine_python_sdk
 .articlestore
 .build
 .build-lock
