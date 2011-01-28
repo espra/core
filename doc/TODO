@@ -9,8 +9,7 @@ if [ "x$1" == "xignored" ]; then
 fi
 
 python -c "from datetime import datetime as d, timedelta as t; \
-           left = d(2010, 7, 23, 23, 59, 0) + t(days=40) - d.now(); \
-           print left + d.now(); \
+           left = d(2011, 3, 1) - d.now(); \
            days, left = left.days, left.seconds; \
            left, seconds = divmod(left, 60); \
            hours, minutes = divmod(left, 60); \
@@ -42,8 +41,25 @@ Admin
 ✗ base linux setup on servers
 ✗ ssl certificates
 ✗ http setup including redirects from apex domains
-✗ amphub deployment
-✗ amp deployment
+✗ ampzero deployment
+
+=======
+Process
+=======
+
+✓ git review
+✓ git review init
+✓ git review: builtins
+✓ git review: github cross repository compare
+✓ git review: diff view
+✓ git review: comment
+✓ git review: test runner
+✓ git review: build slave
+✓ git review: try bot
+✓ git review: watchlist
+✓ git review: view
+
+✓ amp test
 
 ============
 Installation
@@ -51,13 +67,14 @@ Installation
 
 ✓ configure
 ✓ make
-✓ redpill: init
-✓ redpill: config
-✓ redpill: packages
-✓ redpill: distribution
-✓ redpill: install
-✓ redpill: uninstall
-✗ redpill: daemon
+
+✓ amp build: init
+✓ amp build: config
+✓ amp build: packages
+✓ amp build: distribution
+✓ amp build: install
+✓ amp build: uninstall
+✓ amp build: build recipes
 
 ✓ package: base dependencies
 ✓ package: zlib
@@ -91,36 +108,29 @@ Installation
 # package: git
 # package: gevent
 
-✓ coffeescript/sass -> js lib/css generation -> minification
-
-✓ amp command-line auto completion
-✗ amp config handling
-✗ amp init
-✗ amp hub registration: host
-✗ amp hub registration: user
-✗ amp sign: new node
-✗ amp run
-✗ amp run --no-hub
-✗ amp run --server
-✗ amp run --services
-✗ amp deploy
-✗ pre/post deploy scripts
-
-✗ detect node on local subnet from teredo IP
-✓ rendezvous support
-✗ rendezvous announce
+✓ assetgen
+✗ update build distfiles
+✗ redpill: daemon
+✗ redpill: deploy
+✗ redpill: pre/post deploy scripts
 
 ===========
-Ampify Core
+Ampify Zero
 ===========
 
+✗ ampzero: main()
+✗ ampzero: command line arguments handler
 ✗ default configuration
 ✗ configuration handler
-✓ yaml parser nodule
-✓ yaml parser caller
 
-✓ verify support for modern browser
-✓ browser update view
+✗ modern browser: update view
+✓ google analytics
+
+✗ weblite: request
+✗ weblite: response
+✗ weblite: services
+✗ weblite: security
+✗ weblite: template
 
 ✗ design: site css
 ✗ design: general layout
@@ -144,38 +154,40 @@ Ampify Core
 ✗ input box auto-completion -- spaces
 ✗ input box date input, 2010-01-13T21:34Z
 ✗ input box time input, 21:34
+✗ input box currency input
+✗ input box transboolean
 ✗ input box map input
+✗ input box links
+✗ input box rich text
+✗ input box ~ naming/aliasing
 ✗ input box "to" field
 
 ✗ autogrowing editor
 ✗ inline editor
-✗ auto-preview
+✗ auto-preview + error reporter
 ✗ position list editor
 ✗ uploader
 
-✗ pie menu
-✗ pie menu: design
-✗ pie menu: options hook
-
 ✗ google maps
-✗ map view
+✗ map view: non-https load
+✗ map view: rendering
+✗ map view: search (geocode) + voice search
 ✗ map view: design
-✗ map clustering support
 ✗ location discovery
+✗ location -> datastore boxes
+✗ map view: magic zoom
+
+✗ ~ names
+✗ ~ management
+✗ ~ redirects
 
 ✗ calendar display
 ✗ calendar view
 ✗ calendar (streak)
 
-✗ url truncating...
-✗ url longurl expansion
-
-✓ google analytics
-
 ✗ loading indicator
 ✗ load cache
 ✗ load on scroll
-
 ✗ scrollbars
 ✗ scrollbars theme
 
@@ -217,10 +229,19 @@ Ampify Core
 ✗ /pecu handling
 ✗ /intention handling
 ✗ /need handling
+✗ list value handling
 ✗ questions handling
 ✗ question options view
 ✗ question answer view
 ✗ answers handling
+
+✗ .commands
+✗ .commands completion
+✗ ? help commands
+✗ service formatters
+✗ service formatters: command
+✗ service formatters: script
+✗ media player commands
 
 ✗ +drafts
 ✗ +sent
@@ -254,24 +275,29 @@ Ampify Core
 ✗ inclusions invalidate
 ✗ include failure display
 ✗ include aspect
+✗ include specific#parts
 
-✗ parser
-✗ urls detect
-✗ links interceptor
+✗ message parser
+✗ message urls detect
+✗ links interceptor -- malware warning
 
 ✗ fonts
 ✗ fonts: loader
 ✗ fonts: font files
 ✗ fonts: css
-✗ fonts: naaga
 
-✗ oembed
-✗ oembed: skitch
-✗ oembed: flickr
-✗ oembed: mp3
-✗ oembed: soundcloud
-✗ oembed: youtube
-✗ oembed: vimeo
+✗ embed
+✗ embed: image proxy
+✗ embed: image ref rewriter
+✗ embed: skitch/flickr/twitpic
+✗ embed: github gists
+✗ embed: mp3
+✗ embed: soundcloud
+✗ embed: pdf/powerpoint
+✗ embed: youtube/vimeo
+✗ embed: videos
+✗ embed: longurls support
+✗ embed: store data
 
 ✗ spotify uris
 ✗ skype uris
@@ -320,9 +346,6 @@ Ampify Core
 ✗ error message display
 ✗ handle code updated/reload mechanism
 
-✗ private space creation view
-✗ private space invitation view
-
 ✗ initialise user session
 ✗ items cache
 ✗ live connection
@@ -335,19 +358,50 @@ Ampify Core
 ✗ cross-site auth
 ✗ cross-site tokens
 
-✗ js transaction handling
-✗ pecu allocations
-✗ pecu totals
+✗ top-40 dampener
 
 ✗ preferred language settings
 ✗ google translation
 ✗ transliteration support
 
+✗ cajoleit
+✗ caja host
+✗ caja service loader
+✗ caja service api
+✗ caja service builtins
+✗ caja service capabilities
+
+✗ builtins: urlfetch/open
+✗ builtins: dom fragment
+✗ builtins: template
+✗ builtins: call
+✗ builtins: query
+✗ builtins: user
+✗ builtins: space
+✗ builtins: link
+✗ builtins: token
+✗ builtins: get-lines
+✗ builtins: find
+✗ builtins: get
+✗ builtins: save
+✗ builtins: send
+
+✗ amp script: parser
+✗ amp script: pipeline
+✗ amp script: variables
+✗ amp script: runner
+✗ amp script: context
+
+✗ js yaml parser
+✗ js yaml metadata extraction
+
 ✗ timezone settings
 ✗ js timezone support
 ✗ olson db -> js data
 ✗ relative time display
-✗ recurring events
+✗ ical output
+✗ shared event time setting/planning
+✗ countdown -- it's on at!
 
 ✗ events app
 ✗ events app: view
@@ -357,8 +411,6 @@ Ampify Core
 ✗ trust maps management
 ✗ trust maps view
 ✗ trust maps graph view
-
-✗ access tokens management
 
 ✗ amp creds settings view
 ✗ amp creds needed view
@@ -372,87 +424,44 @@ Ampify Core
 ✗ iphone/ipad input
 ✗ iphone/ipad touch events
 
-✗ local names support
-✗ on-save name->id mapping
-✗ on-load id->name mapping
-
 ✗ code editor
 ✗ code editor: preview
 ✗ code editor: handler
-✗ code editor: wysiwyg field
-✗ code editor: scroll
-✗ code editor: cut/paste
-✗ code editor: text
 ✗ code editor: syntax highlighter
-✗ code editor: naaga syntax
-✗ code editor: autocompletion
-✗ code editor: help viewer
-✗ code editor: commands
 ✗ code editor: live output renderer
 ✗ code editor: error reporter
 
-✗ ipv4 support
-✗ ipv6 support
-
-✗ ampnode main()
-✗ ampnode command line arguments handler
-
-✓ lzf compression
-✗ lzf compression: dictionary-support
-
 ✗ mail service
-✗ mail service: naaga support
 ✗ mail service: smtp client
 ✗ mail service: sendgrid support
+✗ mail service: incoming handler
 
 ✗ urlfetch service
 ✗ urlfetch service: caller
-✗ urlfetch service: naaga
 ✗ urlfetch service: headers
 ✗ iana-reserved ips
-# ssl cert verification
+✗ ssl cert verification
 
 ✗ images service
 ✗ images service: resize/rotate
 ✗ images service: nodule
 ✗ images service: caller
-✗ images service: naaga
 ✗ images service: functions
 
 ✗ taskqueue service
 ✗ taskqueue service: caller
-✗ taskqueue service: naaga
 ✗ taskqueue service: functions
 
 ✗ memstore service
 ✗ memstore service: caller
-✗ memstore service: naaga
 ✗ memstore service: functions
 
 ✗ routing service
 ✗ routing service: caller
-✗ routing service: naaga
 ✗ routing service: functions
-
-✗ relay service
-✗ relay service: caller
-✗ relay service: naaga
-✗ relay service: functions
-✗ relay service: setup
-✗ relay service: request
-✗ relay service: accept
-✗ relay service: update
-
-✗ amphub service
-✗ amphub service: caller
-✗ amphub service: naaga
-✗ amphub service: functions
-✗ amphub service: registration
-✗ amphub service: update
 
 ✗ peerfund service
 ✗ peerfund service: caller
-✗ peerfund service: naaga
 ✗ peerfund service: functions
 ✗ peerfund service: templates
 ✗ peerfund service: accounts
@@ -462,26 +471,8 @@ Ampify Core
 ✗ confluence app: timeline
 ✗ confluence app: graph view
 
-✗ naaga service
-✗ naaga service: nodejs nodule
-✗ naaga service: multi process
-✗ naaga service: base runtime
-✗ naaga service: error handler
-✗ naaga service: package
-✗ naaga service: loader
-✗ naaga service: callback
-✗ naaga service: auth
-✗ naaga service: call services
-✗ naaga service: timeout
-
-✗ naaga: package
-✗ naaga: versioning support
-✗ naaga: remote call
-
 ✗ http -> https redirect
-✗ upgrade notifier: html page, json, amptp
-✗ ampnode binary upgrade
-✗ redpill daemon
+✗ upgrade notifier: html page, json
 
 ✗ global trust map config
 ✗ global trust map query
@@ -501,43 +492,18 @@ Ampify Core
 ✗ file transfer: multi-transfer
 ✗ file transfer: range get
 ✗ file transfer: upload
+✗ file transfer: video progressive/stream
 
 ✗ request handling
 ✗ http request parser
 ✗ https request handler
-✗ amptp request parser
 
-✗ amptp
-✗ amptp what is my ip
-✗ amptp upnp/natpmp
-✗ amptp upnp/natpmp nodule
-✗ amptp udp bind
-✗ amptp ordering
-✗ amptp ordering 2
-✗ amptp framing
-✗ amptp framing 2
-✗ amptp framing 3
+✗ openvpn setup
+✗ openvpn multihome updater script
 
-✗ amptp congestion control
-✗ amptp congestion control 2
-✗ amptp congestion control 3
-✗ amptp secure connection
-✗ amptp secure connection 2
-✗ amptp secure connection 3
-✗ amptp recall connection
-✗ amptp ping
-✗ amptp auto-compression
-
-# openvpn setup
-# openvpn multihome updater script
-
-# tls support
-# tls connection
-# tls server init
-
-✗ cert generate
-✗ cert sign
-✗ cert loading
+✗ tls support
+✗ tls connection
+✗ tls server init
 
 ✗ dmca support
 ✗ dmca service
@@ -588,7 +554,6 @@ Ampify Core
 ✗ replication service
 ✗ replication request
 ✗ replication accept
-✗ replication update amphub
 ✗ replication pattern handler
 ✗ replication notification
 
@@ -598,15 +563,12 @@ Ampify Core
 
 ✗ identity service
 ✗ identity service: caller
-✗ identity service: naaga
 
 ✗ user model
 ✗ user registration
 ✗ user authentication
 ✗ user authorisation
 ✗ user quotas
-✗ user foreign connect (facebook)
-✗ user foreign connect (twitter)
 ✗ user profile
 ✗ user profile picture
 ✗ user settings
@@ -625,16 +587,17 @@ Ampify Core
 ✗ user payments model
 ✗ user payments
 
-✗ paypal basic api
-✗ paypal recurring payments
-✗ paypal adaptive payments
+✗ paypal: basic api + simple pay link
+✗ paypal: recurring payments
+✗ paypal: adaptive payments
+✗ paypal: buy amp creds
+✗ paypal: pecu payouts
 
 ✗ default spaces
 ✗ default tokens
 
 ✗ datastore service
 ✗ datastore service: caller
-✗ datastore service: naaga
 ✗ datastore service: serialisation
 ✗ datastore service: disk store
 ✗ datastore service: memstore
@@ -687,7 +650,7 @@ Ampify Core
 
 ✗ language detection
 ✗ language models generation
-✗ language models -> naaga data
+✗ language models -> json
 
 ✓ javascript ucd -- part 1
 ✗ javascript ucd -- part 2
@@ -699,17 +662,20 @@ Ampify Core
 ✗ go case-folding normalisation
 ✗ link normalisation
 
+✗ search query parser
+✗ query subset params
+✗ /aspect search
+
+✗ boolean encoding/search
 ✗ to encoding/search
 ✗ about encoding/search
 ✗ refs encoding/search
 ✗ links encoding/search
 ✗ includes encoding/search
 ✗ list encoding/search
-✗ argonought encoding
 ✗ numbers encoding/search
 ✗ phrase encoding/search
 ✗ geo-location encoding/search
-✗ pair encoding/search
 ✗ date encoding/search
 ✗ time/timedelta encoding/search
 ✗ amp creds encoding/search
@@ -719,179 +685,35 @@ Ampify Core
 ✗ pecus encoding/search
 ✗ multi encoding/search
 
-✗ naaga
-✗ naaga: tokeniser
-✗ naaga: lexer
-✗ naaga: parser
-✗ naaga: parser combinator
-✗ naaga: quasi literals
-✗ naaga: auto-sanitising html
-✗ naaga: templated expansion
-✗ naaga: element literals
-✗ naaga: auto-binding
-✗ naaga: coherent reaction
-✗ naaga: tick
-✗ naaga: reaction ordering
-✗ naaga: auto-value propagation
-✗ naaga: lexical scoping
-✗ naaga: auto-scope binding
-✗ naaga: """strings"""
-✗ naaga: comments
-✗ naaga: package
-✗ naaga: service call
-✗ naaga: versioning
-✗ naaga: help/preview
-✗ naaga: dom sandboxing
-✗ naaga: dom query
-✗ naaga: do blocks
-✗ naaga: if/else conditionals
-✗ naaga: comparisons
-✗ naaga: pipe operator
-✗ naaga: for loops
-✗ naaga: while loops
-✗ naaga: list comprehensions
-✗ naaga: set comprehensions
-✗ naaga: dict comprehensions
-✗ naaga: functions
-✗ naaga: function calls
-✗ naaga: blocks
-✗ naaga: try/catch
-✗ naaga: try/catch/finally
-✗ naaga: lazy ranges
-✗ naaga: slices
-✗ naaga: eval
-✗ naaga: assignment
-✗ naaga: variables
-✗ naaga: multiple assignment
-✗ naaga: assignment swap
-✗ naaga: repl
-✗ naaga: order precendence
-✗ naaga: exponentiation
-✗ naaga: square roots
-✗ naaga: ? operator
-✗ naaga: % remainder operator
-✗ naaga: and/or operators
-✗ naaga: sub expresions
-✗ naaga: mixed list/dict object
-✗ naaga: make object
-✗ naaga: i18n
-✗ naaga: timezones
-✗ naaga: raphael graphs
-✗ naaga: html generation
-
+✗ argonought: boolean
 ✗ argonought: string
-✗ naaga argo: string
-✗ naaga object: string
 ✗ argonought: quasi
-✗ naaga argo: quasi
-✗ naaga object: quasi
 ✓ argonought: number
-✗ naaga argo: number
-✗ naaga object: number
 ✓ argonought: integer
-✗ naaga argo: integer
-✗ naaga object: integer
-✗ argonought: float
-✗ naaga argo: float
-✗ naaga object: float
-✗ argonought: complex
-✗ naaga argo: complex
-✗ naaga object: complex
 ✗ argonought: date
-✗ naaga argo: date
-✗ naaga object: date
 ✗ argonought: time
-✗ naaga argo: time
-✗ naaga object: time
 ✗ argonought: datetime
-✗ naaga argo: datetime
-✗ naaga object: datetime
 ✗ argonought: timedelta
-✗ naaga argo: timedelta
-✗ naaga object: timedelta
 ✗ argonought: currency
-✗ naaga argo: currency
-✗ naaga object: currency
 ✗ argonought: units
-✗ naaga argo: units
-✗ naaga object: units
-✗ argonought: pair
-✗ naaga argo: pair
-✗ naaga object: pair
 ✗ argonought: geo-location
-✗ naaga argo: geo-location
-✗ naaga object: geo-location
 ✗ argonought: pecus
-✗ naaga argo: pecus
-✗ naaga object: pecus
 ✗ argonought: language
-✗ naaga argo: language
-✗ naaga object: language
 ✗ argonought: amp
-✗ naaga argo: amp
-✗ naaga object: amp
 ✗ argonought: list
-✗ naaga argo: list
-✗ naaga object: list
-✗ argonought: set
-✗ naaga argo: set
-✗ naaga object: set
-✗ argonought: dict
-✗ naaga argo: dict
-✗ naaga object: dict
-✗ argonought: named value
-✗ naaga argo: named value
-✗ naaga object: named value
 ✗ argonought: link
-✗ naaga argo: link
-✗ naaga object: link
 ✗ argonought: user
-✗ naaga argo: user
-✗ naaga object: user
 ✗ argonought: aspect
-✗ naaga argo: aspect
-✗ naaga object: aspect
-✗ argonought: call
-✗ naaga argo: call
-✗ naaga object: call
-✗ argonought: element
-✗ naaga argo: element
-✗ naaga object: element
-✗ argonought: ip
-✗ naaga argo: ip
-✗ naaga object: ip
-✗ argonought: range
-✗ naaga argo: range
-✗ naaga object: range
-✗ argonought: code
-✗ naaga argo: code
-✗ naaga object: code
-✗ argonought: object
-✗ naaga argo: object
-✗ naaga object: object
 ✗ argonought: spaces
-✗ naaga argo: spaces
-✗ naaga object: spaces
 ✗ argonought: tokens
-✗ naaga argo: tokens
-✗ naaga object: tokens
-
-✗ search query parser
-✗ query subset params
 
 ✗ transaction lock / lease
 ✗ transaction save
 ✗ pecu totals
 
-✗ oembed support
-✗ oembed store data
-✗ longurls support
-✗ longurls store data
-
 ✗ double entry support
 ✗ amp creds: service
 ✗ amp creds: caller
-✗ amp creds: naaga
 ✗ amp creds: account model
 ✗ amp creds: transfer
 ✗ amp creds: transaction
@@ -900,18 +722,13 @@ Ampify Core
 ✗ hashcash generator
 ✗ hashcash verifier
 
-✗ service tokens
-✗ service tokens: transfer
-✗ service tokens: storage
-✗ service tokens: processing
-✗ service tokens: request
-
 ✗ user messaging
 
-✗ private spaces
-✗ private space creation
-✗ private space invitation
+✗ controlled spaces
+✗ controlled space creation view
+✗ controlled space invitation view
 
+✗ access tokens management
 ✗ access tokens model
 ✗ access tokens creation
 ✗ access tokens revoke
@@ -921,12 +738,16 @@ Ampify Core
 ✗ trust maps listing
 ✗ trust maps query
 
+✗ json encoding
+✗ json decoding
+
 ✗ parallel query
 ✗ parallel query cursor
 ✗ parallel query filter
 ✗ parallel query memcache
 ✗ parallel query sensor notify
 
+✗ sanitiser
 ✗ sanitiser: dom elements
 ✗ sanitiser: jsonp
 ✗ sanitiser: css
@@ -939,8 +760,18 @@ Ampify Core
 ✗ markdown with {{inclusions}}
 ✗ markdown + sanitiser
 ✗ markdown preview view
-
 ✗ syntax highlighter for code
+
+✗ render: raw
+✗ render: code
+✗ render: html
+✗ render: text
+✗ render: js
+✗ render: coffee
+✗ render: template
+
+✗ math rendering support
+✗ [[links]]
 
 ✗ trends model
 ✗ trends updating
@@ -951,17 +782,8 @@ Ampify Core
 ✗ trends search
 ✗ trends listing
 
-✗ mapreduce handlers
-✗ mapreduce generated results view
-
-✗ quota tracking
-
 ✗ auto-completion query support
 ✗ auto-completion cache support
-
-✗ ampauth server
-✗ ampauth client
-✗ ampauth views
 
 ✗ oauth support
 ✗ oauth server
@@ -969,20 +791,10 @@ Ampify Core
 ✗ oauth settings
 ✗ oauth clients view
 
-✗ nginx configuration
-✗ nginx load-balancing
-✗ multi-process ampnode
-
 ✗ redis configuration
 ✗ redis nodule
 ✗ redis manager
 ✗ redis client library
-
-# keyspace configuration
-# keyspace proxy
-✗ keyspace service
-✗ keyspace nodule
-✗ keyspace client
 
 ✗ redis-keyspace partitioner
 ✗ redis-keyspace detector
@@ -1006,7 +818,6 @@ Ampify Core
 
 ✗ sensor service
 ✗ sensor service: caller
-✗ sensor service: naaga
 ✗ sensor network
 ✗ sensor pattern match finder
 ✗ send code updated signal
@@ -1018,46 +829,24 @@ Ampify Core
 ✗ web hooks post handler
 ✗ memcache invalidation handler
 
-✓ github integration
-# github key generation
-
-✓ git review
-✓ git review init
-✓ git review: builtins
-✓ git review: github cross repository compare
-✓ git review: diff view
-✓ git review: comment
-✓ git review: test runner
-✓ git review: build slave
-✓ git review: try bot
-✓ git review: watchlist
-✓ git review: view
+✗ github integration
 
 ✗ google calendar integration: in
 ✗ google calendar integration: out
-
-✗ rss feed service
-✗ rss feed service: caller
-✗ rss feed service: parser
-✗ rss feed service: naaga handler
-✗ rss feed service: cache
-✗ rss feed generator for __format__=rss
 
 ✗ twitter: oauth
 ✗ twitter: link to user account
 ✗ twitter: settings view
 ✗ twitter: "post to" support
 ✗ twitter: post
+✗ twitter: connected friends
 
 ✗ facebook: oauth
 ✗ facebook: link to user account
 ✗ facebook: settings view
 ✗ facebook: "post to" support
 ✗ facebook: post
-
-✗ web services service
-✗ web services service: naaga
-✗ google map geocoding call
+✗ facebook: connected friends
 
 ✗ anonymous posting
 ✗ anonymous posting: payment
@@ -1070,7 +859,6 @@ Ampify Core
 
 ✗ logging service
 ✗ logging service: caller
-✗ logging service: naaga
 
 ✗ request logging
 ✗ error logging
@@ -1081,56 +869,369 @@ Ampify Core
 ✗ live error logging
 ✗ input external data, e.g. user plans, quotas, etc.
 
+✗ quota tracking
 ✗ quota limits
 ✗ quota limit setter
 ✗ quota usage logger
 ✗ quota usage view
 
-# async s3 client
-# logs saver to s3
-# logs saver to redis
-# datastore saver to s3
-# datastore restore from s3
+✗ async s3 client
+✗ logs saver to s3
+✗ logs saver to redis
+✗ datastore saver to s3
+✗ datastore restore from s3
 
 ✗ log store view
 ✗ log store configuration
 ✗ log model
-✗ mappers
-✗ reducers
-✗ default jobs, e.g. top users
-✗ a/b test jobs
-✗ reports interface
-✗ report charts
 
 ✗ remonit data input sources
 ✗ remonit configuration
 ✗ remonit notification
-✗ remonit web interface
-✗ remonit status interface
-✗ remonit recent logs interface
-✗ remonit error reporting interface
-
 ✗ public status app
-✗ public status app access verification
 ✗ public status app charts
 
-✗ liquid democracy
-✗ amp creds exchange
-✗ usage tips
-✗ virtual users, e.g. britney-spears, appa, etc.
+✗ espian democracy
+✗ espian democracy: who is eligible
+✗ espian democracy: space
+✗ espian democracy: context jury
+✗ espian democracy: access
+✗ espian democracy: propose
+✗ espian democracy: deliberate
+✗ espian democracy: recommend
+✗ espian democracy: vote
 
 ✓ optparse
-✓ hubproxy
-✓ amp test
+✓ command-line auto completion
+✓ yaml parser nodule
+✓ yaml parser caller
+✓ lzf compression
+
+✗ badges
+✗ buy badges
+✗ assign badges
+✗ tasks for badges
+✗ handshake protocol
+
+✗ letterbox protocol
+✗ charts
+✗ base32
+✗ predictions
+✗ dynamic favicon updater
+
+======
+Future
+======
+
+# amphub deployment
+# amp deployment
+# ampnode binary upgrade
+# blacklist ip/networks
+
+# amp config handling
+# amp init
+# amp hub registration: host
+# amp hub registration: user
+# amp sign: new node
+# amp run
+# amp run --no-hub
+# amp run --server
+# amp run --services
+
+# detect node on local subnet from teredo IP
+# rendezvous support
+# rendezvous announce
+
+# local names support
+# on-save name->id mapping
+# on-load id->name mapping
+
+# pie menu
+# pie menu: design
+# pie menu: options hook
+
+# mapreduce handlers
+# mapreduce generated results view
+
+# mappers
+# reducers
+# default jobs, e.g. top users
+# a/b test jobs
+# reports interface
+# report charts
+
+# usage tips
+# virtual users, e.g. britney-spears, appa, etc.
+
+# pair encoding/search
+# argonought: pair
+# argonought: float
+# argonought: complex
+# argonought: set
+# argonought: dict
+# argonought: named value
+# argonought: call
+# argonought: element
+# argonought: ip
+# argonought: range
+# argonought: code
+# argonought: object
+
+# fonts: naaga
+# code editor: naaga syntax
+# mail service: naaga support
+# urlfetch service: naaga
+# images service: naaga
+# taskqueue service: naaga
+# memstore service: naaga
+# routing service: naaga
+# peerfund service: naaga
+# identity service: naaga
+# datastore service: naaga
+# amp creds: naaga
+# sensor service: naaga
+# logging service: naaga
+# web services service: naaga
+
+# naaga
+# naaga: tokeniser
+# naaga: lexer
+# naaga: parser
+# naaga: parser combinator
+# naaga: quasi literals
+# naaga: auto-sanitising html
+# naaga: templated expansion
+# naaga: element literals
+# naaga: auto-binding
+# naaga: coherent reaction
+# naaga: tick
+# naaga: reaction ordering
+# naaga: auto-value propagation
+# naaga: lexical scoping
+# naaga: auto-scope binding
+# naaga: """strings"""
+# naaga: comments
+# naaga: package
+# naaga: service call
+# naaga: versioning
+# naaga: help/preview
+# naaga: dom sandboxing
+# naaga: dom query
+# naaga: do blocks
+# naaga: if/else conditionals
+# naaga: comparisons
+# naaga: pipe operator
+# naaga: for loops
+# naaga: while loops
+# naaga: list comprehensions
+# naaga: set comprehensions
+# naaga: dict comprehensions
+# naaga: functions
+# naaga: function calls
+# naaga: blocks
+# naaga: try/catch
+# naaga: try/catch/finally
+# naaga: lazy ranges
+# naaga: slices
+# naaga: eval
+# naaga: assignment
+# naaga: variables
+# naaga: multiple assignment
+# naaga: assignment swap
+# naaga: repl
+# naaga: order precendence
+# naaga: exponentiation
+# naaga: square roots
+# naaga: ? operator
+# naaga: % remainder operator
+# naaga: and/or operators
+# naaga: sub expresions
+# naaga: mixed list/dict object
+# naaga: make object
+# naaga: i18n
+# naaga: timezones
+# naaga: raphael graphs
+# naaga: html generation
+
+# amptp
+# amptp what is my ip
+# amptp upnp/natpmp
+# amptp upnp/natpmp nodule
+# amptp udp bind
+# amptp ordering
+# amptp ordering 2
+# amptp framing
+# amptp framing 2
+# amptp framing 3
+
+# amptp congestion control
+# amptp congestion control 2
+# amptp congestion control 3
+# amptp secure connection
+# amptp secure connection 2
+# amptp secure connection 3
+# amptp recall connection
+# amptp ping
+# amptp auto-compression
+
+# naaga argo: string
+# naaga object: string
+# naaga argo: quasi
+# naaga object: quasi
+# naaga argo: number
+# naaga object: number
+# naaga argo: integer
+# naaga object: integer
+# naaga argo: float
+# naaga object: float
+# naaga argo: complex
+# naaga object: complex
+# naaga argo: date
+# naaga object: date
+# naaga argo: time
+# naaga object: time
+# naaga argo: datetime
+# naaga object: datetime
+# naaga argo: timedelta
+# naaga object: timedelta
+# naaga argo: currency
+# naaga object: currency
+# naaga argo: units
+# naaga object: units
+# naaga argo: pair
+# naaga object: pair
+# naaga argo: geo-location
+# naaga object: geo-location
+# naaga argo: pecus
+# naaga object: pecus
+# naaga argo: language
+# naaga object: language
+# naaga argo: amp
+# naaga object: amp
+# naaga argo: list
+# naaga object: list
+# naaga argo: set
+# naaga object: set
+# naaga argo: dict
+# naaga object: dict
+# naaga argo: named value
+# naaga object: named value
+# naaga argo: link
+# naaga object: link
+# naaga argo: user
+# naaga object: user
+# naaga argo: aspect
+# naaga object: aspect
+# naaga argo: call
+# naaga object: call
+# naaga argo: element
+# naaga object: element
+# naaga argo: ip
+# naaga object: ip
+# naaga argo: range
+# naaga object: range
+# naaga argo: code
+# naaga object: code
+# naaga argo: object
+# naaga object: object
+# naaga argo: spaces
+# naaga object: spaces
+# naaga argo: tokens
+# naaga object: tokens
+
+# rss feed service
+# rss feed service: caller
+# rss feed service: parser
+# rss feed service: naaga handler
+# rss feed service: cache
+# rss feed generator for __format__=rss
+
+# offline: mode switcher
+# offline: cache
+# offline: consumption view
+
+# relay service
+# relay service: caller
+# relay service: naaga
+# relay service: functions
+# relay service: setup
+# relay service: request
+# relay service: accept
+# relay service: update
+
+# amphub service
+# amphub service: caller
+# amphub service: naaga
+# amphub service: functions
+# amphub service: registration
+# amphub service: update
+
+# ampauth server
+# ampauth client
+# ampauth views
+
+# cert generate
+# cert sign
+# cert loading
+
+# naaga service
+# naaga service: nodejs nodule
+# naaga service: multi process
+# naaga service: base runtime
+# naaga service: error handler
+# naaga service: package
+# naaga service: loader
+# naaga service: callback
+# naaga service: auth
+# naaga service: call services
+# naaga service: timeout
+
+# naaga: package
+# naaga: versioning support
+# naaga: remote call
+
+# code editor: wysiwyg field
+# code editor: scroll
+# code editor: cut/paste
+# code editor: text
+# code editor: autocompletion
+# code editor: help viewer
+# code editor: commands
+
+# lzf compression: dictionary-support
+# amptp request parser
+# upgrade notifier: amptp
+
+# service tokens
+# service tokens: transfer
+# service tokens: storage
+# service tokens: processing
+# service tokens: request
+
+# js transaction handling
+# pecu allocations
+# pecu totals
+
+# ipv4 support
+# ipv6 support
+
+# web services service
+# google map geocoding call
 
 # magic db
 # magic detector -> mimetype
 # geoip data
 # geoip parser/lookup
 
-✗ charts
-✗ base32
-✗ predictions
-✗ blacklist ip/networks
+# remonit web interface
+# remonit status interface
+# remonit recent logs interface
+# remonit error reporting interface
+# public status app access verification
+
+# amp creds exchange
+# replication update amphub
+# github key generation
+# recurring events
 
 EOF
