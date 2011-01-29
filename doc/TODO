@@ -364,6 +364,12 @@ Ampify Zero
 ✗ google translation
 ✗ transliteration support
 
+✗ undo actions: client
+✗ undo actions: backend
+✗ keyboard controls
+✗ stylised reader mode
+✗ stylised reader cache
+
 ✗ cajoleit
 ✗ caja host
 ✗ caja service loader
@@ -494,6 +500,12 @@ Ampify Zero
 ✗ file transfer: upload
 ✗ file transfer: video progressive/stream
 
+✗ frontend
+✗ frontend proxy
+✗ frontend upgrade
+✗ http server
+✗ xsrf tokens
+
 ✗ request handling
 ✗ http request parser
 ✗ https request handler
@@ -551,12 +563,6 @@ Ampify Zero
 ✗ argonought calls: async
 ✗ argonought encodes of special typed values
 
-✗ replication service
-✗ replication request
-✗ replication accept
-✗ replication pattern handler
-✗ replication notification
-
 ✗ current sensors check
 ✗ current sensors view
 ✗ current sensors refresh
@@ -583,7 +589,7 @@ Ampify Zero
 ✗ profile pic update
 
 ✗ user invitation
-✗ user mail-out / email list
+✗ user mail-out / email list / confirmation mail reply
 ✗ user payments model
 ✗ user payments
 
@@ -1233,5 +1239,11 @@ Future
 # replication update amphub
 # github key generation
 # recurring events
+
+# replication service
+# replication request
+# replication accept
+# replication pattern handler
+# replication notification
 
 EOF
