@@ -1,0 +1,104 @@
+/* Public Domain (-) 2010-2011 The Ampify Authors. */
+/* See the Ampify UNLICENSE file for details. */
+
+// Mixins
+
+=border-radius($radius)
+  -webkit-border-radius: $radius
+  -moz-border-radius: $radius
+  border-radius: $radius
+
+=border-radius-top-right($radius)
+  -webkit-border-top-right-radius: $radius
+  -moz-border-radius-topright: $radius
+  border-top-right-radius: $radius
+
+=border-radius-bottom-right($radius)
+  -webkit-border-bottom-right-radius: $radius
+  -moz-border-radius-bottomright: $radius
+  border-bottom-right-radius: $radius
+
+=border-radius-bottom-left($radius)
+  -webkit-border-bottom-left-radius: $radius
+  -moz-border-radius-bottomleft: $radius
+  border-bottom-left-radius: $radius
+
+=border-radius-top-left($radius)
+  -webkit-border-top-left-radius: $radius
+  -moz-border-radius-topleft: $radius
+  border-top-left-radius: $radius
+
+=border-radius-top($radius)
+  +border-radius-top-left($radius)
+  +border-radius-top-right($radius)
+
+=border-radius-right($radius)
+  +border-radius-top-right($radius)
+  +border-radius-bottom-right($radius)
+
+=border-radius-bottom($radius)
+  +border-radius-bottom-right($radius)
+  +border-radius-bottom-left($radius)
+
+=border-radius-left($radius)
+  +border-radius-top-left($radius)
+  +border-radius-bottom-left($radius)
+
+// Elements
+
+body
+  background-color: #fff
+  font: 90%/1em 'Lucida Grande', 'Lucida Sans Unicode', Optima, Verdana, sans-serif
+  height: 100%
+  margin: 0
+  padding: 0
+  width: 100%
+
+a
+  color: #03e
+  display: block
+  outline: 0
+  text-decoration: none
+
+a:active, a:hover
+  text-decoration: underline
+
+img
+  border: none
+
+// Classes
+
+.update-browser h1
+  background-color: #f6f6f6
+  border-bottom: 2px solid #f0f0f0
+  font-family: Georgia, serif
+  font-size: 30px
+  line-height: 39px
+  margin: 0
+  padding: 16px 10px 12px 10px
+
+.update-browser .listing
+  border-top: 1px solid #e6e6e6
+
+.update-browser ul
+  margin: 60px auto 20px auto
+  padding: 0
+  width: 600px
+
+.update-browser li
+  border: 1px solid #fff
+  float: left
+  list-style-type: none
+  margin: 0
+  padding: 20px 0px
+  text-align: center
+  width: 198px
+
+.update-browser li:hover
+  border: 1px solid #d6d6d6
+  background-color: #f8f6f6
+
+.update-browser li div
+  font-size: 20px
+  line-height: 20px
+  margin-top: 16px
