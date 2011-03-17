@@ -1,3 +1,0 @@
-Implemented by Sam Thorogood <http://www.whistlr.info/>
-
-License: <http://www.opensource.org/licenses/bsd-license.php>
