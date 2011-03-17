@@ -7,6 +7,6 @@
 
 import pylibs
 
-from pyutil.yatiblog import main
+from yatiblog.main import main
 
 main()
