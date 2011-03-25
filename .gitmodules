@@ -18,7 +18,7 @@
 	url = https://github.com/jashkenas/coffee-script.git
 [submodule "third_party/vows"]
 	path = third_party/vows
-	url = https://github.com/tav/vows.git
+	url = https://github.com/cloudhead/vows.git
 [submodule "third_party/jslibs"]
 	path = third_party/jslibs
 	url = https://github.com/tav/jslibs.git
