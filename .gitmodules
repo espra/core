@@ -34,3 +34,6 @@
 [submodule "third_party/pypy"]
 	path = third_party/pypy
 	url = https://github.com/pypy/pypy.git
+[submodule "third_party/node-fibers"]
+	path = third_party/node-fibers
+	url = https://github.com/laverdet/node-fibers.git
