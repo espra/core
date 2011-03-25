@@ -14,8 +14,8 @@ from Cython.Distutils import build_ext
 
 extensions = [
     Extension(
-        "ampify._lzf",
-        ["ampify/_lzf.pyx", "ampify/liblzf/lzf_c.c", "ampify/liblzf/lzf_d.c"],
+        "ampify.liblzf",
+        ["ampify/liblzf.pyx", "ampify/liblzf/lzf_c.c", "ampify/liblzf/lzf_d.c"],
         include_dirs=["ampify/liblzf"],
         )
     ]
