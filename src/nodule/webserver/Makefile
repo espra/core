@@ -3,8 +3,8 @@
 
 include $(GOROOT)/src/Make.inc
 
-TARG=hubproxy
+TARG=webserver
 GOFILES=\
-	hubproxy.go\
+	webserver.go\
 
 include $(GOROOT)/src/Make.cmd
