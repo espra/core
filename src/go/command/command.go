@@ -28,12 +28,17 @@ func GetOutput(args []string) (output string, error os.Error) {
 		goto Error
 	}
 	defer read_pipe.Close()
-	pid, err := os.ForkExec(args[0], args, os.Environ(), ".", []*os.File{nil, write_pipe, nil})
+	process, err := os.StartProcess(args[0], args,
+		&os.ProcAttr{
+			Dir:   ".",
+			Env:   os.Environ(),
+			Files: []*os.File{nil, write_pipe, nil},
+		})
 	if err != nil {
 		write_pipe.Close()
 		goto Error
 	}
-	_, err = os.Wait(pid, 0)
+	_, err = process.Wait(0)
 	write_pipe.Close()
 	if err != nil {
 		goto Error

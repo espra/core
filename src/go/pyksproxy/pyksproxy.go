@@ -43,7 +43,7 @@ func (err *KeyspaceError) String() string {
 type KeyspaceProxy struct {
 	Connected bool
 	Servers   string
-	pid       int
+	process   *os.Process
 	stdin     *os.File
 	stdout    *os.File
 	stderr    *os.File
@@ -70,13 +70,17 @@ func Keyspace(servers string) (*KeyspaceProxy, os.Error) {
 		return nil, err
 	}
 	fd := []*os.File{stdinRead, stdoutWrite, stderrWrite}
-	pid, err := os.ForkExec(scriptPath, argv, os.Environ(), "", fd)
+	process, err := os.StartProcess(scriptPath, argv, &os.ProcAttr{
+		Dir:   "",
+		Env:   os.Environ(),
+		Files: fd,
+	})
 	if err != nil {
 		return nil, err
 	}
 	return &KeyspaceProxy{
 		Servers: servers,
-		pid:     pid,
+		process: process,
 		stdin:   stdinWrite,
 		stdout:  stdoutRead,
 		stderr:  stderrRead,
