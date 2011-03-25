@@ -5,7 +5,6 @@ PACKAGES=\
 	argo\
 	big\
 	command\
-	keyspace\
 	logging\
 	lzf\
 	optparse\
@@ -20,7 +19,6 @@ PACKAGES=\
 NOBENCH=\
 	command\
 	encoding\
-	keyspace\
 	logging\
 	lzf\
 	optparse\
@@ -32,7 +30,6 @@ NOBENCH=\
 
 NOTEST=\
 	command\
-	keyspace\
 	logging\
 	pyksproxy\
 	slice\
@@ -102,7 +99,6 @@ test: test.dirs
 # ------------------------------------------------------------------------------
 
 argo.install: big.install
-keyspace.install: runtime.install slice.install
 logging.install: encoding.install
 optparse.install: runtime.install slice.install yaml.install
 pyksproxy.install: runtime.install slice.install
