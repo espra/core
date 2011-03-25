@@ -13,19 +13,15 @@ doc/website/*.html
 environ/local
 environ/receipts
 
-src/amp/ampnode/ampnode
-src/amp/hubproxy/hubproxy
-src/amp/tentproxy/tentproxy
+src/ampify/*.c
 src/cajoleit/lib
 src/cajoleit/war
-src/jsutil/*.js
-src/instance/www/static/*.css
-src/instance/www/static/*.js
-src/pyutil/*.c
-src/tentapp/env.py
-src/tentapp/secret.py
-src/tentapp/static/css/*.css
-src/tentapp/static/js/*.js
+src/go/tentproxy/tentproxy
+src/js/*.js
+src/nodule/static/files/css/*.css
+src/nodule/static/files/js/*.js
+src/nodule/urlfetch/urlfetch
+src/nodule/webserver/webserver
 
 # minified css/js files
 
@@ -37,6 +33,8 @@ src/tentapp/static/js/*.js
 .bzr
 .bzrignore
 .DS_Store
+.hg
+.hgignore
 .lock-wscript
 .sass-cache
 .sconsign*
