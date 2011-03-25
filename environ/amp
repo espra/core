@@ -14,7 +14,9 @@ if [[ "x$AMPIFY_ROOT" == "x" ]]; then
 	echo "ERROR: Sorry, couldn't detect the Ampify Root Directory."
 fi
 
-. $AMPIFY_ROOT/environ/ampenv.sh
+if [[ "x$AMPIFY_LOCAL" == "x" ]]; then
+	. $AMPIFY_ROOT/environ/ampenv.sh
+fi
 
 # Exit if the Python version is not a 2.x more recent than 2.5.
 python -c "import sys
@@ -33,4 +35,4 @@ if [ $version_check_status -ne 0 ]; then
 	exit $version_check_status
 fi
 
-ampengine $@
+python -m ampify.main $@
