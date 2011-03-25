@@ -31,3 +31,6 @@
 [submodule "third_party/uglify-js"]
 	path = third_party/uglify-js
 	url = https://github.com/mishoo/UglifyJS.git
+[submodule "third_party/pypy"]
+	path = third_party/pypy
+	url = https://github.com/pypy/pypy.git
