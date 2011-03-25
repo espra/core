@@ -62,9 +62,14 @@ func (proxy *Proxy) ServeHTTP(conn http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	// Get the header.
+	headers := conn.Header()
+
 	// Set the received headers back to the initial connection.
-	for k, v := range resp.Header {
-		conn.SetHeader(k, v)
+	for k, values := range resp.Header {
+		for _, v := range values {
+			headers.Add(k, v)
+		}
 	}
 
 	// Read the full response body.

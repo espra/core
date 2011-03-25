@@ -88,7 +88,7 @@ func (redirector *Redirector) ServeHTTP(conn http.ResponseWriter, req *http.Requ
 		url = "/"
 	}
 
-	conn.SetHeader("Location", url)
+	conn.Header().Set("Location", url)
 	conn.WriteHeader(http.StatusMovedPermanently)
 	fmt.Fprintf(conn, redirectHTML, url)
 	logRequest(http.StatusMovedPermanently, req.Host, conn, req)
@@ -108,7 +108,7 @@ type Frontend struct {
 func (frontend *Frontend) ServeHTTP(conn http.ResponseWriter, req *http.Request) {
 
 	if frontend.enforceHost && req.Host != frontend.officialHost {
-		conn.SetHeader("Location", frontend.officialRedirectURL)
+		conn.Header().Set("Location", frontend.officialRedirectURL)
 		conn.WriteHeader(http.StatusMovedPermanently)
 		conn.Write(frontend.officialRedirectHTML)
 		logRequest(http.StatusMovedPermanently, req.Host, conn, req)
@@ -170,9 +170,14 @@ func (frontend *Frontend) ServeHTTP(conn http.ResponseWriter, req *http.Request)
 		return
 	}
 
+	// Get the header.
+	headers := conn.Header()
+
 	// Set the received headers back to the initial connection.
-	for k, v := range resp.Header {
-		conn.SetHeader(k, v)
+	for k, values := range resp.Header {
+		for _, v := range values {
+			headers.Add(k, v)
+		}
 	}
 
 	// Write the response body back to the initial connection.
@@ -186,11 +191,11 @@ func (frontend *Frontend) ServeHTTP(conn http.ResponseWriter, req *http.Request)
 
 func logRequest(status int, host string, conn http.ResponseWriter, request *http.Request) {
 	var ip string
-	splitPoint := strings.LastIndex(conn.RemoteAddr(), ":")
+	splitPoint := strings.LastIndex(request.RemoteAddr, ":")
 	if splitPoint == -1 {
-		ip = conn.RemoteAddr()
+		ip = request.RemoteAddr
 	} else {
-		ip = conn.RemoteAddr()[0:splitPoint]
+		ip = request.RemoteAddr[0:splitPoint]
 	}
 	logging.Info("fe", status, request.Method, host, request.RawURL,
 		ip, request.UserAgent, request.Referer)
@@ -210,9 +215,10 @@ func filterRequestLog(record *logging.Record) (write bool, data []interface{}) {
 }
 
 func serveError502(conn http.ResponseWriter, host string, request *http.Request) {
+	headers := conn.Header()
+	headers.Set(contentType, textHTML)
+	headers.Set(contentLength, error502Length)
 	conn.WriteHeader(http.StatusBadGateway)
-	conn.SetHeader(contentType, textHTML)
-	conn.SetHeader(contentLength, error502Length)
 	conn.Write(error502)
 	logRequest(http.StatusBadGateway, host, conn, request)
 }
