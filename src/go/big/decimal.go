@@ -8,7 +8,7 @@ import (
 )
 
 var (
-	nat40    nat
+	nat20    nat
 	Decimal0 *Decimal
 	Decimal1 *Decimal
 )
@@ -149,28 +149,28 @@ func (d *Decimal) Components() (*Int, *Int) {
 		}
 		rhs = strings.TrimRight(rhs+value, "0")
 		if len(rhs) > 0 {
-			return NewIntComponent("0", d.neg), NewIntComponent(pad40("1"+rhs), false)
+			return NewIntComponent("0", d.neg), NewIntComponent(pad20("1"+rhs), false)
 		}
 		return NewIntComponent("0", false), nil
 	}
 	diff = valsize - multiplier + 1
 	rhs := strings.TrimRight(value[diff:], "0")
 	if len(rhs) > 0 {
-		return NewIntComponent(value[:diff], d.neg), NewIntComponent(pad40("1"+rhs), false)
+		return NewIntComponent(value[:diff], d.neg), NewIntComponent(pad20("1"+rhs), false)
 	}
 	return NewIntComponent(value[:diff], false), nil
 }
 
-func pad40(s string) string {
+func pad20(s string) string {
 	length := len(s)
-	if length > 40 {
-		s = s[0:40]
+	if length > 20 {
+		s = s[0:20]
 	}
-	value := make([]byte, 40)
+	value := make([]byte, 20)
 	for i := 0; i < length; i++ {
 		value[i] = s[i]
 	}
-	for i := length; i < 40; i++ {
+	for i := length; i < 20; i++ {
 		value[i] = '0'
 	}
 	return string(value)
@@ -322,7 +322,7 @@ func (x *Decimal) Div(y *Decimal) *Decimal {
 		res.neg = x.neg != y.neg
 		return res
 	}
-	a = a.mul(a, nat40)
+	a = a.mul(a, nat20)
 	if len(b) == 1 {
 		a, _ = nat{}.divW(a, b[0])
 	} else {
@@ -331,13 +331,13 @@ func (x *Decimal) Div(y *Decimal) *Decimal {
 	if r == 1 {
 		return &Decimal{
 			a:   a,
-			b:   b.set(nat40),
+			b:   b.set(nat20),
 			neg: x.neg != y.neg,
 		}
 	}
 	return &Decimal{
 		a:   a,
-		b:   b.set(nat40),
+		b:   b.set(nat20),
 		neg: x.neg != y.neg,
 	}
 }
@@ -411,10 +411,10 @@ func NewIntComponent(value string, neg bool) *Int {
 }
 
 func init() {
-	nat40 = nat{}.make(0)
-	nat40 = nat40.mulAddWW(nat40, Word(10), Word(1))
-	for i := 0; i < 40; i++ {
-		nat40 = nat40.mulAddWW(nat40, Word(10), Word(0))
+	nat20 = nat{}.make(0)
+	nat20 = nat20.mulAddWW(nat20, Word(10), Word(1))
+	for i := 0; i < 20; i++ {
+		nat20 = nat20.mulAddWW(nat20, Word(10), Word(0))
 	}
 	Decimal0, _ = NewDecimal("0")
 	Decimal1, _ = NewDecimal("1")
