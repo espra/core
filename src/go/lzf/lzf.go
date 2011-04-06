@@ -209,6 +209,10 @@ func Decompress(input []byte) (output []byte) {
 
 	outputLength = ((uint32(input[0]) << 24) | (uint32(input[1]) << 16) | (uint32(input[2]) << 8) | uint32(input[3]))
 
+	if outputLength >= MaxSize {
+		return nil
+	}
+
 	output = make([]byte, outputLength, outputLength)
 	iidx = 4
 
