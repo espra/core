@@ -174,7 +174,7 @@ try:
 except ImportError:
     from json import loads as decode_json
 
-from io import IteratorParser
+from pyutil.io import IteratorParser
 
 # ------------------------------------------------------------------------------
 # Some Constants
