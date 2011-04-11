@@ -33,8 +33,9 @@ from pygments.lexers import get_lexer_by_name
 from yaml import safe_load as load_yaml
 
 from pyutil.env import run_command
-from pyutil.rst import render_rst, SYNTAX_FORMATTER
 from pyutil.scm import SCMConfig
+
+from yatiblog.rst import render_rst, SYNTAX_FORMATTER
 
 # ------------------------------------------------------------------------------
 # Some Constants
