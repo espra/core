@@ -78,16 +78,16 @@ test.dirs: $(addsuffix .test, $(TEST))
 bench: bench.dirs
 
 clean: clean.dirs
-	@cd tentproxy && $(make) clean
+	@cd frontend && $(make) clean
 
 distclean: nuke
 
 nuke: nuke.dirs
 	@echo rm -rf $(QUOTED_GOROOT)/pkg/amp
-	@cd tentproxy && $(make) nuke
+	@cd frontend && $(make) nuke
 
 install: install.dirs
-	@cd tentproxy && $(make) install
+	@cd frontend && $(make) install
 
 test: test.dirs
 
