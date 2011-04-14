@@ -16,7 +16,7 @@ environ/receipts
 src/ampify/*.c
 src/cajoleit/lib
 src/cajoleit/war
-src/go/tentproxy/tentproxy
+src/go/frontend/frontend
 src/js/*.js
 src/nodule/static/files/css/*.css
 src/nodule/static/files/js/*.js
