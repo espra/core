@@ -118,7 +118,7 @@ func (frontend *Frontend) ServeHTTP(conn http.ResponseWriter, req *http.Request)
 	originalHost := req.Host
 
 	// Open a connection to the App Engine server.
-	gaeConn, err := net.Dial("tcp", "", frontend.gaeAddr)
+	gaeConn, err := net.Dial("tcp", frontend.gaeAddr)
 	if err != nil {
 		if debugMode {
 			fmt.Printf("Couldn't connect to remote %s: %v\n", frontend.gaeHost, err)

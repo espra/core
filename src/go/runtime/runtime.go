@@ -75,7 +75,7 @@ func Error(message string, v ...interface{}) {
 }
 
 func CreatePidFile(path string) {
-	pidFile, err := os.Open(path, os.O_CREAT|os.O_WRONLY, 0666)
+	pidFile, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY, 0666)
 	if err != nil {
 		Error("ERROR: %s\n", err)
 	}
@@ -94,7 +94,7 @@ type Lock struct {
 
 func GetLock(directory string, name string) (lock *Lock, err os.Error) {
 	file := path.Join(directory, fmt.Sprintf("%s-%d.lock", name, os.Getpid()))
-	lockFile, err := os.Open(file, os.O_CREAT|os.O_WRONLY, 0666)
+	lockFile, err := os.OpenFile(file, os.O_CREATE|os.O_WRONLY, 0666)
 	if err != nil {
 		return lock, err
 	}

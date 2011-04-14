@@ -96,7 +96,7 @@ func (logger *FileLogger) log() {
 		select {
 		case filename = <-rotateSignal:
 			if filename != logger.filename {
-				file, err := os.Open(filename, os.O_CREAT|os.O_WRONLY, 0666)
+				file, err := os.OpenFile(filename, os.O_CREATE|os.O_WRONLY, 0666)
 				if err == nil {
 					logger.file.Close()
 					logger.file = file
@@ -248,7 +248,7 @@ func AddFileLogger(name string, directory string, rotate int) (logger *FileLogge
 	}
 	filename := logger.GetFilename(UTC)
 	pointer := FixUpLog(filename)
-	file, err := os.Open(filename, os.O_CREAT|os.O_WRONLY, 0666)
+	file, err := os.OpenFile(filename, os.O_CREATE|os.O_WRONLY, 0666)
 	if err != nil {
 		return logger, err
 	}
