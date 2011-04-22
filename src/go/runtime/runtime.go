@@ -27,20 +27,32 @@ var (
 	CPUCount   int
 )
 
+var signalHandlers = make(map[signal.UnixSignal]func())
 var exitHandlers = []func(){}
 
-func handleExitSignals() {
+func RegisterSignalHandler(signal signal.UnixSignal, handler func()) {
+	signalHandlers[signal] = handler
+}
+
+func ClearSignalHandler(signal signal.UnixSignal) {
+	signalHandlers[signal] = func() {}, false
+}
+
+func handleSignals() {
 	var sig signal.Signal
-	SIGTERM := signal.Signal(signal.SIGTERM)
-	SIGINT := signal.Signal(signal.SIGINT)
 	for {
 		sig = <-signal.Incoming
-		if sig == SIGTERM || sig == SIGINT {
-			RunExitHandlers()
-			os.Exit(0)
-			break
+		handler, found := signalHandlers[sig.(signal.UnixSignal)]
+		if found {
+			handler()
 		}
 	}
+}
+
+func exitProcess() {
+	fmt.Printf("GOT SIGNAL\n")
+	RunExitHandlers()
+	os.Exit(0)
 }
 
 func RunExitHandlers() {
@@ -70,6 +82,12 @@ func Error(message string, v ...interface{}) {
 	} else {
 		fmt.Fprintf(os.Stderr, message, v...)
 	}
+	RunExitHandlers()
+	os.Exit(1)
+}
+
+func StandardError(err os.Error) {
+	fmt.Fprintf(os.Stderr, "ERROR: %s\n", err)
 	RunExitHandlers()
 	os.Exit(1)
 }
@@ -174,5 +192,7 @@ func init() {
 	if AmpifyRoot == "" {
 		Error("ERROR: The AMPIFY_ROOT environment variable hasn't been set.\n")
 	}
-	go handleExitSignals()
+	RegisterSignalHandler(signal.SIGINT, exitProcess)
+	RegisterSignalHandler(signal.SIGTERM, exitProcess)
+	go handleSignals()
 }
