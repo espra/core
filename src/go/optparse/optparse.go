@@ -425,6 +425,23 @@ func (op *OptionParser) PrintUsage() {
 	}
 }
 
+func (op *OptionParser) PrintDefaultConfigFile() {
+	fmt.Printf("# %s.yaml\n\n", os.Args[0])
+	for _, opt := range op.options {
+		if opt.configflag != "" {
+			fmt.Printf("%s: ", opt.configflag)
+			switch opt.valueType {
+			case "int":
+				fmt.Printf("%d\n", *opt.intValue)
+			case "bool":
+				fmt.Printf("%v\n", *opt.boolValue)
+			case "string":
+				fmt.Printf("%s\n", *opt.stringValue)
+			}
+		}
+	}
+}
+
 // Utility constructor.
 func Parser(usage string, version ...string) (op *OptionParser) {
 	op = &OptionParser{}
