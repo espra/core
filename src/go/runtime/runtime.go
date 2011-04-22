@@ -50,7 +50,6 @@ func handleSignals() {
 }
 
 func exitProcess() {
-	fmt.Printf("GOT SIGNAL\n")
 	RunExitHandlers()
 	os.Exit(0)
 }
