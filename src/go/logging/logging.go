@@ -281,7 +281,7 @@ func AddReceiver(receiver chan *Record) {
 	Receivers = temp
 }
 
-func AddFilter(filter Filter) {
+func AddConsoleFilter(filter Filter) {
 	length := len(ConsoleFilters)
 	temp := make([]Filter, length+1, length+1)
 	for idx, item := range ConsoleFilters {
