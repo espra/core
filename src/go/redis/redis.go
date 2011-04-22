@@ -141,7 +141,7 @@ func Tick(interval int64) {
 	tickLock <- 1
 	for TickRunning {
 		TickValue = time.Nanoseconds()
-		time.Sleep(interval)
+		<-time.After(interval)
 	}
 }
 

@@ -78,7 +78,7 @@ func signalRotation(logger *FileLogger, signalChannel chan string) {
 		if filename != logger.filename {
 			signalChannel <- filename
 		}
-		time.Sleep(interval)
+		<-time.After(interval)
 	}
 }
 
@@ -295,7 +295,7 @@ func init() {
 
 	go func() {
 		for {
-			time.Sleep(1000000000)
+			<-time.After(1000000000)
 			Now = time.Seconds()
 			UTC = time.UTC()
 		}
