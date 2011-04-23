@@ -67,7 +67,7 @@ func (opt *option) String() (output string) {
 		}
 	}
 	length := len(output)
-	if length >= 19 {
+	if length >= 21 {
 		output += "\n                    "
 	} else {
 		padding := make([]byte, 20-length)
