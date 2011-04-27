@@ -202,17 +202,11 @@ func (logger *FileLogger) GetFilename(timestamp *time.Time) string {
 	case RotateNever:
 		suffix = ""
 	case RotateDaily:
-		suffix = "." + encoding.PadInt64(timestamp.Year, 4) + "-" +
-			encoding.PadInt(timestamp.Month, 2) + "-" + encoding.PadInt(timestamp.Day, 2)
+		suffix = timestamp.Format(".2006-01-02")
 	case RotateHourly:
-		suffix = "." + encoding.PadInt64(timestamp.Year, 4) + "-" +
-			encoding.PadInt(timestamp.Month, 2) + "-" + encoding.PadInt(timestamp.Day, 2) + "." +
-			encoding.PadInt(timestamp.Hour, 2)
+		suffix = timestamp.Format(".2006-01-02.03")
 	case RotateTest:
-		suffix = "." + encoding.PadInt64(timestamp.Year, 4) + "-" +
-			encoding.PadInt(timestamp.Month, 2) + "-" + encoding.PadInt(timestamp.Day, 2) + "." +
-			encoding.PadInt(timestamp.Hour, 2) + "-" + encoding.PadInt(timestamp.Minute, 2) + "-" +
-			encoding.PadInt(timestamp.Second, 2)
+		suffix = timestamp.Format(".2006-01-02.03-04-05")
 	}
 	filename := logger.name + suffix + ".log"
 	return path.Join(logger.directory, filename)
@@ -239,7 +233,7 @@ func FixUpLog(filename string) (pointer int) {
 }
 
 func AddFileLogger(name string, directory string, rotate int) (logger *FileLogger, err os.Error) {
-	receiver := make(chan *Record)
+	receiver := make(chan *Record, 100)
 	logger = &FileLogger{
 		name:      name,
 		directory: directory,
@@ -263,7 +257,7 @@ func AddFileLogger(name string, directory string, rotate int) (logger *FileLogge
 }
 
 func AddConsoleLogger() {
-	stdReceiver := make(chan *Record)
+	stdReceiver := make(chan *Record, 100)
 	console := &ConsoleLogger{
 		receiver: stdReceiver,
 	}
