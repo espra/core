@@ -272,23 +272,11 @@ func AddConsoleLogger() {
 }
 
 func AddReceiver(receiver chan *Record) {
-	length := len(Receivers)
-	temp := make([]chan *Record, length+1, length+1)
-	for idx, item := range Receivers {
-		temp[idx] = item
-	}
-	temp[length] = receiver
-	Receivers = temp
+	Receivers = append(Receivers, receiver)
 }
 
 func AddConsoleFilter(filter Filter) {
-	length := len(ConsoleFilters)
-	temp := make([]Filter, length+1, length+1)
-	for idx, item := range ConsoleFilters {
-		temp[idx] = item
-	}
-	temp[length] = filter
-	ConsoleFilters = temp
+	ConsoleFilters = append(ConsoleFilters, filter)
 }
 
 func init() {
