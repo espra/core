@@ -10,15 +10,22 @@ import (
 	"io/ioutil"
 	"os"
 	"path"
+	"strconv"
 	"time"
 )
 
 // Logs can be set to rotate either hourly, daily or never.
 const (
-	RotateNever  = 0
-	RotateHourly = 1
-	RotateDaily  = 2
-	RotateTest   = 3
+	RotateNever = iota
+	RotateHourly
+	RotateDaily
+	RotateTest
+)
+
+const (
+	InfoLog = 1 << iota
+	ErrorLog
+	MixedLog = InfoLog | ErrorLog
 )
 
 const (
@@ -33,7 +40,8 @@ var (
 var (
 	Now            = time.Seconds()
 	UTC            = time.UTC()
-	Receivers      = make([]chan *Record, 0)
+	ErrorReceivers = make([]chan *Record, 0)
+	InfoReceivers  = make([]chan *Record, 0)
 	ConsoleFilters = make([]Filter, 0)
 )
 
@@ -66,11 +74,12 @@ type Record struct {
 func signalRotation(logger *FileLogger, signalChannel chan string) {
 	var interval int64
 	var filename string
-	if logger.rotate == RotateDaily {
+	switch logger.rotate {
+	case RotateDaily:
 		interval = 86400000000000
-	} else if logger.rotate == RotateHourly {
+	case RotateHourly:
 		interval = 3600000000000
-	} else if logger.rotate == RotateTest {
+	case RotateTest:
 		interval = 3000000000
 	}
 	for {
@@ -154,9 +163,9 @@ func (logger *ConsoleLogger) log() {
 			file = os.Stdout
 		}
 		if record.Error {
-			status = "ERROR"
+			status = "ERR"
 		} else {
-			status = "INFO"
+			status = "INF"
 		}
 		fmt.Fprintf(file, "%s [%s-%s-%s %s:%s:%s]", status,
 			encoding.PadInt64(UTC.Year, 4), encoding.PadInt(UTC.Month, 2),
@@ -170,28 +179,44 @@ func (logger *ConsoleLogger) log() {
 
 }
 
-func Log(message string, v ...interface{}) {
+func Info(message string, v ...interface{}) {
 	if len(v) > 0 {
 		message = fmt.Sprintf(message, v...)
 	}
-	items := make([]interface{}, 1)
-	items[0] = message
-	record := &Record{false, v}
-	for _, receiver := range Receivers {
+	message = strconv.Quote(message)
+	items := make([]interface{}, 2)
+	items[0] = "m"
+	items[1] = message[1 : len(message)-1]
+	record := &Record{false, items}
+	for _, receiver := range InfoReceivers {
 		receiver <- record
 	}
 }
 
-func Info(v ...interface{}) {
+func InfoData(v ...interface{}) {
 	record := &Record{false, v}
-	for _, receiver := range Receivers {
+	for _, receiver := range InfoReceivers {
 		receiver <- record
 	}
 }
 
-func Error(v ...interface{}) {
+func Error(message string, v ...interface{}) {
+	if len(v) > 0 {
+		message = fmt.Sprintf(message, v...)
+	}
+	message = strconv.Quote(message)
+	items := make([]interface{}, 2)
+	items[0] = "m"
+	items[1] = message[1 : len(message)-1]
+	record := &Record{true, items}
+	for _, receiver := range ErrorReceivers {
+		receiver <- record
+	}
+}
+
+func ErrorData(v ...interface{}) {
 	record := &Record{true, v}
-	for _, receiver := range Receivers {
+	for _, receiver := range ErrorReceivers {
 		receiver <- record
 	}
 }
@@ -232,7 +257,7 @@ func FixUpLog(filename string) (pointer int) {
 	return pointer
 }
 
-func AddFileLogger(name string, directory string, rotate int) (logger *FileLogger, err os.Error) {
+func AddFileLogger(name string, directory string, rotate int, logType int) (logger *FileLogger, err os.Error) {
 	receiver := make(chan *Record, 100)
 	logger = &FileLogger{
 		name:      name,
@@ -252,7 +277,7 @@ func AddFileLogger(name string, directory string, rotate int) (logger *FileLogge
 	logger.file = file
 	logger.filename = filename
 	go logger.log()
-	AddReceiver(logger.receiver)
+	AddReceiver(logger.receiver, logType)
 	return logger, nil
 }
 
@@ -262,11 +287,16 @@ func AddConsoleLogger() {
 		receiver: stdReceiver,
 	}
 	go console.log()
-	AddReceiver(console.receiver)
+	AddReceiver(console.receiver, MixedLog)
 }
 
-func AddReceiver(receiver chan *Record) {
-	Receivers = append(Receivers, receiver)
+func AddReceiver(receiver chan *Record, logType int) {
+	if logType&InfoLog != 0 {
+		InfoReceivers = append(InfoReceivers, receiver)
+	}
+	if logType&ErrorLog != 0 {
+		ErrorReceivers = append(ErrorReceivers, receiver)
+	}
 }
 
 func AddConsoleFilter(filter Filter) {
