@@ -33,7 +33,7 @@ func (err ArgoError) String() string {
 }
 
 type Encoder struct {
-	stream io.Writer
+	Stream io.Writer
 }
 
 func (enc *Encoder) WriteSize(value uint64) os.Error {
@@ -49,8 +49,17 @@ func (enc *Encoder) WriteSize(value uint64) os.Error {
 			break
 		}
 	}
-	_, err := enc.stream.Write(data)
+	_, err := enc.Stream.Write(data)
 	return err
+}
+
+func (enc *Encoder) WriteString(value string) (err os.Error) {
+	err = enc.WriteSize(uint64(len(value)))
+	if err != nil {
+		return
+	}
+	_, err = enc.Stream.Write([]byte(value))
+	return
 }
 
 func (enc *Encoder) WriteStringArray(value []string) (err os.Error) {
@@ -63,7 +72,7 @@ func (enc *Encoder) WriteStringArray(value []string) (err os.Error) {
 		if err != nil {
 			return
 		}
-		_, err = enc.stream.Write([]byte(item))
+		_, err = enc.Stream.Write([]byte(item))
 		if err != nil {
 			return
 		}
@@ -72,7 +81,7 @@ func (enc *Encoder) WriteStringArray(value []string) (err os.Error) {
 }
 
 type Decoder struct {
-	stream io.Reader
+	Stream io.Reader
 }
 
 func (dec *Decoder) ReadSize() (value uint64, err os.Error) {
@@ -80,7 +89,7 @@ func (dec *Decoder) ReadSize() (value uint64, err os.Error) {
 	lowByte := uint64(1)
 	data := make([]byte, 1)
 	for lowByte > 0 {
-		n, err := dec.stream.Read(data)
+		n, err := dec.Stream.Read(data)
 		if n != 1 {
 			if err == nil {
 				return value, ArgoError("Couldn't read from the data stream.")
@@ -95,6 +104,22 @@ func (dec *Decoder) ReadSize() (value uint64, err os.Error) {
 	return value, nil
 }
 
+func (dec *Decoder) ReadString() (value string, err os.Error) {
+	stringSize, err := dec.ReadSize()
+	if err != nil {
+		return
+	}
+	item := make([]byte, stringSize)
+	n, err := dec.Stream.Read(item)
+	if uint64(n) != stringSize {
+		if err == nil {
+			return value, ArgoError("Couldn't read from the data stream.")
+		}
+		return
+	}
+	return string(item), nil
+}
+
 func (dec *Decoder) ReadStringArray() (value []string, err os.Error) {
 	arraySize, err := dec.ReadSize()
 	if err != nil {
@@ -107,7 +132,7 @@ func (dec *Decoder) ReadStringArray() (value []string, err os.Error) {
 			return
 		}
 		item := make([]byte, stringSize)
-		n, err := dec.stream.Read(item)
+		n, err := dec.Stream.Read(item)
 		if uint64(n) != stringSize {
 			if err == nil {
 				return value, ArgoError("Couldn't read from the data stream.")
