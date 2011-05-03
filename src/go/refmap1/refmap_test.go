@@ -5,6 +5,7 @@ package refmap
 
 import (
 	"fmt"
+	"runtime"
 	"testing"
 	"time"
 )
@@ -30,16 +31,24 @@ func TestRefmap(t *testing.T) {
 		t.Errorf("Got the same refs for a fully decref-ed string: %v", ref3)
 	}
 
+	ref5 := refmap.Get("another value")
+	if ref4 != ref5 {
+		t.Errorf("Mis-matched refs for Incref() and Get(): (%v, %v)", ref4, ref5)
+	}
+
 }
 
 func TestPerf(t *testing.T) {
-	N := 5000
+	runtime.GOMAXPROCS(4)
+	N := 10000
 	refmap := New()
 	start := time.Nanoseconds()
 	results := make(chan uint64, N)
 	for i := 0; i < N; i++ {
 		go func() {
 			results <- refmap.Incref("some string", 2)
+			refmap.Get("some string")
+			refmap.Get("another string")
 			refmap.Decref("some string", 1)
 		}()
 	}

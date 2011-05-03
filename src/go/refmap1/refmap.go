@@ -6,7 +6,8 @@
 package refmap
 
 const (
-	INCREF = iota
+	GET = iota
+	INCREF
 	DECREF
 )
 
@@ -28,6 +29,15 @@ type Req struct {
 type Ref struct {
 	s string /* String identifier */
 	v uint64 /* Value of the current refcount */
+}
+
+func (refmap *Map) Get(s string) uint64 {
+	resp := make(chan uint64)
+	req := &Req{r: resp, s: s, t: GET}
+	refmap.Inbox <- req
+	ref := <-resp
+	close(resp)
+	return ref
 }
 
 func (refmap *Map) Incref(s string, incref int) uint64 {
@@ -54,6 +64,12 @@ func NewWithVal(start uint64) *Map {
 			s := req.s
 			_ref, found := lookup[s]
 			switch req.t {
+			case GET:
+				if found {
+					req.r <- _ref
+				} else {
+					req.r <- zero
+				}
 			case INCREF:
 				if found {
 					req.r <- _ref
