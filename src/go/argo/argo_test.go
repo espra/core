@@ -23,10 +23,66 @@ func TestWriteSize(t *testing.T) {
 	}
 
 	for value, expected := range tests {
-		buf := Buffer()
-		WriteSize(value, buf)
+		buf := &bytes.Buffer{}
+		enc := &Encoder{buf}
+		enc.WriteSize(value)
 		if string(buf.Bytes()) != expected {
 			t.Errorf("Got unexpected encoding for %d: %q", value, buf.Bytes())
+		}
+	}
+
+}
+
+func TestStringArray(t *testing.T) {
+
+	input := []string{"hello", "world", "hehe", "okay"}
+	buf := &bytes.Buffer{}
+	enc := &Encoder{buf}
+	dec := &Decoder{buf}
+
+	err := enc.WriteStringArray(input)
+	if err != nil {
+		t.Errorf("Got error encoding string array: %s", err)
+		return
+	}
+
+	result, err := dec.ReadStringArray()
+	if err != nil {
+		t.Errorf("Got error decoding string array: %s", err)
+		return
+	}
+
+	if len(input) != len(result) {
+		t.Errorf("Got mis-matched result for string array: %#v -> %#v", input, result)
+		return
+	}
+
+	for idx, item := range input {
+		if item != result[idx] {
+			t.Errorf("Got mis-matched result for string array: %#v -> %#v", input, result)
+			return
+		}
+	}
+
+}
+
+func TestReadSize(t *testing.T) {
+
+	tests := map[string]uint64{
+		"\x00":                                     0,
+		"\x95\x9a\xef:":                            123456789,
+		"\xff\xff\xff\xff\xff\xff\xff\xff\xff\x01": 18446744073709551615,
+	}
+
+	for value, expected := range tests {
+		buf := bytes.NewBuffer([]byte(value))
+		dec := &Decoder{buf}
+		result, err := dec.ReadSize()
+		if err != nil {
+			t.Errorf("Got error decoding %q: %s", value, err)
+		}
+		if result != expected {
+			t.Errorf("Got unexpected decoding for %q: %d", value, result)
 		}
 	}
 
@@ -121,12 +177,12 @@ func TestWriteDecimalOrdering(t *testing.T) {
 
 }
 
-
 func BenchmarkWriteSize(b *testing.B) {
 	buf := Buffer()
+	enc := &Encoder{buf}
 	for i := 0; i < b.N; i++ {
 		buf.Reset()
-		WriteSize(123456789, buf)
+		enc.WriteSize(123456789)
 	}
 }
 

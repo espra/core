@@ -6,6 +6,7 @@ package argo
 import (
 	"amp/big"
 	"bytes"
+	"io"
 	"os"
 	"strings"
 )
@@ -25,24 +26,98 @@ var (
 	zeroBase              = []byte{'\x80', '\x01', '\x01'}
 )
 
-type EncodingError string
+type ArgoError string
 
-func (err EncodingError) String() string {
+func (err ArgoError) String() string {
 	return string(err)
 }
 
-func WriteSize(value uint64, buffer *bytes.Buffer) {
+type Encoder struct {
+	stream io.Writer
+}
+
+func (enc *Encoder) WriteSize(value uint64) os.Error {
+	data := make([]byte, 0)
 	for {
 		leftBits := value & 127
 		value >>= 7
 		if value > 0 {
 			leftBits += 128
 		}
-		buffer.WriteByte(byte(leftBits))
+		data = append(data, byte(leftBits))
 		if value == 0 {
 			break
 		}
 	}
+	_, err := enc.stream.Write(data)
+	return err
+}
+
+func (enc *Encoder) WriteStringArray(value []string) (err os.Error) {
+	err = enc.WriteSize(uint64(len(value)))
+	if err != nil {
+		return
+	}
+	for _, item := range value {
+		err = enc.WriteSize(uint64(len(item)))
+		if err != nil {
+			return
+		}
+		_, err = enc.stream.Write([]byte(item))
+		if err != nil {
+			return
+		}
+	}
+	return nil
+}
+
+type Decoder struct {
+	stream io.Reader
+}
+
+func (dec *Decoder) ReadSize() (value uint64, err os.Error) {
+	bitShift := uint(0)
+	lowByte := uint64(1)
+	data := make([]byte, 1)
+	for lowByte > 0 {
+		n, err := dec.stream.Read(data)
+		if n != 1 {
+			if err == nil {
+				return value, ArgoError("Couldn't read from the data stream.")
+			}
+			return
+		}
+		byteValue := uint64(data[0])
+		lowByte = byteValue & 128
+		value += (byteValue & 127) << bitShift
+		bitShift += 7
+	}
+	return value, nil
+}
+
+func (dec *Decoder) ReadStringArray() (value []string, err os.Error) {
+	arraySize, err := dec.ReadSize()
+	if err != nil {
+		return
+	}
+	var i uint64
+	for i < arraySize {
+		stringSize, err := dec.ReadSize()
+		if err != nil {
+			return
+		}
+		item := make([]byte, stringSize)
+		n, err := dec.stream.Read(item)
+		if uint64(n) != stringSize {
+			if err == nil {
+				return value, ArgoError("Couldn't read from the data stream.")
+			}
+			return
+		}
+		value = append(value, string(item))
+		i++
+	}
+	return value, nil
 }
 
 func pow(x, y int64) (z int64) {
@@ -160,14 +235,14 @@ func WriteNumber(value string, buffer *bytes.Buffer) os.Error {
 	if strings.Count(value, ".") > 0 {
 		number, ok := big.NewDecimal(value)
 		if !ok {
-			return EncodingError("Couldn't create a Decimal representation of " + value)
+			return ArgoError("Couldn't create a Decimal representation of " + value)
 		}
 		WriteDecimal(number, buffer)
 		return nil
 	}
 	number, ok := new(big.Int).SetString(value, 10)
 	if !ok {
-		return EncodingError("Couldn't create an Int representation of " + value)
+		return ArgoError("Couldn't create an Int representation of " + value)
 	}
 	WriteBigInt(number, buffer)
 	return nil
