@@ -60,6 +60,15 @@ func (refmap *Map) Decref(s string, decref int) {
 	}
 }
 
+func (refmap *Map) ReverseLookup(id uint64) (s string) {
+	refmap.Mutex.RLock()
+	defer refmap.Mutex.RUnlock()
+	if ref, found := refmap.Info[id]; found {
+		return ref.s
+	}
+	return
+}
+
 func NewWithVal(start uint64) *Map {
 	info := make(map[uint64]*Ref)
 	lookup := make(map[string]uint64)
