@@ -7,7 +7,8 @@ package refmap
 
 import "sync"
 
-const zero uint64 = 0
+const Zero uint64 = 0
+const One uint64 = 1
 
 type Map struct {
 	Info   map[uint64]*Ref
@@ -21,13 +22,49 @@ type Ref struct {
 	v uint64 /* Value of the current refcount */
 }
 
+func (refmap *Map) Create(s string) uint64 {
+	refmap.Mutex.Lock()
+	defer refmap.Mutex.Unlock()
+	ref, found := refmap.Lookup[s]
+	if found {
+		return ref
+	}
+	refmap.val += 1
+	ref = refmap.val
+	refmap.Lookup[s] = ref
+	refmap.Info[ref] = &Ref{s: s, v: One}
+	return ref
+}
+
+func (refmap *Map) Delete(s string) {
+	refmap.Mutex.Lock()
+	defer refmap.Mutex.Unlock()
+	ref, found := refmap.Lookup[s]
+	if !found {
+		return
+	}
+	refmap.Lookup[s] = ref, false
+	refmap.Info[ref] = &Ref{}, false
+}
+
+func (refmap *Map) DeleteRef(v uint64) {
+	refmap.Mutex.Lock()
+	defer refmap.Mutex.Unlock()
+	ref, found := refmap.Info[v]
+	if !found {
+		return
+	}
+	refmap.Lookup[ref.s] = v, false
+	refmap.Info[v] = ref, false
+}
+
 func (refmap *Map) Get(s string) uint64 {
 	refmap.Mutex.RLock()
 	defer refmap.Mutex.RUnlock()
 	if ref, found := refmap.Lookup[s]; found {
 		return ref
 	}
-	return zero
+	return Zero
 }
 
 func (refmap *Map) Incref(s string, incref int) uint64 {
@@ -55,9 +92,23 @@ func (refmap *Map) Decref(s string, decref int) {
 	i := refmap.Info[ref]
 	v := i.v - uint64(decref)
 	if v <= 0 {
-		refmap.Lookup[i.s] = zero, false
+		refmap.Lookup[i.s] = Zero, false
 		refmap.Info[ref] = i, false
 	}
+}
+
+func (refmap *Map) MultiGet(xs ...string) []uint64 {
+	resp := make([]uint64, len(xs))
+	refmap.Mutex.RLock()
+	defer refmap.Mutex.RUnlock()
+	for idx, s := range xs {
+		if ref, found := refmap.Lookup[s]; found {
+			resp[idx] = ref
+		} else {
+			resp[idx] = Zero
+		}
+	}
+	return resp
 }
 
 func (refmap *Map) ReverseLookup(id uint64) (s string) {
@@ -77,5 +128,5 @@ func NewWithVal(start uint64) *Map {
 }
 
 func New() *Map {
-	return NewWithVal(zero)
+	return NewWithVal(Zero)
 }
