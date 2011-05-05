@@ -104,12 +104,12 @@ func (pubsub *PubSub) Listen(sid string, qids []string, timeout int64) (result m
 
 	notification := <-listener
 	waiting = false
+	result = make(map[string][]string)
 
 	if notification.item == "" {
-		return
+		return result, nil, true
 	}
 
-	result = make(map[string][]string)
 	result[notification.qid] = []string{notification.item}
 
 	var qid string
