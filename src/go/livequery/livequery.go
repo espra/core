@@ -16,13 +16,16 @@ type Notification struct {
 }
 
 type Query struct {
-	keys []string
-	seen int64
+	keys    []string
+	qid     string
+	seen    int64
+	session *Session
 }
 
 type Session struct {
 	listener chan *Notification
-	queries  map[string]*Query
+	mutex    sync.Mutex
+	seen     int64
 }
 
 type Subscription struct {
@@ -31,40 +34,148 @@ type Subscription struct {
 }
 
 type PubSub struct {
-	mutex    sync.RWMutex
-	refmap   *refmap.Map
-	sessions map[string]*Session
-	subs     map[string][]*Subscription
+	mutex         sync.RWMutex
+	queries       map[uint64]*Query
+	refmap        *refmap.Map
+	sessions      map[string]*Session
+	subscriptions map[string][]*Subscription
 }
 
-func (pubsub *PubSub) Listen(sid string) map[string][]string {
-	results := make(map[string][]string)
-	return results
+// -----------------------------------------------------------------------------
+// Listen
+// -----------------------------------------------------------------------------
+
+func (pubsub *PubSub) Listen(sid string, qids []string, now int64, timeout int64) (result map[string][]string, refresh map[string]int, ok bool) {
+
+	sqids := make([]string, len(qids))
+	for idx, qid := range qids {
+		sqids[idx] = sid + ":" + qid
+	}
+
+	refresh = make(map[string]int)
+	refs := pubsub.refmap.MultiGet(sqids...)
+
+	for idx, ref := range refs {
+		if ref == refmap.Zero {
+			refresh[qids[idx]] = 1
+		}
+	}
+
+	if len(refresh) > 0 {
+		return nil, refresh, false
+	}
+
+	pubsub.mutex.Lock()
+
+	session, found := pubsub.sessions[sid]
+	if !found {
+		pubsub.mutex.Unlock()
+		return
+	}
+
+	listener := session.listener
+	queries := pubsub.queries
+
+	for idx, ref := range refs {
+		if query, found := queries[ref]; found {
+			query.seen = now
+		} else {
+			refresh[qids[idx]] = 1
+		}
+	}
+
+	pubsub.mutex.Unlock()
+	if len(refresh) > 0 {
+		return nil, refresh, false
+	}
+
+	waiting := true
+	session.mutex.Lock()
+	defer session.mutex.Unlock()
+
+	go func() {
+		<-time.After(timeout)
+		if waiting {
+			notification := &Notification{}
+			listener <- notification
+		}
+	}()
+
+	notification := <-listener
+	waiting = false
+
+	if notification.item == "" {
+		return
+	}
+
+	result = make(map[string][]string)
+	result[notification.qid] = []string{notification.item}
+
+	var qid string
+
+	for i := 0; i < len(listener); i++ {
+		notification = <-listener
+		qid = notification.qid
+		resp, found := result[qid]
+		if found {
+			result[qid] = append(resp, notification.item)
+		} else {
+			result[qid] = []string{notification.item}
+		}
+	}
+
+	return result, nil, true
+
 }
+
+// -----------------------------------------------------------------------------
+// Publish
+// -----------------------------------------------------------------------------
 
 func (pubsub *PubSub) Publish(item string, keys []string) {
+
 	tally := len(keys)
 	if tally == 0 {
 		return
 	}
-	data := pubsub.subs
+
+	queries := pubsub.queries
+	subscriptions := pubsub.subscriptions
 	counts := make(map[*Subscription]int)
 	pubsub.mutex.RLock()
+
 	for _, key := range keys {
-		if subs, found := data[key]; found {
+		if subs, found := subscriptions[key]; found {
 			for _, sub := range subs {
 				counts[sub] += 1
 			}
 		}
 	}
-	pubsub.mutex.RUnlock()
+
+	resp := make(map[*Query]int)
 	for sub, count := range counts {
 		if sub.tally == count {
-			go func() {
-			}()
+			resp[queries[sub.sqidRef]] = 1
 		}
 	}
+
+	pubsub.mutex.RUnlock()
+
+	for query, _ := range resp {
+		go func() {
+			notification := &Notification{
+				item: item,
+				qid:  query.qid,
+			}
+			query.session.listener <- notification
+		}()
+	}
+
 }
+
+// -----------------------------------------------------------------------------
+// Subscribe
+// -----------------------------------------------------------------------------
 
 func (pubsub *PubSub) Subscribe(sqid string, keys []string, keys2 []string) {
 
@@ -78,45 +189,40 @@ func (pubsub *PubSub) Subscribe(sqid string, keys []string, keys2 []string) {
 
 	tally := len(keys)
 	keys2Len := len(keys2)
-	refCount := tally + keys2Len
 
-	if refCount == 0 {
+	if tally+keys2Len == 0 {
 		return
 	}
+
 	if keys2Len > 0 {
 		tally += 1
-	}
-
-	sqidRef := pubsub.refmap.Incref(sqid, refCount)
-
-	for _, key := range keys2 {
-		keys = append(keys, key)
+		keys = append(keys, keys2...)
 	}
 
 	now := time.Seconds()
-	data := pubsub.subs
+	sqidRef := pubsub.refmap.Create(sqid)
+	queries := pubsub.queries
 	sessions := pubsub.sessions
+	subscriptions := pubsub.subscriptions
+
 	pubsub.mutex.Lock()
 	session, found := sessions[sid]
 
-	if found {
-		query, found := session.queries[qid]
-		if found {
-			query.seen = now
-		} else {
-			query := &Query{keys: keys, seen: now}
-			session.queries[qid] = query
-		}
-	} else {
+	// Create a new session if one doesn't already exist for the Session ID.
+	if !found {
 		listener := make(chan *Notification, 100)
-		queries := make(map[string]*Query)
-		query := &Query{keys: keys, seen: now}
-		queries[qid] = query
-		session := &Session{
+		session = &Session{
 			listener: listener,
-			queries:  queries,
+			seen:     now,
 		}
 		sessions[sid] = session
+	}
+
+	queries[sqidRef] = &Query{
+		keys:    keys,
+		qid:     qid,
+		seen:    now,
+		session: session,
 	}
 
 	for _, key := range keys {
@@ -124,11 +230,11 @@ func (pubsub *PubSub) Subscribe(sqid string, keys []string, keys2 []string) {
 			sqidRef: sqidRef,
 			tally:   tally,
 		}
-		subs, found := data[key]
+		subs, found := subscriptions[key]
 		if found {
-			data[key] = append(subs, sub)
+			subscriptions[key] = append(subs, sub)
 		} else {
-			data[key] = []*Subscription{sub}
+			subscriptions[key] = []*Subscription{sub}
 		}
 	}
 
@@ -136,13 +242,101 @@ func (pubsub *PubSub) Subscribe(sqid string, keys []string, keys2 []string) {
 
 }
 
+// -----------------------------------------------------------------------------
+// Cleanup
+// -----------------------------------------------------------------------------
+
+func (pubsub *PubSub) Cleanup(expire int64, interval int64) {
+
+	blankSubs := make([]*Subscription, 0)
+	queries := pubsub.queries
+	refmap := pubsub.refmap
+	sessions := pubsub.sessions
+	subscriptions := pubsub.subscriptions
+
+	for {
+		now := time.Seconds()
+		pubsub.mutex.Lock()
+
+		removeKeys := make(map[string]int)
+		removeQueries := make(map[uint64]*Query)
+		removeSessions := make(map[string]*Session)
+
+		// Loop through the queries and find the ones we haven't seen in a
+		// while. Also, gather together the keys which hold subscriptions for
+		// those queries.
+		for ref, query := range queries {
+			if now-query.seen < expire {
+				continue
+			}
+			removeQueries[ref] = query
+			for _, key := range query.keys {
+				removeKeys[key] += 1
+			}
+		}
+
+		// Remove those queries.
+		for ref, query := range removeQueries {
+			queries[ref] = query, false
+		}
+
+		// Loop through the affected subscription keys and modify the
+		// subscriptions appropriately.
+		for key, remsize := range removeKeys {
+			subs := subscriptions[key]
+			subsize := len(subs)
+			if remsize == subsize {
+				subscriptions[key] = blankSubs, false
+			} else {
+				newsubs := make([]*Subscription, subsize-remsize)
+				idx := 0
+				for _, sub := range subs {
+					if _, found := removeQueries[sub.sqidRef]; !found {
+						newsubs[idx] = sub
+						idx += 1
+					}
+				}
+			}
+		}
+
+		// Look through the sessions and find the ones we haven't seen in a
+		// while.
+		for sid, session := range sessions {
+			if now-session.seen > expire {
+				removeSessions[sid] = session
+			}
+		}
+
+		// Remove those sessions.
+		for sid, session := range removeSessions {
+			sessions[sid] = session, false
+		}
+
+		pubsub.mutex.Unlock()
+
+		// Delete the refmap references for the various sqids.
+		for ref, _ := range removeQueries {
+			refmap.DeleteRef(ref)
+		}
+
+		<-time.After(interval)
+	}
+
+}
+
+// -----------------------------------------------------------------------------
+// Initialiser
+// -----------------------------------------------------------------------------
+
 func New() *PubSub {
 	refmap := refmap.New()
+	queries := make(map[uint64]*Query)
 	sessions := make(map[string]*Session)
-	subs := make(map[string][]*Subscription)
+	subcriptions := make(map[string][]*Subscription)
 	return &PubSub{
-		refmap:   refmap,
-		sessions: sessions,
-		subs:     subs,
+		queries:       queries,
+		refmap:        refmap,
+		sessions:      sessions,
+		subscriptions: subcriptions,
 	}
 }
