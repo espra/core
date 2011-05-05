@@ -45,7 +45,7 @@ type PubSub struct {
 // Listen
 // -----------------------------------------------------------------------------
 
-func (pubsub *PubSub) Listen(sid string, qids []string, now int64, timeout int64) (result map[string][]string, refresh map[string]int, ok bool) {
+func (pubsub *PubSub) Listen(sid string, qids []string, timeout int64) (result map[string][]string, refresh map[string]int, ok bool) {
 
 	sqids := make([]string, len(qids))
 	for idx, qid := range qids {
@@ -65,6 +65,7 @@ func (pubsub *PubSub) Listen(sid string, qids []string, now int64, timeout int64
 		return nil, refresh, false
 	}
 
+	now := time.Seconds()
 	pubsub.mutex.Lock()
 
 	session, found := pubsub.sessions[sid]
@@ -162,13 +163,13 @@ func (pubsub *PubSub) Publish(item string, keys []string) {
 	pubsub.mutex.RUnlock()
 
 	for query, _ := range resp {
-		go func() {
+		go func(query *Query) {
 			notification := &Notification{
 				item: item,
 				qid:  query.qid,
 			}
 			query.session.listener <- notification
-		}()
+		}(query)
 	}
 
 }
@@ -225,11 +226,12 @@ func (pubsub *PubSub) Subscribe(sqid string, keys []string, keys2 []string) {
 		session: session,
 	}
 
+	sub := &Subscription{
+		sqidRef: sqidRef,
+		tally:   tally,
+	}
+
 	for _, key := range keys {
-		sub := &Subscription{
-			sqidRef: sqidRef,
-			tally:   tally,
-		}
 		subs, found := subscriptions[key]
 		if found {
 			subscriptions[key] = append(subs, sub)
