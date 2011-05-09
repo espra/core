@@ -6,10 +6,10 @@
 require 'pathname'
 
 MAIN_ROOT = Pathname.new(__FILE__).realpath.dirname.dirname
-$:.unshift MAIN_ROOT.join('third_party', 'haml', 'lib')
+$:.unshift MAIN_ROOT.join('third_party', 'sass', 'lib')
 
-require 'haml/exec'
-require 'haml/util'
+require 'sass'
+require 'sass/exec'
 
 if ARGV.length == 0
     ARGV << "--help"
@@ -17,5 +17,5 @@ elsif not ARGV.include? "--cache-location"
     ARGV.unshift "--cache-location", MAIN_ROOT.join('.sass-cache').to_s
 end
 
-opts = Haml::Exec::Sass.new(ARGV)
+opts = Sass::Exec::Sass.new(ARGV)
 opts.parse!
