@@ -1,42 +1,39 @@
-[submodule "third_party/redis"]
-	path = third_party/redis
-	url = https://github.com/tav/redis.git
+[submodule "third_party/coffee-script"]
+	path = third_party/coffee-script
+	url = https://github.com/jashkenas/coffee-script.git
+[submodule "third_party/git-review"]
+	path = third_party/git-review
+	url = https://github.com/tav/git-review.git
 [submodule "third_party/go"]
 	path = third_party/go
 	url = https://github.com/tav/go.git
+[submodule "third_party/golibs"]
+	path = third_party/golibs
+	url = https://github.com/tav/golibs.git
+[submodule "third_party/jslibs"]
+	path = third_party/jslibs
+	url = https://github.com/tav/jslibs.git
 [submodule "third_party/nodelint"]
 	path = third_party/nodelint
 	url = https://github.com/tav/nodelint.git
 [submodule "third_party/pylibs"]
 	path = third_party/pylibs
 	url = https://github.com/tav/pylibs.git
-[submodule "third_party/coffee-script"]
-	path = third_party/coffee-script
-	url = https://github.com/jashkenas/coffee-script.git
-[submodule "third_party/vows"]
-	path = third_party/vows
-	url = https://github.com/cloudhead/vows.git
-[submodule "third_party/jslibs"]
-	path = third_party/jslibs
-	url = https://github.com/tav/jslibs.git
-[submodule "third_party/git-review"]
-	path = third_party/git-review
-	url = https://github.com/tav/git-review.git
-[submodule "third_party/golibs"]
-	path = third_party/golibs
-	url = https://github.com/tav/golibs.git
-[submodule "third_party/uglify-js"]
-	path = third_party/uglify-js
-	url = https://github.com/mishoo/UglifyJS.git
-[submodule "third_party/pypy"]
-	path = third_party/pypy
-	url = https://github.com/pypy/pypy.git
+[submodule "third_party/redis"]
+	path = third_party/redis
+	url = https://github.com/tav/redis.git
 [submodule "third_party/sass"]
 	path = third_party/sass
 	url = https://github.com/tav/sass.git
-[submodule "third_party/yatiblog"]
-	path = third_party/yatiblog
-	url = https://github.com/tav/yatiblog.git
 [submodule "third_party/tavutil"]
 	path = third_party/tavutil
 	url = https://github.com/tav/tavutil.git
+[submodule "third_party/uglify-js"]
+	path = third_party/uglify-js
+	url = https://github.com/mishoo/UglifyJS.git
+[submodule "third_party/vows"]
+	path = third_party/vows
+	url = https://github.com/cloudhead/vows.git
+[submodule "third_party/yatiblog"]
+	path = third_party/yatiblog
+	url = https://github.com/tav/yatiblog.git
