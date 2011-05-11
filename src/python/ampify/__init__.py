@@ -20,6 +20,9 @@ framework to create social apps on top of a secure, decentralised core.
                       | |             ( )_| |
                       (_)             `\___/'
 
+
+This packages provides the APIs needed to write Ampify Nodules in Python.
+
 """
 
 # ------------------------------------------------------------------------------

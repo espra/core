@@ -1,10 +1,7 @@
 # Public Domain (-) 2010-2011 The Ampify Authors.
 # See the Ampify UNLICENSE file for details.
 
-"""
-Argonought -- the support extension to JSON for a richer experience.
-
-"""
+"""Argonought Serialisation Format."""
 
 from datetime import date, datetime, timedelta
 from decimal import Decimal, getcontext, ROUND_DOWN
@@ -12,35 +9,33 @@ from struct import pack as struct_pack, unpack as struct_unpack
 
 from simplejson import dumps as encode_json, loads as decode_json
 
-
-__all__ = [
-    'number', 'unit',
-    'NUMERIC_TYPES'
-    ]
+# ------------------------------------------------------------------------------
+# Some Constants
+# ------------------------------------------------------------------------------
 
 serialisation_cache = {}
-serialisation_map = {}
-deserialisation_map = {}
+ENCODERS = {}
+DECODERS = {}
 
 # ------------------------------------------------------------------------------
-# some utility funktions
+# Utility Functions
 # ------------------------------------------------------------------------------
 
-def register_serialiser(argo_type, type, cache=True, cache_size=1000):
-    def _register_serialiser(serialiser):
-        serialisation_map[type] = (argo_type, serialiser, cache)
+def register_encoder(argo_type, type, cache=True, cache_size=1000):
+    def _register_encoder(encoder):
+        ENCODERS[type] = (argo_type, encoder, cache)
         if argo_type not in serialisation_cache:
             serialisation_cache[argo_type] = CachingDict(cache_size)
-        return serialiser
-    return _register_serialiser
+        return encoder
+    return _register_encoder
 
-def register_deserialiser(argo_type):
-    def _register_deserialiser(deserialiser):
-        deserialisation_map[type_string2id_map[argo_type]] = deserialiser
-        return deserialiser
-    return _register_deserialiser
+def register_decoder(argo_type):
+    def _register_decoder(decoder):
+        DECODERS[type_string2id_map[argo_type]] = decoder
+        return decoder
+    return _register_decoder
 
-def pack(object, stream=None, retval=False):
+def encode(object, stream=None, retval=False):
     if not stream:
         stream = StringIO()
         retval = True
