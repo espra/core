@@ -2,16 +2,10 @@
 # See the Ampify UNLICENSE file for details.
 
 # ------------------------------------------------------------------------------
-# some konstants
-# ------------------------------------------------------------------------------
-
-AMP := environ/amp
-
-# ------------------------------------------------------------------------------
 # we declare our phonies so they stop telling us that targets are up-to-date
 # ------------------------------------------------------------------------------
 
-.PHONY: all build clean debug distclean docs nuke test update
+.PHONY: all build clean debug docs nuke test update
 
 # ------------------------------------------------------------------------------
 # our rules, starting with the default
@@ -21,33 +15,30 @@ all: update build
 	@touch .latest
 
 build:
-	@$(AMP) build
+	@./environ/redpill build
 
 clean:
-	@./environ/assetgen --clean
-	rm -rf src/build
+	@cd src/amp && make nuke
+	rm -rf src/ampify/build
 	rm -rf third_party/pylibs/build
 
 debug:
-	@$(AMP) build --debug
-
-distclean: clean
-	rm -rf environ/local
-	rm -rf environ/receipts
-	rm -f src/jsutil/ucd.js
-	rm -f src/ampify/*.so
+	@./environ/redpill build --debug
 
 docs:
 	@test -d third_party/pylibs || \
-		(echo "ERROR: You need to checkout the third_party/pylibs submodule !!" \
+		(echo 'ERROR: You need to checkout the third_party/pylibs submodule !!' \
 			&& exit 1)
 	@./environ/yatiblog doc
 
-nuke: distclean
+nuke: clean
 	rm -rf .sass-cache
+	rm -rf environ/local
+	rm -rf environ/receipts
+	rm -f src/coffee/ucd.js
 
 test:
-	@$(AMP) test
+	@cd src/amp && make test
 
 update:
 	@./environ/git-update
