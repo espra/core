@@ -5,7 +5,7 @@
 # we declare our phonies so they stop telling us that targets are up-to-date
 # ------------------------------------------------------------------------------
 
-.PHONY: all build clean debug docs nuke test update
+.PHONY: all build clean docs nuke test update
 
 # ------------------------------------------------------------------------------
 # our rules, starting with the default
@@ -16,14 +16,12 @@ all: update build
 
 build:
 	@./environ/redpill build
+	@cd src/amp && make install
 
 clean:
 	@cd src/amp && make nuke
 	rm -rf src/ampify/build
 	rm -rf third_party/pylibs/build
-
-debug:
-	@./environ/redpill build --debug
 
 docs:
 	@test -d third_party/pylibs || \
