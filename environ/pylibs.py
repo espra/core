@@ -7,18 +7,20 @@ import sys
 from os.path import dirname, join as join_path, realpath
 
 AMPIFY_ROOT = dirname(dirname(realpath(__file__)))
-SRC_PATH = join_path(AMPIFY_ROOT, 'src')
-THIRD_PARTY_LIBS_PATH = join_path(AMPIFY_ROOT, 'third_party', 'pylibs')
 
-if THIRD_PARTY_LIBS_PATH not in sys.path:
-    sys.path.insert(0, THIRD_PARTY_LIBS_PATH)
-
-if SRC_PATH not in sys.path:
-    sys.path.insert(0, SRC_PATH)
+for path in [
+    join_path(AMPIFY_ROOT, 'environ'),
+    join_path(AMPIFY_ROOT, 'third_party', 'pylibs'),
+    join_path(AMPIFY_ROOT, 'third_party', 'yatiblog'),
+    join_path(AMPIFY_ROOT, 'third_party', 'tavutil'),
+    join_path(AMPIFY_ROOT, 'src', 'python'),
+    ]:
+    if path not in sys.path:
+        sys.path.insert(0, path)
 
 if not hasattr(sys, 'skip_pylibs_check'):
     try:
-        import optcomplete
+        import tavutil.optcomplete
     except ImportError:
         print
         print "You need to checkout the third_party/pylibs submodule."
