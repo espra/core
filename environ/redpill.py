@@ -1,27 +1,15 @@
-#! /usr/bin/env python
-
-# Public Domain (-) 2010-2011 The Ampify Authors.
+# Public Domain (-) 2004-2011 The Ampify Authors.
 # See the Ampify UNLICENSE file for details.
 
 """
-==========
-Amp Engine
-==========
+The redpill bootstraps you into the world of Ampify.
 
-Amp Engine powers Ampify -- the decentralised social platform.
-
-::
-
-                                   ___       
-                              _  /'___)      
-       _ _   ___ ___   _ _   (_)| (__  _   _ 
-     /'_` )/' _ ` _ `\( '_`\ | || ,__)( ) ( )
-    ( (_| || ( ) ( ) || (_) )| || |   | (_) |
-    `\__,_)(_) (_) (_)| ,__/'(_)(_)   `\__, |
-                      | |             ( )_| |
-                      (_)             `\___/'
-
-
+                        _         _ _ _ 
+           _ __ ___  __| |  _ __ (_) | |
+          | '__/ _ \/ _` | | '_ \| | | |
+          | | |  __/ (_| | | |_) | | | |
+          |_|  \___|\__,_| | .__/|_|_|_|
+                           |_|          
 """
 
 import os
@@ -29,7 +17,6 @@ import sys
 import tarfile
 import traceback
 
-from doctest import ELLIPSIS, testmod
 from errno import EACCES, ENOENT
 from glob import glob
 from hashlib import sha1, sha256
@@ -43,10 +30,10 @@ from thread import start_new_thread
 from time import sleep
 from urllib import urlopen
 
-from optcomplete import autocomplete, DirCompleter, ListCompleter
-from optcomplete import make_autocompleter, parse_options
-from pyutil.env import run_command, CommandNotFound
 from simplejson import loads as decode_json
+from tavutil.env import run_command, CommandNotFound
+from tavutil.optcomplete import autocomplete, ListCompleter
+from tavutil.optcomplete import make_autocompleter, parse_options
 from yaml import safe_load as decode_yaml
 
 try:
@@ -187,7 +174,7 @@ def lock(path):
     try:
         flock(lock.fileno(), LOCK_EX | LOCK_NB)
     except Exception:
-        exit("ERROR: Another amp process is already running.")
+        exit("ERROR: Another redpill process is already running.")
 
 def unlock(path):
     if path in LOCKS:
@@ -266,11 +253,11 @@ BUILD_WORKING_DIRECTORY = '/tmp/amp-build-%s' % sha1(ROOT).hexdigest()[:8]
 BUILD_LOCK = BUILD_WORKING_DIRECTORY + '.lock'
 
 BUILD_RECIPES = [path for path in environ.get(
-    'AMPIFY_BUILD_RECIPES', join(ENVIRON, 'buildrecipes')
+    'REDPILL_BUILD_RECIPES', join(ENVIRON, 'buildrecipes')
     ).split(':') if isfile(path)]
 
 ROLES_PATH = [path for path in environ.get(
-    'AMPIFY_ROLES_PATH', join(ENVIRON, 'roles')
+    'REDPILL_ROLES_PATH', join(ENVIRON, 'roles')
     ).split(':') if isdir(path)]
 
 CURRENT_DIRECTORY = getcwd()
@@ -738,7 +725,7 @@ def install_packages(types=BUILD_TYPES):
             rmdir(LOCAL)
             rmdir(RECEIPTS)
             unlock(BUILD_LOCK)
-            execve(join(ENVIRON, 'amp'), sys.argv, get_ampify_env(environ))
+            execve(join(ENVIRON, 'redpill'), sys.argv, get_ampify_env(environ))
     else:
         uninstall_packages(uninstall, installed)
 
@@ -897,7 +884,7 @@ def build_base_and_reload():
     load_role('base')
     install_packages()
     unlock(BUILD_LOCK)
-    execve(join(ENVIRON, 'amp'), sys.argv, get_ampify_env(environ))
+    execve(join(ENVIRON, 'redpill'), sys.argv, get_ampify_env(environ))
 
 # ------------------------------------------------------------------------------
 # Utility Functions
@@ -911,6 +898,29 @@ def normalise_instance_name(instance_name):
     return instance_name, instance_root
 
 # ------------------------------------------------------------------------------
+# Role Commands
+# ------------------------------------------------------------------------------
+
+def get_redpill_role():
+    role = environ.get('REDPILL_ROLE', 'default')
+    if PLATFORM == 'freebsd' and role == 'default':
+        return 'freebsd'
+    return role
+
+def get_redpill_infohash():
+    roles = set()
+    for path in ROLES_PATH:
+        roles.update([f[:-5] for f in listdir(path) if f.endswith('.yaml')])
+    stream = []
+    write = stream.append
+    for role in sorted(roles):
+        write(role)
+        write('\n')
+    while stream[-1] == '\n':
+        stream.pop()
+    return ''.join(stream)
+
+# ------------------------------------------------------------------------------
 # Main Runner
 # ------------------------------------------------------------------------------
 
@@ -918,17 +928,31 @@ def main(argv=None, show_help=False):
 
     argv = argv or sys.argv[1:]
 
-    # Set the script name to ``amp`` so that OptionParser error messages don't
-    # display a potentially confusing ``ampengine`` to end users.
-    sys.argv[0] = 'amp'
+    # Set the script name to ``redpill`` so that OptionParser error messages
+    # don't display a potentially confusing ``redpill.py`` to end users.
+    sys.argv[0] = 'redpill'
 
-    usage = ("""Usage: amp <command> [options]
+    command_listing = '\n'.join(
+        "    %-10s %s"
+        % (cmd, COMMANDS[cmd].help) for cmd in sorted(COMMANDS)
+        )
+
+    mini_help = {
+        'infohash': "show the current infohash and exit",
+        'role': "show the redpill role and exit",
+        'version': "show the version number and exit"
+        }
+
+    mini_listing = '\n'.join(
+        "    %-10s %s"
+        % (cmd, mini_help[cmd]) for cmd in sorted(mini_help)
+        )
+
+    usage = ("""Usage: redpill <command> [options]
     \nCommands:
-    \n%s
-    version  show the version number and exit
-    \nSee `amp help <command>` for more info on a specific command.""" %
-    '\n'.join("    %-8s %s" % (cmd, COMMANDS[cmd].help) for cmd in sorted(COMMANDS))
-    )
+    \n%s\n\n%s
+    \nSee `redpill help <command>` for more info on a specific command.""" %
+    (command_listing, mini_listing))
 
     autocomplete(
         OptionParser(add_help_option=False),
@@ -947,10 +971,20 @@ def main(argv=None, show_help=False):
             if argv:
                 command = argv[0]
                 argv = ['--help']
+                if command in mini_help:
+                    help = mini_help[command]
+                    print("Usage: redpill %s\n\n    %s\n" % (command, help))
+                    sys.exit()
             else:
                 show_help = True
+        if command == 'infohash':
+            print(get_redpill_infohash())
+            sys.exit()
+        if command == 'role':
+            print(get_redpill_role())
+            sys.exit()
         if command in ['-v', '--version', 'version']:
-            print('amp %s' % __release__)
+            print('redpill %s' % __release__)
             sys.exit()
 
     if show_help:
@@ -961,11 +995,11 @@ def main(argv=None, show_help=False):
         return COMMANDS[command](argv)
 
     # We support git-command like behaviour. That is, if there's an external
-    # binary named ``amp-foo`` available on the ``$PATH``, then running ``amp
+    # binary named ``redpill-foo`` available on the ``$PATH``, then running ``redpill
     # foo`` will automatically delegate to it.
     try:
         output, retcode = run_command(
-            ['amp-%s' % command] + argv, retcode=True, redirect_stdout=False,
+            ['redpill-%s' % command] + argv, retcode=True, redirect_stdout=False,
             redirect_stderr=False
             )
     except CommandNotFound:
@@ -980,9 +1014,9 @@ def main(argv=None, show_help=False):
 
 def build(argv=None, completer=None):
 
-    op = OptionParser(usage="Usage: amp build [options]", add_help_option=False)
+    op = OptionParser(usage="Usage: redpill build [options]", add_help_option=False)
 
-    op.add_option('--role', dest='role', default='default',
+    op.add_option('--role', dest='role', default=get_redpill_role(),
                   help="specify a non-default role to build")
 
     options, args = parse_options(op, argv, completer)
@@ -1004,7 +1038,7 @@ def build(argv=None, completer=None):
 
 def check(argv=None, completer=None):
 
-    op = OptionParser(usage="Usage: amp check", add_help_option=False)
+    op = OptionParser(usage="Usage: redpill check", add_help_option=False)
     options, args = parse_options(op, argv, completer)
 
     log("Checking the current revision id for your code.", PROGRESS)
@@ -1013,9 +1047,10 @@ def check(argv=None, completer=None):
         ).split()[0]
 
     log("Checking the latest commits on GitHub.", PROGRESS)
-    commit_info = urlopen(
+    commit_info = urlopen(environ.get(
+        'REDPILL_CHECK_URL',
         'https://github.com/api/v2/json/commits/list/tav/ampify/master'
-        ).read()
+        )).read()
 
     latest_revision_id = decode_json(commit_info)['commits'][0]['id']
 
@@ -1025,122 +1060,13 @@ def check(argv=None, completer=None):
     log("Your checkout is up-to-date.", SUCCESS)
 
 # ------------------------------------------------------------------------------
-# Deploy Command
-# ------------------------------------------------------------------------------
-
-def deploy(argv=None, completer=None):
-
-    op = OptionParser(
-        usage="Usage: amp deploy <instance-name> [options]",
-        add_help_option=False
-        )
-
-    op.add_option('--test', dest='test', action='store_true', default=False,
-                  help="run tests before completing the switch")
-
-    options, args = parse_options(op, argv, completer, True)
-
-# ------------------------------------------------------------------------------
-# Hub Command
-# ------------------------------------------------------------------------------
-
-def hub(argv=None, completer=None):
-
-    op = OptionParser(
-        usage="Usage: amp hub [register|update] [options]",
-        add_help_option=False
-        )
-
-    options, args = parse_options(op, argv, completer, True)
-
-# ------------------------------------------------------------------------------
-# Init Command
-# ------------------------------------------------------------------------------
-
-def init(argv=None, completer=None):
-
-    op = OptionParser(
-        usage="Usage: amp init <instance-name> [options]",
-        add_help_option=False
-        )
-
-    op.add_option('--clobber', dest='clobber', action='store_true',
-                  help="clobber any existing files/directories if they exist")
-
-    op.add_option('--from', dest='git_repo', default='',
-                  help="initialise by cloning the given git repository")
-
-    options, args = parse_options(op, argv, completer)
-
-    git_repo = options.git_repo
-    if git_repo:
-        if args:
-            instance_name = args[0]
-        else:
-            instance_name = git_repo.split('/')[-1].rsplit('.', 1)[0]
-            if not instance_name:
-                exit(ERRMSG_GIT_NAME_DETECTION)
-    else:
-        if args:
-            instance_name = args[0]
-        else:
-            op.print_help()
-            sys.exit(1)
-
-    instance_name, instance_root = normalise_instance_name(instance_name)
-    clobber = options.clobber
-
-    if exists(instance_root):
-        if not clobber:
-            exit(
-                "ERROR: A directory already exists at %s\n          "
-                "Use the --clobber parameter to overwrite the directory"
-                % instance_root
-                )
-        chdir(instance_root)
-        diff = do('git', 'diff', '--cached', '--name-only', redirect_stdout=1)
-        if diff.strip():
-            error(
-                "ERROR: You have a dirty working tree at %s\n          "
-                "Please either commit your changes or move your files.\n"
-                % instance_root
-                )
-            error("  These are the problematic files:")
-            for filename in diff.strip().splitlines():
-                log("    %s" % filename, ERROR)
-            print
-        first_run = 0
-    else:
-        create = query("Create a instance at %s" % instance_root).lower()
-        if not create.startswith('y'):
-            sys.exit(2)
-        makedirs(instance_root)
-        print
-        print("Created %s" % instance_root)
-        print
-        chdir(instance_root)
-        do('git', 'init')
-        print
-        readme = open('README.md', 'wb')
-        readme.close()
-        do('git', 'add', 'README.md')
-        do('git', 'commit', '-m', "Initialised the instance [amp].")
-        first_run = 1
-
-    diff = do('git', 'diff', '--cached', '--name-only', redirect_stdout=1)
-    if diff.strip():
-        do('git', 'commit', '-m', "Updated instance [amp].")
-
-    print(DEBUG)
-
-# ------------------------------------------------------------------------------
 # Install Command
 # ------------------------------------------------------------------------------
 
 def install(argv=None, completer=None):
 
     op = OptionParser(
-        usage="Usage: amp install <package-1> <package-2> ...",
+        usage="Usage: redpill install <package-1> <package-2> ...",
         add_help_option=False
         )
 
@@ -1161,7 +1087,7 @@ def install(argv=None, completer=None):
 def uninstall(argv=None, completer=None):
 
     op = OptionParser(
-        usage="Usage: amp uninstall <package>", add_help_option=False
+        usage="Usage: redpill uninstall <package>", add_help_option=False
         )
 
     init_build_recipes()
@@ -1172,120 +1098,15 @@ def uninstall(argv=None, completer=None):
     uninstall_package(args[0])
 
 # ------------------------------------------------------------------------------
-# Run Command
-# ------------------------------------------------------------------------------
-
-def run(argv=None, completer=None):
-    
-    op = OptionParser(
-        usage="Usage: amp run <instance-name> [options] [stop|quit|restart]",
-        add_help_option=False
-        )
-
-    op.add_option('-d', '--debug', dest='debug', action='store_true',
-                  help="enable debug mode")
-
-    op.add_option("--file", dest="filename",
-                  help="input file to read data from")
-
-    if completer:
-        return op, DirCompleter(AMPIFY_ROOT_PARENT)
-
-    options, args = parse_options(op, argv, completer, True)
-
-    if options.debug:
-        global DEBUG
-        DEBUG = True
-
-    instance_name, instance_root = normalise_instance_name(args[0])
-
-# ------------------------------------------------------------------------------
-# Test Command
-# ------------------------------------------------------------------------------
-
-PYTHON_TEST_MODULES = [
-    'pyutil.rst'
-    ]
-
-def test(argv=None, completer=None, run_all=False):
-
-    op = OptionParser(usage="Usage: amp test [options]", add_help_option=False)
-
-    op.add_option('-a', '--all', dest='all', action='store_true',
-                  help="run the comprehensive test suite")
-
-    op.add_option('-v', '--verbose', dest='verbose', action='store_true',
-                  default=False, help="enable verbose mode")
-
-    testers = ['python', 'go', 'js']
-    if completer:
-        return op, ListCompleter(testers)
-
-    options, args = parse_options(op, argv, completer)
-    if not args:
-        args = testers
-
-    args = set(args)
-    if options.all:
-        run_all = True
-
-    if 'python' in args:
-        py_tests(PYTHON_TEST_MODULES, verbose=options.verbose)
-
-    if 'go' in args:
-        go_tests()
-
-    if 'js' in args:
-        js_tests(verbose=options.verbose)
-
-def js_tests(verbose=None):
-    js_root = join(AMPIFY_ROOT, 'src', 'jsutil')
-    chdir(js_root)
-    if verbose:
-        command = ['vows', '--spec']
-    else:
-        command = ['vows']
-    _, retval = run_command(
-        command, retcode=True, redirect_stderr=False, redirect_stdout=False
-        )
-    if retval:
-        sys.exit(retval)
-
-def go_tests():
-    go_root = join(AMPIFY_ROOT, 'src', 'amp')
-    chdir(go_root)
-    run_command([MAKE, 'nuke'])
-    _, retval = run_command(
-        [MAKE, 'install', 'test'], retcode=True, redirect_stderr=False,
-        redirect_stdout=False
-        )
-    if retval:
-        sys.exit(retval)
-
-def py_tests(modules, verbose):
-    failed = 0
-    for module in modules:
-        module = __import__(module, fromlist=[''])
-        fail, _ = testmod(module, optionflags=ELLIPSIS, verbose=verbose)
-        failed += fail
-    if failed:
-        sys.exit(1)
-
-# ------------------------------------------------------------------------------
 # Help Strings
 # ------------------------------------------------------------------------------
 
 # These, along with other strings, should perhaps be internationalised at a
 # later date.
-build.help = "download and build the ampify dependencies"
-check.help = "check if your checkout is up-to-date"
-deploy.help = "deploy an instance to remote hosts"
-hub.help = "interact with amphub"
-init.help = "initialise a new amp instance"
-install.help = "install specific amp build packages"
-run.help = "run the components for an amp instance"
-test.help = "run the ampify test suite"
-uninstall.help = "uninstall specific amp build packages"
+build.help = "download and build the dependencies"
+check.help = "check if this checkout is up-to-date"
+install.help = "install specific build packages"
+uninstall.help = "uninstall specific build packages"
 
 # ------------------------------------------------------------------------------
 # Command Mapping
@@ -1294,12 +1115,7 @@ uninstall.help = "uninstall specific amp build packages"
 COMMANDS = {
     'build': build,
     'check': check,
-    'deploy': deploy,
-    'hub': hub,
-    'init': init,
     'install': install,
-    'run': run,
-    'test': test,
     'uninstall': uninstall
     }
 
@@ -1314,9 +1130,19 @@ AUTOCOMPLETE_COMMANDS['help'] = lambda completer: (
     ListCompleter(COMMANDS.keys())
     )
 
+AUTOCOMPLETE_COMMANDS['role'] = lambda completer: (
+    OptionParser(add_help_option=False),
+    None
+    )
+
+AUTOCOMPLETE_COMMANDS['infohash'] = lambda completer: (
+    OptionParser(add_help_option=False),
+    None
+    )
+
 AUTOCOMPLETE_COMMANDS['version'] = lambda completer: (
     OptionParser(add_help_option=False),
-    DirCompleter(AMPIFY_ROOT_PARENT)
+    None
     )
 
 for command in AUTOCOMPLETE_COMMANDS.values():

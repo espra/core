@@ -1,38 +1,38 @@
-#! /usr/bin/env python
+#! /usr/bin/env bash
 
 # Public Domain (-) 2010-2011 The Ampify Authors.
 # See the Ampify UNLICENSE file for details.
 
-"""
-==============
-Redpill Daemon
-==============
+if [[ "x$BASH_SOURCE" == "x" ]]; then
+	echo "Sorry, this only works under Bash shells atm. Patches welcome... =)"
+	exit
+fi
 
-The redpill takes care of updating a deployed Ampify setup.
+AMPIFY_ROOT=$(dirname $(dirname $0))
 
-* Build -- max(N/200, 2) -- if more than 2 matching uname -mrs / rev id / ampify_root
-* Create tarball
-* Compare hash
-* Generate diff to desired versions
-* Compare hash
-* Distribute bsdiffs
+if [[ "x$AMPIFY_ROOT" == "x" ]]; then
+	echo "ERROR: Sorry, couldn't detect the Ampify Root Directory."
+fi
 
-~/.ampify
+if [[ "x$AMPIFY_LOCAL" == "x" ]]; then
+	. $AMPIFY_ROOT/environ/ampenv.sh
+fi
 
-* Send current revision IDs
-* Receive bsdiff
-* Apply bsdiffs
-* Untar
-* Tell nginx to go into system upgrade mode
-* Send KILL signal to amp processes
-* Move ampify/instance directories
-* Move untarred directories to become the new ampify/instance directories
-* Start amp processes
-* Tell nginx to go into normal mode
-* Move .git directory
-* Delete the previous directories
+# Exit if the Python version is not a 2.x more recent than 2.5.
+python -c "import sys
+if (not hasattr(sys, 'version_info')) or sys.version_info < (2, 5):
+    print('ERROR: Sorry, you do not have a compatible Python version.')
+    print('ERROR: It needs to be a 2.x version more recent than 2.5.')
+    sys.exit(1)
 
-* Reload redpill
+if sys.version_info >= (3,):
+    print('ERROR: Sorry, you do not have a compatible Python version.')
+    print('ERROR: Python 3 is not supported. You need a recent 2.x version.')
+    sys.exit(1)"
 
-"""
+version_check_status=$?
+if [ $version_check_status -ne 0 ]; then
+	exit $version_check_status
+fi
 
+python -m redpill $@
