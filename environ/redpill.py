@@ -22,8 +22,7 @@ from glob import glob
 from hashlib import sha1, sha256
 from optparse import OptionParser
 from os import chdir, getcwd, environ, execve, listdir, makedirs, remove, stat
-from os.path import dirname, exists, expanduser, isabs, isdir, isfile, islink
-from os.path import join, realpath, split
+from os.path import exists, isabs, isdir, isfile, islink, join
 from shutil import copy, rmtree
 from stat import ST_MTIME
 from thread import start_new_thread
@@ -218,38 +217,29 @@ def cleanup_partial_install(current_filelisting):
 # Constants
 # ------------------------------------------------------------------------------
 
-AMPIFY_ROOT = dirname(dirname(realpath(__file__)))
-AMPIFY_ROOT_PARENT = dirname(AMPIFY_ROOT)
+ROOT = environ['AMPIFY_ROOT']
+LOCAL = environ['AMPIFY_LOCAL']
 
-ROOT = AMPIFY_ROOT
 ENVIRON = join(ROOT, 'environ')
-LOCAL = join(ENVIRON, 'local')
+SHARE = join(LOCAL, 'share')
+
 BIN = join(LOCAL, 'bin')
 INCLUDE = join(LOCAL, 'include')
-LIB = join(LOCAL, 'lib')
-SHARE = join(LOCAL, 'share')
 INFO = join(SHARE, 'info')
+LIB = join(LOCAL, 'lib')
 MAN = join(SHARE, 'man')
 RECEIPTS = join(ENVIRON, 'receipts')
+SRC = join(ROOT, 'src')
+THIRD_PARTY = join(ROOT, 'third_party')
 TMP = join(LOCAL, 'tmp')
 VAR = join(LOCAL, 'var')
-SRC = join(ROOT, 'src')
 
 DISTFILES_URL_BASE = environ.get(
-    'AMPIFY_DISTFILES_URL_BASE',
+    'REDPILL_DISTFILES_URL_BASE',
     "http://cloud.github.com/downloads/tav/ampify/distfile."
     )
 
-# DISTFILES_URL_BASE = environ.get(
-#     'AMPIFY_DISTFILES_URL_BASE',
-#     "http://github.s3.amazonaws.com/downloads/tav/ampify/distfile."
-#     )
-
-# Alternatively, could use the HTTPS URL -- note that this would be using S3 and
-# not Amazon CloudFront:
-# https://github.s3.amazonaws.com/downloads/tav/ampify/distfile.
-
-BUILD_WORKING_DIRECTORY = '/tmp/amp-build-%s' % sha1(ROOT).hexdigest()[:8]
+BUILD_WORKING_DIRECTORY = '/tmp/redpill-%s' % sha1(ROOT).hexdigest()[:8]
 BUILD_LOCK = BUILD_WORKING_DIRECTORY + '.lock'
 
 BUILD_RECIPES = [path for path in environ.get(
@@ -261,7 +251,6 @@ ROLES_PATH = [path for path in environ.get(
     ).split(':') if isdir(path)]
 
 CURRENT_DIRECTORY = getcwd()
-HOME = expanduser('~')
 
 if PLATFORM == 'darwin':
     LIB_EXTENSION = '.dylib'
@@ -513,12 +502,12 @@ def init_build_recipes():
 # Env Manipulation
 # ------------------------------------------------------------------------------
 
-def get_ampify_env(environ):
+def get_redpill_env(environ):
     new = {}
     for key in environ:
-        if key.startswith('AMPIFY'):
+        if key.startswith('AMPIFY') or key.startswith('REDPILL'):
             new[key] = environ[key]
-        if key.startswith('JAVA') or key.endswith('JAVA'):
+        elif key.startswith('JAVA') or key.endswith('JAVA'):
             new[key] = environ[key]
     for var in [
         'PATH', 'LD_LIBRARY_PATH',
@@ -725,7 +714,7 @@ def install_packages(types=BUILD_TYPES):
             rmdir(LOCAL)
             rmdir(RECEIPTS)
             unlock(BUILD_LOCK)
-            execve(join(ENVIRON, 'redpill'), sys.argv, get_ampify_env(environ))
+            execve(join(ENVIRON, 'redpill'), sys.argv, get_redpill_env(environ))
     else:
         uninstall_packages(uninstall, installed)
 
@@ -884,41 +873,7 @@ def build_base_and_reload():
     load_role('base')
     install_packages()
     unlock(BUILD_LOCK)
-    execve(join(ENVIRON, 'redpill'), sys.argv, get_ampify_env(environ))
-
-# ------------------------------------------------------------------------------
-# Utility Functions
-# ------------------------------------------------------------------------------
-
-# This function normalises instance names -- just in case someone accidentally
-# passed in a path name.
-def normalise_instance_name(instance_name):
-    instance_name = split(realpath(instance_name))[-1]
-    instance_root = join(AMPIFY_ROOT_PARENT, instance_name)
-    return instance_name, instance_root
-
-# ------------------------------------------------------------------------------
-# Role Commands
-# ------------------------------------------------------------------------------
-
-def get_redpill_role():
-    role = environ.get('REDPILL_ROLE', 'default')
-    if PLATFORM == 'freebsd' and role == 'default':
-        return 'freebsd'
-    return role
-
-def get_redpill_infohash():
-    roles = set()
-    for path in ROLES_PATH:
-        roles.update([f[:-5] for f in listdir(path) if f.endswith('.yaml')])
-    stream = []
-    write = stream.append
-    for role in sorted(roles):
-        write(role)
-        write('\n')
-    while stream[-1] == '\n':
-        stream.pop()
-    return ''.join(stream)
+    execve(join(ENVIRON, 'redpill'), sys.argv, get_redpill_env(environ))
 
 # ------------------------------------------------------------------------------
 # Main Runner
@@ -932,27 +887,21 @@ def main(argv=None, show_help=False):
     # don't display a potentially confusing ``redpill.py`` to end users.
     sys.argv[0] = 'redpill'
 
-    command_listing = '\n'.join(
+    major_listing = '\n'.join(
         "    %-10s %s"
-        % (cmd, COMMANDS[cmd].help) for cmd in sorted(COMMANDS)
+        % (cmd, MAJOR_COMMANDS[cmd].__doc__) for cmd in sorted(MAJOR_COMMANDS)
         )
-
-    mini_help = {
-        'infohash': "show the current infohash and exit",
-        'role': "show the redpill role and exit",
-        'version': "show the version number and exit"
-        }
 
     mini_listing = '\n'.join(
         "    %-10s %s"
-        % (cmd, mini_help[cmd]) for cmd in sorted(mini_help)
+        % (cmd, MINI_COMMANDS[cmd].__doc__) for cmd in sorted(MINI_COMMANDS)
         )
 
-    usage = ("""Usage: redpill <command> [options]
+    usage = ("""%s\nUsage: redpill <command> [options]
     \nCommands:
     \n%s\n\n%s
     \nSee `redpill help <command>` for more info on a specific command.""" %
-    (command_listing, mini_listing))
+    (__doc__, major_listing, mini_listing))
 
     autocomplete(
         OptionParser(add_help_option=False),
@@ -965,34 +914,29 @@ def main(argv=None, show_help=False):
     else:
         command = argv[0]
         argv = argv[1:]
-        if command in ['-h', '--help']:
-            show_help = True
-        elif command == 'help':
+        if command in ['help', '-h', '--help']:
             if argv:
                 command = argv[0]
                 argv = ['--help']
-                if command in mini_help:
-                    help = mini_help[command]
-                    print("Usage: redpill %s\n\n    %s\n" % (command, help))
+                if command in MINI_COMMANDS:
+                    help = MINI_COMMANDS[command].__doc__
+                    print "Usage: redpill %s\n\n    %s\n" % (command, help)
                     sys.exit()
             else:
                 show_help = True
-        if command == 'infohash':
-            print(get_redpill_infohash())
+        elif command in ['-v', '--version']:
+            version()
             sys.exit()
-        if command == 'role':
-            print(get_redpill_role())
-            sys.exit()
-        if command in ['-v', '--version', 'version']:
-            print('redpill %s' % __release__)
+        elif command in MINI_COMMANDS:
+            MINI_COMMANDS[command]()
             sys.exit()
 
     if show_help:
-        print(usage)
-        sys.exit(1)
+        print usage
+        sys.exit()
 
-    if command in COMMANDS:
-        return COMMANDS[command](argv)
+    if command in MAJOR_COMMANDS:
+        return MAJOR_COMMANDS[command](argv)
 
     # We support git-command like behaviour. That is, if there's an external
     # binary named ``redpill-foo`` available on the ``$PATH``, then running ``redpill
@@ -1013,33 +957,26 @@ def main(argv=None, show_help=False):
 # ------------------------------------------------------------------------------
 
 def build(argv=None, completer=None):
+    """download and build the dependencies"""
 
-    op = OptionParser(usage="Usage: redpill build [options]", add_help_option=False)
+    usage = "Usage: redpill build [options]\n\n    %s" % build.__doc__
 
-    op.add_option('--role', dest='role', default=get_redpill_role(),
-                  help="specify a non-default role to build")
+    op = OptionParser(usage=usage, add_help_option=False)
+
+    op.add_option('--role', dest='role', default=get_role(),
+                  help="specify the role to build [%s]" % get_role())
 
     options, args = parse_options(op, argv, completer)
 
     load_role(options.role)
     install_packages()
 
-    _, retcode = run_command(
-        [sys.executable, join(AMPIFY_ROOT, 'environ', 'assetgen')],
-        retcode=True, redirect_stdout=False, redirect_stderr=False
-        )
-
-    if retcode:
-        sys.exit(retcode)
-
 # ------------------------------------------------------------------------------
 # Check Command
 # ------------------------------------------------------------------------------
 
-def check(argv=None, completer=None):
-
-    op = OptionParser(usage="Usage: redpill check", add_help_option=False)
-    options, args = parse_options(op, argv, completer)
+def check():
+    """check if this checkout is up-to-date"""
 
     log("Checking the current revision id for your code.", PROGRESS)
     revision_id = do(
@@ -1055,24 +992,88 @@ def check(argv=None, completer=None):
     latest_revision_id = decode_json(commit_info)['commits'][0]['id']
 
     if revision_id != latest_revision_id:
-        exit("A new version is available. Please run `git pull`.")
+        exit("A new version is available. Please run `git update`.")
 
     log("Your checkout is up-to-date.", SUCCESS)
+
+# ------------------------------------------------------------------------------
+# Role Command
+# ------------------------------------------------------------------------------
+
+def get_role():
+    role = environ.get('REDPILL_ROLE', 'default')
+    if PLATFORM == 'freebsd' and role == 'default':
+        return 'freebsd'
+    return role
+
+def role():
+    """show the redpill role and exit"""
+    print get_role()
+
+# ------------------------------------------------------------------------------
+# Infohash Command
+# ------------------------------------------------------------------------------
+
+def get_infohash():
+    return sha256(infolist()).hexdigest()
+
+def infohash():
+    """show the current infohash and exit"""
+    print get_infohash()
+
+# ------------------------------------------------------------------------------
+# Infolist Command
+# ------------------------------------------------------------------------------
+
+def get_infolist():
+
+    roles = set()
+    for path in ROLES_PATH:
+        roles.update([f[:-5] for f in listdir(path) if f.endswith('.yaml')])
+
+    roles = list(sorted(roles))
+    for role in roles:
+        load_role(role)
+
+    stream = []; write = stream.append
+    write('\t\t')
+    write(':'.join(roles))
+    write('\n')
+
+    for package in sorted(TO_INSTALL):
+        write(package)
+        write('\t\t')
+        write(TO_INSTALL[package])
+        write('\n')
+
+    while stream[-1] == '\n':
+        stream.pop()
+
+    return ''.join(stream)
+
+def infolist():
+    """show the current infolist and exit"""
+    print get_infolist()
 
 # ------------------------------------------------------------------------------
 # Install Command
 # ------------------------------------------------------------------------------
 
 def install(argv=None, completer=None):
+    """install specific build packages"""
 
-    op = OptionParser(
-        usage="Usage: redpill install <package-1> <package-2> ...",
-        add_help_option=False
+    usage = (
+        "Usage: redpill install <package-1> <package-2> ...\n\n    %s"
+        % install.__doc__
         )
+
+    op = OptionParser(usage=usage, add_help_option=False)
 
     init_build_recipes()
     if completer:
-        return op, ListCompleter(RECIPES)
+        installed_packages = get_installed_packages()
+        potentials = [pkg for pkg in RECIPES if pkg not in installed_packages]
+        return op, ListCompleter(potentials)
 
     options, args = parse_options(op, argv, completer, True)
     for package in args:
@@ -1084,66 +1085,69 @@ def install(argv=None, completer=None):
 # Uninstall Command
 # ------------------------------------------------------------------------------
 
-def uninstall(argv=None, completer=None):
+def get_installed_packages():
+    return dict(f.split('-', 1) for f in listdir(RECEIPTS))
 
-    op = OptionParser(
-        usage="Usage: redpill uninstall <package>", add_help_option=False
+def uninstall(argv=None, completer=None):
+    """uninstall specific build packages"""
+
+    usage = (
+        "Usage: redpill uninstall <package-1> <package-2> ...\n\n    %s"
+        % uninstall.__doc__
         )
+
+    op = OptionParser(usage=usage, add_help_option=False)
 
     init_build_recipes()
     if completer:
-        return op, ListCompleter(RECIPES)
+        return op, ListCompleter(get_installed_packages())
 
     options, args = parse_options(op, argv, completer, True)
-    uninstall_package(args[0])
+    for package in args:
+        uninstall_package(package)
 
 # ------------------------------------------------------------------------------
-# Help Strings
+# Version Command
 # ------------------------------------------------------------------------------
 
-# These, along with other strings, should perhaps be internationalised at a
-# later date.
-build.help = "download and build the dependencies"
-check.help = "check if this checkout is up-to-date"
-install.help = "install specific build packages"
-uninstall.help = "uninstall specific build packages"
+def version():
+    """show the version number and exit"""
+
+    print 'redpill %s' % __release__
 
 # ------------------------------------------------------------------------------
 # Command Mapping
 # ------------------------------------------------------------------------------
 
-COMMANDS = {
+MAJOR_COMMANDS = {
     'build': build,
-    'check': check,
     'install': install,
     'uninstall': uninstall
+    }
+
+MINI_COMMANDS = {
+    'check': check,
+    'infohash': infohash,
+    'infolist': infolist,
+    'role': role,
+    'version': version
     }
 
 # ------------------------------------------------------------------------------
 # Command Autocompletion
 # ------------------------------------------------------------------------------
 
-AUTOCOMPLETE_COMMANDS = COMMANDS.copy()
+AUTOCOMPLETE_COMMANDS = MAJOR_COMMANDS.copy()
 
 AUTOCOMPLETE_COMMANDS['help'] = lambda completer: (
     OptionParser(add_help_option=False),
-    ListCompleter(COMMANDS.keys())
+    ListCompleter(MAJOR_COMMANDS.keys() + MINI_COMMANDS.keys())
     )
 
-AUTOCOMPLETE_COMMANDS['role'] = lambda completer: (
-    OptionParser(add_help_option=False),
-    None
-    )
+no_autocomplete = lambda completer: (OptionParser(add_help_option=False), None)
 
-AUTOCOMPLETE_COMMANDS['infohash'] = lambda completer: (
-    OptionParser(add_help_option=False),
-    None
-    )
-
-AUTOCOMPLETE_COMMANDS['version'] = lambda completer: (
-    OptionParser(add_help_option=False),
-    None
-    )
+for command in MINI_COMMANDS:
+    AUTOCOMPLETE_COMMANDS[command] = no_autocomplete
 
 for command in AUTOCOMPLETE_COMMANDS.values():
     command.autocomplete = make_autocompleter(command)
