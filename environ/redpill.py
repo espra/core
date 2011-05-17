@@ -264,6 +264,11 @@ if PLATFORM == 'freebsd':
 else:
     MAKE = 'make'
 
+if sys.maxint == 2**63 - 1:
+    ARCH = 'amd64'
+else:
+    ARCH = '386'
+
 CPPFLAGS = "-I%s" % INCLUDE
 LDFLAGS = "-L%s" % LIB
 
@@ -273,14 +278,8 @@ BUILTINS = locals()
 BASE_PACKAGES = set()
 PACKAGES = {}
 RECIPES_INITIALISED = []
-VIRGIN_BUILD = not exists(join(LOCAL, 'bin', 'python'))
 
 DEBUG = False
-
-ERRMSG_GIT_NAME_DETECTION = (
-    "ERROR: Couldn't detect the instance name from the Git URL.\n          "
-    "Please provide an instance name parameter. Thanks!"
-    )
 
 # ------------------------------------------------------------------------------
 # Distfiles Downloader
@@ -347,9 +346,6 @@ def load_role(role):
     init_build_recipes()
     if role in ROLES:
         return ROLES[role]
-
-    if VIRGIN_BUILD and role != 'base':
-        build_base_and_reload()
 
     for path in ROLES_PATH:
         role_file = join(path, role) + '.yaml'
@@ -459,13 +455,13 @@ def init_build_recipes():
                 version = run_command(
                     ['git', 'rev-parse', 'HEAD'], cwd=path, exit_on_error=True
                     ).strip()
-            elif recipe_type == 'makelike':
-                contents = []
+            elif 'depends' in recipe:
+                contents = {}
                 latest = 0
                 for pattern in recipe['depends']:
                     for file in glob(pattern):
                         dep_file = open(file, 'rb')
-                        contents.append(dep_file.read())
+                        contents[file] = dep_file.read()
                         dep_file.close()
                         dep_mtime = stat(file)[ST_MTIME]
                         if dep_mtime > latest:
@@ -489,7 +485,10 @@ def init_build_recipes():
                     for file in listdir(RECEIPTS):
                         if file.startswith(package + '-'):
                             remove(join(RECEIPTS, file))
-                version = sha1(''.join(contents)).hexdigest()
+                version = sha1(''.join([
+                    '%s\x00%s' % (f, contents[f])
+                    for f in sorted(contents)
+                    ])).hexdigest()
             else:
                 version = recipe['version']
             versions.append(version)
@@ -584,12 +583,8 @@ SUBMODULE_BUILD.update({
     'distfile': ''
     })
 
-def makelike_commands(package, info):
-    return info['generators']
-
 MAKELIKE_BUILD = BASE_BUILD.copy()
 MAKELIKE_BUILD.update({
-    'commands': makelike_commands,
     'distfile': ''
     })
 
@@ -603,10 +598,46 @@ BUILD_TYPES = {
     }
 
 # ------------------------------------------------------------------------------
-# Core Install Functions
+# Core Installer Functionality
 # ------------------------------------------------------------------------------
 
 TO_INSTALL = {}
+TO_UNINSTALL = {}
+
+def get_installed_packages(called=[], cache={}):
+    if called:
+        return cache
+    called.append(1)
+    cache.update(dict(f.split('-', 1) for f in listdir(RECEIPTS)))
+    return cache
+
+def get_installed_dependencies(
+    package, gathered=None, raw_types=['submodule', 'makelike']
+    ):
+    if gathered is None:
+        gathered = set()
+    else:
+        gathered.add(package)
+    installed_version = get_installed_packages()[package]
+    recipes = RECIPES[package]
+    if recipes.values()[0].get('type') in raw_types:
+        recipe = recipes.values()[0]
+    else:
+        recipe = recipes[installed_version]
+    for dep in recipe.get('requires', []):
+        get_installed_dependencies(dep, gathered)
+    return gathered
+
+def get_installed_data():
+    installed = get_installed_packages()
+    inverse_dependencies = {}
+    for package in installed:
+        if package in PACKAGES:
+            for dep in get_installed_dependencies(package):
+                if dep not in inverse_dependencies:
+                    inverse_dependencies[dep] = set()
+                inverse_dependencies[dep].add(package)
+    return installed, inverse_dependencies
 
 # Check and load the build recipe for the given package name and add it to the
 # ``TO_INSTALL`` set.
@@ -621,44 +652,6 @@ def install_package(package):
     for dependency in RECIPES[package][version].get('requires', []):
         install_package(dependency)
 
-# Uninstall the given list of packages in uninstall.
-def uninstall_packages(uninstall, installed):
-    for name, version in uninstall.items():
-        log("Uninstalling %s %s" % (name, version))
-        installed_version = '%s-%s' % (name, version)
-        receipt_path = join(RECEIPTS, installed_version)
-        receipt = open(receipt_path, 'rb')
-        directories = set()
-        for path in receipt:
-            if isabs(path):
-                exit("ERROR: Got an absolute path in receipt %s" % receipt_path)
-            path = path.strip()
-            if not path:
-                continue
-            path = join(LOCAL, path)
-            if not islink(path):
-                if not exists(path):
-                    continue
-            if isdir(path):
-                directories.add(path)
-            else:
-                print "Removing:", path
-                os.remove(path)
-        for path in reversed(sorted(directories)):
-            if not listdir(path):
-                print "Removing Directory:", path
-                rmtree(path)
-        receipt.close()
-        os.remove(receipt_path)
-        del installed[name]
-
-# A utility function to uninstall a single package.
-def uninstall_package(package):
-    installed = dict(f.split('-', 1) for f in listdir(RECEIPTS))
-    if package in installed:
-        data = {package: installed[package]}
-        uninstall_packages(data, data)
-
 # Handle the actual installation/uninstallation of appropriate packages.
 def install_packages(types=BUILD_TYPES):
 
@@ -671,41 +664,19 @@ def install_packages(types=BUILD_TYPES):
         ]:
         mkdir(directory)
 
+    cleanup_install()
+
     # We assume the invariant that all packages only have one version installed.
-    installed = dict(f.split('-', 1) for f in listdir(RECEIPTS))
-    uninstall = {}
-
-    raw_types = ['submodule', 'makelike']
-    def get_installed_dependencies(package, gathered=None, raw_types=raw_types):
-        if gathered is None:
-            gathered = set()
-        else:
-            gathered.add(package)
-        installed_version = installed[package]
-        recipes = RECIPES[package]
-        if recipes.values()[0].get('type') in raw_types:
-            recipe = recipes.values()[0]
-        else:
-            recipe = recipes[installed_version]
-        for dep in recipe.get('requires', []):
-            get_installed_dependencies(dep, gathered)
-        return gathered
-
-    inverse_dependencies = {}
-    for package in installed:
-        if package in PACKAGES:
-            for dep in get_installed_dependencies(package):
-                if dep not in inverse_dependencies:
-                    inverse_dependencies[dep] = set()
-                inverse_dependencies[dep].add(package)
+    installed, inverse_dependencies = get_installed_data()
+    uninstall = set()
 
     for package in TO_INSTALL:
         if package in installed:
             existing_version = installed[package]
             if TO_INSTALL[package] != existing_version:
-                uninstall[package] = existing_version
+                uninstall.add(package)
                 for inv_dep in inverse_dependencies.get(package, []):
-                    uninstall[package] = installed[package]
+                    uninstall.add(package)
 
     # If a base package needs to be uninstalled, just nuke environ/local and
     # rebuild everything from scratch.
@@ -715,8 +686,11 @@ def install_packages(types=BUILD_TYPES):
             rmdir(RECEIPTS)
             unlock(BUILD_LOCK)
             execve(join(ENVIRON, 'redpill'), sys.argv, get_redpill_env(environ))
-    else:
-        uninstall_packages(uninstall, installed)
+
+    if uninstall:
+        for package in uninstall:
+            uninstall_package(package)
+        uninstall_packages()
 
     to_install = set(TO_INSTALL) - set(installed)
 
@@ -815,7 +789,7 @@ def install_packages(types=BUILD_TYPES):
         commands = info['commands']
         if isinstance(commands, basestring):
             commands = [commands]
-        elif callable(commands):
+        elif hasattr(commands, '__call__'):
             try:
                 commands = commands(package, info)
             except Exception:
@@ -865,15 +839,78 @@ def install_packages(types=BUILD_TYPES):
 
     chdir(CURRENT_DIRECTORY)
 
+# A utility function to uninstall a single package.
+def uninstall_package(package):
+    installed = get_installed_packages()
+    if package in installed:
+        TO_UNINSTALL[package] = installed[package]
+
+# Handle the actual uninstallation of the various packages.
+def uninstall_packages():
+    installed = get_installed_packages()
+    for name, version in TO_UNINSTALL.iteritems():
+        log("Uninstalling %s %s" % (name, version))
+        installed_version = '%s-%s' % (name, version)
+        receipt_path = join(RECEIPTS, installed_version)
+        receipt = open(receipt_path, 'rb')
+        directories = set()
+        for path in receipt:
+            if isabs(path):
+                exit("ERROR: Got an absolute path in receipt %s" % receipt_path)
+            path = path.strip()
+            if not path:
+                continue
+            path = join(LOCAL, path)
+            if not islink(path):
+                if not exists(path):
+                    continue
+            if isdir(path):
+                directories.add(path)
+            else:
+                print "Removing:", path
+                os.remove(path)
+        for path in reversed(sorted(directories)):
+            if not listdir(path):
+                print "Removing Directory:", path
+                rmtree(path)
+        receipt.close()
+        os.remove(receipt_path)
+        del installed[name]
+
+def cleanup_install():
+    current = get_listing()
+    expected = set()
+    for f in listdir(RECEIPTS):
+        f = open(join(RECEIPTS, f), 'rb')
+        expected.update(f.read().splitlines())
+        f.close()
+    diff = current.difference(expected)
+    for path in diff:
+        if isabs(path):
+            continue
+        path = join(LOCAL, path)
+        if islink(path):
+            print "Removing:", path
+            remove(path)
+        elif not isdir(path):
+            print "Ignoring:", path
+
 # ------------------------------------------------------------------------------
 # Virgin Build Handler
 # ------------------------------------------------------------------------------
+
+VIRGIN_BUILD = not exists(join(LOCAL, 'bin', 'bsdiff'))
 
 def build_base_and_reload():
     load_role('base')
     install_packages()
     unlock(BUILD_LOCK)
     execve(join(ENVIRON, 'redpill'), sys.argv, get_redpill_env(environ))
+
+# We used to check for a virgin build and force a build and reload, i.e.
+#
+# if VIRGIN_BUILD and role != 'base':
+#     build_base_and_reload()
 
 # ------------------------------------------------------------------------------
 # Main Runner
@@ -997,7 +1034,7 @@ def check():
     log("Your checkout is up-to-date.", SUCCESS)
 
 # ------------------------------------------------------------------------------
-# Role Command
+# Info Utilities
 # ------------------------------------------------------------------------------
 
 def get_role():
@@ -1006,54 +1043,81 @@ def get_role():
         return 'freebsd'
     return role
 
-def role():
-    """show the redpill role and exit"""
-    print get_role()
-
-# ------------------------------------------------------------------------------
-# Infohash Command
-# ------------------------------------------------------------------------------
-
-def get_infohash():
-    return sha256(infolist()).hexdigest()
-
-def infohash():
-    """show the current infohash and exit"""
-    print get_infohash()
-
-# ------------------------------------------------------------------------------
-# Infolist Command
-# ------------------------------------------------------------------------------
-
-def get_infolist():
-
+def get_build_info():
     roles = set()
     for path in ROLES_PATH:
         roles.update([f[:-5] for f in listdir(path) if f.endswith('.yaml')])
-
     roles = list(sorted(roles))
     for role in roles:
         load_role(role)
-
     stream = []; write = stream.append
     write('\t\t')
     write(':'.join(roles))
     write('\n')
-
     for package in sorted(TO_INSTALL):
         write(package)
         write('\t\t')
         write(TO_INSTALL[package])
         write('\n')
-
     while stream[-1] == '\n':
         stream.pop()
-
     return ''.join(stream)
 
-def infolist():
-    """show the current infolist and exit"""
-    print get_infolist()
+def get_installed_info():
+    stream = []; write = stream.append
+    installed = get_installed_packages()
+    for package in sorted(installed):
+        write(package)
+        write('\t\t')
+        write(installed[package])
+        write('\n')
+    while stream and stream[-1] == '\n':
+        stream.pop()
+    return ''.join(stream)
+
+# ------------------------------------------------------------------------------
+# Info Command
+# ------------------------------------------------------------------------------
+
+def info(argv=None, completer=None):
+    """show metadata relating to the installs"""
+
+    usage = "Usage: redpill info [options]\n\n    %s" % info.__doc__
+    op = OptionParser(usage=usage, add_help_option=False)
+
+    op.add_option(
+        '--hash', action='store_true',
+        help="show the sha256 hash of the output"
+        )
+
+    op.add_option(
+        '--installed', action='store_true',
+        help="output the list of installed packages/versions"
+        )
+
+    op.add_option(
+        '--role', action='store_true',
+        help="output the default redpill role"
+        )
+
+    if completer:
+        return op
+
+    options, args = parse_options(op, argv, completer)
+
+    lock(BUILD_LOCK)
+    if options.role:
+        output = get_role()
+    elif options.installed:
+        output = get_installed_info()
+    else:
+        output = get_build_info()
+
+    if options.hash:
+        output = sha256(output).hexdigest()
+
+    print output
+    unlock(BUILD_LOCK)
 
 # ------------------------------------------------------------------------------
 # Install Command
@@ -1063,7 +1127,7 @@ def install(argv=None, completer=None):
     """install specific build packages"""
 
     usage = (
-        "Usage: redpill install <package-1> <package-2> ...\n\n    %s"
+        "Usage: redpill install [packages]\n\n    %s"
         % install.__doc__
         )
 
@@ -1082,17 +1146,34 @@ def install(argv=None, completer=None):
     install_packages()
 
 # ------------------------------------------------------------------------------
-# Uninstall Command
+# Nuke Command
 # ------------------------------------------------------------------------------
 
-def get_installed_packages():
-    return dict(f.split('-', 1) for f in listdir(RECEIPTS))
+def nuke(argv=None, completer=None):
+    """nuke the local install"""
+
+    usage = "Usage: redpill nuke [options]\n\n    %s" % nuke.__doc__
+    op = OptionParser(usage=usage, add_help_option=False)
+
+    if completer:
+        return op
+
+    options, args = parse_options(op, argv, completer)
+
+    lock(BUILD_LOCK)
+    rmdir(LOCAL)
+    rmdir(RECEIPTS)
+    unlock(BUILD_LOCK)
+
+# ------------------------------------------------------------------------------
+# Uninstall Command
+# ------------------------------------------------------------------------------
 
 def uninstall(argv=None, completer=None):
     """uninstall specific build packages"""
 
     usage = (
-        "Usage: redpill uninstall <package-1> <package-2> ...\n\n    %s"
+        "Usage: redpill uninstall [packages]\n\n    %s"
         % uninstall.__doc__
         )
 
@@ -1105,6 +1186,8 @@ def uninstall(argv=None, completer=None):
     options, args = parse_options(op, argv, completer, True)
     for package in args:
         uninstall_package(package)
+
+    uninstall_packages()
 
 # ------------------------------------------------------------------------------
 # Version Command
@@ -1121,15 +1204,14 @@ def version():
 
 MAJOR_COMMANDS = {
     'build': build,
+    'info': info,
     'install': install,
+    'nuke': nuke,
     'uninstall': uninstall
     }
 
 MINI_COMMANDS = {
     'check': check,
-    'infohash': infohash,
-    'infolist': infolist,
-    'role': role,
     'version': version
     }
 
