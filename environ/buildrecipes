@@ -20,7 +20,7 @@ RECIPES['ampify'] = [{
     'path': ROOT,
     'before': lambda: chdir(join(SRC, 'amp')),
     'commands': [
-        ['gomake', 'install']
+        [MAKE, 'install']
         ]
     }]
 
