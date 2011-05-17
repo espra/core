@@ -3,7 +3,7 @@
 # Public Domain (-) 2010-2011 The Ampify Authors.
 # See the Ampify UNLICENSE file for details.
 
-"""Build recipes for Ampify."""
+"""The redpill build recipes for Ampify."""
 
 if NUMBER_OF_CPUS > 1:
     PARALLEL = '-j%i' % NUMBER_OF_CPUS
@@ -60,6 +60,16 @@ RECIPES['bzip2'] = [{
     }]
 
 # ------------------------------------------------------------------------------
+# cacerts
+# ------------------------------------------------------------------------------
+
+RECIPES['cacerts'] = [{
+    'version': '1.2',
+    'hash': '3957a8fbeb5cb7c22299a99a88acc66e19239d50d31306079e2b8daf15ccb83f',
+    'type': 'resource'
+    }]
+
+# ------------------------------------------------------------------------------
 # closure
 # ------------------------------------------------------------------------------
 
@@ -95,6 +105,7 @@ def copy_keyspace_py_lib():
             copy(join(directory, file), join(pylibs, file))
 
 RECIPES['keyspace'] = [{
+    'requires': ['python'],
     'version': '1.8.0',
     'hash': '5f6425411eff961e1bf9122aa3f59a898cee4af0fcd7a1abe29b84a3cf6539e2',
     'after': copy_keyspace_py_lib,
@@ -106,15 +117,6 @@ RECIPES['keyspace'] = [{
         [MAKE, 'install'],
         [MAKE, 'pythonlib']
         ]
-    }]
-
-# ------------------------------------------------------------------------------
-# libevent
-# ------------------------------------------------------------------------------
-
-RECIPES['libevent'] = [{
-    'version': '1.4.13',
-    'hash': ''
     }]
 
 # ------------------------------------------------------------------------------
@@ -138,14 +140,14 @@ RECIPES['libnatpmp'] = [{
 
 MAKEUCD_SCRIPT = join(ENVIRON, 'makeucd')
 UCD_DATA_FILE = join(SHARE, 'ucd', 'UnicodeData.txt')
-UCD_JS_FILE = join(SRC, 'jsutil', 'ucd.js')
+UCD_JS_FILE = join(SRC, 'coffee', 'ucd.js')
 
 RECIPES['makeucd'] = [{
-    'requires': ['python', 'ucd'],
+    'requires': ['ucd'],
     'type': 'makelike',
     'depends': [MAKEUCD_SCRIPT],
     'outputs': [UCD_JS_FILE],
-    'generators': [
+    'commands': [
         [MAKEUCD_SCRIPT, UCD_DATA_FILE, UCD_JS_FILE]
         ]
     }]
@@ -234,37 +236,11 @@ RECIPES['pcre'] = [{
     }]
 
 # ------------------------------------------------------------------------------
-# pyutil
-# ------------------------------------------------------------------------------
-
-PYUTIL_PYX_FILES = glob(join(SRC, 'pyutil', '*.pyx'))
-if PLATFORM != 'darwin':
-    PYUTIL_PYX_FILES.remove(join(SRC, 'pyutil', 'darwinsandbox.pyx'))
-
-PYUTIL_SO_FILES = [
-    file.rsplit('.pyx', 1)[0] + '.so' for file in PYUTIL_PYX_FILES
-    ]
-
-RECIPES['pyutil'] = [{
-    'requires': ['python'],
-    'type': 'makelike',
-    'before': lambda: chdir(SRC),
-    'depends': PYUTIL_PYX_FILES + [join(ROOT, 'src', 'setup.py')],
-    'outputs': PYUTIL_SO_FILES,
-    'after': lambda: rmdir('build'),
-    'generators': [
-        lambda: [remove(path) for path in PYUTIL_SO_FILES if isfile(path)],
-        [sys.executable, 'setup.py', 'build_ext', '-i']
-        ]
-    }]
-
-# ------------------------------------------------------------------------------
 # pylibs
 # ------------------------------------------------------------------------------
 
 RECIPES['pylibs'] = [{
     'type': 'submodule',
-    'requires': ['python'],
     'path': 'third_party/pylibs',
     'after': lambda: rmdir('build'),
     'commands': [
@@ -318,11 +294,35 @@ RECIPES['redis'] = [{
     }]
 
 # ------------------------------------------------------------------------------
+# tavutil
+# ------------------------------------------------------------------------------
+
+TAVUTIL_ROOT = join(THIRD_PARTY, 'tavutil')
+TAVUTIL_PYX_FILES = glob(join(TAVUTIL_ROOT, 'tavutil', '*.pyx'))
+if PLATFORM != 'darwin':
+    TAVUTIL_PYX_FILES.remove(join(TAVUTIL_ROOT, 'tavutil', 'darwinsandbox.pyx'))
+
+TAVUTIL_SO_FILES = [
+    file.rsplit('.pyx', 1)[0] + '.so' for file in TAVUTIL_PYX_FILES
+    ]
+
+RECIPES['tavutil'] = [{
+    'type': 'makelike',
+    'before': lambda: chdir(TAVUTIL_ROOT),
+    'depends': TAVUTIL_PYX_FILES + [join(TAVUTIL_ROOT, 'setup.py')],
+    'outputs': TAVUTIL_SO_FILES,
+    'after': lambda: rmdir('build'),
+    'commands': [
+        lambda: [remove(path) for path in TAVUTIL_SO_FILES if isfile(path)],
+        [sys.executable, 'setup.py', 'build_ext', '-i']
+        ]
+    }]
+
+# ------------------------------------------------------------------------------
 # ucd
 # ------------------------------------------------------------------------------
 
 RECIPES['ucd'] = [{
-    'required': ['python'],
     'version': '5.2.0',
     'hash': '12363cd8793148283551a69478ec42220c9e43c91d4dd77557df5d5265199e51',
     'type': 'resource'
