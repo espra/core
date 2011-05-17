@@ -16,7 +16,6 @@ all: update build
 
 build:
 	@./environ/redpill build
-	@cd src/amp && make install
 
 clean:
 	@cd src/amp && make nuke
