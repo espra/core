@@ -15,4 +15,7 @@ GOFILES=\
 OFILES=\
 	$(GOROOT_ORIGINAL)/src/pkg/big/arith_$(GOARCH).$O\
 
+$(GOROOT_ORIGINAL)/src/pkg/big/arith_$(GOARCH).$O:
+	cd $(GOROOT_ORIGINAL)/src/pkg/big && make
+
 include $(GOROOT)/src/Make.pkg
