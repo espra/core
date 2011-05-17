@@ -1,7 +1,5 @@
 # specific files/directories
 
-.appengine_java_sdk
-.appengine_python_sdk
 .articlestore
 .build
 .build-lock
@@ -13,11 +11,8 @@ doc/website/*.html
 environ/local
 environ/receipts
 
-src/ampify/*.c
-src/cajoleit/lib
-src/cajoleit/war
-src/go/frontend/frontend
-src/js/*.js
+src/amp/amp/amp
+src/coffee/*.js
 src/nodule/static/files/css/*.css
 src/nodule/static/files/js/*.js
 src/nodule/urlfetch/urlfetch
