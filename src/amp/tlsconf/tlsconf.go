@@ -9,6 +9,7 @@ package tlsconf
 import (
 	"amp/runtime"
 	"crypto/rand"
+	"crypto/x509"
 	"crypto/tls"
 	"io/ioutil"
 	"os"
@@ -22,8 +23,8 @@ func GenConfig(file string) (config *tls.Config, err os.Error) {
 	if err != nil {
 		return nil, err
 	}
-	roots := tls.NewCASet()
-	roots.SetFromPEM(data)
+	roots := x509.NewCertPool()
+	roots.AppendCertsFromPEM(data)
 	config = &tls.Config{
 		Rand:    rand.Reader,
 		Time:    time.Seconds,
