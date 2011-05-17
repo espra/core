@@ -188,7 +188,8 @@ fi
 # Go Related Variables
 # ------------------------------------------------------------------------------
 
-export GOROOT=$AMPIFY_ROOT/third_party/go
+export GOROOT_ORIGINAL=$_THIRD_PARTY/go
+export GOROOT=$AMPIFY_LOCAL/go
 export GOBIN=$AMPIFY_LOCAL/bin
 
 case $_OS_NAME in

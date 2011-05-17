@@ -23,7 +23,7 @@ from hashlib import sha1, sha256
 from optparse import OptionParser
 from os import chdir, getcwd, environ, execve, listdir, makedirs, remove, stat
 from os.path import exists, isabs, isdir, isfile, islink, join
-from shutil import copy, rmtree
+from shutil import copy, copytree, rmtree
 from stat import ST_MTIME
 from thread import start_new_thread
 from time import sleep
@@ -868,13 +868,13 @@ def uninstall_packages():
                 directories.add(path)
             else:
                 print "Removing:", path
-                os.remove(path)
+                remove(path)
         for path in reversed(sorted(directories)):
             if not listdir(path):
                 print "Removing Directory:", path
                 rmtree(path)
         receipt.close()
-        os.remove(receipt_path)
+        remove(receipt_path)
         del installed[name]
 
 def cleanup_install():
@@ -889,11 +889,9 @@ def cleanup_install():
         if isabs(path):
             continue
         path = join(LOCAL, path)
-        if islink(path):
+        if not isdir(path):
             print "Removing:", path
             remove(path)
-        elif not isdir(path):
-            print "Ignoring:", path
 
 # ------------------------------------------------------------------------------
 # Virgin Build Handler

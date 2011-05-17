@@ -83,12 +83,29 @@ RECIPES['closure'] = [{
 # go
 # ------------------------------------------------------------------------------
 
+go_install_path = join(LOCAL, 'go')
+
+def before_go_install():
+    if exists(go_install_path):
+        rmtree(go_install_path)
+    chdir('src')
+
+def after_go_install():
+    mkdir(go_install_path)
+    copytree(join('..', 'pkg'), join(go_install_path, 'pkg'))
+    go_src = join(go_install_path, 'src')
+    mkdir(go_src)
+    for path in listdir('.'):
+        if path.startswith('Make'):
+            copy(path, join(go_src, path))
+
 RECIPES['go'] = [{
     'type': 'submodule',
     'path': 'third_party/go',
-    'before': lambda: chdir('src'),
+    'before': before_go_install,
+    'after': after_go_install,
     'commands': [
-        ['./all.bash']
+        ['./make.bash']
         ]
     }]
 
