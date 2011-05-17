@@ -118,6 +118,9 @@ RECIPES['go'] = [{
     'path': 'third_party/go',
     'before': before_go_install,
     'after': after_go_install,
+    'env': {
+        'GOROOT': environ['GOROOT_ORIGINAL']
+        },
     'commands': [
         ['./make.bash']
         ]
