@@ -1,10 +1,9 @@
 requires: base
 packages:
-- closure
-- keyspace
+- cacerts
+- go
 - makeucd
+- node
 - pylibs
-- pyutil
 - redis
-- ucd
-- yuicompressor
+- tavutil

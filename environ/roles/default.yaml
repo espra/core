@@ -1,13 +1,9 @@
 requires: base
 packages:
-- closure
+- cacerts
 - go
-- libnatpmp
 - makeucd
-- miniupnpc
-- pylibs
-- pyutil
 - node
+- pylibs
 - redis
-- ucd
-- yuicompressor
+- tavutil
