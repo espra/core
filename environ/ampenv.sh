@@ -111,12 +111,12 @@ fi
 
 case $_OS_NAME in
 	darwin)
-		if [ "x$PRE_AMPENV_DYLD_LIBRARY_PATH" != "x" ]; then
-			export DYLD_FALLBACK_LIBRARY_PATH=$AMPIFY_LOCAL/lib:$AMPIFY_LOCAL/freeswitch/lib:$PRE_AMPENV_DYLD_LIBRARY_PATH:/usr/local/lib:/usr/lib
+		if [ "x$PRE_AMPENV_DYLD_FALLBACK_LIBRARY_PATH" != "x" ]; then
+			export DYLD_FALLBACK_LIBRARY_PATH=$AMPIFY_LOCAL/lib:$AMPIFY_LOCAL/freeswitch/lib:$PRE_AMPENV_DYLD_FALLBACK_LIBRARY_PATH:/usr/local/lib:/usr/lib
 		else
-			export PRE_AMPENV_DYLD_LIBRARY_PATH=$DYLD_LIBRARY_PATH
-			if [ "x$DYLD_LIBRARY_PATH" != "x" ]; then
-				export DYLD_FALLBACK_LIBRARY_PATH=$AMPIFY_LOCAL/lib:$AMPIFY_LOCAL/freeswitch/lib:$DYLD_LIBRARY_PATH:/usr/local/lib:/usr/lib
+			if [ "x$DYLD_FALLBACK_LIBRARY_PATH" != "x" ]; then
+				export PRE_AMPENV_DYLD_FALLBACK_LIBRARY_PATH=$DYLD_FALLBACK_LIBRARY_PATH
+				export DYLD_FALLBACK_LIBRARY_PATH=$AMPIFY_LOCAL/lib:$AMPIFY_LOCAL/freeswitch/lib:$DYLD_FALLBACK_LIBRARY_PATH:/usr/local/lib:/usr/lib
 			else
 				export DYLD_FALLBACK_LIBRARY_PATH=$AMPIFY_LOCAL/lib:$AMPIFY_LOCAL/freeswitch/lib:/usr/local/lib:/usr/lib
 			fi
@@ -146,19 +146,21 @@ case $_OS_NAME in
 		fi;;
 	*) echo "ERROR: Unknown system operating system: ${_OS_NAME}"
 esac
-	
+
+_ENV_VAL=$AMPIFY_ROOT/src/python:$_THIRD_PARTY/tavutil:$_THIRD_PARTY/yatiblog:$_THIRD_PARTY/pylibs:$AMPIFY_ROOT/environ
+
 if [ "x$PRE_AMPENV_PYTHONPATH" != "x" ]; then
-	export PYTHONPATH=$AMPIFY_ROOT/src:$AMPIFY_ROOT/third_party/pylibs:$PRE_AMPENV_PYTHONPATH
+	export PYTHONPATH=$_ENV_VAL:$PRE_AMPENV_PYTHONPATH
 else
 	if [ "x$PYTHONPATH" != "x" ]; then
 		export PRE_AMPENV_PYTHONPATH=$PYTHONPATH
-		export PYTHONPATH=$AMPIFY_ROOT/src:$AMPIFY_ROOT/third_party/pylibs:$PYTHONPATH
+		export PYTHONPATH=$_ENV_VAL:$PYTHONPATH
 	else
-		export PYTHONPATH=$AMPIFY_ROOT/src:$AMPIFY_ROOT/third_party/pylibs
+		export PYTHONPATH=$_ENV_VAL
 	fi
 fi
 
-_ENV_VAL=$_THIRD_PARTY/vows/lib:$_THIRD_PARTY/jslibs:$_THIRD_PARTY/coffee-script/lib:$_THIRD_PARTY
+_ENV_VAL=$_THIRD_PARTY/vows/lib:$_THIRD_PARTY/jslibs:$_THIRD_PARTY/coffee-script/lib:$_THIRD_PARTY/uglify-js
 
 if [ "x$PRE_AMPENV_NODE_PATH" != "x" ]; then
 	export NODE_PATH=$_ENV_VAL:$PRE_AMPENV_PATH
@@ -230,11 +232,12 @@ if test "$PS1"; then
 	complete -o default -F _amp_completion ampnode
 	complete -o default -F _amp_completion assetgen
 	complete -o default -F _amp_completion bolt
-	complete -o default -F _amp_completion fab
+	complete -o default -F _amp_completion frontend
 	complete -o default -F _amp_completion git-review
 	complete -o default -F _amp_completion git-slave
+	complete -o default -F _amp_completion live-server
+	complete -o default -F _amp_completion redpill
 	complete -o default -F _amp_completion urlfetch
-	complete -o default -F _amp_completion webserver
 
 	# And, finally, register files with specific commands.
 	complete -f -X '!*.go' 5g 6g 8g
