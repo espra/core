@@ -8,8 +8,8 @@ Building Ampify
 ===============
 
 You need to have `Git 1.7+ <http://git-scm.com/>`_, a Unix-like OS, a bash
-shell, a recent Python 2.x, Java and general dev tools (gcc, make, ant, etc.)
-installed.
+shell, a recent Python 2.x, Ruby 1.8+, Java and general dev tools (gcc, make,
+ant, etc.) installed.
 
 .. syntax:: bash
 
@@ -32,7 +32,7 @@ installed.
 
   1. `Install XCode <http://developer.apple.com/technologies/xcode.html>`_.
      Unfortunately Apple force you to sign up as an Apple Developer in order to
-     download XCode, but this is free and should only take a minute or so.
+     download XCode, but this should only take a minute or so.
 
   2. `Install Git
      <http://code.google.com/p/git-osx-installer/downloads/list?can=3>`_.
@@ -51,7 +51,7 @@ installed.
 
   On older Debian releases, the ``git`` package might either point to a
   different app or be severely outdated. So if running ``git --version`` doesn't
-  give you a 1.7+ version, e.g. ``git version 1.7.1``, then install it from
+  give you a 1.7+ version, e.g. ``git version 1.7.5``, then install it from
   `backports <http://www.backports.org/dokuwiki/doku.php?id=instructions>`_.
 
 **Build Process**
@@ -60,14 +60,13 @@ installed.
    HTTP protocol.
 
 2. Running ``make`` updates the submodules, builds various dependencies like Go
-   and Node.js, compiles CoffeeScript/Sass files and minifies the resulting
-   JavaScript/CSS files. All builds are self-contained within the
+   and, of course, Ampify itself. All builds are self-contained within the
    ``environ/local`` sub-directory that will be automatically created.
 
    You can run ``make clean`` to remove everything except the built
-   dependencies, which you can also remove using the full ``make distclean``. Be
-   sure to re-run ``make`` after you do a git pull or update -- this will keep
-   the generated files up-to-date.
+   dependencies, which you can also remove using the full ``make nuke``. Be sure
+   to re-run ``make`` after you do a git pull or update -- this will keep the
+   generated files up-to-date.
 
    Please note that running ``make`` for the first time currently takes around
    20 minutes, so you might want to grab something to drink and do something
