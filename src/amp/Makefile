@@ -5,13 +5,15 @@ PACKAGES=\
 	argo\
 	big\
 	command\
+	encoding\
+	livequery\
 	logging\
 	lzf\
 	optparse\
 	pyksproxy\
+	refmap\
 	runtime\
 	slice\
-	encoding\
 	tlsconf\
 	url\
 	yaml\
@@ -19,10 +21,13 @@ PACKAGES=\
 NOBENCH=\
 	command\
 	encoding\
+	livequery\
 	logging\
 	lzf\
 	optparse\
 	pyksproxy\
+	refmap\
+	runtime\
 	slice\
 	tlsconf\
 	url\
@@ -30,10 +35,10 @@ NOBENCH=\
 
 NOTEST=\
 	command\
+	encoding\
 	logging\
 	pyksproxy\
 	slice\
-	encoding\
 	tlsconf\
 
 ifeq ($(shell uname),FreeBSD)
@@ -78,16 +83,16 @@ test.dirs: $(addsuffix .test, $(TEST))
 bench: bench.dirs
 
 clean: clean.dirs
-	@cd frontend && $(make) clean
+	@cd amp && $(make) clean
 
 distclean: nuke
 
 nuke: nuke.dirs
 	@echo rm -rf $(QUOTED_GOROOT)/pkg/amp
-	@cd frontend && $(make) nuke
+	@cd amp && $(make) nuke
 
 install: install.dirs
-	@cd frontend && $(make) install
+	@cd amp && $(make) install
 
 test: test.dirs
 
@@ -96,6 +101,7 @@ test: test.dirs
 # ------------------------------------------------------------------------------
 
 argo.install: big.install
+livequery.install: refmap.install
 logging.install: encoding.install
 optparse.install: runtime.install slice.install yaml.install
 pyksproxy.install: runtime.install slice.install
