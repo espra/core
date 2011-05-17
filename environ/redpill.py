@@ -450,7 +450,7 @@ def init_build_recipes():
         data = {}
         for recipe in recipes:
             recipe_type = recipe.get('type')
-            if recipe_type == 'submodule':
+            if recipe_type == 'git':
                 path = join(ROOT, recipe['path'])
                 version = run_command(
                     ['git', 'rev-parse', 'HEAD'], cwd=path, exit_on_error=True
@@ -578,8 +578,8 @@ JAR_BUILD.update({
     'commands': jar_install
     })
 
-SUBMODULE_BUILD = BASE_BUILD.copy()
-SUBMODULE_BUILD.update({
+GIT_BUILD = BASE_BUILD.copy()
+GIT_BUILD.update({
     'distfile': ''
     })
 
@@ -590,11 +590,11 @@ MAKELIKE_BUILD.update({
 
 BUILD_TYPES = {
     'default': DEFAULT_BUILD,
+    'git': GIT_BUILD,
     'jar': JAR_BUILD,
     'makelike': MAKELIKE_BUILD,
     'python': PYTHON_BUILD,
-    'resource': RESOURCE_BUILD,
-    'submodule': SUBMODULE_BUILD
+    'resource': RESOURCE_BUILD
     }
 
 # ------------------------------------------------------------------------------
@@ -612,7 +612,7 @@ def get_installed_packages(called=[], cache={}):
     return cache
 
 def get_installed_dependencies(
-    package, gathered=None, raw_types=['submodule', 'makelike']
+    package, gathered=None, raw_types=['git', 'makelike']
     ):
     if gathered is None:
         gathered = set()
@@ -770,7 +770,7 @@ def install_packages(types=BUILD_TYPES):
             tar.extractall()
             tar.close()
             chdir(package)
-        elif info.get('type') == 'submodule':
+        elif info.get('type') == 'git':
             chdir(join(ROOT, info['path']))
             if info.get('clean'):
                 do('git', 'clean', '-fdx')

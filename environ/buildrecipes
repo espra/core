@@ -11,6 +11,20 @@ else:
     PARALLEL = ''
 
 # ------------------------------------------------------------------------------
+# ampify
+# ------------------------------------------------------------------------------
+
+RECIPES['ampify'] = [{
+    'type': 'git',
+    'requires': ['go'],
+    'path': ROOT,
+    'before': lambda: chdir(join(SRC, 'amp')),
+    'commands': [
+        ['gomake', 'install']
+        ]
+    }]
+
+# ------------------------------------------------------------------------------
 # berkeleydb
 # ------------------------------------------------------------------------------
 
@@ -100,7 +114,7 @@ def after_go_install():
             copy(path, join(go_src, path))
 
 RECIPES['go'] = [{
-    'type': 'submodule',
+    'type': 'git',
     'path': 'third_party/go',
     'before': before_go_install,
     'after': after_go_install,
@@ -257,7 +271,7 @@ RECIPES['pcre'] = [{
 # ------------------------------------------------------------------------------
 
 RECIPES['pylibs'] = [{
-    'type': 'submodule',
+    'type': 'git',
     'path': 'third_party/pylibs',
     'after': lambda: rmdir('build'),
     'commands': [
@@ -300,7 +314,7 @@ RECIPES['readline'] = [{
 # ------------------------------------------------------------------------------
 
 RECIPES['redis'] = [{
-    'type': 'submodule',
+    'type': 'git',
     'path': 'third_party/redis',
     'after': lambda: copy(
         join(getcwd(), 'src', 'redis-server'), join(BIN, 'redis')
