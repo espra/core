@@ -35,7 +35,7 @@ func GenConfig(file string) (config *tls.Config, err os.Error) {
 
 // Set the ``tlsconf.Config`` variable.
 func Init() {
-	path := runtime.AmpifyRoot + "/environ/local/var/ca.cert"
+	path := runtime.AmpifyRoot + "/environ/local/share/cacerts/ca.cert"
 	var err os.Error
 	Config, err = GenConfig(path)
 	if err != nil {
