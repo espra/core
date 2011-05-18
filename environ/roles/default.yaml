@@ -6,5 +6,4 @@ packages:
 - makeucd
 - node
 - pylibs
-- redis
 - tavutil
