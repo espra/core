@@ -147,7 +147,7 @@ case $_OS_NAME in
 	*) echo "ERROR: Unknown system operating system: ${_OS_NAME}"
 esac
 
-_ENV_VAL=$AMPIFY_ROOT/src/python:$_THIRD_PARTY/tavutil:$_THIRD_PARTY/yatiblog:$_THIRD_PARTY/pylibs:$AMPIFY_ROOT/environ
+_ENV_VAL=$AMPIFY_ROOT/src/python:$_THIRD_PARTY/tavutil:$_THIRD_PARTY/yatiblog:$_THIRD_PARTY/pylibs:$AMPIFY_ROOT/environ:$_THIRD_PARTY/assetgen
 
 if [ "x$PRE_AMPENV_PYTHONPATH" != "x" ]; then
 	export PYTHONPATH=$_ENV_VAL:$PRE_AMPENV_PYTHONPATH
