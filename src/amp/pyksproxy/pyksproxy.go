@@ -7,7 +7,6 @@ package pyksproxy
 
 import (
 	"amp/runtime"
-	"amp/slice"
 	"bytes"
 	"fmt"
 	"os"
@@ -96,7 +95,7 @@ func EncodeSize(value int) (result []byte) {
 		if value > 0 {
 			leftBits += 128
 		}
-		slice.AppendByte(&result, byte(leftBits))
+		result = append(result, byte(leftBits))
 		if value == 0 {
 			break
 		}

@@ -7,7 +7,6 @@ package optparse
 
 import (
 	"amp/runtime"
-	"amp/slice"
 	"amp/yaml"
 	"fmt"
 	"os"
@@ -86,19 +85,19 @@ func (op *OptionParser) computeFlags(flags []string, opt *option) (configflag, s
 		if strings.HasPrefix(flag, "--") {
 			longflag = flag
 			op.long2options[longflag] = opt
-			slice.AppendString(&op.longflags, longflag)
+			op.longflags = append(op.longflags, longflag)
 		} else if strings.HasPrefix(flag, "-") {
 			shortflag = flag
 			op.short2options[shortflag] = opt
-			slice.AppendString(&op.shortflags, shortflag)
+			op.shortflags = append(op.shortflags, shortflag)
 		} else if strings.HasSuffix(flag, ":") {
 			configflag = flag[0 : len(flag)-1]
 			op.config2options[configflag] = opt
-			slice.AppendString(&op.configflags, configflag)
+			op.configflags = append(op.configflags, configflag)
 		} else {
 			longflag = flag
 			op.long2options[longflag] = opt
-			slice.AppendString(&op.longflags, longflag)
+			op.longflags = append(op.longflags, longflag)
 		}
 	}
 	return
@@ -264,13 +263,13 @@ func (op *OptionParser) Parse(args []string) (remainder []string) {
 		completions := make([]string, 0)
 		for flag, _ := range op.long2options {
 			if strings.HasPrefix(flag, prefix) {
-				slice.AppendString(&completions, flag)
+				completions = append(completions, flag)
 			}
 		}
 
 		for flag, _ := range op.short2options {
 			if strings.HasPrefix(flag, prefix) {
-				slice.AppendString(&completions, flag)
+				completions = append(completions, flag)
 			}
 		}
 
@@ -302,7 +301,7 @@ func (op *OptionParser) Parse(args []string) (remainder []string) {
 				noOpt = false
 			}
 		} else {
-			slice.AppendString(&remainder, arg)
+			remainder = append(remainder, arg)
 			if idx == argLength {
 				break
 			} else {

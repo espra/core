@@ -13,7 +13,6 @@ PACKAGES=\
 	pyksproxy\
 	refmap\
 	runtime\
-	slice\
 	tlsconf\
 	url\
 	yaml\
@@ -28,7 +27,6 @@ NOBENCH=\
 	pyksproxy\
 	refmap\
 	runtime\
-	slice\
 	tlsconf\
 	url\
 	yaml\
@@ -38,7 +36,6 @@ NOTEST=\
 	encoding\
 	logging\
 	pyksproxy\
-	slice\
 	tlsconf\
 
 ifeq ($(shell uname),FreeBSD)
@@ -103,7 +100,7 @@ test: test.dirs
 argo.install: big.install
 livequery.install: refmap.install
 logging.install: encoding.install
-optparse.install: runtime.install slice.install yaml.install
-pyksproxy.install: runtime.install slice.install
+optparse.install: runtime.install yaml.install
+pyksproxy.install: runtime.install
 runtime.install: command.install
 tlsconf.install: runtime.install

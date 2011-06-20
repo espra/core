@@ -49,11 +49,6 @@ func handleSignals() {
 	}
 }
 
-func exitProcess() {
-	RunExitHandlers()
-	os.Exit(0)
-}
-
 func RunExitHandlers() {
 	for _, handler := range exitHandlers {
 		handler()
@@ -61,18 +56,17 @@ func RunExitHandlers() {
 }
 
 func RegisterExitHandler(handler func()) {
-	length := len(exitHandlers)
-	temp := make([]func(), length+1, length+1)
-	for idx, item := range exitHandlers {
-		temp[idx] = item
-	}
-	temp[length] = handler
-	exitHandlers = temp
+	exitHandlers = append(exitHandlers, handler)
 }
 
 func Exit(code int) {
 	RunExitHandlers()
 	os.Exit(code)
+}
+
+// Utility function which calls Exit and matches the signal handler interface.
+func exitProcess() {
+	Exit(0)
 }
 
 func Error(message string, v ...interface{}) {
@@ -81,14 +75,12 @@ func Error(message string, v ...interface{}) {
 	} else {
 		fmt.Fprintf(os.Stderr, message, v...)
 	}
-	RunExitHandlers()
-	os.Exit(1)
+	Exit(1)
 }
 
 func StandardError(err os.Error) {
 	fmt.Fprintf(os.Stderr, "ERROR: %s\n", err)
-	RunExitHandlers()
-	os.Exit(1)
+	Exit(1)
 }
 
 func CreatePidFile(path string) {
