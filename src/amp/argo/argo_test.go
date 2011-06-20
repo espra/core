@@ -14,7 +14,7 @@ func Buffer() *bytes.Buffer {
 	return bytes.NewBuffer([]byte{})
 }
 
-func TestWriteSize(t *testing.T) {
+func TestWriteVarint(t *testing.T) {
 
 	tests := map[uint64]string{
 		0:                    "\x00",
@@ -25,7 +25,7 @@ func TestWriteSize(t *testing.T) {
 	for value, expected := range tests {
 		buf := &bytes.Buffer{}
 		enc := &Encoder{buf}
-		enc.WriteSize(value)
+		enc.WriteVarint(value)
 		if string(buf.Bytes()) != expected {
 			t.Errorf("Got unexpected encoding for %d: %q", value, buf.Bytes())
 		}
@@ -66,7 +66,7 @@ func TestStringArray(t *testing.T) {
 
 }
 
-func TestReadSize(t *testing.T) {
+func TestReadVarint(t *testing.T) {
 
 	tests := map[string]uint64{
 		"\x00":                                     0,
@@ -77,7 +77,7 @@ func TestReadSize(t *testing.T) {
 	for value, expected := range tests {
 		buf := bytes.NewBuffer([]byte(value))
 		dec := &Decoder{buf}
-		result, err := dec.ReadSize()
+		result, err := dec.ReadVarint()
 		if err != nil {
 			t.Errorf("Got error decoding %q: %s", value, err)
 		}
@@ -177,12 +177,12 @@ func TestWriteDecimalOrdering(t *testing.T) {
 
 }
 
-func BenchmarkWriteSize(b *testing.B) {
+func BenchmarkWriteVarint(b *testing.B) {
 	buf := Buffer()
 	enc := &Encoder{buf}
 	for i := 0; i < b.N; i++ {
 		buf.Reset()
-		enc.WriteSize(123456789)
+		enc.WriteVarint(123456789)
 	}
 }
 

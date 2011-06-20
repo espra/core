@@ -36,7 +36,7 @@ type Encoder struct {
 	Stream io.Writer
 }
 
-func (enc *Encoder) WriteSize(value uint64) os.Error {
+func (enc *Encoder) WriteVarint(value uint64) os.Error {
 	data := make([]byte, 0)
 	for {
 		leftBits := value & 127
@@ -54,7 +54,7 @@ func (enc *Encoder) WriteSize(value uint64) os.Error {
 }
 
 func (enc *Encoder) WriteString(value string) (err os.Error) {
-	err = enc.WriteSize(uint64(len(value)))
+	err = enc.WriteVarint(uint64(len(value)))
 	if err != nil {
 		return
 	}
@@ -63,12 +63,12 @@ func (enc *Encoder) WriteString(value string) (err os.Error) {
 }
 
 func (enc *Encoder) WriteStringArray(value []string) (err os.Error) {
-	err = enc.WriteSize(uint64(len(value)))
+	err = enc.WriteVarint(uint64(len(value)))
 	if err != nil {
 		return
 	}
 	for _, item := range value {
-		err = enc.WriteSize(uint64(len(item)))
+		err = enc.WriteVarint(uint64(len(item)))
 		if err != nil {
 			return
 		}
@@ -84,7 +84,16 @@ type Decoder struct {
 	Stream io.Reader
 }
 
-func (dec *Decoder) ReadSize() (value uint64, err os.Error) {
+func (dec *Decoder) Read(n int) (value []byte, err os.Error) {
+	value = make([]byte, n)
+	read, err := dec.Stream.Read(value)
+	if read != n && err == nil {
+		return value, ArgoError("Couldn't read from the data stream.")
+	}
+	return
+}
+
+func (dec *Decoder) ReadVarint() (value uint64, err os.Error) {
 	bitShift := uint(0)
 	lowByte := uint64(1)
 	data := make([]byte, 1)
@@ -105,7 +114,7 @@ func (dec *Decoder) ReadSize() (value uint64, err os.Error) {
 }
 
 func (dec *Decoder) ReadString() (value string, err os.Error) {
-	stringSize, err := dec.ReadSize()
+	stringSize, err := dec.ReadVarint()
 	if err != nil {
 		return
 	}
@@ -121,13 +130,13 @@ func (dec *Decoder) ReadString() (value string, err os.Error) {
 }
 
 func (dec *Decoder) ReadStringArray() (value []string, err os.Error) {
-	arraySize, err := dec.ReadSize()
+	arraySize, err := dec.ReadVarint()
 	if err != nil {
 		return
 	}
 	var i uint64
 	for i < arraySize {
-		stringSize, err := dec.ReadSize()
+		stringSize, err := dec.ReadVarint()
 		if err != nil {
 			return
 		}
