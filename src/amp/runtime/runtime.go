@@ -27,22 +27,22 @@ var (
 	CPUCount   int
 )
 
-var signalHandlers = make(map[signal.UnixSignal]func())
+var signalHandlers = make(map[os.UnixSignal]func())
 var exitHandlers = []func(){}
 
-func RegisterSignalHandler(signal signal.UnixSignal, handler func()) {
+func RegisterSignalHandler(signal os.UnixSignal, handler func()) {
 	signalHandlers[signal] = handler
 }
 
-func ClearSignalHandler(signal signal.UnixSignal) {
+func ClearSignalHandler(signal os.UnixSignal) {
 	signalHandlers[signal] = func() {}, false
 }
 
 func handleSignals() {
-	var sig signal.Signal
+	var sig os.Signal
 	for {
 		sig = <-signal.Incoming
-		handler, found := signalHandlers[sig.(signal.UnixSignal)]
+		handler, found := signalHandlers[sig.(os.UnixSignal)]
 		if found {
 			handler()
 		}
@@ -183,7 +183,7 @@ func init() {
 	if AmpifyRoot == "" {
 		Error("ERROR: The AMPIFY_ROOT environment variable hasn't been set.\n")
 	}
-	RegisterSignalHandler(signal.SIGINT, exitProcess)
-	RegisterSignalHandler(signal.SIGTERM, exitProcess)
+	RegisterSignalHandler(os.SIGINT, exitProcess)
+	RegisterSignalHandler(os.SIGTERM, exitProcess)
 	go handleSignals()
 }

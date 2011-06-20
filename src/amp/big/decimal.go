@@ -61,7 +61,7 @@ func NewDecimal(value string) (*Decimal, bool) {
 
 	a := nat{}.make(0)
 	for i := 0; i < valsize; i++ {
-		d := hexValue(value[i])
+		d := value[i] - '0'
 		if 0 <= d && d < 10 {
 			a = a.mulAddWW(a, Word(10), Word(d))
 		} else {
@@ -381,7 +381,7 @@ func NewIntString(value string) (*Int, bool) {
 	}
 	a := nat{}.make(0)
 	for i := 0; i < valsize; i++ {
-		d := hexValue(value[i])
+		d := value[i] - '0'
 		if 0 <= d && d < 10 {
 			a = a.mulAddWW(a, Word(10), Word(d))
 		} else {
@@ -399,7 +399,7 @@ func NewIntComponent(value string, neg bool) *Int {
 	valsize := len(value)
 	a := nat{}.make(0)
 	for i := 0; i < valsize; i++ {
-		d := hexValue(value[i])
+		d := value[i] - '0'
 		if 0 <= d && d < 10 {
 			a = a.mulAddWW(a, Word(10), Word(d))
 		}

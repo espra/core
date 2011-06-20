@@ -23,12 +23,16 @@ func (err *CommandError) String() string {
 
 // Return the output from running the given command
 func GetOutput(args []string) (output string, error os.Error) {
+	var (
+		buffer *bytes.Buffer
+		process *os.Process
+	)
 	read_pipe, write_pipe, err := os.Pipe()
 	if err != nil {
 		goto Error
 	}
 	defer read_pipe.Close()
-	process, err := os.StartProcess(args[0], args,
+	process, err = os.StartProcess(args[0], args,
 		&os.ProcAttr{
 			Dir:   ".",
 			Env:   os.Environ(),
@@ -43,7 +47,7 @@ func GetOutput(args []string) (output string, error os.Error) {
 	if err != nil {
 		goto Error
 	}
-	buffer := &bytes.Buffer{}
+	buffer = &bytes.Buffer{}
 	_, err = io.Copy(buffer, read_pipe)
 	if err != nil {
 		goto Error
