@@ -14,27 +14,45 @@ import (
 	"strings"
 )
 
+type Completer interface {
+	Complete() []string
+}
+
+type listCompleter struct {
+	items []string
+}
+
+func ListCompleter(items ...string) *listCompleter {
+	return &listCompleter{items}
+}
+
+func (completer *listCompleter) Complete() []string {
+	return completer.items
+}
+
 type option struct {
-	configflag     string
-	shortflag      string
-	longflag       string
-	dest           string
-	usage          string
-	requiredFlag   bool
-	requiredConfig bool
-	defined        bool
-	valueType      string
-	intValue       *int
 	boolValue      *bool
+	defined        bool
+	dest           string
+	completer      Completer
+	configflag     string
+	intValue       *int
+	listValue      *[]string
+	longflag       string
+	requiredConfig bool
+	requiredFlag   bool
+	shortflag      string
 	stringValue    *string
+	usage          string
+	valueType      string
 }
 
 type OptionParser struct {
+	Completer      Completer
 	Usage          string
 	Version        string
 	ParseHelp      bool
 	ParseVersion   bool
-	Autocomplete   bool
 	options        []*option
 	config2options map[string]*option
 	configflags    []string
@@ -115,6 +133,8 @@ func (op *OptionParser) Default(flags []string, usage string, displayDest bool, 
 			required = prop
 		case string:
 			dest = prop
+		case Completer:
+			opt.completer = prop
 		}
 	}
 	if required {
@@ -135,16 +155,7 @@ func (op *OptionParser) Default(flags []string, usage string, displayDest bool, 
 			}
 		}
 	}
-	length := len(op.options)
-	if cap(op.options) == length {
-		temp := make([]*option, length, 2*(length+1))
-		for idx, item := range op.options {
-			temp[idx] = item
-		}
-		op.options = temp
-	}
-	op.options = op.options[0 : length+1]
-	op.options[length] = opt
+	op.options = append(op.options, opt)
 	return
 }
 
@@ -242,25 +253,53 @@ func (op *OptionParser) Parse(args []string) (remainder []string) {
 		// Pass to the shell completion if the previous word was a flag
 		// expecting some parameter.
 		if (compWord - 1) > 0 {
+			var completer Completer
 			prev := compWordsList[compWord-1]
 			if strings.HasPrefix(prev, "--") {
 				opt, ok := op.long2options[prev]
 				if ok {
 					if opt.dest != "" {
-						runtime.Exit(1)
+						if opt.completer == nil {
+							runtime.Exit(1)
+						} else {
+							completer = opt.completer
+						}
 					}
 				}
 			} else if strings.HasPrefix(prev, "-") {
 				opt, ok := op.short2options[prev]
 				if ok {
 					if opt.dest != "" {
-						runtime.Exit(1)
+						if opt.completer == nil {
+							runtime.Exit(1)
+						} else {
+							completer = opt.completer
+						}
 					}
 				}
+			}
+			if completer != nil {
+				completions := make([]string, 0)
+				for _, item := range completer.Complete() {
+					if strings.HasPrefix(item, prefix) {
+						completions = append(completions, item)
+					}
+				}
+				fmt.Print(strings.Join(completions, " "))
+				runtime.Exit(1)
 			}
 		}
 
 		completions := make([]string, 0)
+
+		if op.Completer != nil {
+			for _, item := range op.Completer.Complete() {
+				if strings.HasPrefix(item, prefix) {
+					completions = append(completions, item)
+				}
+			}
+		}
+
 		for flag, _ := range op.long2options {
 			if strings.HasPrefix(flag, prefix) {
 				completions = append(completions, flag)
@@ -448,7 +487,6 @@ func Parser(usage string, version ...string) (op *OptionParser) {
 	op.short2options = make(map[string]*option)
 	op.config2options = make(map[string]*option)
 	op.Usage = usage
-	op.Autocomplete = true
 	op.ParseHelp = true
 	verSlice := []string(version)
 	if len(verSlice) > 0 {
