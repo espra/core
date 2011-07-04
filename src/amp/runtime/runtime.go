@@ -14,6 +14,7 @@ import (
 	"os"
 	"os/signal"
 	"path"
+	"path/filepath"
 	"runtime"
 	"strconv"
 	"strings"
@@ -129,6 +130,35 @@ func (lock *Lock) ReleaseLock() {
 		os.Remove(lock.link)
 	}
 }
+
+// The ``JoinPath`` utility function joins the given ``path`` with the
+// ``directory`` unless it happens to be an absolute path, in which case it
+// returns the path exactly as it was given.
+func JoinPath(directory, path string) string {
+	if filepath.IsAbs(path) {
+		return path
+	}
+	return filepath.Join(directory, filepath.Clean(path))
+}
+
+// The ``InitProcess`` utility function acquires a process lock and writes the
+// PID file for the current process.
+func InitProcess(name, runPath string) {
+
+	pidFile := fmt.Sprintf("%s.pid", name)
+
+	// Get the runtime lock to ensure we only have one process of any given name
+	// running within the same run path at any time.
+	_, err := GetLock(runPath, name)
+	if err != nil {
+		Error("ERROR: Couldn't successfully acquire a process lock:\n\n\t%s\n\n", err)
+	}
+
+	// Write the process ID into a file for use by external scripts.
+	go CreatePidFile(filepath.Join(runPath, pidFile))
+
+}
+
 
 // The ``runtime.GetCPUCount`` function tries to detect the number of CPUs on
 // the current machine.
