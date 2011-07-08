@@ -4,15 +4,19 @@
 package weblite
 
 import (
-	"amp/runtime"
 	"amp/optparse"
+	"amp/runtime"
+	"amp/structure"
+	"bytes"
 	"fmt"
 	"os"
 	"path/filepath"
+	"template"
 )
 
 type Response interface{}
-type Handler func(ctx *Context) Response
+type Handler func(*Context) Response
+type Renderer func(*Context, Response) Response
 
 // -----------------------------------------------------------------------------
 // Context
@@ -20,7 +24,8 @@ type Handler func(ctx *Context) Response
 
 type Context struct {
 	Args   []string
-	Params map[string]string
+	Kwargs map[string]string
+	Env    map[string]interface{}
 	Host   string
 	Method string
 }
@@ -39,8 +44,14 @@ func (ctx *Context) SetCookie(key string, value string) {
 	return
 }
 
-func (ctx *Context) GetUser() (user string) {
-	return
+// -----------------------------------------------------------------------------
+// Auth Provider
+// -----------------------------------------------------------------------------
+
+type AuthProvider interface {
+	GetUser(ctx *Context) interface{}
+	GetUsername(ctx *Context) string
+	IsAdmin(ctx *Context) bool
 }
 
 // -----------------------------------------------------------------------------
@@ -49,11 +60,12 @@ func (ctx *Context) GetUser() (user string) {
 
 type Service struct {
 	Handler   Handler
-	Renderers []interface{}
+	Renderers []Renderer
 	admin     bool
 	auth      bool
 	stream    bool
 	xsrf      bool
+	wildcard  bool
 }
 
 func (service *Service) AdminOnly() *Service {
@@ -78,38 +90,104 @@ func (service *Service) Stream() *Service {
 }
 
 // -----------------------------------------------------------------------------
-// Application
+// Templating Provider
+// -----------------------------------------------------------------------------
+
+type TemplatingProvider interface {
+	GenerateRenderer(string) Renderer
+}
+
+type Templating struct {
+	Debug     bool
+	Cache     map[string]*template.Template
+	Directory string
+}
+
+func (templating *Templating) Load(path string) (template *template.Template) {
+	return
+}
+
+func (templating *Templating) GenerateRenderer(path string) Renderer {
+	return func(ctx *Context, input Response) (resp Response) {
+		template := templating.Load(path)
+		buffer := &bytes.Buffer{}
+		template.Execute(buffer, input)
+		return buffer.String()
+	}
+}
+
+// -----------------------------------------------------------------------------
+// Standard Application Config
 // -----------------------------------------------------------------------------
 
 type AppConfig struct {
-	Debug               *bool
-	GenConfig           *bool
-	Host                *string
-	Port                *int
-	FrontendHost        *string
-	FrontendPort        *int
-	FrontendConnections *int
-	FrontendTLS         *bool
-	LogDirectory        *string
-	LogRotate           *string
-	NoConsoleLog        *bool
-	RunDirectory        *string
-	TemplatesDirectory  *string
+	assetManifest       *string
+	debug               *bool
+	genConfig           *bool
+	host                *string
+	port                *int
+	errorDirectory      *string
+	frontendHost        *string
+	frontendPort        *int
+	frontendConnections *int
+	frontendTLS         *bool
+	logDirectory        *string
+	logRotate           *string
+	noConsoleLog        *bool
+	runDirectory        *string
+	templatesDirectory  *string
 }
 
+// -----------------------------------------------------------------------------
+// Application
+// -----------------------------------------------------------------------------
+
 type Application struct {
-	Name     string
-	Config   *AppConfig
-	Debug    bool
-	Opts     *optparse.OptionParser
-	Path     string
-	Registry map[string]*Service
+	Auth       AuthProvider
+	Name       string
+	Config     *AppConfig
+	Debug      bool
+	Hooks      []func()
+	Opts       *optparse.OptionParser
+	Path       string
+	Services   *structure.PrefixTree
+	Templating TemplatingProvider
 }
 
 func (app *Application) Register(path string, handler Handler, renderers ...interface{}) (service *Service) {
-	service = &Service{Handler: handler, Renderers: renderers}
-	app.Registry[path] = service
+	list := make([]Renderer, len(renderers))
+	for i, r := range renderers {
+		switch r.(type) {
+		case string:
+			if app.Templating == nil {
+				panic("Templating used without being enabled: " + r.(string))
+			}
+			list[i] = app.Templating.GenerateRenderer(r.(string))
+		case Renderer:
+			list[i] = r.(Renderer)
+		default:
+			panic("Unknown renderer type!")
+		}
+	}
+	service = &Service{Handler: handler, Renderers: list}
+	if path[len(path)-1] == '*' {
+		service.wildcard = true
+		path = path[:len(path)-1]
+	}
+	app.Services.Insert(path, service)
 	return service
+}
+
+func (app *Application) RegisterAuthProvider(provider AuthProvider) {
+	app.Auth = provider
+}
+
+func (app *Application) RegisterTemplatingProvider(provider TemplatingProvider) {
+	app.Templating = provider
+}
+
+func (app *Application) RegisterHook(hook func()) {
+	app.Hooks = append(app.Hooks, hook)
 }
 
 func (app *Application) ParseOpts() {
@@ -117,37 +195,37 @@ func (app *Application) ParseOpts() {
 	opts := app.Opts
 	conf := app.Config
 
-	conf.Host = opts.StringConfig("weblite-host", "localhost",
+	conf.host = opts.StringConfig("weblite-host", "localhost",
 		"the host to bind this weblite server to [localhost]")
 
-	conf.Port = opts.IntConfig("weblite-port", 8080,
+	conf.port = opts.IntConfig("weblite-port", 8080,
 		"the port to bind this weblite server to [8080]")
 
-	conf.FrontendHost = opts.StringConfig("frontend-host", "localhost",
+	conf.frontendHost = opts.StringConfig("frontend-host", "localhost",
 		"the frontend host to connect to [localhost]")
 
-	conf.FrontendPort = opts.IntConfig("frontend-port", 9040,
+	conf.frontendPort = opts.IntConfig("frontend-port", 9040,
 		"the frontend port to connect to [9040]")
 
-	conf.FrontendConnections = opts.IntConfig("frontend-cxns", 5,
+	conf.frontendConnections = opts.IntConfig("frontend-cxns", 5,
 		"the number of frontend connections to maintain [5]")
 
-	conf.FrontendTLS = opts.BoolConfig("frontend-tls", false,
+	conf.frontendTLS = opts.BoolConfig("frontend-tls", false,
 		"use TLS when connecting to the frontend [false]")
 
-	conf.RunDirectory = opts.StringConfig("run-dir", "run",
+	conf.runDirectory = opts.StringConfig("run-dir", "run",
 		"the path to the run directory to store locks, pid files, etc. [run]")
 
-	conf.TemplatesDirectory = opts.StringConfig("templates-dir", "templates",
-		"the path to the templates directory [templates]")
+	conf.errorDirectory = opts.StringConfig("error-dir", "error",
+		"the path to the error templates directory [error]")
 
-	conf.LogDirectory = opts.StringConfig("log-dir", "log",
+	conf.logDirectory = opts.StringConfig("log-dir", "log",
 		"the path to the log directory [log]")
 
-	conf.LogRotate = opts.StringConfig("log-rotate", "never",
+	conf.logRotate = opts.StringConfig("log-rotate", "never",
 		"specify one of 'hourly', 'daily' or 'never' [never]")
 
-	conf.NoConsoleLog = opts.BoolConfig("no-console-log", false,
+	conf.noConsoleLog = opts.BoolConfig("no-console-log", false,
 		"disable server requests being logged to the console [false]")
 
 	extraConfig := opts.StringConfig("extra-config", "",
@@ -158,7 +236,7 @@ func (app *Application) ParseOpts() {
 	args := opts.Parse(os.Args)
 
 	// Print the default YAML config file if the ``-g`` flag was specified.
-	if *conf.GenConfig {
+	if *conf.genConfig {
 		opts.PrintDefaultConfigFile()
 		runtime.Exit(0)
 	}
@@ -199,26 +277,49 @@ func (app *Application) ParseOpts() {
 		}
 	}
 
+	// Set the debug mode flag if the ``-d`` flag was specified.
+	app.Debug = *conf.debug
 	app.Path = instanceDirectory
+
+	for _, hook := range app.Hooks {
+		hook()
+	}
 
 }
 
-func (app *Application) Init(env map[string]string) {
+func (app *Application) EnableTemplating() *Application {
+
+	templating := &Templating{}
+	templatesDirectory := app.Opts.StringConfig("templates-dir", "templates",
+		"the path to the templates directory [templates]")
+
+	assetManifest := app.Opts.StringConfig("asset-manifest", "assets.json",
+		"the path to the JSON asset manifest file [assets.json]")
+
+	app.RegisterTemplatingProvider(templating)
+	app.RegisterHook(func() {
+		templating.Debug = app.Debug
+		templating.Directory = runtime.JoinPath(app.Path, *templatesDirectory)
+		_ = *assetManifest
+	})
+
+	return app
+
+}
+
+func (app *Application) Init(env map[string]interface{}) {
 
 	conf := app.Config
 
-	// Set the debug mode flag if the ``-d`` flag was specified.
-	app.Debug = *conf.Debug
-
 	// Create the log directory if it doesn't exist.
-	logPath := runtime.JoinPath(app.Path, *conf.LogDirectory)
+	logPath := runtime.JoinPath(app.Path, *conf.logDirectory)
 	err := os.MkdirAll(logPath, 0755)
 	if err != nil {
 		runtime.StandardError(err)
 	}
 
 	// Create the run directory if it doesn't exist.
-	runPath := runtime.JoinPath(app.Path, *conf.RunDirectory)
+	runPath := runtime.JoinPath(app.Path, *conf.runDirectory)
 	err = os.MkdirAll(runPath, 0755)
 	if err != nil {
 		runtime.StandardError(err)
@@ -228,9 +329,7 @@ func (app *Application) Init(env map[string]string) {
 	runtime.Init()
 	runtime.InitProcess(app.Name, runPath)
 
-	fmt.Printf("Running %s on %s:%d\n",
-		app.Name, *app.Config.Host, *app.Config.Port)
-
+	fmt.Printf("Running %s on %s:%d\n", app.Name, *conf.host, *conf.port)
 	app.HandleRequests()
 
 }
@@ -243,7 +342,19 @@ func (app *Application) HandleRequests() {
 
 func (app *Application) HandleRequest(path string) {
 	ctx := &Context{}
-	service := app.Registry[path]
+	matches := app.Services.MatchPrefix(path)
+	if len(matches) == 0 {
+		panic("no match")
+	}
+	var service *Service
+	for i := len(matches); i >= 0; i-- {
+		match := matches[0]
+		service = match.Value.(*Service)
+		if match.Suffix != "" && match.Suffix[0] != '/' && !service.wildcard {
+			continue
+		}
+		break
+	}
 	resp := service.Handler(ctx)
 	renderers := service.Renderers
 	var output map[string]interface{}
@@ -264,15 +375,11 @@ func (app *Application) HandleRequest(path string) {
 	}
 }
 
-func Noop(input interface{}) {
-
-}
-
 // -----------------------------------------------------------------------------
 // Constructor
 // -----------------------------------------------------------------------------
 
-func App(name, version string) (*Application, *optparse.OptionParser) {
+func App(name, version string) *Application {
 
 	// Initialise the options parser.
 	opts := optparse.Parser(
@@ -288,15 +395,16 @@ func App(name, version string) (*Application, *optparse.OptionParser) {
 		Opts:   opts,
 	}
 
-	app.Registry = make(map[string]*Service)
+	app.Hooks = make([]func(), 0)
+	app.Services = structure.NewPrefixTree()
 
 	// Setup default command line options.
-	conf.Debug = opts.Bool([]string{"-d", "--debug"}, false,
+	conf.debug = opts.Bool([]string{"-d", "--debug"}, false,
 		"enable debug mode")
 
-	conf.GenConfig = opts.Bool([]string{"-g", "--gen-config"}, false,
+	conf.genConfig = opts.Bool([]string{"-g", "--gen-config"}, false,
 		"show the default yaml config")
 
-	return app, opts
+	return app
 
 }
