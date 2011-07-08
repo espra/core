@@ -103,7 +103,7 @@ func (tree *PrefixTree) Lookup(key string) (value interface{}) {
 					return
 				}
 				key = key[max:]
-				char := key[0]
+				char = key[0]
 				for _, subnode := range node.nodes {
 					if subnode.label[0] == char {
 						node = subnode
@@ -145,7 +145,7 @@ func (tree *PrefixTree) Delete(key string) {
 					return
 				}
 				key = key[max:]
-				char := key[0]
+				char = key[0]
 				for _, subnode := range node.nodes {
 					if subnode.label[0] == char {
 						nodes = append(nodes, node)
@@ -214,7 +214,7 @@ func (tree *PrefixTree) MatchPrefix(key string) (match []*PrefixMatch) {
 					return
 				}
 				key = key[max:]
-				char := key[0]
+				char = key[0]
 				if node.value != nil {
 					match = append(match, &PrefixMatch{
 						Suffix: key,
