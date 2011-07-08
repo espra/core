@@ -200,6 +200,9 @@ func (tree *PrefixTree) MatchPrefix(key string) (match []*PrefixMatch) {
 		outer:
 			for {
 				if key == node.label {
+					if node.value == nil {
+						return
+					}
 					match = append(match, &PrefixMatch{
 						Suffix: "",
 						Value:  node.value,
