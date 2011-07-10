@@ -13,9 +13,11 @@ PACKAGES=\
 	pyksproxy\
 	refmap\
 	runtime\
+	structure\
 	tlsconf\
 	url\
 	yaml\
+	weblite\
 
 NOBENCH=\
 	command\
@@ -27,9 +29,11 @@ NOBENCH=\
 	pyksproxy\
 	refmap\
 	runtime\
+	structure\
 	tlsconf\
 	url\
 	yaml\
+	weblite\
 
 NOTEST=\
 	command\
@@ -37,6 +41,7 @@ NOTEST=\
 	logging\
 	pyksproxy\
 	tlsconf\
+	weblite\
 
 ifeq ($(shell uname),FreeBSD)
 make=gmake
@@ -104,3 +109,4 @@ optparse.install: runtime.install yaml.install
 pyksproxy.install: runtime.install
 runtime.install: command.install
 tlsconf.install: runtime.install
+weblite.install: optparse.install structure.install
