@@ -50,7 +50,7 @@ type KeyspaceProxy struct {
 }
 
 func Keyspace(servers string) (*KeyspaceProxy, os.Error) {
-	serverList := strings.Split(servers, " ", -1)
+	serverList := strings.Split(servers, " ")
 	argv := make([]string, len(serverList)+1)
 	argv[0] = scriptPath
 	for idx, server := range serverList {

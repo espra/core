@@ -180,7 +180,7 @@ func (pubsub *PubSub) Publish(item string, keys []string) {
 
 func (pubsub *PubSub) Subscribe(sqid string, keys []string, keys2 []string) {
 
-	splitSqid := strings.Split(sqid, ":", 2)
+	splitSqid := strings.SplitN(sqid, ":", 2)
 	if len(splitSqid) != 2 {
 		return
 	}

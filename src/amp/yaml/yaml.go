@@ -16,12 +16,12 @@ import (
 
 func Parse(input string) map[string]string {
 	data := make(map[string]string)
-	for _, line := range strings.Split(input, "\n", -1) {
+	for _, line := range strings.Split(input, "\n") {
 		line = strings.TrimSpace(line)
 		if strings.HasPrefix(line, "#") {
 			continue
 		}
-		split := strings.Split(line, ":", 2)
+		split := strings.SplitN(line, ":", 2)
 		if len(split) != 2 {
 			continue
 		}

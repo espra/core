@@ -75,4 +75,6 @@ func TestLiveQuery(t *testing.T) {
 	fmt.Printf("Sessions: %#v\n", pubsub.sessions)
 	fmt.Printf("Subs: %#v\n", pubsub.subscriptions)
 
+	runtime.GOMAXPROCS(1)
+
 }

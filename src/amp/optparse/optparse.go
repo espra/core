@@ -227,7 +227,7 @@ func (op *OptionParser) Parse(args []string) (remainder []string) {
 				runtime.Exit(1)
 			}
 		}
-		compWordsList := strings.Split(compWords, " ", -1)
+		compWordsList := strings.Split(compWords, " ")
 		compLine := os.Getenv("COMP_LINE")
 		compPoint, err := strconv.Atoi(os.Getenv("COMP_POINT"))
 		if err != nil {

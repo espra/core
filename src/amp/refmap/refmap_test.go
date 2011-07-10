@@ -56,4 +56,5 @@ func TestPerf(t *testing.T) {
 		<-results
 	}
 	fmt.Printf("Took: %v\n", time.Nanoseconds()-start)
+	runtime.GOMAXPROCS(1)
 }
