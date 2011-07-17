@@ -3,8 +3,8 @@
 
 include $(GOROOT)/src/Make.inc
 
-TARG=amp/weblite
+TARG=amp/web
 GOFILES=\
-        weblite.go\
+        web.go\
 
 include $(GOROOT)/src/Make.pkg
