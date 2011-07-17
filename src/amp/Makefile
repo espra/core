@@ -5,6 +5,7 @@ PACKAGES=\
 	argo\
 	big\
 	command\
+	dict\
 	encoding\
 	livequery\
 	logging\
@@ -17,10 +18,11 @@ PACKAGES=\
 	tlsconf\
 	url\
 	yaml\
-	weblite\
+	web\
 
 NOBENCH=\
 	command\
+	dict\
 	encoding\
 	livequery\
 	logging\
@@ -33,7 +35,7 @@ NOBENCH=\
 	tlsconf\
 	url\
 	yaml\
-	weblite\
+	web\
 
 NOTEST=\
 	command\
@@ -41,7 +43,7 @@ NOTEST=\
 	logging\
 	pyksproxy\
 	tlsconf\
-	weblite\
+	web\
 
 ifeq ($(shell uname),FreeBSD)
 make=gmake
@@ -105,8 +107,8 @@ test: test.dirs
 argo.install: big.install
 livequery.install: refmap.install
 logging.install: encoding.install
-optparse.install: runtime.install yaml.install
+optparse.install: dict.install runtime.install yaml.install
 pyksproxy.install: runtime.install
 runtime.install: command.install
 tlsconf.install: runtime.install
-weblite.install: optparse.install structure.install
+web.install: optparse.install structure.install
