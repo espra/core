@@ -196,10 +196,10 @@ func GetCPUCount() (count int) {
 }
 
 // A utility ``runtime.Init`` function is provided which will set Go's internal
-// ``GOMAXPROCS`` to the number of CPUs detected and exit with an error message
-// if the ``$AMPIFY_ROOT`` environment variable hasn't been set.
+// ``GOMAXPROCS`` to double the number of CPUs detected and exit with an error
+// message if the ``$AMPIFY_ROOT`` environment variable hasn't been set.
 func Init() {
-	runtime.GOMAXPROCS(CPUCount)
+	runtime.GOMAXPROCS(CPUCount * 2)
 }
 
 // -----------------------------------------------------------------------------
