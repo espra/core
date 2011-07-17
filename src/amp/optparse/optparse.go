@@ -6,8 +6,10 @@
 package optparse
 
 import (
+	"amp/dict"
 	"amp/runtime"
 	"amp/yaml"
+	"exec"
 	"fmt"
 	"os"
 	"strconv"
@@ -213,48 +215,16 @@ func (op *OptionParser) Parse(args []string) (remainder []string) {
 	}
 
 	argLength := len(args) - 1
+	complete, words, compWord, prefix := GetCompletionData()
 
 	// Command-line auto-completion support.
-	autocomplete := os.Getenv("OPTPARSE_AUTO_COMPLETE")
-	if autocomplete != "" {
-
-		compWords := os.Getenv("COMP_WORDS")
-		if compWords == "" {
-			// zsh's bashcompinit does not pass COMP_WORDS, replace with
-			// COMP_LINE for now...
-			compWords = os.Getenv("COMP_LINE")
-			if compWords == "" {
-				runtime.Exit(1)
-			}
-		}
-		compWordsList := strings.Split(compWords, " ")
-		compLine := os.Getenv("COMP_LINE")
-		compPoint, err := strconv.Atoi(os.Getenv("COMP_POINT"))
-		if err != nil {
-			runtime.Exit(1)
-		}
-		compWord, err := strconv.Atoi(os.Getenv("COMP_CWORD"))
-		if err != nil {
-			runtime.Exit(1)
-		}
-
-		prefix := ""
-		if compWord > 0 {
-			if compWord < len(compWordsList) {
-				prefix = compWordsList[compWord]
-			}
-		}
-
-		// At some point in the future, make autocompletion customisable per
-		// option flag and, at that point, make use of these variables.
-		_ = compLine
-		_ = compPoint
+	if complete {
 
 		// Pass to the shell completion if the previous word was a flag
 		// expecting some parameter.
 		if (compWord - 1) > 0 {
 			var completer Completer
-			prev := compWordsList[compWord-1]
+			prev := words[compWord-1]
 			if strings.HasPrefix(prev, "--") {
 				opt, ok := op.long2options[prev]
 				if ok {
@@ -496,4 +466,196 @@ func Parser(usage string, version ...string) (op *OptionParser) {
 		op.ParseVersion = false
 	}
 	return op
+}
+
+func GetCompletionData() (complete bool, words []string, compWord int, prefix string) {
+
+	autocomplete := os.Getenv("OPTPARSE_AUTO_COMPLETE")
+	if autocomplete != "" {
+
+		complete = true
+		compWords := os.Getenv("COMP_WORDS")
+		if compWords == "" {
+			// zsh's bashcompinit does not pass COMP_WORDS, replace with
+			// COMP_LINE for now...
+			compWords = os.Getenv("COMP_LINE")
+			if compWords == "" {
+				runtime.Exit(1)
+			}
+		}
+
+		words = strings.Split(compWords, " ")
+		compLine := os.Getenv("COMP_LINE")
+
+		compPoint, err := strconv.Atoi(os.Getenv("COMP_POINT"))
+		if err != nil {
+			runtime.Exit(1)
+		}
+
+		compWord, err = strconv.Atoi(os.Getenv("COMP_CWORD"))
+		if err != nil {
+			runtime.Exit(1)
+		}
+
+		if compWord > 0 {
+			if compWord < len(words) {
+				prefix = words[compWord]
+			}
+		}
+
+		// At some point in the future, make use of these variables.
+		_ = compLine
+		_ = compPoint
+
+	}
+
+	return
+
+}
+
+// Support for git subcommands style command handling.
+func Subcommands(name, version string, commands map[string]func([]string, string), commandsUsage map[string]string) {
+
+	var mainUsage string
+
+	callCommand := func(command string, args []string, complete bool) {
+		args[0] = fmt.Sprintf("%s %s", name, command)
+		if handler, ok := commands[command]; ok {
+			handler(args, commandsUsage[command])
+		} else {
+
+			exe := fmt.Sprintf("%s-%s", name, command)
+			exePath, err := exec.LookPath(exe)
+			if err != nil {
+				runtime.Error("ERROR: Unknown command '%s'\n", command)
+			}
+
+			args[0] = exe
+			process, err := os.StartProcess(exePath, args,
+				&os.ProcAttr{
+					Dir:   ".",
+					Env:   os.Environ(),
+					Files: []*os.File{nil, os.Stdout, os.Stderr},
+				})
+
+			if err != nil {
+				runtime.Error(fmt.Sprintf("ERROR: %s: %s\n", exe, err))
+			}
+
+			_, err = process.Wait(0)
+			if err != nil {
+				runtime.Error(fmt.Sprintf("ERROR: %s: %s\n", exe, err))
+			}
+
+		}
+		runtime.Exit(0)
+	}
+
+	if _, ok := commands["help"]; !ok {
+		commands["help"] = func(args []string, usage string) {
+
+			helpCommands := make([]string, len(commands))
+			j := 0
+			for name, _ := range commands {
+				if name != "help" && !strings.HasPrefix(name, "-") {
+					helpCommands[j] = name
+					j += 1
+				}
+			}
+
+			opts := Parser(mainUsage)
+			opts.ParseHelp = false
+			opts.Completer = ListCompleter(helpCommands...)
+			helpArgs := opts.Parse(args)
+
+			if len(helpArgs) == 0 {
+				fmt.Print(mainUsage)
+				return
+			}
+
+			if len(helpArgs) != 1 {
+				runtime.Error("ERROR: Unknown command: '%s'\n", strings.Join(helpArgs, " "))
+			}
+
+			command := helpArgs[0]
+			if command == "help" {
+				fmt.Print(mainUsage)
+			} else {
+				callCommand(command, []string{name, "--help"}, false)
+			}
+
+		}
+		commands["-h"] = commands["help"]
+		commands["--help"] = commands["help"]
+	}
+
+	if _, ok := commands["version"]; !ok {
+		commands["version"] = func(args []string, usage string) {
+			opts := Parser(fmt.Sprintf("Usage: %s version\n\n    %s\n", name, usage))
+			opts.Parse(args)
+			fmt.Printf("%s\n", version)
+			return
+		}
+		commands["-v"] = commands["version"]
+		commands["--version"] = commands["version"]
+	}
+
+	commandNames := make([]string, len(commands))
+	i := 0
+
+	for name, _ := range commands {
+		commandNames[i] = name
+		i += 1
+	}
+
+	usageKeys := dict.SortedKeys(commandsUsage)
+	padding := 10
+
+	for _, key := range usageKeys {
+		if len(key) > padding {
+			padding = len(key)
+		}
+	}
+
+	mainUsage = fmt.Sprintf("Usage: %s <command> [options]\n\nCommands:\n\n", name)
+	usageLine := fmt.Sprintf("    %%-%ds %%s\n", padding)
+
+	for _, key := range usageKeys {
+		mainUsage += fmt.Sprintf(usageLine, key, commandsUsage[key])
+	}
+
+	mainUsage += fmt.Sprintf(
+		"\nSee `%s help <command>` for more info on a specific command.\n", name)
+
+	complete, words, compWord, prefix := GetCompletionData()
+	args := os.Args[1:]
+
+	if len(args) == 0 {
+		if complete {
+			if compWord == 1 {
+				completions := make([]string, 0)
+				for _, cmd := range commandNames {
+					if strings.HasPrefix(cmd, prefix) {
+						completions = append(completions, cmd)
+					}
+				}
+				fmt.Print(strings.Join(completions, " "))
+				runtime.Exit(1)
+			} else {
+				command := words[1]
+				args = []string{name}
+				callCommand(command, args, true)
+
+			}
+		} else {
+			fmt.Print(mainUsage)
+			runtime.Exit(0)
+		}
+	}
+
+	command := args[0]
+	args[0] = name
+
+	callCommand(command, args, false)
+
 }
