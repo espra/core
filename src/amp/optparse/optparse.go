@@ -517,6 +517,7 @@ func GetCompletionData() (complete bool, words []string, compWord int, prefix st
 func Subcommands(name, version string, commands map[string]func([]string, string), commandsUsage map[string]string) {
 
 	var mainUsage string
+	var commandNames, helpCommands []string
 
 	callCommand := func(command string, args []string, complete bool) {
 		args[0] = fmt.Sprintf("%s %s", name, command)
@@ -553,15 +554,6 @@ func Subcommands(name, version string, commands map[string]func([]string, string
 
 	if _, ok := commands["help"]; !ok {
 		commands["help"] = func(args []string, usage string) {
-
-			helpCommands := make([]string, len(commands))
-			j := 0
-			for name, _ := range commands {
-				if name != "help" && !strings.HasPrefix(name, "-") {
-					helpCommands[j] = name
-					j += 1
-				}
-			}
 
 			opts := Parser(mainUsage)
 			opts.ParseHelp = false
@@ -600,12 +592,19 @@ func Subcommands(name, version string, commands map[string]func([]string, string
 		commands["--version"] = commands["version"]
 	}
 
-	commandNames := make([]string, len(commands))
-	i := 0
+	commandNames = make([]string, len(commands))
+	helpCommands = make([]string, len(commands))
+	i, j := 0, 0
 
 	for name, _ := range commands {
-		commandNames[i] = name
-		i += 1
+		if !strings.HasPrefix(name, "-") {
+			commandNames[i] = name
+			i += 1
+			if name != "help" {
+				helpCommands[j] = name
+				j += 1
+			}
+		}
 	}
 
 	usageKeys := dict.SortedKeys(commandsUsage)
