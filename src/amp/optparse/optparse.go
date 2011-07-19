@@ -514,21 +514,28 @@ func GetCompletionData() (complete bool, words []string, compWord int, prefix st
 }
 
 // Support for git subcommands style command handling.
-func Subcommands(name, version string, commands map[string]func([]string, string), commandsUsage map[string]string) {
+func Subcommands(name, version string, commands map[string]func([]string, string), commandsUsage map[string]string, additional ...string) {
 
-	var mainUsage string
 	var commandNames, helpCommands []string
+	var complete bool
+	var mainUsage string
 
 	callCommand := func(command string, args []string, complete bool) {
-		args[0] = fmt.Sprintf("%s %s", name, command)
+		var findexe bool
+		if command[0] == '-' {
+			args[0] = name
+		} else {
+			args[0] = fmt.Sprintf("%s %s", name, command)
+			findexe = true
+		}
 		if handler, ok := commands[command]; ok {
 			handler(args, commandsUsage[command])
-		} else {
+		} else if findexe {
 
-			exe := fmt.Sprintf("%s-%s", name, command)
+			exe := fmt.Sprintf("%s-%s", strings.Replace(name, " ", "-", -1), command)
 			exePath, err := exec.LookPath(exe)
 			if err != nil {
-				runtime.Error("ERROR: Unknown command '%s'\n", command)
+				runtime.Error("ERROR: Couldn't find '%s'\n", exe)
 			}
 
 			args[0] = exe
@@ -548,6 +555,8 @@ func Subcommands(name, version string, commands map[string]func([]string, string
 				runtime.Error(fmt.Sprintf("ERROR: %s: %s\n", exe, err))
 			}
 
+		} else {
+			runtime.Error(fmt.Sprintf("%s: error: no such option: %s\n", name, command))
 		}
 		runtime.Exit(0)
 	}
@@ -566,13 +575,17 @@ func Subcommands(name, version string, commands map[string]func([]string, string
 			}
 
 			if len(helpArgs) != 1 {
-				runtime.Error("ERROR: Unknown command: '%s'\n", strings.Join(helpArgs, " "))
+				runtime.Error("ERROR: Unknown command '%s'\n", strings.Join(helpArgs, " "))
 			}
 
 			command := helpArgs[0]
 			if command == "help" {
 				fmt.Print(mainUsage)
 			} else {
+				if !complete {
+					argLen := len(os.Args)
+					os.Args[argLen-2], os.Args[argLen-1] = os.Args[argLen-1], "--help"
+				}
 				callCommand(command, []string{name, "--help"}, false)
 			}
 
@@ -581,15 +594,17 @@ func Subcommands(name, version string, commands map[string]func([]string, string
 		commands["--help"] = commands["help"]
 	}
 
-	if _, ok := commands["version"]; !ok {
-		commands["version"] = func(args []string, usage string) {
-			opts := Parser(fmt.Sprintf("Usage: %s version\n\n    %s\n", name, usage))
-			opts.Parse(args)
-			fmt.Printf("%s\n", version)
-			return
+	if len(version) != 0 {
+		if _, ok := commands["version"]; !ok {
+			commands["version"] = func(args []string, usage string) {
+				opts := Parser(fmt.Sprintf("Usage: %s version\n\n    %s\n", name, usage))
+				opts.Parse(args)
+				fmt.Printf("%s\n", version)
+				return
+			}
+			commands["-v"] = commands["version"]
+			commands["--version"] = commands["version"]
 		}
-		commands["-v"] = commands["version"]
-		commands["--version"] = commands["version"]
 	}
 
 	commandNames = make([]string, len(commands))
@@ -616,40 +631,56 @@ func Subcommands(name, version string, commands map[string]func([]string, string
 		}
 	}
 
-	mainUsage = fmt.Sprintf("Usage: %s <command> [options]\n\nCommands:\n\n", name)
+	var suffix string
+
+	additionalItems := len(additional)
+	if additionalItems == 0 {
+		suffix = ""
+	} else if additionalItems == 1 {
+		mainUsage = additional[0] + "\n"
+		suffix = ""
+	} else {
+		mainUsage = additional[0] + "\n"
+		suffix = "\n" + additional[1]
+	}
+
+	mainUsage += fmt.Sprintf("Usage: %s <command> [options]\n\nCommands:\n\n", name)
 	usageLine := fmt.Sprintf("    %%-%ds %%s\n", padding)
 
 	for _, key := range usageKeys {
 		mainUsage += fmt.Sprintf(usageLine, key, commandsUsage[key])
 	}
 
+	mainUsage += suffix
 	mainUsage += fmt.Sprintf(
 		"\nSee `%s help <command>` for more info on a specific command.\n", name)
 
 	complete, words, compWord, prefix := GetCompletionData()
-	args := os.Args[1:]
+	baseLength := len(strings.Split(name, " "))
+	args := os.Args
+
+	if complete && len(args) == 1 {
+		if compWord == baseLength {
+			completions := make([]string, 0)
+			for _, cmd := range commandNames {
+				if strings.HasPrefix(cmd, prefix) {
+					completions = append(completions, cmd)
+				}
+			}
+			fmt.Print(strings.Join(completions, " "))
+			runtime.Exit(1)
+		} else {
+			command := words[baseLength]
+			args = []string{name}
+			callCommand(command, args, true)
+		}
+	}
+
+	args = args[baseLength:]
 
 	if len(args) == 0 {
-		if complete {
-			if compWord == 1 {
-				completions := make([]string, 0)
-				for _, cmd := range commandNames {
-					if strings.HasPrefix(cmd, prefix) {
-						completions = append(completions, cmd)
-					}
-				}
-				fmt.Print(strings.Join(completions, " "))
-				runtime.Exit(1)
-			} else {
-				command := words[1]
-				args = []string{name}
-				callCommand(command, args, true)
-
-			}
-		} else {
-			fmt.Print(mainUsage)
-			runtime.Exit(0)
-		}
+		fmt.Print(mainUsage)
+		runtime.Exit(0)
 	}
 
 	command := args[0]
