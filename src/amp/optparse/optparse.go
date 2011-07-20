@@ -373,7 +373,7 @@ func (op *OptionParser) Parse(args []string) (remainder []string) {
 
 func (op *OptionParser) ParseConfig(filename string, args []string) (err os.Error) {
 
-	data, err := yaml.ParseFile(filename)
+	data, err := yaml.ParseDictFile(filename)
 	if err != nil {
 		return err
 	}

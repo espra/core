@@ -1,0 +1,14 @@
+# a comment line -- should be ignored
+
+application: espra
+version: 1
+pi: 3.141592
+bugs: ~
+runtime: "go"
+admins:
+  - thruflo
+  - tav
+  - nick
+debug: false
+
+templating: on
