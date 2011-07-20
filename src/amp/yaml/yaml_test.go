@@ -35,18 +35,32 @@ func TestParseFile(t *testing.T) {
 		t.Errorf("Got an unexpected error reading the test2.yaml file: %s", err)
 	}
 
-	if len(data) != 8 {
-		t.Errorf("Got an invalid number of results back from the parsed test2.yaml file: %d", len(data))
-		return
+	t.Logf("%v", data)
+
+	// if len(root) != 8 {
+	// 	t.Errorf("Got an invalid number of results back from the parsed test2.yaml file: %d", len(root))
+	// 	return
+	// }
+
+	admins, ok := data.Get("admins")
+	if !ok {
+		t.Error("Wasn't able to find a value for the 'admins' key in the parsed test2.yaml file.")
 	}
 
-	t.Logf(Display(data))
-
-	if data["admins"].Type != List && len(data["admins"].List) != 3 {
+	if admins.Type != List && len(admins.List) != 3 {
 		t.Error("Got an invalid value for the 'admins' key in the parsed test2.yaml file.")
 		return
 	}
 
-	t.Logf("admins[0] == %s\n", data["admins"].List[0].String)
+	t.Logf("admins[0] == %s\n", admins.List[0].String)
+
+	if adminList, ok := data.GetStringList("admins"); ok {
+		t.Logf("admins == %s\n", adminList)
+	}
+
+	if value, _ := data.GetString("application"); value != "espra" {
+		t.Errorf("Got invalid value %q for the 'application' key in the parsed test2.yaml file.", value)
+		return
+	}
 
 }

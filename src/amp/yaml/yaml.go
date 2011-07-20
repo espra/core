@@ -32,13 +32,17 @@ const (
 )
 
 type Data struct {
+	Root map[string]*Elem
+}
+
+type Elem struct {
 	Type   int
 	String string
 	Bool   bool
 	Float  float64
-	Int    int
-	List   []*Data
-	Map    map[string]*Data
+	Int    int64
+	List   []*Elem
+	Map    map[string]*Elem
 }
 
 func matchNumber(value string) (match bool, floatesque bool) {
@@ -55,7 +59,7 @@ func matchNumber(value string) (match bool, floatesque bool) {
 	return true, floatesque
 }
 
-func setValue(elem *Data, value string) {
+func setValue(elem *Elem, value string) {
 	valueLength := len(value)
 	lowercase := strings.ToLower(value)
 	if lowercase == "true" || lowercase == "on" || lowercase == "yes" {
@@ -80,7 +84,7 @@ func setValue(elem *Data, value string) {
 				elem.String = value
 			}
 		} else {
-			intval, err := strconv.Atoi(value)
+			intval, err := strconv.Atoi64(value)
 			if err == nil {
 				elem.Type = Int
 				elem.Int = intval
@@ -95,33 +99,75 @@ func setValue(elem *Data, value string) {
 	}
 }
 
-func getKeyValue(lineno int, line string) (key, value string, err os.Error) {
+func getKeyValue(lineno int, line string, needkey bool) (key, value string, err os.Error) {
 	split := strings.SplitN(line, ":", 2)
-	if len(split) != 2 {
-		err = fmt.Errorf(
-			"YAML Error: Expected a property name on line %d: %q",
-			lineno, line)
-		return
+	if needkey {
+		if len(split) != 2 {
+			err = fmt.Errorf(
+				"YAML Error: Expected a property name on line %d: %q",
+				lineno, line)
+			return
+		}
+		key = split[0]
+		value = trim(split[1])
+	} else if len(split) == 2 {
+		key = split[0]
+		value = trim(split[1])
+	} else {
+		value = trim(split[0])
 	}
-	key = split[0]
-	value = strings.TrimSpace(split[1])
 	return
 }
 
-func Parse(input string) (root map[string]*Data, err os.Error) {
+func trim(value string) string {
+	value = strings.TrimSpace(value)
+	if value == "" {
+		return ""
+	}
+	var (
+		quoted    bool
+		delimiter byte
+	)
+	for idx, length := 0, len(value); idx < length; idx++ {
+		char := value[idx]
+		if idx == 0 {
+			switch char {
+			case '"':
+				quoted = true
+				delimiter = '"'
+			case '\'':
+				quoted = true
+				delimiter = '\''
+			case '#':
+				return ""
+			}
+		} else {
+			if quoted && char == delimiter {
+				return value[0 : idx+1]
+			} else if char == '#' {
+				return strings.TrimSpace(value[0:idx])
+			}
+		}
+	}
+	return value
+}
+
+func Parse(input string) (data *Data, err os.Error) {
 
 	var (
-		elem   *Data
+		elem   *Elem
 		indent int
 		key    string
 		lineno int
 		value  string
 	)
 
-	root = make(map[string]*Data)
+	data = &Data{make(map[string]*Elem)}
+	root := data.Root
 
 	for _, line := range strings.Split(input, "\n") {
 
+		indent = 0
 		for i, total := 0, len(line); i < total; i++ {
 			if line[i] != ' ' {
 				indent = i
@@ -143,11 +189,11 @@ func Parse(input string) (root map[string]*Data, err os.Error) {
 		}
 
 		if key == "" {
-			key, value, err = getKeyValue(lineno, line)
+			key, value, err = getKeyValue(lineno, line, true)
 			if err != nil {
 				return
 			}
-			elem = &Data{}
+			elem = &Elem{}
 			root[key] = elem
 			if value != "" {
 				setValue(elem, value)
@@ -157,15 +203,12 @@ func Parse(input string) (root map[string]*Data, err os.Error) {
 		}
 
 		if len(line) > 1 && line[:2] == "- " {
-			value = strings.TrimSpace(line[2:])
-			listElem := &Data{}
-			if value != "" {
-				setValue(listElem, value)
-			}
+			value = trim(line[2:])
+			listElem := &Elem{}
 			switch elem.Type {
 			case Null:
 				elem.Type = List
-				elem.List = []*Data{listElem}
+				elem.List = []*Elem{listElem}
 			case List:
 				elem.List = append(elem.List, listElem)
 			default:
@@ -173,18 +216,25 @@ func Parse(input string) (root map[string]*Data, err os.Error) {
 					"YAML Error: Conflicting %s value for list item on line %d: %q",
 					getTypeName(elem.Type), lineno, line)
 			}
-		} else {
-			key, value, err = getKeyValue(lineno, line)
-			if err != nil {
-				return
+			if value != "" {
+				subkey, subvalue, _ := getKeyValue(lineno, value, false)
+				if subkey != "" {
+					// XXX Handle maps nested within lists.
+					_ = subvalue
+				} else {
+					setValue(listElem, value)
+				}
 			}
-			elem = &Data{}
-			root[key] = elem
+		} else {
+			key, value, _ = getKeyValue(lineno, line, false)
+			if key != "" {
+				elem = &Elem{}
+				root[key] = elem
+			}
 			if value != "" {
 				setValue(elem, value)
 				key = ""
 			}
-
 		}
 
 	}
@@ -193,7 +243,7 @@ func Parse(input string) (root map[string]*Data, err os.Error) {
 
 }
 
-func ParseFile(filename string) (map[string]*Data, os.Error) {
+func ParseFile(filename string) (*Data, os.Error) {
 	input, err := ioutil.ReadFile(filename)
 	if err != nil {
 		return nil, err
@@ -250,35 +300,138 @@ func getTypeName(typ int) (name string) {
 	return
 }
 
-func Display(root map[string]*Data) string {
+func (data *Data) String() string {
 	buffer := &bytes.Buffer{}
-	for key, data := range root {
+	for key, elem := range data.Root {
 		fmt.Fprintf(buffer, "%s: ", key)
-		data.Display(buffer, "  ")
+		elem.Display(buffer, "  ")
 		buffer.WriteByte('\n')
 	}
 	return buffer.String()
 }
 
-func (data *Data) Display(buffer *bytes.Buffer, indent string) {
-	switch data.Type {
+func (data *Data) Get(key string, subkeys ...string) (elem *Elem, ok bool) {
+	elem, ok = data.Root[key]
+	if !ok {
+		return
+	}
+	for _, key := range subkeys {
+		if elem.Type != Map {
+			return elem, false
+		}
+		elem, ok = elem.Map[key]
+	}
+	return
+}
+
+func (data *Data) GetString(key string, subkeys ...string) (value string, ok bool) {
+	elem, ok := data.Get(key, subkeys...)
+	if !ok {
+		return
+	}
+	if elem.Type == String {
+		return elem.String, true
+	}
+	return
+}
+
+func (data *Data) GetBool(key string, subkeys ...string) (value bool, ok bool) {
+	elem, ok := data.Get(key, subkeys...)
+	if !ok {
+		return
+	}
+	if elem.Type == Bool {
+		return elem.Bool, true
+	}
+	return
+}
+
+func (data *Data) GetFloat(key string, subkeys ...string) (value float64, ok bool) {
+	elem, ok := data.Get(key, subkeys...)
+	if !ok {
+		return
+	}
+	if elem.Type == Float {
+		return elem.Float, true
+	}
+	return
+}
+
+func (data *Data) GetInt(key string, subkeys ...string) (value int64, ok bool) {
+	elem, ok := data.Get(key, subkeys...)
+	if !ok {
+		return
+	}
+	if elem.Type == Int {
+		return elem.Int, true
+	}
+	return
+}
+
+func (data *Data) GetList(key string, subkeys ...string) (value []*Elem, ok bool) {
+	elem, ok := data.Get(key, subkeys...)
+	if !ok {
+		return
+	}
+	if elem.Type == List {
+		return elem.List, true
+	}
+	return
+}
+
+func (data *Data) GetMap(key string, subkeys ...string) (value map[string]*Elem, ok bool) {
+	elem, ok := data.Get(key, subkeys...)
+	if !ok {
+		return
+	}
+	if elem.Type == Map {
+		return elem.Map, true
+	}
+	return
+}
+
+func (data *Data) GetStringList(key string, subkeys ...string) (value []string, ok bool) {
+	elem, ok := data.Get(key, subkeys...)
+	if !ok {
+		return
+	}
+	if elem.Type != List {
+		return
+	}
+	value = make([]string, len(elem.List))
+	i := 0
+	for _, listElem := range elem.List {
+		if listElem.Type == String {
+			value[i] = listElem.String
+			i += 1
+		}
+	}
+	return value, true
+}
+
+func (data *Data) Size() int {
+	return len(data.Root)
+}
+
+func (elem *Elem) Display(buffer *bytes.Buffer, indent string) {
+	switch elem.Type {
 	case String:
-		fmt.Fprintf(buffer, "%q", data.String)
+		fmt.Fprintf(buffer, "%q", elem.String)
 	case Bool:
-		fmt.Fprintf(buffer, "%t", data.Bool)
+		fmt.Fprintf(buffer, "%t", elem.Bool)
 	case Float:
-		fmt.Fprintf(buffer, "%f", data.Float)
+		fmt.Fprintf(buffer, "%f", elem.Float)
 	case Int:
-		fmt.Fprintf(buffer, "%d", data.Int)
+		fmt.Fprintf(buffer, "%d", elem.Int)
 	case List:
-		for _, elem := range data.List {
+		for _, listElem := range elem.List {
 			fmt.Fprintf(buffer, "\n%s- ", indent)
-			elem.Display(buffer, indent+"  ")
+			listElem.Display(buffer, indent+"  ")
 		}
 	case Map:
-		for key, elem := range data.Map {
+		for key, mapElem := range elem.Map {
 			fmt.Fprintf(buffer, "\n%s%s: ", indent, key)
-			elem.Display(buffer, indent+"  ")
+			mapElem.Display(buffer, indent+"  ")
 		}
 	case Null:
 		fmt.Fprint(buffer, "null")
