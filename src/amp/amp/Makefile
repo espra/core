@@ -6,5 +6,9 @@ include $(GOROOT)/src/Make.inc
 TARG=amp
 GOFILES=\
 	amp.go\
+	frontend.go\
+	node.go\
+	repo.go\
+	run.go\
 
 include $(GOROOT)/src/Make.cmd
