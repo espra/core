@@ -897,18 +897,13 @@ def cleanup_install():
 # Virgin Build Handler
 # ------------------------------------------------------------------------------
 
-VIRGIN_BUILD = not exists(join(LOCAL, 'bin', 'bsdiff'))
+VIRGIN_BUILD = not exists(join(LOCAL, 'bin', 'python'))
 
 def build_base_and_reload():
     load_role('base')
     install_packages()
     unlock(BUILD_LOCK)
     execve(join(ENVIRON, 'redpill'), sys.argv, get_redpill_env(environ))
-
-# We used to check for a virgin build and force a build and reload, i.e.
-#
-# if VIRGIN_BUILD and role != 'base':
-#     build_base_and_reload()
 
 # ------------------------------------------------------------------------------
 # Main Runner
@@ -1002,6 +997,9 @@ def build(argv=None, completer=None):
                   help="specify the role to build [%s]" % get_role())
 
     options, args = parse_options(op, argv, completer)
+
+    if VIRGIN_BUILD and options.role != 'base':
+        build_base_and_reload()
 
     load_role(options.role)
     install_packages()
