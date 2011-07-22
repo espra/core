@@ -121,7 +121,9 @@ func TestIronStrings(t *testing.T) {
 		t.Errorf("Got an ok with the wrong key for the IronString.")
 	}
 
-	tampered := "X" + iron[1:]
+	lead := iron[0]
+	lead ^= 'X'
+	tampered := string(lead) + iron[1:]
 
 	value, ok = GetIronValue("user", tampered, key, true)
 	if ok {

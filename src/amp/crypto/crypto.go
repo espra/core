@@ -88,7 +88,7 @@ var (
 	passwordHashFunc   = hmac.NewSHA256
 	passwordIterations = 20000
 	passwordKeyLength  = 80
-	passwordSaltLength = 10
+	passwordSaltLength = 40
 )
 
 func SetPasswordHashFunc(hashfunc func([]byte) hash.Hash) {
