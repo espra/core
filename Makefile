@@ -19,7 +19,7 @@ build:
 
 clean:
 	@cd src/amp && make nuke
-	rm -rf src/ampify/build
+	rm -rf src/python/ampify/build
 	rm -rf third_party/pylibs/build
 
 docs:
