@@ -7,7 +7,6 @@ package optparse
 
 import (
 	"amp/dict"
-	"amp/runtime"
 	"amp/yaml"
 	"exec"
 	"fmt"
@@ -15,6 +14,10 @@ import (
 	"strconv"
 	"strings"
 )
+
+// -----------------------------------------------------------------------------
+// Autocompletion
+// -----------------------------------------------------------------------------
 
 type Completer interface {
 	Complete() []string
@@ -24,12 +27,46 @@ type listCompleter struct {
 	items []string
 }
 
+func (completer *listCompleter) Complete() []string {
+	return completer.items
+}
+
 func ListCompleter(items ...string) *listCompleter {
 	return &listCompleter{items}
 }
 
-func (completer *listCompleter) Complete() []string {
-	return completer.items
+// -----------------------------------------------------------------------------
+// Utility Functions
+// -----------------------------------------------------------------------------
+
+func error(message string, v ...interface{}) {
+	if len(v) == 0 {
+		fmt.Fprint(os.Stderr, message)
+	} else {
+		fmt.Fprintf(os.Stderr, message, v...)
+	}
+	os.Exit(1)
+}
+
+// -----------------------------------------------------------------------------
+// Core Option Parser
+// -----------------------------------------------------------------------------
+
+type OptionParser struct {
+	Completer      Completer
+	Usage          string
+	Version        string
+	ParseHelp      bool
+	ParseVersion   bool
+	options        []*option
+	config2options map[string]*option
+	configflags    []string
+	short2options  map[string]*option
+	shortflags     []string
+	long2options   map[string]*option
+	longflags      []string
+	helpAdded      bool
+	versionAdded   bool
 }
 
 type option struct {
@@ -47,23 +84,6 @@ type option struct {
 	stringValue    *string
 	usage          string
 	valueType      string
-}
-
-type OptionParser struct {
-	Completer      Completer
-	Usage          string
-	Version        string
-	ParseHelp      bool
-	ParseVersion   bool
-	options        []*option
-	config2options map[string]*option
-	configflags    []string
-	short2options  map[string]*option
-	shortflags     []string
-	long2options   map[string]*option
-	longflags      []string
-	helpAdded      bool
-	versionAdded   bool
 }
 
 func (opt *option) String() (output string) {
@@ -230,7 +250,7 @@ func (op *OptionParser) Parse(args []string) (remainder []string) {
 				if ok {
 					if opt.dest != "" {
 						if opt.completer == nil {
-							runtime.Exit(1)
+							os.Exit(1)
 						} else {
 							completer = opt.completer
 						}
@@ -241,7 +261,7 @@ func (op *OptionParser) Parse(args []string) (remainder []string) {
 				if ok {
 					if opt.dest != "" {
 						if opt.completer == nil {
-							runtime.Exit(1)
+							os.Exit(1)
 						} else {
 							completer = opt.completer
 						}
@@ -256,7 +276,7 @@ func (op *OptionParser) Parse(args []string) (remainder []string) {
 					}
 				}
 				fmt.Print(strings.Join(completions, " "))
-				runtime.Exit(1)
+				os.Exit(1)
 			}
 		}
 
@@ -283,7 +303,7 @@ func (op *OptionParser) Parse(args []string) (remainder []string) {
 		}
 
 		fmt.Print(strings.Join(completions, " "))
-		runtime.Exit(1)
+		os.Exit(1)
 
 	}
 
@@ -319,38 +339,38 @@ func (op *OptionParser) Parse(args []string) (remainder []string) {
 			}
 		}
 		if noOpt {
-			runtime.Error("%s: error: no such option: %s\n", args[0], arg)
+			error("%s: error: no such option: %s\n", args[0], arg)
 		}
 		if opt.dest != "" {
 			if idx == argLength {
-				runtime.Error("%s: error: %s option requires an argument\n", args[0], arg)
+				error("%s: error: %s option requires an argument\n", args[0], arg)
 			}
 		}
 		if opt.valueType == "bool" {
 			if opt.longflag == "--help" && op.ParseHelp {
 				op.PrintUsage()
-				runtime.Exit(1)
+				os.Exit(1)
 			} else if opt.longflag == "--version" && op.ParseVersion {
 				fmt.Printf("%s\n", op.Version)
-				runtime.Exit(0)
+				os.Exit(0)
 			}
 			*opt.boolValue = true
 			opt.defined = true
 			idx += 1
 		} else if opt.valueType == "string" {
 			if idx == argLength {
-				runtime.Error("%s: error: no value specified for %s\n", args[0], arg)
+				error("%s: error: no value specified for %s\n", args[0], arg)
 			}
 			*opt.stringValue = args[idx+1]
 			opt.defined = true
 			idx += 2
 		} else if opt.valueType == "int" {
 			if idx == argLength {
-				runtime.Error("%s: error: no value specified for %s\n", args[0], arg)
+				error("%s: error: no value specified for %s\n", args[0], arg)
 			}
 			intValue, err := strconv.Atoi(args[idx+1])
 			if err != nil {
-				runtime.Error("%s: error: couldn't convert %s value '%s' to an integer\n", args[0], arg, args[idx+1])
+				error("%s: error: couldn't convert %s value '%s' to an integer\n", args[0], arg, args[idx+1])
 			}
 			*opt.intValue = intValue
 			opt.defined = true
@@ -363,7 +383,7 @@ func (op *OptionParser) Parse(args []string) (remainder []string) {
 
 	for _, opt := range op.options {
 		if opt.requiredFlag && !opt.defined {
-			runtime.Error("%s: error: required: %s", args[0], opt)
+			error("%s: error: required: %s", args[0], opt)
 		}
 	}
 
@@ -385,7 +405,7 @@ func (op *OptionParser) ParseConfig(filename string, args []string) (err os.Erro
 		value, ok := data[config]
 		if !ok {
 			if opt.requiredConfig {
-				runtime.Error("%s: error: required: %s", args[0], opt)
+				error("%s: error: required: %s", args[0], opt)
 			} else {
 				continue
 			}
@@ -396,14 +416,14 @@ func (op *OptionParser) ParseConfig(filename string, args []string) (err os.Erro
 			} else if value == "false" || value == "off" || value == "no" {
 				*opt.boolValue = false
 			} else {
-				runtime.Error("%s: error: invalid boolean value for %s: %q\n", args[0], config, value)
+				error("%s: error: invalid boolean value for %s: %q\n", args[0], config, value)
 			}
 		} else if opt.valueType == "string" {
 			*opt.stringValue = value
 		} else if opt.valueType == "int" {
 			intValue, err := strconv.Atoi(value)
 			if err != nil {
-				runtime.Error("%s: error: couldn't convert the %s value %q to an integer\n", args[0], config, value)
+				error("%s: error: couldn't convert the %s value %q to an integer\n", args[0], config, value)
 			}
 			*opt.intValue = intValue
 		}
@@ -480,7 +500,7 @@ func GetCompletionData() (complete bool, words []string, compWord int, prefix st
 			// COMP_LINE for now...
 			compWords = os.Getenv("COMP_LINE")
 			if compWords == "" {
-				runtime.Exit(1)
+				os.Exit(1)
 			}
 		}
 
@@ -489,12 +509,12 @@ func GetCompletionData() (complete bool, words []string, compWord int, prefix st
 
 		compPoint, err := strconv.Atoi(os.Getenv("COMP_POINT"))
 		if err != nil {
-			runtime.Exit(1)
+			os.Exit(1)
 		}
 
 		compWord, err = strconv.Atoi(os.Getenv("COMP_CWORD"))
 		if err != nil {
-			runtime.Exit(1)
+			os.Exit(1)
 		}
 
 		if compWord > 0 {
@@ -535,7 +555,7 @@ func Subcommands(name, version string, commands map[string]func([]string, string
 			exe := fmt.Sprintf("%s-%s", strings.Replace(name, " ", "-", -1), command)
 			exePath, err := exec.LookPath(exe)
 			if err != nil {
-				runtime.Error("ERROR: Couldn't find '%s'\n", exe)
+				error("ERROR: Couldn't find '%s'\n", exe)
 			}
 
 			args[0] = exe
@@ -547,18 +567,18 @@ func Subcommands(name, version string, commands map[string]func([]string, string
 				})
 
 			if err != nil {
-				runtime.Error(fmt.Sprintf("ERROR: %s: %s\n", exe, err))
+				error(fmt.Sprintf("ERROR: %s: %s\n", exe, err))
 			}
 
 			_, err = process.Wait(0)
 			if err != nil {
-				runtime.Error(fmt.Sprintf("ERROR: %s: %s\n", exe, err))
+				error(fmt.Sprintf("ERROR: %s: %s\n", exe, err))
 			}
 
 		} else {
-			runtime.Error(fmt.Sprintf("%s: error: no such option: %s\n", name, command))
+			error(fmt.Sprintf("%s: error: no such option: %s\n", name, command))
 		}
-		runtime.Exit(0)
+		os.Exit(0)
 	}
 
 	if _, ok := commands["help"]; !ok {
@@ -575,7 +595,7 @@ func Subcommands(name, version string, commands map[string]func([]string, string
 			}
 
 			if len(helpArgs) != 1 {
-				runtime.Error("ERROR: Unknown command '%s'\n", strings.Join(helpArgs, " "))
+				error("ERROR: Unknown command '%s'\n", strings.Join(helpArgs, " "))
 			}
 
 			command := helpArgs[0]
@@ -668,7 +688,7 @@ func Subcommands(name, version string, commands map[string]func([]string, string
 				}
 			}
 			fmt.Print(strings.Join(completions, " "))
-			runtime.Exit(1)
+			os.Exit(1)
 		} else {
 			command := words[baseLength]
 			args = []string{name}
@@ -680,7 +700,7 @@ func Subcommands(name, version string, commands map[string]func([]string, string
 
 	if len(args) == 0 {
 		fmt.Print(mainUsage)
-		runtime.Exit(0)
+		os.Exit(0)
 	}
 
 	command := args[0]
