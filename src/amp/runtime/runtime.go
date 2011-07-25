@@ -10,6 +10,8 @@ package runtime
 
 import (
 	"amp/command"
+	"amp/logging"
+	"amp/optparse"
 	"fmt"
 	"os"
 	"os/signal"
@@ -28,8 +30,11 @@ var (
 	CPUCount   int
 )
 
+// -----------------------------------------------------------------------------
+// Signal Handling
+// -----------------------------------------------------------------------------
+
 var signalHandlers = make(map[os.UnixSignal]func())
-var exitHandlers = []func(){}
 
 func RegisterSignalHandler(signal os.UnixSignal, handler func()) {
 	signalHandlers[signal] = handler
@@ -50,6 +55,12 @@ func handleSignals() {
 	}
 }
 
+// -----------------------------------------------------------------------------
+// Exit Handling
+// -----------------------------------------------------------------------------
+
+var exitHandlers = []func(){}
+
 func RunExitHandlers() {
 	for _, handler := range exitHandlers {
 		handler()
@@ -65,10 +76,9 @@ func Exit(code int) {
 	os.Exit(code)
 }
 
-// Utility function which calls Exit and matches the signal handler interface.
-func exitProcess() {
-	Exit(0)
-}
+// -----------------------------------------------------------------------------
+// Error Handling
+// -----------------------------------------------------------------------------
 
 func Error(message string, v ...interface{}) {
 	if len(v) == 0 {
@@ -84,6 +94,10 @@ func StandardError(err os.Error) {
 	Exit(1)
 }
 
+// -----------------------------------------------------------------------------
+// Pidfile Support
+// -----------------------------------------------------------------------------
+
 func CreatePidFile(path string) {
 	pidFile, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY, 0666)
 	if err != nil {
@@ -96,6 +110,10 @@ func CreatePidFile(path string) {
 	}
 }
 
+// -----------------------------------------------------------------------------
+// Lockfile Support
+// -----------------------------------------------------------------------------
+
 type Lock struct {
 	link     string
 	file     string
@@ -106,30 +124,31 @@ func GetLock(directory string, name string) (lock *Lock, err os.Error) {
 	file := path.Join(directory, fmt.Sprintf("%s-%d.lock", name, os.Getpid()))
 	lockFile, err := os.OpenFile(file, os.O_CREATE|os.O_WRONLY, 0666)
 	if err != nil {
-		return lock, err
+		return
 	}
 	lockFile.Close()
 	link := path.Join(directory, name+".lock")
 	err = os.Link(file, link)
 	if err == nil {
 		lock = &Lock{
-			link:     link,
-			file:     file,
-			acquired: true,
+			link: link,
+			file: file,
 		}
 		RegisterExitHandler(func() { lock.ReleaseLock() })
 	} else {
 		os.Remove(file)
 	}
-	return lock, err
+	return
 }
 
 func (lock *Lock) ReleaseLock() {
-	if lock.acquired {
-		os.Remove(lock.file)
-		os.Remove(lock.link)
-	}
+	os.Remove(lock.file)
+	os.Remove(lock.link)
 }
+
+// -----------------------------------------------------------------------------
+// Directory Support
+// -----------------------------------------------------------------------------
 
 // The ``JoinPath`` utility function joins the given ``path`` with the
 // ``directory`` unless it happens to be an absolute path, in which case it
@@ -139,6 +158,17 @@ func JoinPath(directory, path string) string {
 		return path
 	}
 	return filepath.Join(directory, filepath.Clean(path))
+}
+
+// -----------------------------------------------------------------------------
+// Process Initialisation
+// -----------------------------------------------------------------------------
+
+// A utility ``runtime.Init`` function is provided which will set Go's internal
+// ``GOMAXPROCS`` to double the number of CPUs detected and exit with an error
+// message if the ``$AMPIFY_ROOT`` environment variable hasn't been set.
+func Init() {
+	runtime.GOMAXPROCS(CPUCount * 2)
 }
 
 // The ``InitProcess`` utility function acquires a process lock and writes the
@@ -159,6 +189,139 @@ func InitProcess(name, runPath string) {
 
 }
 
+// -----------------------------------------------------------------------------
+// Process Default Runtime Opts
+// -----------------------------------------------------------------------------
+
+func DefaultOpts(name string, opts *optparse.OptionParser, argv []string, consoleFilter logging.Filter) (bool, string) {
+
+	var (
+		configPath        string
+		instanceDirectory string
+		err               os.Error
+	)
+
+	debug := opts.Bool([]string{"-d", "--debug"}, false,
+		"enable debug mode")
+
+	genConfig := opts.Bool([]string{"-g", "--gen-config"}, false,
+		"show the default yaml config")
+
+	runDirectory := opts.StringConfig("run-dir", "run",
+		"the path to the run directory to store locks, pid files, etc. [run]")
+
+	logDirectory := opts.StringConfig("log-dir", "log",
+		"the path to the log directory [log]")
+
+	logRotate := opts.StringConfig("log-rotate", "never",
+		"specify one of 'hourly', 'daily' or 'never' [never]")
+
+	noConsoleLog := opts.BoolConfig("no-console-log", false,
+		"disable server requests being logged to the console [false]")
+
+	extraConfig := opts.StringConfig("extra-config", "",
+		"path to a YAML config file with additional options")
+
+	// Parse the command line options.
+	args := opts.Parse(argv)
+
+	// Print the default YAML config file if the ``-g`` flag was specified.
+	if *genConfig {
+		opts.PrintDefaultConfigFile()
+		Exit(0)
+	}
+
+	// Assume the parent directory of the config as the instance directory.
+	if len(args) >= 1 {
+		if args[0] == "help" {
+			opts.PrintUsage()
+			Exit(0)
+		}
+		configPath, err = filepath.Abs(filepath.Clean(args[0]))
+		if err != nil {
+			StandardError(err)
+		}
+		err = opts.ParseConfig(configPath, os.Args)
+		if err != nil {
+			StandardError(err)
+		}
+		instanceDirectory, _ = filepath.Split(configPath)
+	} else {
+		opts.PrintUsage()
+		Exit(0)
+	}
+
+	// Load the extra config file with additional options if one has been
+	// specified.
+	if *extraConfig != "" {
+		extraConfigPath, err := filepath.Abs(filepath.Clean(*extraConfig))
+		if err != nil {
+			StandardError(err)
+		}
+		extraConfigPath = JoinPath(instanceDirectory, extraConfigPath)
+		err = opts.ParseConfig(extraConfigPath, os.Args)
+		if err != nil {
+			StandardError(err)
+		}
+	}
+
+	// Create the log directory if it doesn't exist.
+	logPath := JoinPath(instanceDirectory, *logDirectory)
+	err = os.MkdirAll(logPath, 0755)
+	if err != nil {
+		StandardError(err)
+	}
+
+	// Create the run directory if it doesn't exist.
+	runPath := JoinPath(instanceDirectory, *runDirectory)
+	err = os.MkdirAll(runPath, 0755)
+	if err != nil {
+		StandardError(err)
+	}
+
+	// Setup the file and console logging.
+	var rotate int
+
+	switch *logRotate {
+	case "daily":
+		rotate = logging.RotateDaily
+	case "hourly":
+		rotate = logging.RotateHourly
+	case "never":
+		rotate = logging.RotateNever
+	default:
+		Error("ERROR: Unknown log rotation format %q\n", *logRotate)
+	}
+
+	if !*noConsoleLog {
+		logging.AddConsoleLogger()
+		logging.AddConsoleFilter(consoleFilter)
+	}
+
+	_, err = logging.AddFileLogger(name, logPath, rotate, logging.InfoLog)
+	if err != nil {
+		Error("ERROR: Couldn't initialise logfile: %s\n", err)
+	}
+
+	_, err = logging.AddFileLogger("error", logPath, rotate, logging.ErrorLog)
+	if err != nil {
+		Error("ERROR: Couldn't initialise logfile: %s\n", err)
+	}
+
+	// Initialise the runtime -- which will run the process on multiple
+	// processors if possible.
+	Init()
+
+	// Initialise the process-related resources.
+	InitProcess(name, runPath)
+
+	return *debug, instanceDirectory
+
+}
+
+// -----------------------------------------------------------------------------
+// Parallelism Detection
+// -----------------------------------------------------------------------------
 
 // The ``runtime.GetCPUCount`` function tries to detect the number of CPUs on
 // the current machine.
@@ -195,13 +358,6 @@ func GetCPUCount() (count int) {
 	return count
 }
 
-// A utility ``runtime.Init`` function is provided which will set Go's internal
-// ``GOMAXPROCS`` to double the number of CPUs detected and exit with an error
-// message if the ``$AMPIFY_ROOT`` environment variable hasn't been set.
-func Init() {
-	runtime.GOMAXPROCS(CPUCount * 2)
-}
-
 // -----------------------------------------------------------------------------
 // Package Initialiser
 // -----------------------------------------------------------------------------
@@ -213,7 +369,7 @@ func init() {
 	if AmpifyRoot == "" {
 		Error("ERROR: The AMPIFY_ROOT environment variable hasn't been set.\n")
 	}
-	RegisterSignalHandler(os.SIGINT, exitProcess)
-	RegisterSignalHandler(os.SIGTERM, exitProcess)
+	RegisterSignalHandler(os.SIGINT, func() { Exit(0) })
+	RegisterSignalHandler(os.SIGTERM, func() { Exit(0) })
 	go handleSignals()
 }
