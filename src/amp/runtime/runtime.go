@@ -193,7 +193,7 @@ func InitProcess(name, runPath string) {
 // Process Default Runtime Opts
 // -----------------------------------------------------------------------------
 
-func DefaultOpts(name string, opts *optparse.OptionParser, argv []string, consoleFilter logging.Filter) (bool, string) {
+func DefaultOpts(name string, opts *optparse.OptionParser, argv []string, consoleFilter logging.Filter) (bool, string, string) {
 
 	var (
 		configPath        string
@@ -227,16 +227,12 @@ func DefaultOpts(name string, opts *optparse.OptionParser, argv []string, consol
 
 	// Print the default YAML config file if the ``-g`` flag was specified.
 	if *genConfig {
-		opts.PrintDefaultConfigFile()
+		opts.PrintDefaultConfigFile(name)
 		Exit(0)
 	}
 
 	// Assume the parent directory of the config as the instance directory.
 	if len(args) >= 1 {
-		if args[0] == "help" {
-			opts.PrintUsage()
-			Exit(0)
-		}
 		configPath, err = filepath.Abs(filepath.Clean(args[0]))
 		if err != nil {
 			StandardError(err)
@@ -315,7 +311,7 @@ func DefaultOpts(name string, opts *optparse.OptionParser, argv []string, consol
 	// Initialise the process-related resources.
 	InitProcess(name, runPath)
 
-	return *debug, instanceDirectory
+	return *debug, instanceDirectory, runPath
 
 }
 
