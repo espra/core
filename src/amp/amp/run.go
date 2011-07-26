@@ -12,7 +12,7 @@ import (
 	"time"
 )
 
-func runProcess(amp, cmd, path, config string, console bool) {
+func runProcess(amp, cmd, path, config string, console bool, quit chan bool) {
 
 	var files []*os.File
 
@@ -39,9 +39,25 @@ func runProcess(amp, cmd, path, config string, console bool) {
 	if err != nil {
 		runtime.StandardError(err)
 	}
+
+	quit <- true
+
 }
 
-func run(argv []string, usage string) {
+func ensureDirectory(root, path string) (directory string) {
+	if path == "" {
+		directory = root
+	} else {
+		directory = runtime.JoinPath(root, path)
+	}
+	_, err := os.Open(directory)
+	if err != nil {
+		runtime.StandardError(err)
+	}
+	return
+}
+
+func ampRun(argv []string, usage string) {
 
 	opts := optparse.Parser(
 		"Usage: amp run <instance-path> [options]\n\n    " + usage + "\n")
@@ -49,11 +65,17 @@ func run(argv []string, usage string) {
 	profile := opts.String([]string{"--profile"}, "development",
 		"the config profile to use [development]", "NAME")
 
-	frontendPath := opts.String([]string{"--frontend"}, "frontend",
-		"the path to the frontend directory [frontend]", "PATH")
+	repoPath := opts.String([]string{"--repo"}, "repo",
+		"the path to the amp repo directory [repo]", "PATH")
+
+	storePath := opts.String([]string{"--store"}, "store",
+		"the path to the amp store directory [store]", "PATH")
 
 	nodePath := opts.String([]string{"--node"}, "node",
-		"the path to the node directory [node]", "PATH")
+		"the path to the amp node directory [node]", "PATH")
+
+	frontendPath := opts.String([]string{"--frontend"}, "frontend",
+		"the path to the amp frontend directory [frontend]", "PATH")
 
 	noConsoleLog := opts.Bool([]string{"--no-console-log"}, false,
 		"disable output to stdout/stderr")
@@ -70,44 +92,29 @@ func run(argv []string, usage string) {
 		runtime.StandardError(err)
 	}
 
-	_, err = os.Open(root)
-	if err != nil {
-		runtime.StandardError(err)
-	}
-
-	frontendDirectory := runtime.JoinPath(root, *frontendPath)
-	_, err = os.Open(frontendDirectory)
-	if err != nil {
-		runtime.StandardError(err)
-	}
-
-	nodeDirectory := runtime.JoinPath(root, *nodePath)
-	_, err = os.Open(nodeDirectory)
-	if err != nil {
-		runtime.StandardError(err)
-	}
-
 	amp, err := exec.LookPath("amp")
 	if err != nil {
 		runtime.StandardError(err)
 	}
 
-	runtime.Init()
 	config := *profile + ".yaml"
+	console := !*noConsoleLog
+	quit := make(chan bool, 1)
 
-	console := true
-	if *noConsoleLog {
-		console = false
+	runtime.Init()
+	ensureDirectory(root, "")
+
+	for _, spec := range [][]string{
+		{"repo", ensureDirectory(root, *repoPath)},
+		{"store", ensureDirectory(root, *storePath)},
+		{"node", ensureDirectory(root, *nodePath)},
+		{"frontend", ensureDirectory(root, *frontendPath)},
+	} {
+		go runProcess(amp, spec[0], spec[1], config, console, quit)
+		<-time.After(2000000000)
 	}
 
-	go runProcess(amp, "frontend", frontendDirectory, config, console)
-
-	<-time.After(2000000000)
-
-	go runProcess(amp, "node", nodeDirectory, config, console)
-
 	// Enter the wait loop for the process to be killed.
-	loopForever := make(chan bool, 1)
-	<-loopForever
+	<-quit
 
 }
