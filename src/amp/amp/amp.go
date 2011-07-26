@@ -10,17 +10,17 @@ import (
 func main() {
 
 	commands := map[string]func([]string, string){
-		"build":    build,
-		"frontend": frontend,
-		"init":     initialise,
-		"node":     node,
-		"pull":     pull,
-		"push":     push,
-		"repo":     repo,
-		"review":   review,
-		"run":      run,
-		"store":    store,
-		"test":     test,
+		"build":    ampBuild,
+		"frontend": ampFrontend,
+		"init":     ampInit,
+		"node":     ampNode,
+		"pull":     ampPull,
+		"push":     ampPush,
+		"repo":     ampRepo,
+		"review":   ampReview,
+		"run":      ampRun,
+		"store":    ampStore,
+		"test":     ampTest,
 	}
 
 	usage := map[string]string{
