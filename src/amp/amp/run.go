@@ -82,7 +82,7 @@ func ampRun(argv []string, usage string) {
 
 	args := opts.Parse(argv)
 
-	if len(args) == 0 || args[0] == "help" {
+	if len(args) == 0 {
 		opts.PrintUsage()
 		runtime.Exit(0)
 	}
