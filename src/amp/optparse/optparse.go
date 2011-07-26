@@ -453,8 +453,8 @@ func (op *OptionParser) PrintUsage() {
 	}
 }
 
-func (op *OptionParser) PrintDefaultConfigFile() {
-	fmt.Printf("# %s.yaml\n\n", os.Args[0])
+func (op *OptionParser) PrintDefaultConfigFile(name string) {
+	fmt.Printf("# %s.yaml\n\n", name)
 	for _, opt := range op.options {
 		if opt.configflag != "" {
 			fmt.Printf("%s: ", opt.configflag)
