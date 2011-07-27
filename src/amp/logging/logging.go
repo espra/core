@@ -45,6 +45,12 @@ var (
 	ConsoleFilters = make([]Filter, 0)
 )
 
+var (
+	checker  = make(chan int, 1)
+	waiter   = make(chan int, 1)
+	waitable = false
+)
+
 type Filter func(record *Record) (write bool, data []interface{})
 
 type ConsoleLogger struct {
@@ -123,7 +129,8 @@ func (logger *FileLogger) log() {
 			}
 			fmt.Fprintf(logger.file, "%v", Now)
 			for i := 0; i < argLength; i++ {
-				fmt.Fprintf(logger.file, "\xfe%v", record.Items[i])
+				message := strconv.Quote(fmt.Sprint(record.Items[i]))
+				fmt.Fprintf(logger.file, "\xfe%s", message[0:len(message)-1])
 			}
 			logger.file.Write(endOfLogRecord)
 		}
@@ -140,9 +147,18 @@ func (logger *ConsoleLogger) log() {
 	var write bool
 
 	for {
-		record = <-logger.receiver
-		items = record.Items
-		write = true
+		select {
+		case record = <-logger.receiver:
+			items = record.Items
+			write = true
+		case <-checker:
+			if len(logger.receiver) > 0 {
+				checker <- 1
+				continue
+			}
+			waiter <- 1
+			continue
+		}
 		for _, filter := range ConsoleFilters {
 			write, data := filter(record)
 			if !write {
@@ -183,11 +199,7 @@ func Info(message string, v ...interface{}) {
 	if len(v) > 0 {
 		message = fmt.Sprintf(message, v...)
 	}
-	message = strconv.Quote(message)
-	items := make([]interface{}, 2)
-	items[0] = "m"
-	items[1] = message[1 : len(message)-1]
-	record := &Record{false, items}
+	record := &Record{false, []interface{}{"m", message}}
 	for _, receiver := range InfoReceivers {
 		receiver <- record
 	}
@@ -204,11 +216,7 @@ func Error(message string, v ...interface{}) {
 	if len(v) > 0 {
 		message = fmt.Sprintf(message, v...)
 	}
-	message = strconv.Quote(message)
-	items := make([]interface{}, 2)
-	items[0] = "m"
-	items[1] = message[1 : len(message)-1]
-	record := &Record{true, items}
+	record := &Record{true, []interface{}{"m", message}}
 	for _, receiver := range ErrorReceivers {
 		receiver <- record
 	}
@@ -258,12 +266,11 @@ func FixUpLog(filename string) (pointer int) {
 }
 
 func AddFileLogger(name string, directory string, rotate int, logType int) (logger *FileLogger, err os.Error) {
-	receiver := make(chan *Record, 100)
 	logger = &FileLogger{
 		name:      name,
 		directory: directory,
 		rotate:    rotate,
-		receiver:  receiver,
+		receiver:  make(chan *Record, 100),
 	}
 	filename := logger.GetFilename(UTC)
 	pointer := FixUpLog(filename)
@@ -282,9 +289,9 @@ func AddFileLogger(name string, directory string, rotate int, logType int) (logg
 }
 
 func AddConsoleLogger() {
-	stdReceiver := make(chan *Record, 100)
+	waitable = true
 	console := &ConsoleLogger{
-		receiver: stdReceiver,
+		receiver: make(chan *Record, 100),
 	}
 	go console.log()
 	AddReceiver(console.receiver, MixedLog)
@@ -301,6 +308,13 @@ func AddReceiver(receiver chan *Record, logType int) {
 
 func AddConsoleFilter(filter Filter) {
 	ConsoleFilters = append(ConsoleFilters, filter)
+}
+
+func Wait() {
+	if waitable {
+		checker <- 1
+		<-waiter
+	}
 }
 
 func init() {
