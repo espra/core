@@ -295,6 +295,7 @@ func AddConsoleLogger() {
 	}
 	go console.log()
 	AddReceiver(console.receiver, MixedLog)
+	ConsoleFilters = append(ConsoleFilters, defaultConsoleFilter)
 }
 
 func AddReceiver(receiver chan *Record, logType int) {
@@ -308,6 +309,19 @@ func AddReceiver(receiver chan *Record, logType int) {
 
 func AddConsoleFilter(filter Filter) {
 	ConsoleFilters = append(ConsoleFilters, filter)
+}
+
+func defaultConsoleFilter(record *Record) (write bool, data []interface{}) {
+	if len(record.Items) > 0 {
+		meta := record.Items[0]
+		switch meta.(type) {
+		case string:
+			if meta.(string) == "m" {
+				return true, record.Items[1:]
+			}
+		}
+	}
+	return true, nil
 }
 
 func Wait() {
