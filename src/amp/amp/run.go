@@ -4,6 +4,7 @@
 package main
 
 import (
+	"amp/logging"
 	"amp/optparse"
 	"amp/runtime"
 	"exec"
@@ -22,6 +23,8 @@ func runProcess(amp, cmd, path, config string, console bool, quit chan bool) {
 		files = []*os.File{nil, nil, nil}
 	}
 
+	logging.Info("Running: amp %s %s", cmd, config)
+
 	process, err := os.StartProcess(
 		amp,
 		[]string{"amp", cmd, config},
@@ -35,9 +38,14 @@ func runProcess(amp, cmd, path, config string, console bool, quit chan bool) {
 		runtime.StandardError(err)
 	}
 
-	_, err = process.Wait(0)
+	waitmsg, err := process.Wait(0)
 	if err != nil {
 		runtime.StandardError(err)
+	}
+
+	if waitmsg.ExitStatus() != 0 {
+		runtime.Error("ERROR: Got %s when running `amp %s %s`\n",
+			waitmsg, cmd, config)
 	}
 
 	quit <- true
@@ -65,11 +73,8 @@ func ampRun(argv []string, usage string) {
 	profile := opts.String([]string{"--profile"}, "development",
 		"the config profile to use [development]", "NAME")
 
-	repoPath := opts.String([]string{"--repo"}, "repo",
-		"the path to the amp repo directory [repo]", "PATH")
-
-	storePath := opts.String([]string{"--store"}, "store",
-		"the path to the amp store directory [store]", "PATH")
+	masterPath := opts.String([]string{"--master"}, "master",
+		"the path to the amp master node directory [master]", "PATH")
 
 	nodePath := opts.String([]string{"--node"}, "node",
 		"the path to the amp node directory [node]", "PATH")
@@ -98,15 +103,20 @@ func ampRun(argv []string, usage string) {
 	}
 
 	config := *profile + ".yaml"
-	console := !*noConsoleLog
 	quit := make(chan bool, 1)
+
+	var console bool
+
+	if !*noConsoleLog {
+		logging.AddConsoleLogger()
+		console = true
+	}
 
 	runtime.Init()
 	ensureDirectory(root, "")
 
 	for _, spec := range [][]string{
-		{"repo", ensureDirectory(root, *repoPath)},
-		{"store", ensureDirectory(root, *storePath)},
+		{"master", ensureDirectory(root, *masterPath)},
 		{"node", ensureDirectory(root, *nodePath)},
 		{"frontend", ensureDirectory(root, *frontendPath)},
 	} {
