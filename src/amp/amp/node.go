@@ -4,9 +4,10 @@
 package main
 
 import (
+	"amp/logging"
+	"amp/master"
 	"amp/nodule"
 	"amp/optparse"
-	"amp/repo"
 	"amp/runtime"
 	"os"
 	"strings"
@@ -35,33 +36,40 @@ func ampNode(argv []string, usage string) {
 	nodulePaths := opts.StringConfig("nodule-paths", ".",
 		"comma-separated list of nodule container directories [nodule]")
 
-	repoNodes := opts.StringConfig("repo-nodes", "localhost:8060",
-		"comma-separated addresses of amp repo nodes [localhost:8060]")
+	masterNodes := opts.StringConfig("master-nodes", "localhost:8060",
+		"comma-separated addresses of amp master nodes [localhost:8060]")
 
-	repoKeyPath := opts.StringConfig("repo-key", "cert/repo.key",
-		"the path to the file containing the amp repo public key [cert/repo.key]")
+	masterKeyPath := opts.StringConfig("master-key", "cert/master.key",
+		"the path to the file containing the amp master public key [cert/master.key]")
 
 	debug, _, runPath := runtime.DefaultOpts("node", opts, argv, nil)
 
-	repoClient, err := repo.NewClient(*repoNodes, *repoKeyPath)
+	masterClient, err := master.NewClient(*masterNodes, *masterKeyPath)
 
 	if err != nil {
 		runtime.StandardError(err)
 	}
+
+	logging.AddConsoleFilter(nodule.FilterConsoleLog)
 
 	node, err := nodule.NewHost(
 		runPath, *nodeHost, *nodePort, *ctrlHost, *ctrlPort, *nodules,
-		strings.SplitN(*nodulePaths, ",", -1), repoClient)
+		strings.SplitN(*nodulePaths, ",", -1), masterClient)
 
 	if err != nil {
 		runtime.StandardError(err)
 	}
 
-	node.Run(debug)
+	err = node.Run(debug)
+	logging.Wait()
+
+	if err != nil {
+		runtime.Exit(1)
+	}
 
 }
 
-func getNodules(paths []string) (nodules [][]string) {
+func getNodules(paths []string) (nodules []*nodule.Nodule) {
 
 	if paths == nil {
 		cwd, err := os.Getwd()
@@ -71,7 +79,7 @@ func getNodules(paths []string) (nodules [][]string) {
 		paths = []string{cwd}
 	}
 
-	nodules = make([][]string, 0)
+	nodules = make([]*nodule.Nodule, 0)
 	seen := make(map[string]bool)
 
 	for _, path := range paths {
@@ -79,13 +87,42 @@ func getNodules(paths []string) (nodules [][]string) {
 		if err != nil {
 			runtime.StandardError(err)
 		}
-		for name, confpath := range data {
-			if seen[confpath] {
+		for _, nodule := range data {
+			if seen[nodule.Path] {
 				continue
 			}
-			nodules = append(nodules, []string{name, confpath})
-			seen[confpath] = true
+			nodules = append(nodules, nodule)
+			seen[nodule.Path] = true
 		}
+	}
+
+	return
+
+}
+
+func handleCommon(name, usage string, argv []string) (args []string) {
+
+	opts := optparse.Parser(
+		"Usage: amp " + name + " <path> [options]\n\n    " + usage + "\n")
+
+	profile := opts.String([]string{"--profile"}, "development",
+		"the config profile to use [development]", "NAME")
+
+	noConsoleLog := opts.Bool([]string{"--no-console-log"}, false,
+		"disable output to stdout/stderr")
+
+	args = opts.Parse(argv)
+
+	if len(args) == 0 {
+		opts.PrintUsage()
+		runtime.Exit(0)
+	}
+
+	runtime.SetProfile(*profile)
+
+	if !*noConsoleLog {
+		logging.AddConsoleLogger()
+		logging.AddConsoleFilter(nodule.FilterConsoleLog)
 	}
 
 	return
@@ -94,36 +131,54 @@ func getNodules(paths []string) (nodules [][]string) {
 
 func ampBuild(argv []string, usage string) {
 
-	opts := optparse.Parser(
-		"Usage: amp build <path> [options]\n\n    " + usage + "\n")
+	args := handleCommon("build", usage, argv)
+	status := 0
 
-	args := opts.Parse(argv)
-
-	if len(args) == 0 {
-		opts.PrintUsage()
-		runtime.Exit(0)
+	for _, nodule := range getNodules(args) {
+		err := nodule.Build()
+		if err != nil {
+			status = 1
+			break
+		}
 	}
 
-	for _, info := range getNodules(args) {
-		nodule.Build(info[0], info[1])
-	}
+	logging.Wait()
+	runtime.Exit(status)
 
 }
 
 func ampTest(argv []string, usage string) {
 
-	opts := optparse.Parser(
-		"Usage: amp test <path> [options]\n\n    " + usage + "\n")
+	args := handleCommon("test", usage, argv)
+	status := 0
 
-	args := opts.Parse(argv)
-
-	if len(args) == 0 {
-		opts.PrintUsage()
-		runtime.Exit(0)
+	for _, nodule := range getNodules(args) {
+		err := nodule.Test()
+		if err != nil {
+			status = 1
+			break
+		}
 	}
 
-	for _, info := range getNodules(args) {
-		nodule.Test(info[0], info[1])
+	logging.Wait()
+	runtime.Exit(status)
+
+}
+
+func ampReview(argv []string, usage string) {
+
+	args := handleCommon("review", usage, argv)
+	status := 0
+
+	for _, nodule := range getNodules(args) {
+		err := nodule.Review()
+		if err != nil {
+			status = 1
+			break
+		}
 	}
+
+	logging.Wait()
+	runtime.Exit(status)
 
 }
