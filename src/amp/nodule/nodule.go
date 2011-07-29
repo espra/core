@@ -5,142 +5,12 @@ package nodule
 
 import (
 	"amp/logging"
-	"amp/master"
-	"amp/runtime"
 	"amp/yaml"
-	"bytes"
 	"exec"
-	"exp/template"
 	"fmt"
-	"net"
 	"os"
 	"path/filepath"
-	"strings"
 )
-
-// Find all nodules at or within the immediate subdirectories of the given
-// ``directory``.
-func Find(directory string) (nodules []*Nodule, err os.Error) {
-
-	directory, err = filepath.Abs(filepath.Clean(directory))
-	if err != nil {
-		return
-	}
-
-	root, err := os.Open(directory)
-	if err != nil {
-		return
-	}
-
-	defer root.Close()
-
-	stat, err := root.Stat()
-	if err != nil {
-		return
-	}
-
-	if !stat.IsDirectory() {
-		return nil, fmt.Errorf("No directory found at %q.", directory)
-	}
-
-	file := filepath.Join(directory, "nodule.yaml")
-
-	fileobj, err := os.Open(file)
-	if err == nil {
-		fileobj.Close()
-		return []*Nodule{&Nodule{Name: stat.Name, Path: directory}}, nil
-	}
-
-	nodules = make([]*Nodule, 0)
-
-	for {
-		items, err := root.Readdirnames(100)
-		if len(items) == 0 {
-			if err != nil && err != os.EOF {
-				return nil, err
-			}
-			break
-		}
-		for _, name := range items {
-			path := filepath.Join(directory, name)
-			stat, err := os.Stat(path)
-			if err != nil {
-				return nil, err
-			}
-			if stat.IsDirectory() {
-				file := filepath.Join(path, "nodule.yaml")
-				fileobj, err = os.Open(file)
-				if err == nil {
-					fileobj.Close()
-					nodules = append(nodules, &Nodule{Name: name, Path: path})
-				}
-			}
-		}
-	}
-
-	return nodules, nil
-
-}
-
-type ConfigEnv struct {
-	Profile  string
-	Platform string
-	Darwin   bool
-	Linux    bool
-	FreeBSD  bool
-}
-
-var defaultEnv *ConfigEnv
-
-func GetConfigEnv() *ConfigEnv {
-	if defaultEnv != nil {
-		return defaultEnv
-	}
-	env := &ConfigEnv{
-		Profile:  runtime.Profile,
-		Platform: runtime.Platform,
-	}
-	switch runtime.Platform {
-	case "linux":
-		env.Linux = true
-	case "freebsd":
-		env.FreeBSD = true
-	case "darwin":
-		env.Darwin = true
-	}
-	defaultEnv = env
-	return env
-}
-
-func EvalStrings(name string, list []string, data interface{}) ([]string, os.Error) {
-	result := make([]string, len(list))
-	for idx, value := range list {
-		if strings.IndexRune(value, '{') == -1 {
-			result[idx] = value
-		} else {
-			tpl := template.New(name)
-			buf := &bytes.Buffer{}
-			err := tpl.Parse(value)
-			if err != nil {
-				return nil, err
-			}
-			err = tpl.Execute(buf, data)
-			if err != nil {
-				return nil, err
-			}
-			result[idx] = buf.String()
-		}
-	}
-	return result, nil
-}
-
-type Config struct {
-	Type    string
-	Build   []string
-	Run     []string
-	Test    []string
-	Depends []string
-}
 
 type Nodule struct {
 	Name string
@@ -156,8 +26,7 @@ func (nodule *Nodule) Error(process string, error os.Error) os.Error {
 }
 
 func (nodule *Nodule) ConfigError(msg string, v ...interface{}) os.Error {
-	err := fmt.Errorf(msg, v...)
-	return nodule.Error("loading config for", err)
+	return nodule.Error("loading config for", fmt.Errorf(msg, v...))
 }
 
 func (nodule *Nodule) LoadConf() (err os.Error) {
@@ -306,87 +175,66 @@ func (nodule *Nodule) Run() (err os.Error) {
 	return nodule.handleCommon("running", nodule.Conf.Run)
 }
 
-type Host struct {
-	CachePath    string
-	ControlTCP   net.Listener
-	ControlUnix  net.Listener
-	LastRef      uint64
-	Listener     net.Listener
-	Nodules      map[uint64]*Nodule
-	ReadTimeout  int64
-	WriteTimeout int64
-}
+// Find all nodules at or within the immediate subdirectories of the given
+// ``directory``.
+func Find(directory string) (nodules []*Nodule, err os.Error) {
 
-func (host *Host) Run(debug bool) (err os.Error) {
-	for {
-
-	}
-	return
-}
-
-func NewHost(runPath, hostAddress string, hostPort int, ctrlAddress string, ctrlPort int, initNodules string, nodulePaths []string, master *master.Client) (host *Host, err os.Error) {
-
-	// Create the cache directory if it doesn't exist.
-	cachePath := filepath.Join(runPath, "cache")
-	err = os.MkdirAll(cachePath, 0755)
+	directory, err = filepath.Abs(filepath.Clean(directory))
 	if err != nil {
 		return
 	}
 
-	ctrlTCP, err := net.Listen("tcp", fmt.Sprintf("%s:%d", ctrlAddress, ctrlPort))
+	root, err := os.Open(directory)
 	if err != nil {
 		return
 	}
 
-	socket := filepath.Join(runPath, "node.sock")
-	_, err = os.Stat(socket)
+	defer root.Close()
+
+	stat, err := root.Stat()
+	if err != nil {
+		return
+	}
+
+	if !stat.IsDirectory() {
+		return nil, fmt.Errorf("No directory found at %q.", directory)
+	}
+
+	file := filepath.Join(directory, "nodule.yaml")
+
+	fileobj, err := os.Open(file)
 	if err == nil {
-		err = os.Remove(socket)
-		if err != nil {
-			return
+		fileobj.Close()
+		return []*Nodule{&Nodule{Name: stat.Name, Path: directory}}, nil
+	}
+
+	nodules = make([]*Nodule, 0)
+
+	for {
+		items, err := root.Readdirnames(100)
+		if len(items) == 0 {
+			if err != nil && err != os.EOF {
+				return nil, err
+			}
+			break
 		}
-	}
-
-	ctrlUnix, err := net.Listen("unix", socket)
-	if err != nil {
-		return
-	}
-
-	listener, err := net.Listen("tcp", fmt.Sprintf("%s:%d", hostAddress, hostPort))
-	if err != nil {
-		return
-	}
-
-	host = &Host{
-		CachePath:    cachePath,
-		ControlTCP:   ctrlTCP,
-		ControlUnix:  ctrlUnix,
-		Listener:     listener,
-		ReadTimeout:  60 * 1e9,
-		WriteTimeout: 60 * 1e9,
-	}
-
-	return
-
-}
-
-func Log(msg string, args ...interface{}) {
-	if len(args) > 0 {
-		logging.InfoData("node", fmt.Sprintf(msg, args...))
-	} else {
-		logging.InfoData("node", msg)
-	}
-}
-
-func FilterConsoleLog(record *logging.Record) (write bool, data []interface{}) {
-	if len(record.Items) > 0 {
-		meta := record.Items[0]
-		switch meta.(type) {
-		case string:
-			if meta.(string) == "node" {
-				return true, record.Items[1:]
+		for _, name := range items {
+			path := filepath.Join(directory, name)
+			stat, err := os.Stat(path)
+			if err != nil {
+				return nil, err
+			}
+			if stat.IsDirectory() {
+				file := filepath.Join(path, "nodule.yaml")
+				fileobj, err = os.Open(file)
+				if err == nil {
+					fileobj.Close()
+					nodules = append(nodules, &Nodule{Name: name, Path: path})
+				}
 			}
 		}
 	}
-	return true, nil
+
+	return nodules, nil
+
 }

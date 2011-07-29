@@ -5,6 +5,10 @@ include $(GOROOT)/src/Make.inc
 
 TARG=amp/nodule
 GOFILES=\
+		app.go\
+		config.go\
+		host.go\
+		log.go\
         nodule.go\
 
 include $(GOROOT)/src/Make.pkg
