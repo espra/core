@@ -5,6 +5,9 @@ include $(GOROOT)/src/Make.inc
 
 TARG=amp/logging
 GOFILES=\
+		console.go\
+		file.go\
         logging.go\
+		network.go\
 
 include $(GOROOT)/src/Make.pkg
