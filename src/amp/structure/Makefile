@@ -5,6 +5,7 @@ include $(GOROOT)/src/Make.inc
 
 TARG=amp/structure
 GOFILES=\
-        structure.go\
+		dict.go\
+        prefixtree.go\
 
 include $(GOROOT)/src/Make.pkg
