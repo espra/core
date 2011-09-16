@@ -897,7 +897,7 @@ def cleanup_install():
 # Virgin Build Handler
 # ------------------------------------------------------------------------------
 
-VIRGIN_BUILD = False # not exists(join(LOCAL, 'bin', 'python'))
+VIRGIN_BUILD = not exists(join(LOCAL, 'bin', 'bsdiff'))
 
 def build_base_and_reload():
     load_role('base')
