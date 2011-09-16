@@ -1,6 +1,5 @@
 requires: base
 packages:
-- ampify
 - cacerts
 - go
 - makeucd
