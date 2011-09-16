@@ -9,6 +9,7 @@ import (
 	"amp/structure"
 	"bytes"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"template"
@@ -23,17 +24,35 @@ type Renderer func(*Context, Response) Response
 // -----------------------------------------------------------------------------
 
 type Context struct {
-	Args   []string
-	Kwargs map[string]string
-	Env    map[string]interface{}
-	Host   string
-	Method string
+	admin bool
+	user  string
+	xsrf  string
+
+	AjaxRequest     bool
+	Args            []string
+	Kwargs          map[string]string
+	Env             map[string]interface{}
+	Host            string
+	JSONCallback    string
+	Method          string
+	ResponseHeaders map[string]string
+	StopRendering   bool
 }
 
 func (ctx *Context) Error(message string) {
+	panic(os.NewError(message))
+}
+
+func (ctx *Context) SetResponseStatus(status int) {
+}
+
+func (ctx *Context) NotFound() {
 }
 
 func (ctx *Context) Redirect(url string) {
+}
+
+func (ctx *Context) InternalRedirect(url string) {
 }
 
 func (ctx *Context) GetCookie(key string) (value string) {
@@ -44,14 +63,31 @@ func (ctx *Context) SetCookie(key string, value string) {
 	return
 }
 
-// -----------------------------------------------------------------------------
-// Auth Provider
-// -----------------------------------------------------------------------------
+func (ctx *Context) ExpireCookie(key string) {
+	return
+}
 
-type AuthProvider interface {
-	GetUser(ctx *Context) interface{}
-	GetUsername(ctx *Context) string
-	IsAdmin(ctx *Context) bool
+func (ctx *Context) GetUser() string {
+	return ""
+}
+
+func (ctx *Context) IsAdmin() bool {
+	return false
+}
+
+func (ctx *Context) XSRF() string {
+	return ""
+}
+
+func (ctx *Context) DontCache() {
+}
+
+func (ctx *Context) ComputeURL() string {
+	return ""
+}
+
+func (ctx *Context) ComputeHostURL() string {
+	return ""
 }
 
 // -----------------------------------------------------------------------------
@@ -59,13 +95,16 @@ type AuthProvider interface {
 // -----------------------------------------------------------------------------
 
 type Service struct {
+	admin    bool
+	auth     bool
+	stream   bool
+	xsrf     bool
+	wildcard bool
+
+	// A service is effectively a handler and a list of renderers registered for
+	// a given path.
 	Handler   Handler
 	Renderers []Renderer
-	admin     bool
-	auth      bool
-	stream    bool
-	xsrf      bool
-	wildcard  bool
 }
 
 func (service *Service) AdminOnly() *Service {
@@ -79,7 +118,7 @@ func (service *Service) AuthOnly() *Service {
 	return service
 }
 
-func (service *Service) DisableXSRF() *Service {
+func (service *Service) XSRF() *Service {
 	service.xsrf = true
 	return service
 }
@@ -94,26 +133,46 @@ func (service *Service) Stream() *Service {
 // -----------------------------------------------------------------------------
 
 type TemplatingProvider interface {
+	Execute(string, interface{}) []byte
 	GenerateRenderer(string) Renderer
 }
 
 type Templating struct {
-	Debug     bool
-	Cache     map[string]*template.Template
-	Directory string
+	Debug        bool
+	Cache        map[string]*template.Template
+	Directory    string
+	FormatterMap template.FormatterMap
 }
 
-func (templating *Templating) Load(path string) (template *template.Template) {
+func (templating *Templating) Load(path string) (tpl *template.Template) {
+	tpl = template.New(templating.FormatterMap)
 	return
+}
+
+func (templating *Templating) Init(assetManifest string) {
+	templating.FormatterMap = template.FormatterMap{
+		"":     template.StringFormatter,
+		"str":  template.StringFormatter,
+		"html": template.HTMLFormatter,
+		"static": func(w io.Writer, format string, value ...interface{}) {
+			if templating.Debug {
+			} else {
+			}
+		},
+	}
 }
 
 func (templating *Templating) GenerateRenderer(path string) Renderer {
 	return func(ctx *Context, input Response) (resp Response) {
-		template := templating.Load(path)
-		buffer := &bytes.Buffer{}
-		template.Execute(buffer, input)
-		return buffer.String()
+		return templating.Execute(path, input)
 	}
+}
+
+func (templating *Templating) Execute(path string, data interface{}) []byte {
+	template := templating.Load(path)
+	buffer := &bytes.Buffer{}
+	template.Execute(buffer, data)
+	return buffer.Bytes()
 }
 
 // -----------------------------------------------------------------------------
@@ -143,7 +202,6 @@ type AppConfig struct {
 // -----------------------------------------------------------------------------
 
 type Application struct {
-	Auth       AuthProvider
 	Name       string
 	Config     *AppConfig
 	Debug      bool
@@ -176,10 +234,6 @@ func (app *Application) Register(path string, handler Handler, renderers ...inte
 	}
 	app.Services.Insert(path, service)
 	return service
-}
-
-func (app *Application) RegisterAuthProvider(provider AuthProvider) {
-	app.Auth = provider
 }
 
 func (app *Application) RegisterTemplatingProvider(provider TemplatingProvider) {
@@ -300,7 +354,7 @@ func (app *Application) EnableTemplating() *Application {
 	app.RegisterHook(func() {
 		templating.Debug = app.Debug
 		templating.Directory = runtime.JoinPath(app.Path, *templatesDirectory)
-		_ = *assetManifest
+		templating.Init(*assetManifest)
 	})
 
 	return app

@@ -5,7 +5,6 @@ PACKAGES=\
 	argo\
 	big\
 	command\
-	dict\
 	encoding\
 	livequery\
 	logging\
@@ -14,6 +13,7 @@ PACKAGES=\
 	pyksproxy\
 	refmap\
 	runtime\
+	server\
 	structure\
 	tlsconf\
 	url\
@@ -22,7 +22,6 @@ PACKAGES=\
 
 NOBENCH=\
 	command\
-	dict\
 	encoding\
 	livequery\
 	logging\
@@ -31,6 +30,7 @@ NOBENCH=\
 	pyksproxy\
 	refmap\
 	runtime\
+	server\
 	structure\
 	tlsconf\
 	url\
@@ -42,6 +42,7 @@ NOTEST=\
 	encoding\
 	logging\
 	pyksproxy\
+	server\
 	tlsconf\
 	web\
 
@@ -107,8 +108,9 @@ test: test.dirs
 argo.install: big.install
 livequery.install: refmap.install
 logging.install: encoding.install
-optparse.install: dict.install runtime.install yaml.install
+optparse.install: structure.install yaml.install
 pyksproxy.install: runtime.install
-runtime.install: command.install
+runtime.install: command.install logging.install optparse.install
+server.install: logging.install tlsconf.install
 tlsconf.install: runtime.install
 web.install: optparse.install structure.install

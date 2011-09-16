@@ -24,6 +24,9 @@ func ampNode(argv []string, usage string) {
 	nodePort := opts.IntConfig("node-port", 8050,
 		"the port to bind this node to [8050]")
 
+	nodeCert := opts.StringConfig("node-cert", "cert/node.cert",
+		"the path to this node's certificate [cert/node.cert]")
+
 	ctrlHost := opts.StringConfig("control-host", "",
 		"the host to bind the nodule control socket to")
 
@@ -39,22 +42,19 @@ func ampNode(argv []string, usage string) {
 	masterNodes := opts.StringConfig("master-nodes", "localhost:8060",
 		"comma-separated addresses of amp master nodes [localhost:8060]")
 
-	masterKeyPath := opts.StringConfig("master-key", "cert/master.key",
-		"the path to the file containing the amp master public key [cert/master.key]")
+	masterCert := opts.StringConfig("master-cert", "cert/master.cert",
+		"the path to the amp master node's certificate [cert/master.cert]")
 
-	debug, _, runPath := runtime.DefaultOpts("node", opts, argv, nil)
-
-	masterClient, err := master.NewClient(*masterNodes, *masterKeyPath)
+	debug, _, runPath := runtime.DefaultOpts("node", opts, argv, nodule.FilterConsoleLog)
+	masterClient, err := master.NewClient(*masterNodes, *masterCert)
 
 	if err != nil {
 		runtime.StandardError(err)
 	}
 
-	logging.AddConsoleFilter(nodule.FilterConsoleLog)
-
 	node, err := nodule.NewHost(
-		runPath, *nodeHost, *nodePort, *ctrlHost, *ctrlPort, *nodules,
-		strings.SplitN(*nodulePaths, ",", -1), masterClient)
+		runPath, *nodeHost, *nodePort, *nodeCert, *ctrlHost, *ctrlPort,
+		*nodules, strings.SplitN(*nodulePaths, ",", -1), masterClient)
 
 	if err != nil {
 		runtime.StandardError(err)

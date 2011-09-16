@@ -13,9 +13,10 @@ import (
 )
 
 type Nodule struct {
-	Name string
-	Path string
-	Conf *Config
+	Name    string
+	Path    string
+	Conf    *Config
+	version []byte
 }
 
 func (nodule *Nodule) Error(process string, error os.Error) os.Error {
@@ -66,7 +67,7 @@ func (nodule *Nodule) LoadConf() (err os.Error) {
 	if !ok {
 		switch typ {
 		case "go":
-			build = []string{"{{if $.FreeBSD}}gmake{{else}}make{{end}}"}
+			build = goBuild
 		default:
 			return nodule.ConfigError("Couldn't get a config value for 'build' in %s", filename)
 		}
@@ -85,7 +86,7 @@ func (nodule *Nodule) LoadConf() (err os.Error) {
 	if !ok {
 		switch typ {
 		case "go":
-			test = []string{"gotest", "-v"}
+			test = goTest
 		default:
 			return nodule.ConfigError("Couldn't get a config value for 'test' in %s", filename)
 		}
@@ -104,9 +105,22 @@ func (nodule *Nodule) LoadConf() (err os.Error) {
 	if !ok {
 		switch typ {
 		case "go":
-			depends = []string{"*.go"}
+			length := len(goDepends) + 1
+			depends = make([]string, length)
+			copy(depends, goDepends)
+			depends[length-1] = nodule.Name
 		default:
-			depends = make([]string, 0)
+			depends = defaultDepends
+		}
+	}
+
+	ignore, ok := conf.GetStringList("ignore")
+	if !ok {
+		switch typ {
+		case "go":
+			ignore = goIgnore
+		default:
+			ignore = defaultIgnore
 		}
 	}
 
@@ -116,6 +130,7 @@ func (nodule *Nodule) LoadConf() (err os.Error) {
 		Run:     run,
 		Test:    test,
 		Depends: depends,
+		Ignore:  ignore,
 	}
 
 	return
@@ -152,15 +167,6 @@ func (nodule *Nodule) Build() (err os.Error) {
 	return nodule.handleCommon("building", nodule.Conf.Build)
 }
 
-func (nodule *Nodule) Test() (err os.Error) {
-	err = nodule.Build()
-	if err != nil {
-		return
-	}
-	Log("Testing the %s nodule: %s", nodule.Name, nodule.Path)
-	return nodule.handleCommon("testing", nodule.Conf.Test)
-}
-
 func (nodule *Nodule) Review() (err os.Error) {
 	err = nodule.Test()
 	if err != nil {
@@ -173,6 +179,28 @@ func (nodule *Nodule) Review() (err os.Error) {
 func (nodule *Nodule) Run() (err os.Error) {
 	Log("Running the %s nodule: %s", nodule.Name, nodule.Path)
 	return nodule.handleCommon("running", nodule.Conf.Run)
+}
+
+func (nodule *Nodule) Test() (err os.Error) {
+	err = nodule.Build()
+	if err != nil {
+		return
+	}
+	Log("Testing the %s nodule: %s", nodule.Name, nodule.Path)
+	return nodule.handleCommon("testing", nodule.Conf.Test)
+}
+
+func (nodule *Nodule) Version() (version []byte, err os.Error) {
+	if nodule.version != nil {
+		return nodule.version, nil
+	}
+	if nodule.Conf == nil {
+		err = nodule.LoadConf()
+		if err != nil {
+			return
+		}
+	}
+	return
 }
 
 // Find all nodules at or within the immediate subdirectories of the given

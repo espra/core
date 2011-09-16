@@ -1,12 +1,11 @@
-# Public Domain (-) 2010-2011 The Ampify Authors.
+# Public Domain (-) 2011 The Ampify Authors.
 # See the Ampify UNLICENSE file for details.
 
 include $(GOROOT)/src/Make.inc
 
-TARG=amp/server
+TARG=amp
 GOFILES=\
-        frontend.go\
-        http.go\
-		log.go\
+        amp.go\
+		header.go\
 
 include $(GOROOT)/src/Make.pkg

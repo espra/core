@@ -6,7 +6,7 @@
 package optparse
 
 import (
-	"amp/dict"
+	"amp/structure"
 	"amp/yaml"
 	"exec"
 	"fmt"
@@ -642,7 +642,7 @@ func Subcommands(name, version string, commands map[string]func([]string, string
 		}
 	}
 
-	usageKeys := dict.SortedKeys(commandsUsage)
+	usageKeys := structure.SortedKeys(commandsUsage)
 	padding := 10
 
 	for _, key := range usageKeys {

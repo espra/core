@@ -30,6 +30,7 @@ type ConfigEnv struct {
 
 var defaultEnv *ConfigEnv
 
+// By the time this gets called, ``runtime.Profile`` needs to have been set.
 func GetConfigEnv() *ConfigEnv {
 	if defaultEnv != nil {
 		return defaultEnv
@@ -71,3 +72,22 @@ func EvalStrings(name string, list []string, data interface{}) ([]string, os.Err
 	}
 	return result, nil
 }
+
+// -----------------------------------------------------------------------------
+// Default Configs
+// -----------------------------------------------------------------------------
+
+var (
+	defaultDepends = []string{}
+	defaultIgnore  = []string{
+		".git", ".gitignore", ".hg", ".hgignore", "*#*", "*~"}
+)
+
+var (
+	goBuild   = []string{"{{if $.FreeBSD}}gmake{{else}}make{{end}}"}
+	goTest    = []string{"gotest", "-v"}
+	goDepends = []string{"*.go", "Makefile"}
+	goIgnore  = []string{
+		".git", ".gitignore", ".hg", ".hgignore", "*#*", "*~",
+		"*.5", "*.6", "*.8", "*.a", "*.out", "_testmain.go"}
+)

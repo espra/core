@@ -27,6 +27,7 @@ const Platform = syscall.OS
 
 var (
 	AmpifyRoot string
+	Profile    string
 	CPUCount   int
 )
 
@@ -161,6 +162,14 @@ func JoinPath(directory, path string) string {
 }
 
 // -----------------------------------------------------------------------------
+// Process Profile
+// -----------------------------------------------------------------------------
+
+func SetProfile(profile string) {
+	Profile = profile
+}
+
+// -----------------------------------------------------------------------------
 // Process Initialisation
 // -----------------------------------------------------------------------------
 
@@ -242,6 +251,7 @@ func DefaultOpts(name string, opts *optparse.OptionParser, argv []string, consol
 			StandardError(err)
 		}
 		instanceDirectory, _ = filepath.Split(configPath)
+		Profile = strings.Split(filepath.Base(configPath), ".")[0]
 	} else {
 		opts.PrintUsage()
 		Exit(0)

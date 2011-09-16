@@ -4,7 +4,6 @@
 package amp
 
 import (
-	"fmt"
 	"os"
 	"reflect"
 	"unicode"
@@ -61,7 +60,6 @@ func (header Header) Get(key string, value interface{}) (err os.Error) {
 		if et.Kind() == reflect.Struct && rt.Kind() == reflect.Map && rt.Key().Kind() == reflect.String && rt.Elem().Kind() == reflect.Interface {
 			return setValue(rv, ev)
 		}
-		fmt.Printf("TYPE: %v\n", rt)
 		return ErrTypeMismatch
 	}
 	return ErrNotFound

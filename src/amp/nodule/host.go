@@ -31,7 +31,7 @@ func (host *Host) Run(debug bool) (err os.Error) {
 	return
 }
 
-func NewHost(runPath, hostAddress string, hostPort int, ctrlAddress string, ctrlPort int, initNodules string, nodulePaths []string, master *master.Client) (host *Host, err os.Error) {
+func NewHost(runPath, hostAddress string, hostPort int, hostKey string, ctrlAddress string, ctrlPort int, initNodules string, nodulePaths []string, master *master.Client) (host *Host, err os.Error) {
 
 	// Create the cache directory if it doesn't exist.
 	cachePath := filepath.Join(runPath, "cache")

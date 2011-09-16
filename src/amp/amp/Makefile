@@ -7,8 +7,9 @@ TARG=amp
 GOFILES=\
 	amp.go\
 	frontend.go\
+	init.go\
+	master.go\
 	node.go\
-	repo.go\
 	run.go\
 
 include $(GOROOT)/src/Make.cmd
