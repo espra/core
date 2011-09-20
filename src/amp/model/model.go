@@ -1,15 +1,10 @@
 // Public Domain (-) 2011 The Ampify Authors.
 // See the Ampify UNLICENSE file for details.
 
-package db
-
-import (
-	"appengine"
-	"appengine/datastore"
-)
+package model
 
 type Item struct { /* Parent: User */
-	Created   datastore.Time
+	Created   int64
 	Head      bool
 	Index     [][]byte /* From, By, []To, []About, Aspect, Refs, Unpacked Value, Words in Message */
 	Message   []byte
@@ -32,8 +27,8 @@ type User struct {
 	AvatarType int32  /* Gravatar, Facebook, etc. */
 	Email      string
 	Externals  [][]byte
-	Created    datastore.Time
-	Modified   datastore.Time
+	Created    int64
+	Modified   int64
 	Passphrase []byte
 	Phone      []byte
 	PrefNick   []byte
@@ -43,10 +38,10 @@ type User struct {
 }
 
 type ExternalAccount struct { /* Parent: User, Key: Domain-UserID */
-	Created     datastore.Time
+	Created     int64
 	Domain      string /* twitter, facebook, etc. */
 	DisplayName string
-	Modified    datastore.Time
+	Modified    int64
 	Scope       int32 /* read, read/write, etc. */
 	Token       []byte
 	Type        int32 /* OpenID, OAuth 1.0, OAuth 2.0, etc. */
@@ -64,7 +59,7 @@ type ExternalConnections struct {  /* Parent: ExternalAccount */
 }
 
 type UserStatus struct {
-	Payment
+	Payment int32
 }
 
 type OAuth struct {
