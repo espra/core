@@ -3,8 +3,8 @@
 
 include $(GOROOT)/src/Make.inc
 
-TARG=amp/db
+TARG=foo
 GOFILES=\
-		db.go\
+		client.go\
 
-include $(GOROOT)/src/Make.pkg
+include $(GOROOT)/src/Make.cmd
