@@ -102,6 +102,17 @@ go_install_path = join(LOCAL, 'go')
 def before_go_install():
     if exists(go_install_path):
         rmtree(go_install_path)
+    from commands import getoutput
+    version = "%s %s\n" % (
+        getoutput(
+            'git describe --tags --abbrev=0 --match '
+            '"[wr]e[el][ke][la][ys][e.][2.][02r][0-9]*"'
+            ),
+        getoutput("git describe --always --abbrev=8 --dirty=+")
+        )
+    version_file = open('VERSION', 'w')
+    version_file.write(version)
+    version_file.close()
     chdir('src')
 
 def after_go_install():
