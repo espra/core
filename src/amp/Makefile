@@ -4,12 +4,18 @@
 PACKAGES=\
 	argo\
 	big\
+	crypto\
 	command\
+	db\
 	encoding\
 	livequery\
 	logging\
 	lzf\
+	master\
+	model\
+	nodule\
 	optparse\
+	protocol\
 	pyksproxy\
 	refmap\
 	runtime\
@@ -64,40 +70,55 @@ TEST=\
 
 all: install
 
-bench.dirs: $(addsuffix .bench, $(BENCH))
-clean.dirs: $(addsuffix .clean, $(PACKAGES))
-nuke.dirs: $(addsuffix .nuke, $(PACKAGES))
-install.dirs: $(addsuffix .install, $(PACKAGES))
-test.dirs: $(addsuffix .test, $(TEST))
+bench.dirs: pkgroot.bench $(addsuffix .bench, $(BENCH))
+clean.dirs: pkgroot.clean $(addsuffix .clean, $(PACKAGES))
+nuke.dirs: pkgroot.nuke $(addsuffix .nuke, $(PACKAGES))
+install.dirs: pkgroot.install $(addsuffix .install, $(PACKAGES))
+test.dirs: pkgroot.test $(addsuffix .test, $(TEST))
 
 %.bench:
-	+cd $* && $(make) bench
+	+cd pkg/$* && $(make) bench
 
 %.clean:
-	+cd $* && $(make) clean
+	+cd pkg/$* && $(make) clean
 
 %.install:
-	+cd $* && $(make) install
+	+cd pkg/$* && $(make) install
 
 %.nuke:
-	+cd $* && $(make) nuke
+	+cd pkg/$* && $(make) nuke
 
 %.test:
-	+cd $* && $(make) test
+	+cd pkg/$* && $(make) test
+
+pkgroot.bench:
+	+cd pkg && $(make) bench
+
+pkgroot.clean:
+	+cd pkg && $(make) clean
+
+pkgroot.install:
+	+cd pkg && $(make) install
+
+pkgroot.nuke:
+	+cd pkg && $(make) nuke
+
+pkgroot.test:
+	+cd pkg && $(make) test
 
 bench: bench.dirs
 
 clean: clean.dirs
-	@cd amp && $(make) clean
+	@cd cmd/amp && $(make) clean
 
 distclean: nuke
 
 nuke: nuke.dirs
 	@echo rm -rf $(QUOTED_GOROOT)/pkg/amp
-	@cd amp && $(make) nuke
+	@cd cmd/amp && $(make) nuke
 
 install: install.dirs
-	@cd amp && $(make) install
+	@cd cmd/amp && $(make) install
 
 test: test.dirs
 
