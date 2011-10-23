@@ -1,7 +1,7 @@
 // Public Domain (-) 2011 The Ampify Authors.
 // See the Ampify UNLICENSE file for details.
 
-package amp
+package rpc
 
 import (
 	"os"
@@ -10,18 +10,16 @@ import (
 	"utf8"
 )
 
-type Error struct {
-	Message string
-}
+type Error string
 
-func (err *Error) String() string {
-	return err.Message
+func (err Error) String() string {
+	return string(err)
 }
 
 var (
-	ErrNotFound     os.Error = &Error{"amp header: key not found"}
-	ErrPtrExpected  os.Error = &Error{"amp header: expected pointer type"}
-	ErrTypeMismatch os.Error = &Error{"amp header: type mismatch"}
+	ErrNotFound     os.Error = Error("amp header: key not found")
+	ErrPtrExpected  os.Error = Error("amp header: expected pointer type")
+	ErrTypeMismatch os.Error = Error("amp header: type mismatch")
 )
 
 type Header map[string]interface{}
@@ -137,7 +135,7 @@ func setValue(src, dst reflect.Value) (err os.Error) {
 					}
 					field.Set(sl)
 				default:
-					return &Error{"amp header: unsupported type: " + ft.Kind().String()}
+					return Error("amp header: unsupported type: " + ft.Kind().String())
 				}
 			}
 		} else if ft.Kind() == reflect.Struct && vt.Kind() == reflect.Map && vt.Key().Kind() == reflect.String && vt.Elem().Kind() == reflect.Interface {
