@@ -4,8 +4,8 @@
 package url
 
 import (
-	"http"
 	"os"
+	"url"
 )
 
 func Quote(s string) string {
@@ -108,7 +108,7 @@ func urlUnescape(s string, doPlus bool) (string, os.Error) {
 				if len(s) > 3 {
 					s = s[0:3]
 				}
-				return "", http.URLEscapeError(s)
+				return "", url.EscapeError(s)
 			}
 			i += 3
 		case '+':
