@@ -6,6 +6,5 @@ include $(GOROOT)/src/Make.inc
 TARG=amp
 GOFILES=\
         amp.go\
-		header.go\
 
 include $(GOROOT)/src/Make.pkg
