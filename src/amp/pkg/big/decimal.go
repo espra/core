@@ -362,7 +362,7 @@ func (x *Int) IsZero() bool {
 	return len(x.abs) == 0
 }
 
-func (x *Int) RawNeg() bool {
+func (x *Int) IsNegative() bool {
 	return x.neg
 }
 
