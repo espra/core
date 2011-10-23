@@ -5,166 +5,135 @@ package argo
 
 import (
 	"amp/big"
+	"amp/rpc"
+	"fmt"
 	"io"
 	"os"
 	"strings"
+)
+
+var (
+	String      = []byte{0}
+	Int         = []byte{1}
+	Int64       = []byte{2}
+	True        = []byte{3}
+	False       = []byte{4}
+	StringSlice = []byte{5}
+	Dict        = []byte{6}
+	Header      = []byte{7}
+	ByteSlice   = []byte{8}
+	Slice       = []byte{9}
+	BigDecimal  = []byte{10}
 )
 
 type Encoder struct {
 	w io.Writer
 }
 
-func (enc *Encoder) WriteInt(value int) os.Error {
-	data := make([]byte, 0)
-	for {
-		leftBits := value & 127
-		value >>= 7
-		if value > 0 {
-			leftBits += 128
-		}
-		data = append(data, byte(leftBits))
-		if value == 0 {
-			break
-		}
-	}
-	_, err := enc.w.Write(data)
-	return err
-}
+func (enc *Encoder) Encode(v interface{}) (err os.Error) {
 
-func (enc *Encoder) WriteString(value string) (err os.Error) {
-	err = enc.WriteInt(len(value))
-	if err != nil {
-		return
-	}
-	_, err = enc.w.Write([]byte(value))
-	return
-}
-
-func (enc *Encoder) WriteStringList(value []string) (err os.Error) {
-	err = enc.WriteInt(len(value))
-	if err != nil {
-		return
-	}
-	for _, item := range value {
-		err = enc.WriteInt(len(item))
+	switch value := v.(type) {
+	case *big.Decimal:
+		_, err = enc.w.Write(BigDecimal)
 		if err != nil {
 			return
 		}
-		_, err = enc.w.Write([]byte(item))
+		return enc.WriteBigDecimal(value)
+	case bool:
+		if value {
+			_, err = enc.w.Write(True)
+		} else {
+			_, err = enc.w.Write(False)
+		}
 		if err != nil {
 			return
 		}
-	}
-	return nil
-}
-
-func pow(x, y int64) (z int64) {
-	var i int64
-	z = 1
-	for i = 0; i < y; i++ {
-		z = z * x
-	}
-	return z
-}
-
-func (enc *Encoder) WriteInt64(value int64) (err os.Error) {
-	if value == 0 {
-		_, err = enc.w.Write(zero)
 		return
-	}
-	if value > 0 {
-		if value < magicNumber {
-			encoding := []byte{'\x01', '\x80', '\x01', '\x01'}
-			div, mod := value/255, value%255
-			encoding[3] = byte(mod) + 1
-			if div > 0 {
-				div, mod = div/255, div%255
-				encoding[2] = byte(mod) + 1
-				if div > 0 {
-					encoding[1] = byte(div) + 128
-				}
-			}
-			_, err = enc.w.Write(encoding)
+	case []byte:
+		_, err = enc.w.Write(ByteSlice)
+		if err != nil {
 			return
 		}
-		value -= magicNumber
-		encoding := []byte{'\x01', '\xff'}
-		lead, left := value/255, value%255
-		var n int64 = 1
-		for (lead / pow(253, n)) > 0 {
-			n += 1
+		return enc.WriteByteSlice(value)
+	case []interface{}:
+		_, err = enc.w.Write(Slice)
+		if err != nil {
+			return
 		}
-		encoding = append(encoding, byte(n)+1, '\xff')
-		leadChars := make([]byte, 0)
-		for {
-			var mod int64
-			if lead == 0 {
-				break
-			}
-			lead, mod = lead/253, lead%253
-			leadChars = append(leadChars, byte(mod)+2)
+		return enc.WriteSlice(value)
+	case int:
+		_, err = enc.w.Write(Int)
+		if err != nil {
+			return
 		}
-		lenLead := len(leadChars)
-		if lenLead > 0 {
-			for i := lenLead - 1; i >= 0; i-- {
-				encoding = append(encoding, leadChars[i])
-			}
+		return enc.WriteInt(value)
+	case int64:
+		_, err = enc.w.Write(Int64)
+		if err != nil {
+			return
 		}
-		if left > 0 {
-			encoding = append(encoding, '\x01', byte(left))
+		return enc.WriteInt64(value)
+	case map[string]interface{}:
+		_, err = enc.w.Write(Dict)
+		if err != nil {
+			return
 		}
-		_, err = enc.w.Write(encoding)
+		return enc.WriteDict(value)
+	case rpc.Header:
+		_, err = enc.w.Write(Header)
+		if err != nil {
+			return
+		}
+		return enc.WriteDict(value)
+	case string:
+		_, err = enc.w.Write(String)
+		if err != nil {
+			return
+		}
+		return enc.WriteString(value)
+	case []string:
+		_, err = enc.w.Write(StringSlice)
+		if err != nil {
+			return
+		}
+		return enc.WriteStringSlice(value)
+	}
+
+	msg := fmt.Sprintf("argo: encoding unknown type: %s", v)
+	panic(msg)
+
+}
+
+func (enc *Encoder) WriteBigDecimal(value *big.Decimal) (err os.Error) {
+	_, err = enc.w.Write([]byte{'\x01'})
+	if err != nil {
 		return
 	}
-	value = -value
-	if value < magicNumber {
-		encoding := []byte{'\x01', '\x7f', '\xfe', '\xfe'}
-		div, mod := value/255, value%255
-		encoding[3] = 254 - byte(mod)
-		if div > 0 {
-			div, mod = div/255, div%255
-			encoding[2] = 254 - byte(mod)
-			if div > 0 {
-				encoding[1] = 127 - byte(div)
-			}
-		}
-		_, err = enc.w.Write(encoding)
+	left, right := value.Components()
+	err = enc.writeBigInt(left, bigintMagicNumber1)
+	if err != nil {
 		return
 	}
-	value -= magicNumber
-	encoding := []byte{'\x01', '\x00'}
-	lead, left := value/254, value%254
-	var n int64 = 1
-	for (lead / pow(253, n)) > 0 {
-		n += 1
-	}
-	encoding = append(encoding, 254-byte(n), '\x00')
-	leadChars := make([]byte, 0)
-	for {
-		var mod int64
-		if lead == 0 {
-			break
+	if right != nil {
+		if left.IsNegative() {
+			_, err = enc.w.Write([]byte{'\xff'})
+		} else {
+			_, err = enc.w.Write([]byte{'\x00'})
 		}
-		lead, mod = lead/253, lead%253
-		leadChars = append(leadChars, 253-byte(mod))
-	}
-	lenLead := len(leadChars)
-	if lenLead > 0 {
-		for i := lenLead - 1; i >= 0; i-- {
-			encoding = append(encoding, leadChars[i])
+		if err != nil {
+			return
 		}
+		return enc.writeBigInt(right, bigintMagicNumber2)
 	}
-	if lenLead > 1 {
-		encoding = append(encoding, '\x00')
-	}
-	encoding = append(encoding, '\xfe')
-	if left > 0 {
-		encoding = append(encoding, 254-byte(left))
-	} else {
-		encoding = append(encoding, '\xfe')
-	}
-	_, err = enc.w.Write(encoding)
 	return
+}
+
+func (enc *Encoder) WriteBigInt(value *big.Int) (err os.Error) {
+	_, err = enc.w.Write([]byte{'\x01'})
+	if err != nil {
+		return
+	}
+	return enc.writeBigInt(value, bigintMagicNumber1)
 }
 
 func (enc *Encoder) writeBigInt(value *big.Int, cutoff *big.Int) (err os.Error) {
@@ -275,35 +244,174 @@ func (enc *Encoder) writeBigInt(value *big.Int, cutoff *big.Int) (err os.Error) 
 	return
 }
 
-func (enc *Encoder) WriteBigInt(value *big.Int) (err os.Error) {
-	_, err = enc.w.Write([]byte{'\x01'})
+func (enc *Encoder) WriteByteSlice(value []byte) (err os.Error) {
+	err = enc.WriteInt(len(value))
 	if err != nil {
 		return
 	}
-	return enc.writeBigInt(value, bigintMagicNumber1)
+	_, err = enc.w.Write(value)
+	return
 }
 
-func (enc *Encoder) WriteBigDecimal(value *big.Decimal) (err os.Error) {
-	_, err = enc.w.Write([]byte{'\x01'})
+func (enc *Encoder) WriteDict(value map[string]interface{}) (err os.Error) {
+	err = enc.WriteInt(len(value))
 	if err != nil {
 		return
 	}
-	left, right := value.Components()
-	err = enc.writeBigInt(left, bigintMagicNumber1)
-	if err != nil {
-		return
-	}
-	if right != nil {
-		if left.IsNegative() {
-			_, err = enc.w.Write([]byte{'\xff'})
-		} else {
-			_, err = enc.w.Write([]byte{'\x00'})
-		}
+	for k, v := range value {
+		err = enc.WriteInt(len(k))
 		if err != nil {
 			return
 		}
-		return enc.writeBigInt(right, bigintMagicNumber2)
+		_, err = enc.w.Write([]byte(k))
+		if err != nil {
+			return
+		}
+		err = enc.Encode(v)
+		if err != nil {
+			return
+		}
 	}
+	return nil
+}
+
+func (enc *Encoder) WriteInt(value int) os.Error {
+	data := make([]byte, 0)
+	for {
+		leftBits := value & 127
+		value >>= 7
+		if value > 0 {
+			leftBits += 128
+		}
+		data = append(data, byte(leftBits))
+		if value == 0 {
+			break
+		}
+	}
+	_, err := enc.w.Write(data)
+	return err
+}
+
+func (enc *Encoder) WriteInt64(value int64) (err os.Error) {
+	if value == 0 {
+		_, err = enc.w.Write(zero)
+		return
+	}
+	if value > 0 {
+		if value < magicNumber {
+			encoding := []byte{'\x01', '\x80', '\x01', '\x01'}
+			div, mod := value/255, value%255
+			encoding[3] = byte(mod) + 1
+			if div > 0 {
+				div, mod = div/255, div%255
+				encoding[2] = byte(mod) + 1
+				if div > 0 {
+					encoding[1] = byte(div) + 128
+				}
+			}
+			_, err = enc.w.Write(encoding)
+			return
+		}
+		value -= magicNumber
+		encoding := []byte{'\x01', '\xff'}
+		lead, left := value/255, value%255
+		var n int64 = 1
+		for (lead / pow(253, n)) > 0 {
+			n += 1
+		}
+		encoding = append(encoding, byte(n)+1, '\xff')
+		leadChars := make([]byte, 0)
+		for {
+			var mod int64
+			if lead == 0 {
+				break
+			}
+			lead, mod = lead/253, lead%253
+			leadChars = append(leadChars, byte(mod)+2)
+		}
+		lenLead := len(leadChars)
+		if lenLead > 0 {
+			for i := lenLead - 1; i >= 0; i-- {
+				encoding = append(encoding, leadChars[i])
+			}
+		}
+		if left > 0 {
+			encoding = append(encoding, '\x01', byte(left))
+		}
+		_, err = enc.w.Write(encoding)
+		return
+	}
+	value = -value
+	if value < magicNumber {
+		encoding := []byte{'\x01', '\x7f', '\xfe', '\xfe'}
+		div, mod := value/255, value%255
+		encoding[3] = 254 - byte(mod)
+		if div > 0 {
+			div, mod = div/255, div%255
+			encoding[2] = 254 - byte(mod)
+			if div > 0 {
+				encoding[1] = 127 - byte(div)
+			}
+		}
+		_, err = enc.w.Write(encoding)
+		return
+	}
+	value -= magicNumber
+	encoding := []byte{'\x01', '\x00'}
+	lead, left := value/254, value%254
+	var n int64 = 1
+	for (lead / pow(253, n)) > 0 {
+		n += 1
+	}
+	encoding = append(encoding, 254-byte(n), '\x00')
+	leadChars := make([]byte, 0)
+	for {
+		var mod int64
+		if lead == 0 {
+			break
+		}
+		lead, mod = lead/253, lead%253
+		leadChars = append(leadChars, 253-byte(mod))
+	}
+	lenLead := len(leadChars)
+	if lenLead > 0 {
+		for i := lenLead - 1; i >= 0; i-- {
+			encoding = append(encoding, leadChars[i])
+		}
+	}
+	if lenLead > 1 {
+		encoding = append(encoding, '\x00')
+	}
+	encoding = append(encoding, '\xfe')
+	if left > 0 {
+		encoding = append(encoding, 254-byte(left))
+	} else {
+		encoding = append(encoding, '\xfe')
+	}
+	_, err = enc.w.Write(encoding)
+	return
+}
+
+func (enc *Encoder) WriteSlice(value []interface{}) (err os.Error) {
+	err = enc.WriteInt(len(value))
+	if err != nil {
+		return
+	}
+	for _, item := range value {
+		err = enc.Encode(item)
+		if err != nil {
+			return
+		}
+	}
+	return
+}
+
+func (enc *Encoder) WriteString(value string) (err os.Error) {
+	err = enc.WriteInt(len(value))
+	if err != nil {
+		return
+	}
+	_, err = enc.w.Write([]byte(value))
 	return
 }
 
@@ -320,6 +428,33 @@ func (enc *Encoder) WriteStringNumber(value string) (err os.Error) {
 		return Error("Couldn't create an big.Int representation of " + value)
 	}
 	return enc.WriteBigInt(number)
+}
+
+func (enc *Encoder) WriteStringSlice(value []string) (err os.Error) {
+	err = enc.WriteInt(len(value))
+	if err != nil {
+		return
+	}
+	for _, item := range value {
+		err = enc.WriteInt(len(item))
+		if err != nil {
+			return
+		}
+		_, err = enc.w.Write([]byte(item))
+		if err != nil {
+			return
+		}
+	}
+	return nil
+}
+
+func pow(x, y int64) (z int64) {
+	var i int64
+	z = 1
+	for i = 0; i < y; i++ {
+		z = z * x
+	}
+	return z
 }
 
 func NewEncoder(w io.Writer) *Encoder {

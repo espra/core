@@ -52,7 +52,7 @@ func (dec *Decoder) ReadString() (value string, err os.Error) {
 	return string(item), err
 }
 
-func (dec *Decoder) ReadStringList() (value []string, err os.Error) {
+func (dec *Decoder) ReadStringSlice() (value []string, err os.Error) {
 	arraySize, err := dec.ReadInt()
 	if err != nil {
 		return
