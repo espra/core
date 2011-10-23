@@ -6,5 +6,7 @@ include $(GOROOT)/src/Make.inc
 TARG=amp/argo
 GOFILES=\
         argo.go\
+        decode.go\
+        encode.go\
 
 include $(GOROOT)/src/Make.pkg
