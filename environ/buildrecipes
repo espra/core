@@ -327,6 +327,19 @@ RECIPES['readline'] = [{
     }]
 
 # ------------------------------------------------------------------------------
+# setuptools
+# ------------------------------------------------------------------------------
+
+RECIPES['setuptools'] = [{
+    'type': 'python',
+    'version': '0.6c11',
+    'hash': '534d31d2551b4be8040127969db9aa7236b6ec58148293d5ebb476c8fee2c408',
+    'commands': [
+        [sys.executable, 'setup.py', 'install']
+        ]
+    }]
+
+# ------------------------------------------------------------------------------
 # tavutil
 # ------------------------------------------------------------------------------
 
@@ -341,6 +354,7 @@ TAVUTIL_SO_FILES = [
 
 RECIPES['tavutil'] = [{
     'type': 'makelike',
+    'requires': ['setuptools'],
     'before': lambda: chdir(TAVUTIL_ROOT),
     'depends': TAVUTIL_PYX_FILES + [join(TAVUTIL_ROOT, 'setup.py')],
     'outputs': TAVUTIL_SO_FILES,
