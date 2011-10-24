@@ -8,6 +8,21 @@ import (
 )
 
 const (
+	String = iota
+	Int
+	Int64
+	True
+	False
+	StringSlice
+	Dict
+	Header
+	ByteSlice
+	Slice
+	BigDecimal
+	BigInt
+)
+
+const (
 	magicNumber int64 = 8258175
 )
 
