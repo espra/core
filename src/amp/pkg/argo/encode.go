@@ -8,23 +8,47 @@ import (
 	"amp/rpc"
 	"fmt"
 	"io"
+	"math"
 	"os"
+	"reflect"
 	"strings"
 )
 
+const maxInt32 = 2147483647
+
 var (
+	encAny         = []byte{Any}
 	encBigDecimal  = []byte{BigDecimal}
 	encBigInt      = []byte{BigInt}
+	encBool        = []byte{Bool}
+	encBoolFalse   = []byte{BoolFalse}
+	encBoolTrue    = []byte{BoolTrue}
+	encByte        = []byte{Byte}
 	encByteSlice   = []byte{ByteSlice}
+	encComplex64   = []byte{Complex64}
+	encComplex128  = []byte{Complex128}
 	encDict        = []byte{Dict}
-	encFalse       = []byte{False}
+	encDictAny     = []byte{Dict, Any}
+	encFloat32     = []byte{Float32}
+	encFloat64     = []byte{Float64}
 	encHeader      = []byte{Header}
-	encInt         = []byte{Int}
+	encInt32       = []byte{Int32}
 	encInt64       = []byte{Int64}
+	encItem        = []byte{Item}
+	encMap         = []byte{Map}
+	encNil         = []byte{Nil}
 	encSlice       = []byte{Slice}
+	encSliceAny    = []byte{Slice, Any}
 	encString      = []byte{String}
 	encStringSlice = []byte{StringSlice}
-	encTrue        = []byte{True}
+	encUint32      = []byte{Uint32}
+	encUint64      = []byte{Uint64}
+)
+
+var (
+	anyInterfaceType = reflect.TypeOf(interface{}(nil))
+	byteSliceType    = reflect.TypeOf([]byte(nil))
+	stringSliceType  = reflect.TypeOf([]string(nil))
 )
 
 type Encoder struct {
@@ -32,82 +56,482 @@ type Encoder struct {
 }
 
 func (enc *Encoder) Encode(v interface{}) (err os.Error) {
+	return enc.encode(v, true)
+}
+
+func (enc *Encoder) encode(v interface{}, typeinfo bool) (err os.Error) {
 
 	switch value := v.(type) {
 	case *big.Decimal:
-		_, err = enc.w.Write(encBigDecimal)
-		if err != nil {
-			return
+		if typeinfo {
+			_, err = enc.w.Write(encBigDecimal)
+			if err != nil {
+				return
+			}
 		}
 		return enc.WriteBigDecimal(value)
 	case *big.Int:
-		_, err = enc.w.Write(encBigInt)
-		if err != nil {
-			return
+		if typeinfo {
+			_, err = enc.w.Write(encBigInt)
+			if err != nil {
+				return
+			}
 		}
 		return enc.WriteBigInt(value)
 	case bool:
 		if value {
-			_, err = enc.w.Write(encTrue)
+			_, err = enc.w.Write(encBoolTrue)
 		} else {
-			_, err = enc.w.Write(encFalse)
-		}
-		if err != nil {
-			return
+			_, err = enc.w.Write(encBoolFalse)
 		}
 		return
+	case byte:
+		if typeinfo {
+			_, err = enc.w.Write(encByte)
+			if err != nil {
+				return
+			}
+		}
+		_, err = enc.w.Write([]byte{value})
+		return
 	case []byte:
-		_, err = enc.w.Write(encByteSlice)
-		if err != nil {
-			return
+		if typeinfo {
+			_, err = enc.w.Write(encByteSlice)
+			if err != nil {
+				return
+			}
 		}
 		return enc.WriteByteSlice(value)
+	case complex64:
+		if typeinfo {
+			_, err = enc.w.Write(encComplex64)
+			if err != nil {
+				return
+			}
+		}
+		err = enc.WriteFloat32(real(value))
+		if err != nil {
+			return err
+		}
+		return enc.WriteFloat32(imag(value))
+	case complex128:
+		if typeinfo {
+			_, err = enc.w.Write(encComplex128)
+			if err != nil {
+				return
+			}
+		}
+		err = enc.WriteFloat64(real(value))
+		if err != nil {
+			return err
+		}
+		return enc.WriteFloat64(imag(value))
+	case float32:
+		if typeinfo {
+			_, err = enc.w.Write(encFloat32)
+			if err != nil {
+				return
+			}
+		}
+		return enc.WriteFloat32(value)
+	case float64:
+		if typeinfo {
+			_, err = enc.w.Write(encFloat32)
+			if err != nil {
+				return
+			}
+		}
+		return enc.WriteFloat64(value)
+	case int:
+		if typeinfo {
+			_, err = enc.w.Write(encInt64)
+			if err != nil {
+				return
+			}
+		}
+		return enc.WriteInt64(int64(value))
+	case int16:
+		if typeinfo {
+			_, err = enc.w.Write(encInt32)
+			if err != nil {
+				return
+			}
+		}
+		return enc.WriteInt64(int64(value))
+	case int32:
+		if typeinfo {
+			_, err = enc.w.Write(encInt32)
+			if err != nil {
+				return
+			}
+		}
+		return enc.WriteInt64(int64(value))
+	case int64:
+		if typeinfo {
+			_, err = enc.w.Write(encInt64)
+			if err != nil {
+				return
+			}
+		}
+		return enc.WriteInt64(value)
 	case []interface{}:
+		if typeinfo {
+			_, err = enc.w.Write(encSliceAny)
+			if err != nil {
+				return
+			}
+		}
+		return enc.WriteSlice(value)
+	case map[string]interface{}:
+		if typeinfo {
+			_, err = enc.w.Write(encDictAny)
+			if err != nil {
+				return
+			}
+		}
+		return enc.WriteDict(value)
+	case rpc.Header:
+		if typeinfo {
+			_, err = enc.w.Write(encHeader)
+			if err != nil {
+				return
+			}
+		}
+		return enc.WriteDict(value)
+	case string:
+		if typeinfo {
+			_, err = enc.w.Write(encString)
+			if err != nil {
+				return
+			}
+		}
+		return enc.WriteString(value)
+	case []string:
+		if typeinfo {
+			_, err = enc.w.Write(encStringSlice)
+			if err != nil {
+				return
+			}
+		}
+		return enc.WriteStringSlice(value)
+	case uint16:
+		if typeinfo {
+			_, err = enc.w.Write(encUint32)
+			if err != nil {
+				return
+			}
+		}
+		return enc.WriteUint64(uint64(value))
+	case uint32:
+		if typeinfo {
+			_, err = enc.w.Write(encUint32)
+			if err != nil {
+				return
+			}
+		}
+		return enc.WriteUint64(uint64(value))
+	case uint64:
+		if typeinfo {
+			_, err = enc.w.Write(encUint64)
+			if err != nil {
+				return
+			}
+		}
+		return enc.WriteUint64(value)
+	}
+
+	return enc.encodeValue(reflect.ValueOf(v), typeinfo)
+
+}
+
+func (enc *Encoder) encodeValue(v reflect.Value, typeinfo bool) (err os.Error) {
+
+	if !v.IsValid() {
+	}
+
+	switch v.Kind() {
+	case reflect.Array, reflect.Slice:
+		typ := v.Type()
+		if typ == byteSliceType {
+			if typeinfo {
+				_, err = enc.w.Write(encByteSlice)
+				if err != nil {
+					return
+				}
+			}
+			return enc.WriteByteSlice(v.Interface().([]byte))
+		}
+		if typ == stringSliceType {
+			if typeinfo {
+				_, err = enc.w.Write(encStringSlice)
+				if err != nil {
+					return
+				}
+			}
+			return enc.WriteStringSlice(v.Interface().([]string))
+		}
 		_, err = enc.w.Write(encSlice)
 		if err != nil {
 			return
 		}
-		return enc.WriteSlice(value)
-	case int:
-		_, err = enc.w.Write(encInt)
+		container, _err := enc.writeEncType(typ.Elem())
+		if _err != nil {
+			return _err
+		}
+		if v.IsNil() {
+			_, err = enc.w.Write(encNil)
+			return
+		}
+		size := v.Len()
+		err = enc.WriteSize(size)
 		if err != nil {
 			return
 		}
-		return enc.WriteInt(value)
-	case int64:
-		_, err = enc.w.Write(encInt64)
+		for i := 0; i < size; i++ {
+			err = enc.encodeValue(v.Index(i), container)
+			if err != nil {
+				return err
+			}
+		}
+		return
+	case reflect.Bool:
+		if v.Bool() {
+			_, err = enc.w.Write(encBoolTrue)
+		} else {
+			_, err = enc.w.Write(encBoolFalse)
+		}
+		return
+	case reflect.Complex64:
+		if typeinfo {
+			_, err = enc.w.Write(encComplex64)
+			if err != nil {
+				return
+			}
+		}
+		val := v.Complex()
+		err = enc.WriteFloat32(float32(real(val)))
+		if err != nil {
+			return err
+		}
+		return enc.WriteFloat32(float32(imag(val)))
+	case reflect.Complex128:
+		if typeinfo {
+			_, err = enc.w.Write(encComplex128)
+			if err != nil {
+				return
+			}
+		}
+		val := v.Complex()
+		err = enc.WriteFloat64(real(val))
+		if err != nil {
+			return err
+		}
+		return enc.WriteFloat64(imag(val))
+	case reflect.Float32:
+		if typeinfo {
+			_, err = enc.w.Write(encFloat32)
+			if err != nil {
+				return
+			}
+		}
+		return enc.WriteFloat32(float32(v.Float()))
+	case reflect.Float64:
+		if typeinfo {
+			_, err = enc.w.Write(encFloat64)
+			if err != nil {
+				return
+			}
+		}
+		return enc.WriteFloat64(v.Float())
+	case reflect.Int, reflect.Int64:
+		val := v.Int()
+		if typeinfo {
+			_, err = enc.w.Write(encInt64)
+			if err != nil {
+				return
+			}
+		}
+		return enc.WriteInt64(int64(val))
+	case reflect.Int16, reflect.Int32:
+		val := v.Int()
+		if typeinfo {
+			_, err = enc.w.Write(encInt32)
+			if err != nil {
+				return
+			}
+		}
+		return enc.WriteInt64(int64(val))
+	case reflect.Int8:
+		if typeinfo {
+			_, err = enc.w.Write(encByte)
+			if err != nil {
+				return
+			}
+		}
+		_, err = enc.w.Write([]byte{byte(v.Int())})
+		return
+	case reflect.Interface, reflect.Ptr:
+		if v.IsNil() {
+			_, err = enc.w.Write(encNil)
+			return
+		}
+		return enc.encodeValue(v.Elem(), typeinfo)
+	case reflect.Map:
+		var forcekey bool
+		typ := v.Type()
+		keytype := typ.Key()
+		elemtype := typ.Elem()
+		if keytype.Kind() == reflect.String {
+			if elemtype == anyInterfaceType {
+				_, err = enc.w.Write(encDictAny)
+				if err != nil {
+					return
+				}
+				return enc.WriteDict(v.Interface().(map[string]interface{}))
+			} else {
+				_, err = enc.w.Write(encDict)
+				if err != nil {
+					return
+				}
+			}
+		} else {
+			_, err = enc.w.Write(encMap)
+			if err != nil {
+				return
+			}
+			if keytype == anyInterfaceType {
+				_, err = enc.w.Write(encAny)
+				if err != nil {
+					return
+				}
+				forcekey = true
+			} else {
+				forcekey, err = enc.writeEncType(keytype)
+				if err != nil {
+					return
+				}
+			}
+		}
+		var forceval bool
+		if elemtype == anyInterfaceType {
+			_, err = enc.w.Write(encAny)
+			if err != nil {
+				return
+			}
+			forceval = true
+		} else {
+			forceval, err = enc.writeEncType(elemtype)
+			if err != nil {
+				return
+			}
+		}
+		if v.IsNil() {
+			_, err = enc.w.Write(encNil)
+			return
+		}
+		err = enc.WriteSize(v.Len())
 		if err != nil {
 			return
 		}
-		return enc.WriteInt64(value)
-	case map[string]interface{}:
-		_, err = enc.w.Write(encDict)
-		if err != nil {
-			return
+		for _, key := range v.MapKeys() {
+			err = enc.encodeValue(key, forcekey)
+			if err != nil {
+				return
+			}
+			err = enc.encodeValue(v.MapIndex(key), forceval)
+			if err != nil {
+				return
+			}
 		}
-		return enc.WriteDict(value)
-	case rpc.Header:
-		_, err = enc.w.Write(encHeader)
-		if err != nil {
-			return
-		}
-		return enc.WriteDict(value)
-	case string:
+		return
+	case reflect.String:
 		_, err = enc.w.Write(encString)
 		if err != nil {
 			return
 		}
-		return enc.WriteString(value)
-	case []string:
-		_, err = enc.w.Write(encStringSlice)
-		if err != nil {
-			return
+		return enc.WriteString(v.String())
+	case reflect.Uint, reflect.Uint64:
+		val := v.Uint()
+		if typeinfo {
+			_, err = enc.w.Write(encInt64)
+			if err != nil {
+				return
+			}
 		}
-		return enc.WriteStringSlice(value)
+		return enc.WriteUint64(val)
+	case reflect.Uint16, reflect.Uint32:
+		val := v.Uint()
+		if typeinfo {
+			_, err = enc.w.Write(encInt32)
+			if err != nil {
+				return
+			}
+		}
+		return enc.WriteUint64(val)
 	}
 
-	msg := fmt.Sprintf("argo: encoding unknown type: %s", v)
+	msg := fmt.Sprintf("argo: encoding unknown type: %s", v.Kind().String())
 	panic(msg)
+
+}
+
+func (enc *Encoder) writeEncType(t reflect.Type) (container bool, err os.Error) {
+
+	var enctype []byte
+
+	switch t.Kind() {
+	case reflect.Array, reflect.Slice:
+		if t == byteSliceType {
+			enctype = encByteSlice
+		} else if t == stringSliceType {
+			enctype = encStringSlice
+		} else {
+			container = true
+			_, err = enc.w.Write(encSlice)
+			if err != nil {
+				return
+			}
+			_, err = enc.writeEncType(t.Elem())
+			return
+		}
+	case reflect.Bool:
+		enctype = encBool
+	case reflect.Complex64:
+		enctype = encComplex64
+	case reflect.Complex128:
+		enctype = encComplex128
+	case reflect.Float32:
+		enctype = encFloat32
+	case reflect.Float64:
+		enctype = encFloat64
+	case reflect.Int, reflect.Int64:
+		enctype = encInt64
+	case reflect.Int16, reflect.Int32:
+		enctype = encInt32
+	case reflect.Int8:
+		enctype = encByte
+	case reflect.Interface, reflect.Ptr:
+		if t == anyInterfaceType {
+			enctype = encAny
+		} else {
+			container = true
+			_, err = enc.writeEncType(t.Elem())
+			return
+		}
+	case reflect.String:
+		enctype = encString
+	case reflect.Uint, reflect.Uint64:
+		enctype = encUint64
+	case reflect.Uint16, reflect.Uint32:
+		enctype = encUint32
+	}
+
+	if enctype == nil {
+		err = Error("unknown element type: " + t.String())
+		return
+	}
+	_, err = enc.w.Write(enctype)
+	return
 
 }
 
@@ -244,7 +668,11 @@ func (enc *Encoder) writeBigInt(value *big.Int, cutoff *big.Int) (err os.Error) 
 }
 
 func (enc *Encoder) WriteByteSlice(value []byte) (err os.Error) {
-	err = enc.WriteInt(len(value))
+	if value == nil {
+		_, err = enc.w.Write(encNil)
+		return
+	}
+	err = enc.WriteSize(len(value))
 	if err != nil {
 		return
 	}
@@ -253,12 +681,16 @@ func (enc *Encoder) WriteByteSlice(value []byte) (err os.Error) {
 }
 
 func (enc *Encoder) WriteDict(value map[string]interface{}) (err os.Error) {
-	err = enc.WriteInt(len(value))
+	if value == nil {
+		_, err = enc.w.Write(encNil)
+		return
+	}
+	err = enc.WriteSize(len(value))
 	if err != nil {
 		return
 	}
 	for k, v := range value {
-		err = enc.WriteInt(len(k))
+		err = enc.WriteSize(len(k))
 		if err != nil {
 			return
 		}
@@ -266,7 +698,7 @@ func (enc *Encoder) WriteDict(value map[string]interface{}) (err os.Error) {
 		if err != nil {
 			return
 		}
-		err = enc.Encode(v)
+		err = enc.encode(v, true)
 		if err != nil {
 			return
 		}
@@ -274,38 +706,36 @@ func (enc *Encoder) WriteDict(value map[string]interface{}) (err os.Error) {
 	return nil
 }
 
-func (enc *Encoder) WriteInt(value int) os.Error {
-	data := make([]byte, 0)
-	for {
-		leftBits := value & 127
-		value >>= 7
-		if value > 0 {
-			leftBits += 128
-		}
-		data = append(data, byte(leftBits))
-		if value == 0 {
-			break
-		}
+func (enc *Encoder) WriteFloat32(value float32) os.Error {
+	var v uint32
+	u := math.Float32bits(value)
+	for i := 0; i < 4; i++ {
+		v <<= 8
+		v |= u & 0xff
+		u >>= 8
 	}
-	_, err := enc.w.Write(data)
-	return err
+	return enc.WriteUint64(uint64(v))
+}
+
+func (enc *Encoder) WriteFloat64(value float64) os.Error {
+	var v uint64
+	u := math.Float64bits(value)
+	for i := 0; i < 8; i++ {
+		v <<= 8
+		v |= u & 0xff
+		u >>= 8
+	}
+	return enc.WriteUint64(v)
 }
 
 func (enc *Encoder) WriteInt64(value int64) os.Error {
-	data := make([]byte, 0)
-	for {
-		leftBits := value & 127
-		value >>= 7
-		if value > 0 {
-			leftBits += 128
-		}
-		data = append(data, byte(leftBits))
-		if value == 0 {
-			break
-		}
+	var x uint64
+	if value < 0 {
+		x = uint64(^value<<1) | 1
+	} else {
+		x = uint64(value << 1)
 	}
-	_, err := enc.w.Write(data)
-	return err
+	return enc.WriteUint64(x)
 }
 
 func (enc *Encoder) WriteInt64AsBig(value int64) (err os.Error) {
@@ -408,13 +838,37 @@ func (enc *Encoder) WriteInt64AsBig(value int64) (err os.Error) {
 	return
 }
 
+func (enc *Encoder) WriteSize(value int) os.Error {
+	if value < 0 || value > maxInt32 {
+		return OutOfRangeError
+	}
+	data := make([]byte, 0)
+	for {
+		leftBits := value & 127
+		value >>= 7
+		if value > 0 {
+			leftBits += 128
+		}
+		data = append(data, byte(leftBits))
+		if value == 0 {
+			break
+		}
+	}
+	_, err := enc.w.Write(data)
+	return err
+}
+
 func (enc *Encoder) WriteSlice(value []interface{}) (err os.Error) {
-	err = enc.WriteInt(len(value))
+	if value == nil {
+		_, err = enc.w.Write(encNil)
+		return
+	}
+	err = enc.WriteSize(len(value))
 	if err != nil {
 		return
 	}
 	for _, item := range value {
-		err = enc.Encode(item)
+		err = enc.encode(item, true)
 		if err != nil {
 			return
 		}
@@ -423,7 +877,7 @@ func (enc *Encoder) WriteSlice(value []interface{}) (err os.Error) {
 }
 
 func (enc *Encoder) WriteString(value string) (err os.Error) {
-	err = enc.WriteInt(len(value))
+	err = enc.WriteSize(len(value))
 	if err != nil {
 		return
 	}
@@ -435,24 +889,28 @@ func (enc *Encoder) WriteStringNumber(value string) (err os.Error) {
 	if strings.Count(value, ".") > 0 {
 		number, ok := big.NewDecimal(value)
 		if !ok {
-			return Error("Couldn't create a big.Decimal representation of " + value)
+			return Error("couldn't create a big.Decimal representation of " + value)
 		}
 		return enc.WriteBigDecimal(number)
 	}
 	number, ok := new(big.Int).SetString(value, 10)
 	if !ok {
-		return Error("Couldn't create an big.Int representation of " + value)
+		return Error("couldn't create an big.Int representation of " + value)
 	}
 	return enc.WriteBigInt(number)
 }
 
 func (enc *Encoder) WriteStringSlice(value []string) (err os.Error) {
-	err = enc.WriteInt(len(value))
+	if value == nil {
+		_, err = enc.w.Write(encNil)
+		return
+	}
+	err = enc.WriteSize(len(value))
 	if err != nil {
 		return
 	}
 	for _, item := range value {
-		err = enc.WriteInt(len(item))
+		err = enc.WriteSize(len(item))
 		if err != nil {
 			return
 		}
@@ -462,6 +920,23 @@ func (enc *Encoder) WriteStringSlice(value []string) (err os.Error) {
 		}
 	}
 	return nil
+}
+
+func (enc *Encoder) WriteUint64(value uint64) os.Error {
+	data := make([]byte, 0)
+	for {
+		leftBits := value & 127
+		value >>= 7
+		if value > 0 {
+			leftBits += 128
+		}
+		data = append(data, byte(leftBits))
+		if value == 0 {
+			break
+		}
+	}
+	_, err := enc.w.Write(data)
+	return err
 }
 
 func pow(x, y int64) (z int64) {

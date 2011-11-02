@@ -8,23 +8,33 @@ import (
 )
 
 const (
-	String = iota
-	Int
-	Int64
-	True
-	False
-	StringSlice
-	Dict
-	Header
-	ByteSlice
-	Slice
+	Nil = iota
+	Any
 	BigDecimal
 	BigInt
+	Bool
+	BoolFalse
+	BoolTrue
+	Byte
+	ByteSlice
+	Complex64
+	Complex128
+	Dict
+	Float32
+	Float64
+	Header
+	Int32
+	Int64
+	Item
+	Map
+	Slice
+	String
+	StringSlice
+	Uint32
+	Uint64
 )
 
-const (
-	magicNumber int64 = 8258175
-)
+const magicNumber int64 = 8258175
 
 var (
 	bigintMagicNumber1, _ = big.NewIntString("8258175")
@@ -40,6 +50,7 @@ var (
 type Error string
 
 func (err Error) String() string {
-	return string(err)
+	return "argo error: " + string(err)
 }
 
+var OutOfRangeError = Error("out of range size value")
