@@ -247,6 +247,7 @@ func (enc *Encoder) encode(v interface{}, typeinfo bool) (err os.Error) {
 func (enc *Encoder) encodeValue(v reflect.Value, typeinfo bool) (err os.Error) {
 
 	if !v.IsValid() {
+		return Error("invalid type detected")
 	}
 
 	switch v.Kind() {
@@ -274,7 +275,7 @@ func (enc *Encoder) encodeValue(v reflect.Value, typeinfo bool) (err os.Error) {
 		if err != nil {
 			return
 		}
-		container, _err := enc.writeEncType(typ.Elem())
+		nested, _err := enc.writeEncType(typ.Elem())
 		if _err != nil {
 			return _err
 		}
@@ -288,7 +289,7 @@ func (enc *Encoder) encodeValue(v reflect.Value, typeinfo bool) (err os.Error) {
 			return
 		}
 		for i := 0; i < size; i++ {
-			err = enc.encodeValue(v.Index(i), container)
+			err = enc.encodeValue(v.Index(i), nested)
 			if err != nil {
 				return err
 			}
@@ -475,7 +476,7 @@ func (enc *Encoder) encodeValue(v reflect.Value, typeinfo bool) (err os.Error) {
 
 }
 
-func (enc *Encoder) writeEncType(t reflect.Type) (container bool, err os.Error) {
+func (enc *Encoder) writeEncType(t reflect.Type) (nested bool, err os.Error) {
 
 	var enctype []byte
 
@@ -486,13 +487,8 @@ func (enc *Encoder) writeEncType(t reflect.Type) (container bool, err os.Error) 
 		} else if t == stringSliceType {
 			enctype = encStringSlice
 		} else {
-			container = true
-			_, err = enc.w.Write(encSlice)
-			if err != nil {
-				return
-			}
-			_, err = enc.writeEncType(t.Elem())
-			return
+			enctype = encAny
+			nested = true
 		}
 	case reflect.Bool:
 		enctype = encBool
@@ -511,13 +507,11 @@ func (enc *Encoder) writeEncType(t reflect.Type) (container bool, err os.Error) 
 	case reflect.Int8:
 		enctype = encByte
 	case reflect.Interface, reflect.Ptr:
-		if t == anyInterfaceType {
-			enctype = encAny
-		} else {
-			container = true
-			_, err = enc.writeEncType(t.Elem())
-			return
-		}
+		enctype = encAny
+		nested = true
+	case reflect.Map:
+		enctype = encAny
+		nested = true
 	case reflect.String:
 		enctype = encString
 	case reflect.Uint, reflect.Uint64:
