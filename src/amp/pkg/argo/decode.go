@@ -5,7 +5,9 @@ package argo
 
 import (
 	"io"
+	"math"
 	"os"
+	"reflect"
 )
 
 type Decoder struct {
@@ -13,10 +15,86 @@ type Decoder struct {
 }
 
 func (dec *Decoder) Decode(v interface{}) (err os.Error) {
-	return
+
+	rv := reflect.ValueOf(v)
+	if rv.Kind() != reflect.Ptr || rv.IsNil() {
+		return Error("decode only makes sense for pointer values")
+	}
+
+	return dec.decodeValue(rv)
+
 }
 
-func (dec *Decoder) ReadInt() (value int, err os.Error) {
+func (dec *Decoder) decodeValue(v reflect.Value) (err os.Error) {
+
+	data := make([]byte, 1)
+	_, err = dec.r.Read(data)
+	if err != nil {
+		return
+	}
+
+	elem := v.Elem()
+	got := data[0]
+
+	switch elem.Kind() {
+	case reflect.Complex64:
+		if got != Complex64 {
+			return typeError("complex64", got)
+		}
+	case reflect.Float32:
+		if got != Float32 {
+			return typeError("float32", got)
+		}
+		val, err := dec.ReadFloat32()
+		if err != nil {
+			return err
+		}
+		elem.SetFloat(float64(val))
+	case reflect.Float64:
+		if got != Float64 {
+			return typeError("float64", got)
+		}
+		val, err := dec.ReadFloat64()
+		if err != nil {
+			return err
+		}
+		elem.SetFloat(val)
+	}
+
+	return
+
+}
+
+func (dec *Decoder) ReadFloat32() (value float32, err os.Error) {
+	data := make([]byte, 4)
+	_, err = dec.r.Read(data)
+	if err != nil {
+		return
+	}
+	return math.Float32frombits(uint32(data[3]) | uint32(data[2])<<8 | uint32(data[1])<<16 | uint32(data[0])<<24), nil
+}
+
+func (dec *Decoder) ReadFloat64() (value float64, err os.Error) {
+	data := make([]byte, 8)
+	_, err = dec.r.Read(data)
+	if err != nil {
+		return
+	}
+	return math.Float64frombits(uint64(data[7]) | uint64(data[6])<<8 | uint64(data[5])<<16 | uint64(data[4])<<24 | uint64(data[3])<<32 | uint64(data[2])<<40 | uint64(data[1])<<48 | uint64(data[0])<<56), nil
+}
+
+func (dec *Decoder) ReadInt64() (value int64, err os.Error) {
+	val, err := dec.ReadUint64()
+	if err != nil {
+		return
+	}
+	if val&1 != 0 {
+		return ^int64(val >> 1), nil
+	}
+	return int64(val >> 1), nil
+}
+
+func (dec *Decoder) ReadSize() (value int, err os.Error) {
 	bitShift := uint(0)
 	lowByte := 1
 	data := make([]byte, 1)
@@ -37,7 +115,7 @@ func (dec *Decoder) ReadInt() (value int, err os.Error) {
 }
 
 func (dec *Decoder) ReadString() (value string, err os.Error) {
-	stringSize, err := dec.ReadInt()
+	stringSize, err := dec.ReadSize()
 	if err != nil {
 		return
 	}
@@ -53,13 +131,14 @@ func (dec *Decoder) ReadString() (value string, err os.Error) {
 }
 
 func (dec *Decoder) ReadStringSlice() (value []string, err os.Error) {
-	arraySize, err := dec.ReadInt()
+	arraySize, err := dec.ReadSize()
 	if err != nil {
 		return
 	}
+	value = make([]string, arraySize)
 	var i int
 	for i < arraySize {
-		stringSize, err := dec.ReadInt()
+		stringSize, err := dec.ReadSize()
 		if err != nil {
 			return nil, err
 		}
@@ -71,8 +150,28 @@ func (dec *Decoder) ReadStringSlice() (value []string, err os.Error) {
 			}
 			return nil, err
 		}
-		value = append(value, string(item))
+		value[i] = string(item)
 		i++
+	}
+	return value, nil
+}
+
+func (dec *Decoder) ReadUint64() (value uint64, err os.Error) {
+	bitShift := uint64(0)
+	lowByte := 1
+	data := make([]byte, 1)
+	for lowByte > 0 {
+		n, err := dec.r.Read(data)
+		if n != 1 {
+			if err == nil {
+				return value, Error("Couldn't read from the data stream.")
+			}
+			return 0, err
+		}
+		byteValue := int(data[0])
+		lowByte = byteValue & 128
+		value += uint64(byteValue&127) << bitShift
+		bitShift += 7
 	}
 	return value, nil
 }
