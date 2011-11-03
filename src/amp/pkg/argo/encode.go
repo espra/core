@@ -229,14 +229,13 @@ func (enc *Encoder) encode(v interface{}, typeinfo bool) (err os.Error) {
 		if err != nil {
 			return
 		}
-		err = enc.WriteSize(len(value.fields))
+		err = enc.WriteSize(value.n)
 		if err != nil {
 			return
 		}
-		for id, f := range value.fields {
-			err = enc.WriteSize(id)
-			if err != nil {
-				return
+		for _, f := range value.fields {
+			if f == nil {
+				continue
 			}
 			err = enc.WriteString(f.name)
 			if err != nil {
@@ -504,14 +503,9 @@ func (enc *Encoder) encodeValue(v reflect.Value, typeinfo bool) (err os.Error) {
 		if err != nil {
 			return
 		}
-		err = enc.WriteSize(len(info.fields))
-		if err != nil {
-			return
-		}
 		for i, f := range info.fields {
-			err = enc.WriteSize(i)
-			if err != nil {
-				return
+			if f == nil {
+				continue
 			}
 			err = enc.encodeValue(v.Field(i), f.nested)
 			if err != nil {
@@ -976,8 +970,9 @@ func NewEncoder(w io.Writer) *Encoder {
 }
 
 type structInfo struct {
-	fields map[int]*fieldInfo
+	fields []*fieldInfo
 	id     uint64
+	n      int
 }
 
 type fieldInfo struct {
@@ -998,9 +993,10 @@ func (reg *typeRegistry) Get(t reflect.Type) *structInfo {
 	if info, exists := reg.types[t]; exists {
 		return info
 	}
-	s := &structInfo{fields: make(map[int]*fieldInfo), id: reg.nextId}
-	reg.nextId += 1
 	n := t.NumField()
+	s := &structInfo{fields: make([]*fieldInfo, n), id: reg.nextId}
+	j := 0
+	reg.nextId += 1
 	for i := 0; i < n; i++ {
 		field := t.Field(i)
 		if field.Anonymous {
@@ -1027,7 +1023,9 @@ func (reg *typeRegistry) Get(t reflect.Type) *structInfo {
 		f := &fieldInfo{name: name}
 		f.enctype, f.nested = getEncType(field.Type)
 		s.fields[i] = f
+		j += 1
 	}
+	s.n = j
 	return s
 }
 
