@@ -5,6 +5,7 @@ package argo
 
 import (
 	"amp/big"
+	"os"
 )
 
 const (
@@ -56,3 +57,42 @@ func (err Error) String() string {
 }
 
 var OutOfRangeError = Error("out of range size value")
+
+type TypeMismatchError string
+
+func (err TypeMismatchError) String() string {
+	return "argo error: " + string(err)
+}
+
+var typeNames = map[byte]string{
+	Nil:         "nil",
+	Any:         "interface{}",
+	BigDecimal:  "big.Decimal",
+	BigInt:      "big.Int",
+	Bool:        "bool",
+	BoolFalse:   "bool",
+	BoolTrue:    "bool",
+	Byte:        "byte",
+	ByteSlice:   "[]byte",
+	Complex64:   "complex64",
+	Complex128:  "complex128",
+	Dict:        "map[string]",
+	Float32:     "float32",
+	Float64:     "float64",
+	Header:      "rpc.Header",
+	Int32:       "int32",
+	Int64:       "int64",
+	Item:        "Item",
+	Map:         "map",
+	Slice:       "[]interface{}",
+	String:      "string",
+	StringSlice: "[]string",
+	Struct:      "struct",
+	StructInfo:  "structInfo",
+	Uint32:      "uint32",
+	Uint64:      "uint64",
+}
+
+func typeError(expected string, got byte) os.Error {
+	return TypeMismatchError("expected " + expected + ", got " + typeNames[got])
+}
