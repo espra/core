@@ -30,6 +30,8 @@ const (
 	Slice
 	String
 	StringSlice
+	Struct
+	StructInfo
 	Uint32
 	Uint64
 )

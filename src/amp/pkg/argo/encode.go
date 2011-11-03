@@ -12,6 +12,9 @@ import (
 	"os"
 	"reflect"
 	"strings"
+	"sync"
+	"unicode"
+	"utf8"
 )
 
 const maxInt32 = 2147483647
@@ -41,6 +44,8 @@ var (
 	encSliceAny    = []byte{Slice, Any}
 	encString      = []byte{String}
 	encStringSlice = []byte{StringSlice}
+	encStruct      = []byte{Struct}
+	encStructInfo  = []byte{StructInfo}
 	encUint32      = []byte{Uint32}
 	encUint64      = []byte{Uint64}
 )
@@ -52,7 +57,8 @@ var (
 )
 
 type Encoder struct {
-	w io.Writer
+	w    io.Writer
+	seen map[reflect.Type]*structInfo
 }
 
 func (enc *Encoder) Encode(v interface{}) (err os.Error) {
@@ -214,6 +220,34 @@ func (enc *Encoder) encode(v interface{}, typeinfo bool) (err os.Error) {
 			}
 		}
 		return enc.WriteStringSlice(value)
+	case *structInfo:
+		_, err = enc.w.Write(encStructInfo)
+		if err != nil {
+			return
+		}
+		err = enc.WriteUint64(value.id)
+		if err != nil {
+			return
+		}
+		err = enc.WriteSize(len(value.fields))
+		if err != nil {
+			return
+		}
+		for id, f := range value.fields {
+			err = enc.WriteSize(id)
+			if err != nil {
+				return
+			}
+			err = enc.WriteString(f.name)
+			if err != nil {
+				return
+			}
+			_, err = enc.w.Write(f.enctype)
+			if err != nil {
+				return
+			}
+		}
+		return
 	case uint16:
 		if typeinfo {
 			_, err = enc.w.Write(encUint32)
@@ -451,6 +485,40 @@ func (enc *Encoder) encodeValue(v reflect.Value, typeinfo bool) (err os.Error) {
 			return
 		}
 		return enc.WriteString(v.String())
+	case reflect.Struct:
+		typ := v.Type()
+		if enc.seen == nil {
+			enc.seen = make(map[reflect.Type]*structInfo)
+		}
+		info, ok := enc.seen[typ]
+		if !ok {
+			info = typeCache.Get(typ)
+			enc.encode(info, true)
+			enc.seen[typ] = info
+		}
+		_, err = enc.w.Write(encStruct)
+		if err != nil {
+			return
+		}
+		err = enc.WriteUint64(info.id)
+		if err != nil {
+			return
+		}
+		err = enc.WriteSize(len(info.fields))
+		if err != nil {
+			return
+		}
+		for i, f := range info.fields {
+			err = enc.WriteSize(i)
+			if err != nil {
+				return
+			}
+			err = enc.encodeValue(v.Field(i), f.nested)
+			if err != nil {
+				return
+			}
+		}
+		return
 	case reflect.Uint, reflect.Uint64:
 		val := v.Uint()
 		if typeinfo {
@@ -476,57 +544,14 @@ func (enc *Encoder) encodeValue(v reflect.Value, typeinfo bool) (err os.Error) {
 
 }
 
-func (enc *Encoder) writeEncType(t reflect.Type) (nested bool, err os.Error) {
-
-	var enctype []byte
-
-	switch t.Kind() {
-	case reflect.Array, reflect.Slice:
-		if t == byteSliceType {
-			enctype = encByteSlice
-		} else if t == stringSliceType {
-			enctype = encStringSlice
-		} else {
-			enctype = encAny
-			nested = true
-		}
-	case reflect.Bool:
-		enctype = encBool
-	case reflect.Complex64:
-		enctype = encComplex64
-	case reflect.Complex128:
-		enctype = encComplex128
-	case reflect.Float32:
-		enctype = encFloat32
-	case reflect.Float64:
-		enctype = encFloat64
-	case reflect.Int, reflect.Int64:
-		enctype = encInt64
-	case reflect.Int16, reflect.Int32:
-		enctype = encInt32
-	case reflect.Int8:
-		enctype = encByte
-	case reflect.Interface, reflect.Ptr:
-		enctype = encAny
-		nested = true
-	case reflect.Map:
-		enctype = encAny
-		nested = true
-	case reflect.String:
-		enctype = encString
-	case reflect.Uint, reflect.Uint64:
-		enctype = encUint64
-	case reflect.Uint16, reflect.Uint32:
-		enctype = encUint32
-	}
-
+func (enc *Encoder) writeEncType(t reflect.Type) (bool, os.Error) {
+	enctype, nested := getEncType(t)
 	if enctype == nil {
-		err = Error("unknown element type: " + t.String())
-		return
+		err := Error("unknown element type: " + t.String())
+		return nested, err
 	}
-	_, err = enc.w.Write(enctype)
-	return
-
+	_, err := enc.w.Write(enctype)
+	return nested, err
 }
 
 func (enc *Encoder) WriteBigDecimal(value *big.Decimal) (err os.Error) {
@@ -948,4 +973,113 @@ func pow(x, y int64) (z int64) {
 
 func NewEncoder(w io.Writer) *Encoder {
 	return &Encoder{w: w}
+}
+
+type structInfo struct {
+	fields map[int]*fieldInfo
+	id     uint64
+}
+
+type fieldInfo struct {
+	enctype []byte
+	name    string
+	nested  bool
+}
+
+type typeRegistry struct {
+	nextId uint64
+	lock   sync.Mutex
+	types  map[reflect.Type]*structInfo
+}
+
+func (reg *typeRegistry) Get(t reflect.Type) *structInfo {
+	reg.lock.Lock()
+	defer reg.lock.Unlock()
+	if info, exists := reg.types[t]; exists {
+		return info
+	}
+	s := &structInfo{fields: make(map[int]*fieldInfo), id: reg.nextId}
+	reg.nextId += 1
+	n := t.NumField()
+	for i := 0; i < n; i++ {
+		field := t.Field(i)
+		if field.Anonymous {
+			continue
+		}
+		// TODO(tav): can this happen?
+		// if field.Name == "" {
+		// 	continue
+		// }
+		var name string
+		if tag := field.Tag.Get("argo"); tag != "" {
+			if tag == "-" {
+				continue
+			}
+			name = tag
+		}
+		if name == "" {
+			name = field.Name
+			rune, _ := utf8.DecodeRuneInString(name)
+			if !unicode.IsUpper(rune) {
+				continue
+			}
+		}
+		f := &fieldInfo{name: name}
+		f.enctype, f.nested = getEncType(field.Type)
+		s.fields[i] = f
+	}
+	return s
+}
+
+var typeCache *typeRegistry = &typeRegistry{
+	types: make(map[reflect.Type]*structInfo),
+}
+
+func getEncType(t reflect.Type) (enctype []byte, nested bool) {
+
+	switch t.Kind() {
+	case reflect.Array, reflect.Slice:
+		if t == byteSliceType {
+			enctype = encByteSlice
+		} else if t == stringSliceType {
+			enctype = encStringSlice
+		} else {
+			enctype = encAny
+			nested = true
+		}
+	case reflect.Bool:
+		enctype = encBool
+	case reflect.Complex64:
+		enctype = encComplex64
+	case reflect.Complex128:
+		enctype = encComplex128
+	case reflect.Float32:
+		enctype = encFloat32
+	case reflect.Float64:
+		enctype = encFloat64
+	case reflect.Int, reflect.Int64:
+		enctype = encInt64
+	case reflect.Int16, reflect.Int32:
+		enctype = encInt32
+	case reflect.Int8:
+		enctype = encByte
+	case reflect.Interface, reflect.Ptr:
+		enctype = encAny
+		nested = true
+	case reflect.Map:
+		enctype = encAny
+		nested = true
+	case reflect.String:
+		enctype = encString
+	case reflect.Struct:
+		enctype = encAny
+		nested = true
+	case reflect.Uint, reflect.Uint64:
+		enctype = encUint64
+	case reflect.Uint16, reflect.Uint32:
+		enctype = encUint32
+	}
+
+	return
+
 }
