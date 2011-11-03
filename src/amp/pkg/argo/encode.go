@@ -142,7 +142,7 @@ func (enc *Encoder) encode(v interface{}, typeinfo bool) (err os.Error) {
 		return enc.WriteFloat32(value)
 	case float64:
 		if typeinfo {
-			_, err = enc.w.Write(encFloat32)
+			_, err = enc.w.Write(encFloat64)
 			if err != nil {
 				return
 			}
