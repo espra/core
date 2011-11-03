@@ -700,26 +700,30 @@ func (enc *Encoder) WriteDict(value map[string]interface{}) (err os.Error) {
 	return nil
 }
 
-func (enc *Encoder) WriteFloat32(value float32) os.Error {
-	var v uint32
-	u := math.Float32bits(value)
-	for i := 0; i < 4; i++ {
-		v <<= 8
-		v |= u & 0xff
-		u >>= 8
-	}
-	return enc.WriteUint64(uint64(v))
+func (enc *Encoder) WriteFloat32(value float32) (err os.Error) {
+	v := math.Float32bits(value)
+	data := make([]byte, 4)
+	data[0] = byte(v >> 24)
+	data[1] = byte(v >> 16)
+	data[2] = byte(v >> 8)
+	data[3] = byte(v)
+	_, err = enc.w.Write(data)
+	return
 }
 
-func (enc *Encoder) WriteFloat64(value float64) os.Error {
-	var v uint64
-	u := math.Float64bits(value)
-	for i := 0; i < 8; i++ {
-		v <<= 8
-		v |= u & 0xff
-		u >>= 8
-	}
-	return enc.WriteUint64(v)
+func (enc *Encoder) WriteFloat64(value float64) (err os.Error) {
+	v := math.Float64bits(value)
+	data := make([]byte, 8)
+	data[0] = byte(v >> 56)
+	data[1] = byte(v >> 48)
+	data[2] = byte(v >> 40)
+	data[3] = byte(v >> 32)
+	data[4] = byte(v >> 24)
+	data[5] = byte(v >> 16)
+	data[6] = byte(v >> 8)
+	data[7] = byte(v)
+	_, err = enc.w.Write(data)
+	return
 }
 
 func (enc *Encoder) WriteInt64(value int64) os.Error {
