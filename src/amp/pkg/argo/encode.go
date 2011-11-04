@@ -378,23 +378,21 @@ func (enc *Encoder) encodeValue(v reflect.Value, typeinfo bool) (err os.Error) {
 		}
 		return enc.WriteFloat64(v.Float())
 	case reflect.Int, reflect.Int64:
-		val := v.Int()
 		if typeinfo {
 			_, err = enc.w.Write(encInt64)
 			if err != nil {
 				return
 			}
 		}
-		return enc.WriteInt64(int64(val))
+		return enc.WriteInt64(v.Int())
 	case reflect.Int16, reflect.Int32:
-		val := v.Int()
 		if typeinfo {
 			_, err = enc.w.Write(encInt32)
 			if err != nil {
 				return
 			}
 		}
-		return enc.WriteInt64(int64(val))
+		return enc.WriteInt64(v.Int())
 	case reflect.Int8:
 		if typeinfo {
 			_, err = enc.w.Write(encByte)
@@ -514,23 +512,21 @@ func (enc *Encoder) encodeValue(v reflect.Value, typeinfo bool) (err os.Error) {
 		}
 		return
 	case reflect.Uint, reflect.Uint64:
-		val := v.Uint()
 		if typeinfo {
 			_, err = enc.w.Write(encInt64)
 			if err != nil {
 				return
 			}
 		}
-		return enc.WriteUint64(val)
+		return enc.WriteUint64(v.Uint())
 	case reflect.Uint16, reflect.Uint32:
-		val := v.Uint()
 		if typeinfo {
 			_, err = enc.w.Write(encInt32)
 			if err != nil {
 				return
 			}
 		}
-		return enc.WriteUint64(val)
+		return enc.WriteUint64(v.Uint())
 	}
 
 	msg := fmt.Sprintf("argo: encoding unknown type: %s", v.Kind().String())
@@ -1033,51 +1029,47 @@ var typeCache *typeRegistry = &typeRegistry{
 	types: make(map[reflect.Type]*structInfo),
 }
 
-func getEncType(t reflect.Type) (enctype []byte, nested bool) {
+var enctypeMap = [...][]byte{
+	reflect.Array:      encAny,
+	reflect.Bool:       encBool,
+	reflect.Complex64:  encComplex64,
+	reflect.Complex128: encComplex128,
+	reflect.Float32:    encFloat32,
+	reflect.Float64:    encFloat64,
+	reflect.Int:        encInt64,
+	reflect.Int8:       encByte,
+	reflect.Int16:      encInt32,
+	reflect.Int32:      encInt32,
+	reflect.Int64:      encInt64,
+	reflect.Interface:  encAny,
+	reflect.Map:        encAny,
+	reflect.Ptr:        encAny,
+	reflect.String:     encString,
+	reflect.Struct:     encAny,
+	reflect.Uint:       encUint64,
+	reflect.Uint16:     encUint32,
+	reflect.Uint32:     encUint32,
+	reflect.Uint64:     encUint64,
+}
 
-	switch t.Kind() {
-	case reflect.Array, reflect.Slice:
+var enctypeNested = [256]bool{
+	reflect.Array:     true,
+	reflect.Interface: true,
+	reflect.Map:       true,
+	reflect.Ptr:       true,
+	reflect.Struct:    true,
+}
+
+func getEncType(t reflect.Type) ([]byte, bool) {
+	kind := t.Kind()
+	if kind == reflect.Slice {
 		if t == byteSliceType {
-			enctype = encByteSlice
-		} else if t == stringSliceType {
-			enctype = encStringSlice
-		} else {
-			enctype = encAny
-			nested = true
+			return encByteSlice, false
 		}
-	case reflect.Bool:
-		enctype = encBool
-	case reflect.Complex64:
-		enctype = encComplex64
-	case reflect.Complex128:
-		enctype = encComplex128
-	case reflect.Float32:
-		enctype = encFloat32
-	case reflect.Float64:
-		enctype = encFloat64
-	case reflect.Int, reflect.Int64:
-		enctype = encInt64
-	case reflect.Int16, reflect.Int32:
-		enctype = encInt32
-	case reflect.Int8:
-		enctype = encByte
-	case reflect.Interface, reflect.Ptr:
-		enctype = encAny
-		nested = true
-	case reflect.Map:
-		enctype = encAny
-		nested = true
-	case reflect.String:
-		enctype = encString
-	case reflect.Struct:
-		enctype = encAny
-		nested = true
-	case reflect.Uint, reflect.Uint64:
-		enctype = encUint64
-	case reflect.Uint16, reflect.Uint32:
-		enctype = encUint32
+		if t == stringSliceType {
+			return encStringSlice, false
+		}
+		return encAny, true
 	}
-
-	return
-
+	return enctypeMap[kind], enctypeNested[kind]
 }
