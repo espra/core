@@ -7,7 +7,6 @@ import (
 	"amp/big"
 	"amp/rpc"
 	"bytes"
-	"fmt"
 	"io"
 	"math"
 	"os"
@@ -132,6 +131,11 @@ func (enc *Encoder) encode(v interface{}, typeinfo bool) {
 			enc.b.Write(encInt64)
 		}
 		WriteInt64(int64(value), enc.b)
+	case int8:
+		if typeinfo {
+			enc.b.Write(encInt32)
+		}
+		WriteInt64(int64(value), enc.b)
 	case int16:
 		if typeinfo {
 			enc.b.Write(encInt32)
@@ -151,17 +155,17 @@ func (enc *Encoder) encode(v interface{}, typeinfo bool) {
 		if typeinfo {
 			enc.b.Write(encSliceAny)
 		}
-		enc.WriteSlice(value, enc.b)
+		enc.writeSlice(value, enc.b)
 	case map[string]interface{}:
 		if typeinfo {
 			enc.b.Write(encDictAny)
 		}
-		enc.WriteDict(value, enc.b)
+		enc.writeDict(value, enc.b)
 	case rpc.Header:
 		if typeinfo {
 			enc.b.Write(encHeader)
 		}
-		enc.WriteDict(value, enc.b)
+		enc.writeDict(value, enc.b)
 	case string:
 		if typeinfo {
 			enc.b.Write(encString)
@@ -173,15 +177,16 @@ func (enc *Encoder) encode(v interface{}, typeinfo bool) {
 		}
 		WriteStringSlice(value, enc.b)
 	case *structInfo:
-		enc.b.Write(encStructInfo)
-		WriteUint64(value.id, enc.b)
-		WriteSize(value.n, enc.b)
+		buf := enc.b
+		buf.Write(encStructInfo)
+		WriteUint64(value.id, buf)
+		WriteSize(value.n, buf)
 		for _, f := range value.fields {
 			if f == nil {
 				continue
 			}
-			WriteString(f.name, enc.b)
-			enc.b.Write(f.enctype)
+			WriteString(f.name, buf)
+			buf.Write(f.enctype)
 		}
 	case uint16:
 		if typeinfo {
@@ -219,12 +224,14 @@ func (enc *Encoder) encodeValue(v reflect.Value, typeinfo bool) {
 				enc.b.Write(encByteSlice)
 			}
 			WriteByteSlice(v.Interface().([]byte), enc.b)
+			return
 		}
 		if typ == stringSliceType {
 			if typeinfo {
 				enc.b.Write(encStringSlice)
 			}
 			WriteStringSlice(v.Interface().([]string), enc.b)
+			return
 		}
 		enc.b.Write(encSlice)
 		nested := enc.writeEncType(typ.Elem())
@@ -272,16 +279,11 @@ func (enc *Encoder) encodeValue(v reflect.Value, typeinfo bool) {
 			enc.b.Write(encInt64)
 		}
 		WriteInt64(v.Int(), enc.b)
-	case reflect.Int16, reflect.Int32:
+	case reflect.Int8, reflect.Int16, reflect.Int32:
 		if typeinfo {
 			enc.b.Write(encInt32)
 		}
 		WriteInt64(v.Int(), enc.b)
-	case reflect.Int8:
-		if typeinfo {
-			enc.b.Write(encByte)
-		}
-		enc.b.Write([]byte{byte(v.Int())})
 	case reflect.Interface, reflect.Ptr:
 		if v.IsNil() {
 			enc.b.Write(encNil)
@@ -290,21 +292,22 @@ func (enc *Encoder) encodeValue(v reflect.Value, typeinfo bool) {
 		enc.encodeValue(v.Elem(), typeinfo)
 	case reflect.Map:
 		var forcekey bool
+		buf := enc.b
 		typ := v.Type()
 		keytype := typ.Key()
 		elemtype := typ.Elem()
 		if keytype.Kind() == reflect.String {
 			if elemtype == anyInterfaceType {
-				enc.b.Write(encDictAny)
-				enc.WriteDict(v.Interface().(map[string]interface{}), enc.b)
+				buf.Write(encDictAny)
+				enc.writeDict(v.Interface().(map[string]interface{}), buf)
 				return
 			} else {
-				enc.b.Write(encDict)
+				buf.Write(encDict)
 			}
 		} else {
-			enc.b.Write(encMap)
+			buf.Write(encMap)
 			if keytype == anyInterfaceType {
-				enc.b.Write(encAny)
+				buf.Write(encAny)
 				forcekey = true
 			} else {
 				forcekey = enc.writeEncType(keytype)
@@ -312,16 +315,16 @@ func (enc *Encoder) encodeValue(v reflect.Value, typeinfo bool) {
 		}
 		var forceval bool
 		if elemtype == anyInterfaceType {
-			enc.b.Write(encAny)
+			buf.Write(encAny)
 			forceval = true
 		} else {
 			forceval = enc.writeEncType(elemtype)
 		}
 		if v.IsNil() {
-			enc.b.Write(encNil)
+			buf.Write(encNil)
 			return
 		}
-		WriteSize(v.Len(), enc.b)
+		WriteSize(v.Len(), buf)
 		for _, key := range v.MapKeys() {
 			enc.encodeValue(key, forcekey)
 			enc.encodeValue(v.MapIndex(key), forceval)
@@ -353,16 +356,33 @@ func (enc *Encoder) encodeValue(v reflect.Value, typeinfo bool) {
 			enc.b.Write(encInt64)
 		}
 		WriteUint64(v.Uint(), enc.b)
+	case reflect.Uint8:
+		if typeinfo {
+			enc.b.Write(encByte)
+		}
+		enc.b.Write([]byte{byte(v.Int())})
 	case reflect.Uint16, reflect.Uint32:
 		if typeinfo {
 			enc.b.Write(encInt32)
 		}
 		WriteUint64(v.Uint(), enc.b)
 	default:
-		msg := fmt.Sprintf("argo: encoding unknown type: %s", v.Kind().String())
-		panic(msg)
+		error(Error("encoding unknown type: " + v.Kind().String()))
 	}
 
+}
+
+func (enc *Encoder) writeDict(value map[string]interface{}, buf *bytes.Buffer) {
+	if value == nil {
+		buf.Write(encNil)
+		return
+	}
+	WriteSize(len(value), buf)
+	for k, v := range value {
+		WriteSize(len(k), buf)
+		buf.Write([]byte(k))
+		enc.encode(v, true)
+	}
 }
 
 func (enc *Encoder) writeEncType(t reflect.Type) bool {
@@ -372,6 +392,17 @@ func (enc *Encoder) writeEncType(t reflect.Type) bool {
 	}
 	enc.b.Write(enctype)
 	return nested
+}
+
+func (enc *Encoder) writeSlice(value []interface{}, buf *bytes.Buffer) {
+	if value == nil {
+		buf.Write(encNil)
+		return
+	}
+	WriteSize(len(value), buf)
+	for _, item := range value {
+		enc.encode(item, true)
+	}
 }
 
 func WriteBigDecimal(value *big.Decimal, buf *bytes.Buffer) {
@@ -506,19 +537,6 @@ func WriteByteSlice(value []byte, buf *bytes.Buffer) {
 	}
 	WriteSize(len(value), buf)
 	buf.Write(value)
-}
-
-func (enc *Encoder) WriteDict(value map[string]interface{}, buf *bytes.Buffer) {
-	if value == nil {
-		buf.Write(encNil)
-		return
-	}
-	WriteSize(len(value), buf)
-	for k, v := range value {
-		WriteSize(len(k), buf)
-		buf.Write([]byte(k))
-		enc.encode(v, true)
-	}
 }
 
 func WriteFloat32(value float32, buf *bytes.Buffer) {
@@ -676,17 +694,6 @@ func WriteSize(value int, buf *bytes.Buffer) {
 	buf.Write(data[:i])
 }
 
-func (enc *Encoder) WriteSlice(value []interface{}, buf *bytes.Buffer) {
-	if value == nil {
-		buf.Write(encNil)
-		return
-	}
-	WriteSize(len(value), buf)
-	for _, item := range value {
-		enc.encode(item, true)
-	}
-}
-
 func WriteString(value string, buf *bytes.Buffer) {
 	WriteSize(len(value), buf)
 	buf.Write([]byte(value))
@@ -816,7 +823,8 @@ func (reg *typeRegistry) Get(t reflect.Type) *structInfo {
 }
 
 var typeCache *typeRegistry = &typeRegistry{
-	types: make(map[reflect.Type]*structInfo),
+	nextId: 64,
+	types:  make(map[reflect.Type]*structInfo),
 }
 
 var enctypeMap = [...][]byte{
@@ -865,5 +873,5 @@ func getEncType(t reflect.Type) ([]byte, bool) {
 }
 
 func error(err os.Error) {
-	panic(err.String())
+	panic(err)
 }
