@@ -35,6 +35,7 @@ const (
 	StructInfo
 	Uint32
 	Uint64
+	sentinel
 )
 
 const magicNumber int64 = 8258175
@@ -95,4 +96,10 @@ var typeNames = map[byte]string{
 
 func typeError(expected string, got byte) os.Error {
 	return TypeMismatchError("expected " + expected + ", got " + typeNames[got])
+}
+
+func init() {
+	if sentinel > baseId {
+		panic("argo: type IDs have been allocated beyond the base limit")
+	}
 }
