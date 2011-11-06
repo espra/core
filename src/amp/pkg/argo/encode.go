@@ -23,50 +23,52 @@ const (
 )
 
 var (
-	encAny         = []byte{Any}
-	encBigDecimal  = []byte{BigDecimal}
-	encBigInt      = []byte{BigInt}
-	encBool        = []byte{Bool}
-	encBoolFalse   = []byte{BoolFalse}
-	encBoolTrue    = []byte{BoolTrue}
-	encByte        = []byte{Byte}
-	encByteSlice   = []byte{ByteSlice}
-	encComplex64   = []byte{Complex64}
-	encComplex128  = []byte{Complex128}
-	encDict        = []byte{Dict}
-	encDictAny     = []byte{Dict, Any}
-	encFloat32     = []byte{Float32}
-	encFloat64     = []byte{Float64}
-	encHeader      = []byte{Header}
-	encInt32       = []byte{Int32}
-	encInt64       = []byte{Int64}
-	encItem        = []byte{Item}
-	encMap         = []byte{Map}
-	encNil         = []byte{Nil}
-	encSlice       = []byte{Slice}
-	encSliceAny    = []byte{Slice, Any}
-	encString      = []byte{String}
-	encStringSlice = []byte{StringSlice}
-	encStruct      = []byte{Struct}
-	encStructInfo  = []byte{StructInfo}
-	encUint32      = []byte{Uint32}
-	encUint64      = []byte{Uint64}
+	encAny            = []byte{Any}
+	encBigDecimal     = []byte{BigDecimal}
+	encBigInt         = []byte{BigInt}
+	encBool           = []byte{Bool}
+	encBoolFalse      = []byte{BoolFalse}
+	encBoolTrue       = []byte{BoolTrue}
+	encByte           = []byte{Byte}
+	encByteSlice      = []byte{ByteSlice}
+	encByteSliceSlice = []byte{ByteSliceSlice}
+	encComplex64      = []byte{Complex64}
+	encComplex128     = []byte{Complex128}
+	encDict           = []byte{Dict}
+	encDictAny        = []byte{Dict, Any}
+	encFloat32        = []byte{Float32}
+	encFloat64        = []byte{Float64}
+	encHeader         = []byte{Header}
+	encInt32          = []byte{Int32}
+	encInt64          = []byte{Int64}
+	encItem           = []byte{Item}
+	encMap            = []byte{Map}
+	encNil            = []byte{Nil}
+	encSlice          = []byte{Slice}
+	encSliceAny       = []byte{Slice, Any}
+	encString         = []byte{String}
+	encStringSlice    = []byte{StringSlice}
+	encStruct         = []byte{Struct}
+	encStructInfo     = []byte{StructInfo}
+	encUint32         = []byte{Uint32}
+	encUint64         = []byte{Uint64}
 )
 
 var (
-	anyInterfaceType = reflect.TypeOf(interface{}(nil))
-	byteSliceType    = reflect.TypeOf([]byte(nil))
-	stringSliceType  = reflect.TypeOf([]string(nil))
+	anyInterfaceType   = reflect.TypeOf(interface{}(nil))
+	byteSliceType      = reflect.TypeOf([]byte(nil))
+	byteSliceSliceType = reflect.TypeOf([][]byte(nil))
+	stringSliceType    = reflect.TypeOf([]string(nil))
 )
 
 type Encoder struct {
-	b     *bytes.Buffer
-	dup   bool
-	pad   []byte
-	err   os.Error
-	seen  map[reflect.Type]*structInfo
-	state *encState
-	w     io.Writer
+	b       *bytes.Buffer
+	dup     bool
+	engines map[reflect.Type]*encEngine
+	pad     []byte
+	err     os.Error
+	seen    map[*structInfo]bool
+	w       io.Writer
 }
 
 func (enc *Encoder) Encode(v interface{}) (err os.Error) {
@@ -181,18 +183,6 @@ func (enc *Encoder) encode(v interface{}, typeinfo bool) {
 			enc.b.Write(encStringSlice)
 		}
 		enc.writeStringSlice(value, enc.b)
-	case *structInfo:
-		buf := enc.b
-		buf.Write(encStructInfo)
-		enc.writeUint64(value.id, buf)
-		enc.writeSize(value.n, buf)
-		for _, f := range value.fields {
-			if f == nil {
-				continue
-			}
-			enc.writeString(f.name, buf)
-			buf.Write(f.enctype)
-		}
 	case uint16:
 		if typeinfo {
 			enc.b.Write(encUint32)
@@ -209,99 +199,236 @@ func (enc *Encoder) encode(v interface{}, typeinfo bool) {
 		}
 		enc.writeUint64(value, enc.b)
 	default:
-		// if enc.state == nil {
-		// 	enc.state = &encState{
-		// 		loops: make([]int, 0),
-		// 		ops:   make([]int, 0),
-		// 		stack: make([]reflect.Value, 0),
-		// 	}
-		// }
-		enc.encodeValue(reflect.ValueOf(v), typeinfo)
+		enc.encodeValue2(reflect.ValueOf(v), typeinfo)
 	}
 
 }
 
-var encOps = [...]func(){}
+var encOps = [...]func(*Encoder, reflect.Value, bool){
+	ByteSlice: func(enc *Encoder, v reflect.Value, typeinfo bool) {
+		if typeinfo {
+			enc.b.Write(encByteSlice)
+		}
+		enc.writeByteSlice(v.Interface().([]byte), enc.b)
+	},
+	Int64: func(enc *Encoder, v reflect.Value, typeinfo bool) {
+		if typeinfo {
+			enc.b.Write(encInt64)
+		}
+		enc.writeInt64(v.Int(), enc.b)
+	},
+	String: func(enc *Encoder, v reflect.Value, typeinfo bool) {
+		if typeinfo {
+			enc.b.Write(encString)
+		}
+		enc.writeString(v.String(), enc.b)
 
-// ByteSliceSlice
+	},
+	StringSlice: func(enc *Encoder, v reflect.Value, typeinfo bool) {
+		if typeinfo {
+			enc.b.Write(encStringSlice)
+		}
+		enc.writeStringSlice(v.Interface().([]string), enc.b)
+	},
+}
+
+var encBaseOps = [255]int{
+	reflect.Int:    Int64,
+	reflect.Int64:  Int64,
+	reflect.String: String,
+}
+
+var encRawTypes = map[reflect.Type]bool{
+	byteSliceType:   true,
+	stringSliceType: true,
+}
+
+var encEngines = map[reflect.Type]*encEngine{}
+var encLock sync.RWMutex
 
 const (
-	opLoop = iota + baseId
+	indirEngine = iota
+	mapEngine
+	sliceEngine
+	structEngine
 )
 
-type encState struct {
-	loops []int
-	next  int
-	ops   []int
-	stack []reflect.Value
+type encEngine struct {
+	elems []*encElem
+	info  *structInfo
+	typ   int
 }
 
-func (enc *Encoder) getDescriptors(state *encState, v reflect.Value) {
-	switch v.Kind() {
-	case reflect.Array:
-	case reflect.Slice:
-	case reflect.Int64:
-		state.ops = append(state.ops, Int64)
-	}
+type encElem struct {
+	engine *encEngine
+	op     int
+	raw    bool
+	typ    []byte
 }
 
-func (enc *Encoder) engine(state *encState, v reflect.Value) {
-
-	var op int
-
-	for {
-
-		op = state.next
-		if op < baseId {
-			encOps[op]()
-		} else {
-			switch op {
-			case opLoop:
-
-			}
-		}
-
-		break
-
-	}
-
+type structInfo struct {
+	fields []*fieldInfo
+	id     uint64
+	n      int
 }
 
-func (enc *Encoder) encodeValue(v reflect.Value, typeinfo bool) {
+type fieldInfo struct {
+	encElem
+	idx    int
+	name   string
+	nested bool
+}
 
-	if !v.IsValid() {
-		enc.err = Error("invalid type detected")
-		return
+func (engine *encEngine) setElem(idx int, rt reflect.Type) *encElem {
+	elem := &encElem{}
+	if encRawTypes[rt] {
+		elem.raw = true
+	} else if op := encBaseOps[rt.Kind()]; op > 0 {
+		elem.op = op
+	} else {
+		elem.engine = compileEncEngine(rt)
+	}
+	engine.elems[idx] = elem
+	return elem
+}
+
+func compileEncEngine(rt reflect.Type) *encEngine {
+
+	if engine, present := encEngines[rt]; present {
+		return engine
 	}
 
-	switch v.Kind() {
+	engine := &encEngine{}
+
+	switch rt.Kind() {
 	case reflect.Array, reflect.Slice:
-		typ := v.Type()
-		if typ == byteSliceType {
-			if typeinfo {
-				enc.b.Write(encByteSlice)
-			}
-			enc.writeByteSlice(v.Interface().([]byte), enc.b)
+		engine.elems = make([]*encElem, 1)
+		engine.typ = sliceEngine
+		elem := engine.setElem(0, rt.Elem())
+		elem.typ, _ = getEncType(rt.Elem())
+	case reflect.Interface, reflect.Ptr:
+		engine.elems = make([]*encElem, 1)
+		engine.typ = indirEngine
+		engine.setElem(0, rt.Elem())
+	case reflect.Struct:
+		engine.typ = structEngine
+		engine.info = typeCache.Get(rt)
+	default:
+		error(Error("unknown type to compile an encoding engine: " + rt.String()))
+	}
+
+	encEngines[rt] = engine
+	return engine
+
+}
+
+func (enc *Encoder) runEngine(engine *encEngine, v reflect.Value) {
+
+	switch engine.typ {
+	case indirEngine:
+		if v.IsNil() {
+			enc.b.Write(encNil)
 			return
 		}
-		if typ == stringSliceType {
-			if typeinfo {
-				enc.b.Write(encStringSlice)
-			}
-			enc.writeStringSlice(v.Interface().([]string), enc.b)
-			return
+		elem := engine.elems[0]
+		if elem.raw {
+			enc.encode(v.Elem().Interface(), true)
+		} else if elem.op > 0 {
+			encOps[elem.op](enc, v.Elem(), true)
+		} else {
+			enc.runEngine(elem.engine, v.Elem())
 		}
+	case sliceEngine:
+		elem := engine.elems[0]
 		enc.b.Write(encSlice)
-		nested := enc.writeEncType(typ.Elem())
+		enc.b.Write(elem.typ)
 		if v.IsNil() {
 			enc.b.Write(encNil)
 			return
 		}
 		size := v.Len()
 		enc.writeSize(size, enc.b)
-		for i := 0; i < size; i++ {
-			enc.encode(v.Index(i).Interface(), nested)
+		if elem.raw {
+			for i := 0; i < size; i++ {
+				enc.encode(v.Index(i).Interface(), true)
+			}
+			return
 		}
+		if elem.op > 0 {
+			op := encOps[elem.op]
+			for i := 0; i < size; i++ {
+				op(enc, v.Index(i), true)
+			}
+			return
+		}
+		for i := 0; i < size; i++ {
+			enc.runEngine(elem.engine, v.Index(i))
+		}
+	case structEngine:
+		info := engine.info
+		enc.b.Write(encStruct)
+		enc.writeUint64(info.id, enc.b)
+		for _, f := range info.fields {
+			if f.raw {
+				enc.encode(v.Field(f.idx).Interface(), f.nested)
+			} else if f.op > 0 {
+				encOps[f.op](enc, v.Field(f.idx), f.nested)
+			} else {
+				enc.runEngine(f.engine, v.Field(f.idx))
+			}
+		}
+	}
+
+}
+
+func (enc *Encoder) encodeValue2(v reflect.Value, typeinfo bool) {
+
+	if !v.IsValid() {
+		enc.err = Error("invalid type detected")
+		return
+	}
+
+	if op := encBaseOps[v.Kind()]; op > 0 {
+		encOps[op](enc, v, typeinfo)
+		return
+	}
+
+	if enc.seen == nil {
+		enc.engines = make(map[reflect.Type]*encEngine)
+		enc.seen = make(map[*structInfo]bool)
+	} else if engine, present := enc.engines[v.Type()]; present {
+		enc.runEngine(engine, v)
+		return
+	}
+
+	encLock.Lock()
+	defer encLock.Unlock()
+
+	engine := compileEncEngine(v.Type())
+	enc.engines[v.Type()] = engine
+	enc.checkinEngine(engine)
+	enc.runEngine(engine, v)
+
+}
+
+func (enc *Encoder) checkinEngine(engine *encEngine) {
+	if engine.typ == structEngine {
+		if !enc.seen[engine.info] {
+			enc.writeStructInfo(engine.info, enc.b)
+			enc.seen[engine.info] = true
+		}
+	} else {
+		for _, elem := range engine.elems {
+			if elem.engine != nil {
+				enc.checkinEngine(elem.engine)
+			}
+		}
+	}
+}
+
+func (enc *Encoder) encodeValue(v reflect.Value, typeinfo bool) {
+
+	switch v.Kind() {
 	case reflect.Bool:
 		if v.Bool() {
 			enc.b.Write(encBoolTrue)
@@ -332,22 +459,11 @@ func (enc *Encoder) encodeValue(v reflect.Value, typeinfo bool) {
 			enc.b.Write(encFloat64)
 		}
 		enc.writeFloat64(v.Float(), enc.b)
-	case reflect.Int, reflect.Int64:
-		if typeinfo {
-			enc.b.Write(encInt64)
-		}
-		enc.writeInt64(v.Int(), enc.b)
 	case reflect.Int8, reflect.Int16, reflect.Int32:
 		if typeinfo {
 			enc.b.Write(encInt32)
 		}
 		enc.writeInt64(v.Int(), enc.b)
-	case reflect.Interface, reflect.Ptr:
-		if v.IsNil() {
-			enc.b.Write(encNil)
-			return
-		}
-		enc.encode(v.Elem().Interface(), typeinfo)
 	case reflect.Map:
 		var forcekey bool
 		buf := enc.b
@@ -386,28 +502,6 @@ func (enc *Encoder) encodeValue(v reflect.Value, typeinfo bool) {
 		for _, key := range v.MapKeys() {
 			enc.encode(key.Interface(), forcekey)
 			enc.encode(v.MapIndex(key).Interface(), forceval)
-		}
-	case reflect.String:
-		enc.b.Write(encString)
-		enc.writeString(v.String(), enc.b)
-	case reflect.Struct:
-		typ := v.Type()
-		if enc.seen == nil {
-			enc.seen = make(map[reflect.Type]*structInfo)
-		}
-		info, ok := enc.seen[typ]
-		if !ok {
-			info = typeCache.Get(typ)
-			enc.encode(info, true)
-			enc.seen[typ] = info
-		}
-		enc.b.Write(encStruct)
-		enc.writeUint64(info.id, enc.b)
-		for i, f := range info.fields {
-			if f == nil {
-				continue
-			}
-			enc.encode(v.Field(i).Interface(), f.nested)
 		}
 	case reflect.Uint, reflect.Uint64:
 		if typeinfo {
@@ -537,6 +631,16 @@ func (enc *Encoder) writeStringSlice(value []string, buf *bytes.Buffer) {
 	for _, item := range value {
 		enc.writeSize(len(item), buf)
 		buf.Write([]byte(item))
+	}
+}
+
+func (enc *Encoder) writeStructInfo(value *structInfo, buf *bytes.Buffer) {
+	buf.Write(encStructInfo)
+	enc.writeUint64(value.id, buf)
+	enc.writeSize(value.n, buf)
+	for _, f := range value.fields {
+		enc.writeString(f.name, buf)
+		buf.Write(f.typ)
 	}
 }
 
@@ -859,40 +963,34 @@ func pow(x, y int64) (z int64) {
 
 func NewEncoder(w io.Writer) *Encoder {
 	if b, ok := w.(*bytes.Buffer); ok {
-		return &Encoder{w: w, b: b, dup: false, pad: make([]byte, 11)}
+		return &Encoder{
+			b:   b,
+			dup: false,
+			pad: make([]byte, 11),
+			w:   w,
+		}
 	}
-	return &Encoder{w: w, b: &bytes.Buffer{}, dup: true, pad: make([]byte, 11)}
-}
-
-type structInfo struct {
-	fields []*fieldInfo
-	id     uint64
-	n      int
-}
-
-type fieldInfo struct {
-	enctype []byte
-	name    string
-	nested  bool
+	return &Encoder{
+		b:   &bytes.Buffer{},
+		dup: true,
+		pad: make([]byte, 11),
+		w:   w,
+	}
 }
 
 type typeRegistry struct {
 	nextId uint64
-	lock   sync.Mutex
 	types  map[reflect.Type]*structInfo
 }
 
 func (reg *typeRegistry) Get(t reflect.Type) *structInfo {
-	reg.lock.Lock()
-	defer reg.lock.Unlock()
 	if info, exists := reg.types[t]; exists {
 		return info
 	}
-	n := t.NumField()
-	s := &structInfo{fields: make([]*fieldInfo, n), id: reg.nextId}
-	j := 0
+	s := &structInfo{fields: make([]*fieldInfo, 0), id: reg.nextId}
+	n := 0
 	reg.nextId += 1
-	for i := 0; i < n; i++ {
+	for i := 0; i < t.NumField(); i++ {
 		field := t.Field(i)
 		if field.Anonymous {
 			continue
@@ -916,11 +1014,19 @@ func (reg *typeRegistry) Get(t reflect.Type) *structInfo {
 			}
 		}
 		f := &fieldInfo{name: name}
-		f.enctype, f.nested = getEncType(field.Type)
-		s.fields[i] = f
-		j += 1
+		f.typ, f.nested = getEncType(field.Type)
+		if encRawTypes[field.Type] {
+			f.raw = true
+		} else if op := encBaseOps[field.Type.Kind()]; op > 0 {
+			f.op = op
+		} else {
+			f.engine = compileEncEngine(field.Type)
+		}
+		f.idx = i
+		s.fields = append(s.fields, f)
+		n += 1
 	}
-	s.n = j
+	s.n = n
 	return s
 }
 
@@ -968,6 +1074,9 @@ func getEncType(t reflect.Type) ([]byte, bool) {
 		}
 		if t == stringSliceType {
 			return encStringSlice, false
+		}
+		if t == byteSliceSliceType {
+			return encByteSliceSlice, false
 		}
 		return encAny, true
 	}
