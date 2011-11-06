@@ -25,7 +25,7 @@ func (dec *Decoder) Decode(v interface{}) (err os.Error) {
 
 }
 
-func (dec *Decoder) decodeValue(v reflect.Value) (err os.Error) {
+func (dec *Decoder) decodeValue(rv reflect.Value) (err os.Error) {
 
 	data := make([]byte, 1)
 	_, err = dec.r.Read(data)
@@ -33,7 +33,7 @@ func (dec *Decoder) decodeValue(v reflect.Value) (err os.Error) {
 		return
 	}
 
-	elem := v.Elem()
+	elem := rv.Elem()
 	got := data[0]
 
 	switch elem.Kind() {
@@ -42,27 +42,40 @@ func (dec *Decoder) decodeValue(v reflect.Value) (err os.Error) {
 			return typeError("complex64", got)
 		}
 	case reflect.Float32:
-		if got != Float32 {
-			return typeError("float32", got)
+		if got == Float32 {
+			return dec.setFloat32(elem)
 		}
-		val, err := dec.ReadFloat32()
-		if err != nil {
-			return err
-		}
-		elem.SetFloat(float64(val))
+		return typeError("float32", got)
 	case reflect.Float64:
-		if got != Float64 {
-			return typeError("float64", got)
+		switch got {
+		case Float64:
+			return dec.setFloat64(elem)
+		case Float32:
+			return dec.setFloat32(elem)
 		}
-		val, err := dec.ReadFloat64()
-		if err != nil {
-			return err
-		}
-		elem.SetFloat(val)
+		return typeError("float64", got)
 	}
 
 	return
 
+}
+
+func (dec *Decoder) setFloat32(rv reflect.Value) (err os.Error) {
+	val, err := dec.ReadFloat32()
+	if err != nil {
+		return
+	}
+	rv.SetFloat(float64(val))
+	return
+}
+
+func (dec *Decoder) setFloat64(rv reflect.Value) (err os.Error) {
+	val, err := dec.ReadFloat64()
+	if err != nil {
+		return
+	}
+	rv.SetFloat(val)
+	return
 }
 
 func (dec *Decoder) ReadFloat32() (value float32, err os.Error) {
