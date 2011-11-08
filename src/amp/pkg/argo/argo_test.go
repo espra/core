@@ -44,7 +44,7 @@ import (
 
 // }
 
-func TestFloat64(t *testing.T) {
+func testFloat64(t *testing.T) {
 
 	// tests := []float64{17.0, 1792.13, 21, 0.1233, 0, 1.1, 2.1, 3.1, 7.1, 8.1, 9.1, 10.1, 14.1, 15.1, 16.1, 20.1}
 
@@ -77,7 +77,7 @@ type Crazy struct {
 	Height int
 }
 
-func TestCrazy(t *testing.T) {
+func testCrazy(t *testing.T) {
 
 	// var n uint64 = 18446744073709551615
 	// var n uint64 = 2147483647
@@ -380,3 +380,16 @@ func TestCrazy(t *testing.T) {
 // 		WriteUint64(uint64(i), buf)
 // 	}
 // }
+
+func BenchmarkEncoding(b *testing.B) {
+	b.StopTimer()
+	buf := &bytes.Buffer{}
+	x := &Crazy{"tav", 29, []string{"nutella", "Gauloises"}, 180}
+	value := []*Crazy{x, x, x, x, x, x, x, x, x, x, x, x, x, x, x, x, x, x, x, x, x, x, x, x, x, x, x, x, x, x, x, x, x, x, x, x, x, x, x, x, x, x, x, x, x, x, x, x, x, x, x, x, x, x, x, x}
+	b.StartTimer()
+	for i := 0; i < b.N; i++ {
+		enc := NewEncoder(buf)
+		enc.Encode(value)
+		buf.Reset()
+	}
+}

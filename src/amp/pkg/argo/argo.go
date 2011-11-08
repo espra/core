@@ -5,7 +5,6 @@ package argo
 
 import (
 	"amp/big"
-	"os"
 )
 
 const (
@@ -52,20 +51,6 @@ var (
 	zeroBase              = []byte{'\x80', '\x01', '\x01'}
 )
 
-type Error string
-
-func (err Error) String() string {
-	return "argo error: " + string(err)
-}
-
-var OutOfRangeError = Error("out of range size value")
-
-type TypeMismatchError string
-
-func (err TypeMismatchError) String() string {
-	return "argo error: " + string(err)
-}
-
 var typeNames = map[byte]string{
 	Nil:            "nil",
 	Any:            "interface{}",
@@ -94,10 +79,6 @@ var typeNames = map[byte]string{
 	StructInfo:     "structInfo",
 	Uint32:         "uint32",
 	Uint64:         "uint64",
-}
-
-func typeError(expected string, got byte) os.Error {
-	return TypeMismatchError("expected " + expected + ", got " + typeNames[got])
 }
 
 func init() {

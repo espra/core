@@ -8,5 +8,6 @@ GOFILES=\
         argo.go\
         decode.go\
         encode.go\
+        error.go\
 
 include $(GOROOT)/src/Make.pkg
