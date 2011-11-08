@@ -10,6 +10,11 @@ if NUMBER_OF_CPUS > 1:
 else:
     PARALLEL = ''
 
+def make64(cmd, extra=['--64']):
+    if ARCH == 'amd64':
+        cmd.extend(extra)
+    return cmd
+
 # ------------------------------------------------------------------------------
 # ampify
 # ------------------------------------------------------------------------------
@@ -259,14 +264,33 @@ RECIPES['nginx'] = [{
 # openssl
 # ------------------------------------------------------------------------------
 
+OPENSSL_PLATFORM = {
+    ('darwin', '386'): 'darwin-i386-cc',
+    ('darwin', 'amd64'): 'darwin64-x86_64-cc',
+    ('linux', '386'): 'linux-generic32',
+    ('linux', 'amd64'): 'linux-generic64'
+    }[PLATFORM, ARCH]
+
+class OpenSSLError(Exception):
+    """Signify an error configuring OpenSSL."""
+
+def configure_openssl(): # Workaround for bug in subprocess.Popen.
+    from commands import getstatusoutput
+    cmd = ['./Configure', OPENSSL_PLATFORM, 'shared', 'no-idea', 'no-krb5',
+        'no-mdc2', 'zlib', '--prefix=%s' % LOCAL,
+         '--openssldir=%s' % join(SHARE, 'ssl'), '-L%s' % LIB, '-I%s' % INCLUDE]
+    log("Running: %s" % ' '.join(cmd))
+    status, output = getstatusoutput(' '.join(cmd))
+    if status:
+        print output
+        raise OpenSSLError("Error configuring OpenSSL!")
+
 RECIPES['openssl'] = [{
     'requires': ['zlib'],
-    'version': '0.9.8o',
-    'hash': '7c8639905b7122f07378d6079eeeebd7ff0a27f126aba6fd00a8ac98a583f263',
+    'version': '1.0.0e',
+    'hash': 'c185c13927cb5c1af9d4865424d5d51a8c1a8b82657ed5e9026b13ca119428bd',
     'commands': [
-        ['./config', 'shared', 'no-idea', 'no-krb5', 'no-mdc2', 'zlib',
-         '--prefix=%s' % LOCAL, '--openssldir=%s' % join(SHARE, 'ssl'),
-         '-L%s' % LIB, '-I%s' % INCLUDE],
+        configure_openssl,
         [MAKE, 'depend'],
         [MAKE],
         [MAKE, 'install']
@@ -330,10 +354,13 @@ RECIPES['readline'] = [{
 # setuptools
 # ------------------------------------------------------------------------------
 
+PYTHON_LIBS_DIRECTORY = join(LOCAL, 'lib', 'python')
+
 RECIPES['setuptools'] = [{
     'type': 'python',
     'version': '0.6c11',
     'hash': '534d31d2551b4be8040127969db9aa7236b6ec58148293d5ebb476c8fee2c408',
+    'before': lambda: mkdir(PYTHON_LIBS_DIRECTORY),
     'commands': [
         [sys.executable, 'setup.py', 'install']
         ]
@@ -392,6 +419,6 @@ RECIPES['yuicompressor'] = [{
 RECIPES['zlib'] = [{
     'version': '1.2.5',
     'hash': 'cbd4d0d617e901470cbe60bc483fdb95122de8baf8b08d96e3c8928ae483f1ca',
-    'config_flags': ['--shared'],
+    'config_flags': make64(['--shared']),
     'make_flags': ['install', 'prefix=%s' % LOCAL]
     }]
