@@ -209,12 +209,16 @@ func (enc *Encoder) encode(v interface{}, typeinfo bool) {
 		if typeinfo {
 			enc.b.Write(encBigDecimal)
 		}
-		WriteBigDecimal(value, enc.b)
+		val := WriteBigDecimal(value)
+		enc.writeSize(len(val), enc.b)
+		enc.b.Write(val)
 	case *big.Int:
 		if typeinfo {
 			enc.b.Write(encBigInt)
 		}
-		WriteBigInt(value, enc.b)
+		val := WriteBigInt(value)
+		enc.writeSize(len(val), enc.b)
+		enc.b.Write(val)
 	case bool:
 		if value {
 			enc.b.Write(encBoolTrue)
@@ -609,27 +613,27 @@ func (enc *Encoder) writeUint64(value uint64, buf *bytes.Buffer) {
 	buf.Write(enc.pad[:i])
 }
 
-func WriteBigDecimal(value *big.Decimal, buf *bytes.Buffer) {
+func WriteBigDecimal(value *big.Decimal) []byte {
 	left, right := value.Components()
-	writeBigInt(left, bigintMagicNumber1, buf)
+	encoding := writeBigInt(left, bigintMagicNumber1)
 	if right != nil {
 		if left.IsNegative() {
-			buf.Write([]byte{'\xff'})
+			encoding = append(encoding, '\xff')
 		} else {
-			buf.Write([]byte{'\x00'})
+			encoding = append(encoding, '\x00')
 		}
-		writeBigInt(right, bigintMagicNumber2, buf)
+		encoding = append(encoding, writeBigInt(right, bigintMagicNumber2)...)
 	}
+	return encoding
 }
 
-func WriteBigInt(value *big.Int, buf *bytes.Buffer) {
-	writeBigInt(value, bigintMagicNumber1, buf)
+func WriteBigInt(value *big.Int) []byte {
+	return writeBigInt(value, bigintMagicNumber1)
 }
 
-func writeBigInt(value *big.Int, cutoff *big.Int, buf *bytes.Buffer) {
+func writeBigInt(value *big.Int, cutoff *big.Int) []byte {
 	if value.IsZero() {
-		buf.Write(zeroBase)
-		return
+		return []byte{'\x80', '\x01', '\x01'}
 	}
 	if !value.IsNegative() {
 		if value.Cmp(cutoff) == -1 {
@@ -644,8 +648,7 @@ func writeBigInt(value *big.Int, cutoff *big.Int, buf *bytes.Buffer) {
 					encoding[0] = byte(div.Int64()) + 128
 				}
 			}
-			buf.Write(encoding)
-			return
+			return encoding
 		}
 		value = value.Sub(value, cutoff)
 		encoding := []byte{'\xff'}
@@ -676,8 +679,7 @@ func writeBigInt(value *big.Int, cutoff *big.Int, buf *bytes.Buffer) {
 		if left.Sign() == 1 {
 			encoding = append(encoding, '\x01', byte(left.Int64()))
 		}
-		buf.Write(encoding)
-		return
+		return encoding
 	}
 	value = value.Neg(value)
 	if value.Cmp(cutoff) == -1 {
@@ -692,8 +694,7 @@ func writeBigInt(value *big.Int, cutoff *big.Int, buf *bytes.Buffer) {
 				encoding[0] = 127 - byte(div.Int64())
 			}
 		}
-		buf.Write(encoding)
-		return
+		return encoding
 	}
 	value = value.Sub(value, cutoff)
 	encoding := []byte{'\x00'}
@@ -730,8 +731,7 @@ func writeBigInt(value *big.Int, cutoff *big.Int, buf *bytes.Buffer) {
 	} else {
 		encoding = append(encoding, '\xfe')
 	}
-	buf.Write(encoding)
-	return
+	return encoding
 }
 
 func WriteInt64(value int64) []byte {
@@ -744,10 +744,9 @@ func WriteInt64(value int64) []byte {
 	return WriteUint64(x)
 }
 
-func WriteInt64AsBig(value int64, buf *bytes.Buffer) {
+func WriteInt64AsBig(value int64) []byte {
 	if value == 0 {
-		buf.Write(zero)
-		return
+		return []byte{'\x80', '\x01', '\x01'}
 	}
 	if value > 0 {
 		if value < magicNumber {
@@ -761,8 +760,7 @@ func WriteInt64AsBig(value int64, buf *bytes.Buffer) {
 					encoding[0] = byte(div) + 128
 				}
 			}
-			buf.Write(encoding)
-			return
+			return encoding
 		}
 		value -= magicNumber
 		encoding := []byte{'\xff'}
@@ -790,8 +788,7 @@ func WriteInt64AsBig(value int64, buf *bytes.Buffer) {
 		if left > 0 {
 			encoding = append(encoding, '\x01', byte(left))
 		}
-		buf.Write(encoding)
-		return
+		return encoding
 	}
 	value = -value
 	if value < magicNumber {
@@ -805,8 +802,7 @@ func WriteInt64AsBig(value int64, buf *bytes.Buffer) {
 				encoding[0] = 127 - byte(div)
 			}
 		}
-		buf.Write(encoding)
-		return
+		return encoding
 	}
 	value -= magicNumber
 	encoding := []byte{'\x00'}
@@ -840,8 +836,7 @@ func WriteInt64AsBig(value int64, buf *bytes.Buffer) {
 	} else {
 		encoding = append(encoding, '\xfe')
 	}
-	buf.Write(encoding)
-	return
+	return encoding
 }
 
 func WriteSize(value int) ([]byte, os.Error) {
@@ -865,21 +860,19 @@ func WriteSize(value int) ([]byte, os.Error) {
 	return data[:i], nil
 }
 
-func WriteStringNumber(value string, buf *bytes.Buffer) os.Error {
+func WriteStringNumber(value string) ([]byte, os.Error) {
 	if strings.Count(value, ".") > 0 {
 		number, ok := big.NewDecimal(value)
 		if !ok {
-			return Error("couldn't create a big.Decimal representation of " + value)
+			return nil, Error("couldn't create a big.Decimal representation of " + value)
 		}
-		WriteBigDecimal(number, buf)
-		return nil
+		return WriteBigDecimal(number), nil
 	}
 	number, ok := new(big.Int).SetString(value, 10)
 	if !ok {
-		return Error("couldn't create an big.Int representation of " + value)
+		return nil, Error("couldn't create an big.Int representation of " + value)
 	}
-	WriteBigInt(number, buf)
-	return nil
+	return WriteBigInt(number), nil
 }
 
 func WriteUint64(value uint64) []byte {
@@ -927,6 +920,9 @@ func compileEncEngine(rt reflect.Type) *encEngine {
 		engine.elems = make([]*encElem, 1)
 		engine.typ = indirEngine
 		engine.setElem(0, rt.Elem())
+	case reflect.Map:
+		engine.elems = make([]*encElem, 2)
+		engine.typ = mapEngine
 	case reflect.Struct:
 		engine.typ = structEngine
 		engine.info = encTypeInfo.Get(rt)
