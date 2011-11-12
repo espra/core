@@ -20,6 +20,7 @@ func (err TypeMismatchError) String() string {
 }
 
 var OutOfRangeError = Error("out of range size value")
+var PointerError = Error("error deferencing pointers")
 
 func error(err os.Error) {
 	panic(err)

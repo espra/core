@@ -11,30 +11,46 @@ const (
 	Nil = iota
 	Any
 	BigDecimal
+	BigDecimalSlice
 	BigInt
+	BigIntSlice
 	Bool
+	BoolSlice
 	BoolFalse
 	BoolTrue
 	Byte
 	ByteSlice
 	ByteSliceSlice
 	Complex64
+	Complex64Slice
 	Complex128
+	Complex128Slice
 	Dict
+	DictAny
+	DictAnySlice
 	Float32
+	Float32Slice
 	Float64
+	Float64Slice
 	Header
 	Int32
+	Int32Slice
 	Int64
+	Int64Slice
 	Item
+	ItemSlice
 	Map
 	Slice
+	SliceAny
 	String
 	StringSlice
 	Struct
+	StructSlice
 	StructInfo
 	Uint32
+	Uint32Slice
 	Uint64
+	Uint64Slice
 	sentinel
 )
 
