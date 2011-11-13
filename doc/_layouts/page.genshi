@@ -63,6 +63,10 @@ ${Markup(content)}
 	<a href="credits.html">Credits</a>
 	<div>Those who have contributed towards the Ampify design and development.</div>
   </li>
+  <li>
+	<a href="supporting-partners.html">Supporting Partners</a>
+	<div>Our awesome partners who are supporting the development of Ampify.</div>
+  </li>
 </ul>
 <py:if test="defined('__by__')">
 <h3>Meta</h3>
