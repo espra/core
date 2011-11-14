@@ -4,27 +4,26 @@
 package rpc
 
 import (
-	"os"
 	"reflect"
 	"unicode"
-	"utf8"
+	"unicode/utf8"
 )
 
 type Error string
 
-func (err Error) String() string {
+func (err Error) Error() string {
 	return string(err)
 }
 
 var (
-	ErrNotFound     os.Error = Error("amp header: key not found")
-	ErrPtrExpected  os.Error = Error("amp header: expected pointer type")
-	ErrTypeMismatch os.Error = Error("amp header: type mismatch")
+	ErrNotFound     error = Error("amp header: key not found")
+	ErrPtrExpected  error = Error("amp header: expected pointer type")
+	ErrTypeMismatch error = Error("amp header: type mismatch")
 )
 
 type Header map[string]interface{}
 
-func (header Header) Get(key string, value interface{}) (err os.Error) {
+func (header Header) Get(key string, value interface{}) (err error) {
 	if resp, ok := header[key]; ok {
 		ev := reflect.ValueOf(value)
 		if ev.Type().Kind() != reflect.Ptr {
@@ -75,7 +74,7 @@ func (header Header) GetString(key string) (value string, ok bool) {
 	return
 }
 
-func setValue(src, dst reflect.Value) (err os.Error) {
+func setValue(src, dst reflect.Value) (err error) {
 
 	ks := ""
 	kv := reflect.ValueOf(&ks).Elem()

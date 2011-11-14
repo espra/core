@@ -4,7 +4,7 @@
 package rpc
 
 import (
-	"json"
+	"encoding/json"
 	"testing"
 )
 
