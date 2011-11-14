@@ -5,7 +5,10 @@ package argo
 
 import (
 	"amp/big"
+	"reflect"
 )
+
+const magicNumber int64 = 8258175
 
 const (
 	Nil = iota
@@ -54,8 +57,6 @@ const (
 	sentinel
 )
 
-const magicNumber int64 = 8258175
-
 var (
 	bigintMagicNumber1, _ = big.NewIntString("8258175")
 	bigintMagicNumber2, _ = big.NewIntString("8323072")
@@ -63,8 +64,6 @@ var (
 	bigint253, _          = big.NewIntString("253")
 	bigint254, _          = big.NewIntString("254")
 	bigint255, _          = big.NewIntString("255")
-	zero                  = []byte{'\x01', '\x80', '\x01', '\x01'}
-	zeroBase              = []byte{'\x80', '\x01', '\x01'}
 )
 
 var typeNames = map[byte]string{
@@ -97,8 +96,28 @@ var typeNames = map[byte]string{
 	Uint64:         "uint64",
 }
 
+func unsafeAddr(v reflect.Value) uintptr {
+	if v.CanAddr() {
+		return v.UnsafeAddr()
+	}
+	x := reflect.New(v.Type()).Elem()
+	x.Set(v)
+	return x.UnsafeAddr()
+}
+
 func init() {
 	if sentinel > baseId {
 		panic("argo: type IDs have been allocated beyond the base limit")
+	}
+	switch reflect.TypeOf(int(0)).Bits() {
+	case 32:
+		encBaseOps[reflect.Int] = Int32
+		encBaseOps[reflect.Uint] = Uint32
+	case 64:
+		encBaseOps[reflect.Int] = Int64
+		encBaseOps[reflect.Uint] = Uint64
+		is64bit = true
+	default:
+		panic("argo: unknown size of int/uint")
 	}
 }

@@ -3,29 +3,25 @@
 
 package argo
 
-import (
-	"os"
-)
-
 type Error string
 
-func (err Error) String() string {
+func (err Error) Error() string {
 	return "argo error: " + string(err)
 }
 
 type TypeMismatchError string
 
-func (err TypeMismatchError) String() string {
+func (err TypeMismatchError) Error() string {
 	return "argo error: " + string(err)
 }
 
 var OutOfRangeError = Error("out of range size value")
 var PointerError = Error("error deferencing pointers")
 
-func error(err os.Error) {
+func raise(err error) {
 	panic(err)
 }
 
-func typeError(expected string, got byte) os.Error {
+func typeError(expected string, got byte) error {
 	return TypeMismatchError("expected " + expected + ", got " + typeNames[got])
 }
