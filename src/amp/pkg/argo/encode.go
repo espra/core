@@ -5,7 +5,6 @@ package argo
 
 import (
 	"amp/big"
-	"amp/rpc"
 	"bytes"
 	"io"
 	"math"
@@ -62,98 +61,78 @@ var encBaseOps = [255]int{
 }
 
 var encSliceOps = [255]int{
-	reflect.Bool:       BoolSlice,
-	reflect.Complex64:  Complex64Slice,
-	reflect.Complex128: Complex128Slice,
-	reflect.Float32:    Float32Slice,
-	reflect.Float64:    Float64Slice,
-	reflect.Int8:       Int32Slice,
-	reflect.Int16:      Int32Slice,
-	reflect.Int32:      Int32Slice,
-	reflect.Int64:      Int64Slice,
-	reflect.String:     StringSlice,
-	reflect.Uint8:      ByteSlice,
-	reflect.Uint16:     Uint32Slice,
-	reflect.Uint32:     Uint32Slice,
-	reflect.Uint64:     Uint64Slice,
-}
-
-var encSliceSliceOps = [255]int{
-	reflect.Uint8: ByteSliceSlice,
+	reflect.String: StringSlice,
+	reflect.Uint8:  ByteSlice,
 }
 
 var (
-	encAny            = []byte{Any}
-	encBigDecimal     = []byte{BigDecimal}
-	encBigInt         = []byte{BigInt}
-	encBool           = []byte{Bool}
-	encByte           = []byte{Byte}
-	encByteSlice      = []byte{ByteSlice}
-	encByteSliceSlice = []byte{ByteSliceSlice}
-	encComplex64      = []byte{Complex64}
-	encComplex128     = []byte{Complex128}
-	encDict           = []byte{Dict}
-	encDictAny        = []byte{DictAny}
-	encFloat32        = []byte{Float32}
-	encFloat64        = []byte{Float64}
-	encHeader         = []byte{Header}
-	encInt32          = []byte{Int32}
-	encInt64          = []byte{Int64}
-	encItem           = []byte{Item}
-	encMap            = []byte{Map}
-	encNil            = []byte{Nil}
-	encSlice          = []byte{Slice}
-	encSliceAny       = []byte{SliceAny}
-	encString         = []byte{String}
-	encStringSlice    = []byte{StringSlice}
-	encStruct         = []byte{Struct}
-	encStructInfo     = []byte{StructInfo}
-	encUint32         = []byte{Uint32}
-	encUint64         = []byte{Uint64}
-	encTrue           = []byte{1}
-	encFalse          = []byte{0}
-	encBoolTrue       = []byte{Bool, 1}
-	encBoolFalse      = []byte{Bool, 0}
+	encAny         = []byte{Any}
+	encBigDecimal  = []byte{BigDecimal}
+	encBigInt      = []byte{BigInt}
+	encBool        = []byte{Bool}
+	encByte        = []byte{Byte}
+	encByteSlice   = []byte{ByteSlice}
+	encComplex64   = []byte{Complex64}
+	encComplex128  = []byte{Complex128}
+	encDict        = []byte{Dict}
+	encFloat32     = []byte{Float32}
+	encFloat64     = []byte{Float64}
+	encInt32       = []byte{Int32}
+	encInt64       = []byte{Int64}
+	encItem        = []byte{Item}
+	encMap         = []byte{Map}
+	encNil         = []byte{Nil}
+	encSlice       = []byte{Slice}
+	encString      = []byte{String}
+	encStringSlice = []byte{StringSlice}
+	encStruct      = []byte{Struct}
+	encStructInfo  = []byte{StructInfo}
+	encUint32      = []byte{Uint32}
+	encUint64      = []byte{Uint64}
+)
+
+var (
+	encDictAny   = []byte{Dict, Any}
+	encSliceAny  = []byte{Slice, Any}
+	encTrue      = []byte{1}
+	encFalse     = []byte{0}
+	encBoolTrue  = []byte{Bool, 1}
+	encBoolFalse = []byte{Bool, 0}
 )
 
 var encTypeIndicator = [...][]byte{
-	Any:            encAny,
-	BigDecimal:     encBigDecimal,
-	BigInt:         encBigInt,
-	Bool:           encBool,
-	Byte:           encByte,
-	ByteSlice:      encByteSlice,
-	ByteSliceSlice: encByteSliceSlice,
-	Complex64:      encComplex64,
-	Complex128:     encComplex128,
-	Dict:           encDict,
-	DictAny:        encDictAny,
-	Float32:        encFloat32,
-	Float64:        encFloat64,
-	Header:         encHeader,
-	Int32:          encInt32,
-	Int64:          encInt64,
-	Item:           encItem,
-	Map:            encMap,
-	Nil:            encNil,
-	Slice:          encSlice,
-	SliceAny:       encSliceAny,
-	String:         encString,
-	StringSlice:    encStringSlice,
-	Struct:         encStruct,
-	StructInfo:     encStructInfo,
-	Uint32:         encUint32,
-	Uint64:         encUint64,
+	Any:         encAny,
+	BigDecimal:  encBigDecimal,
+	BigInt:      encBigInt,
+	Bool:        encBool,
+	Byte:        encByte,
+	ByteSlice:   encByteSlice,
+	Complex64:   encComplex64,
+	Complex128:  encComplex128,
+	Dict:        encDict,
+	Float32:     encFloat32,
+	Float64:     encFloat64,
+	Int32:       encInt32,
+	Int64:       encInt64,
+	Item:        encItem,
+	Map:         encMap,
+	Nil:         encNil,
+	Slice:       encSlice,
+	String:      encString,
+	StringSlice: encStringSlice,
+	Struct:      encStruct,
+	StructInfo:  encStructInfo,
+	Uint32:      encUint32,
+	Uint64:      encUint64,
 }
 
 type encEngine struct {
-	elems    []*encElem
-	explicit bool
-	i        int /* array: length, indir: indir, raw: op, struct: length */
-	rt       reflect.Type
-	runner   func(*Encoder, *encEngine, uintptr)
-	typ      int
-	typeId   []byte
+	elems  []*encElem
+	i      int /* array: length, indir: indir, raw: op, struct: length */
+	rt     reflect.Type
+	runner func(*Encoder, *encEngine, uintptr)
+	typ    int
+	typeId []byte
 }
 
 type encElem struct {
@@ -177,14 +156,10 @@ var encEngineRunners = map[int]func(*Encoder, *encEngine, uintptr){
 		elemEngine.runner(enc, elemEngine, uintptr(up))
 	},
 	reflectEngine: func(enc *Encoder, engine *encEngine, p uintptr) {
-		// v := (interface{})(p)
-		// enc.encode(v)
 		enc.encode(unsafe.Unreflect(engine.rt, unsafe.Pointer(p)))
 	},
 	sliceEngine: func(enc *Encoder, engine *encEngine, p uintptr) {
-		if engine.explicit {
-			enc.b.Write(engine.typeId)
-		}
+		enc.b.Write(engine.typeId)
 		header := (*reflect.SliceHeader)(unsafe.Pointer(p))
 		mark := header.Data
 		offset := engine.elems[0].offset
@@ -250,7 +225,7 @@ var encOps = [...]func(*Encoder, *encEngine, uintptr){
 			enc.b.Write(encNil)
 			return
 		}
-		enc.writeByteSlice(v, enc.b)
+		enc.writeByteSlice(v)
 	},
 	Complex64: func(enc *Encoder, engine *encEngine, p uintptr) {
 		v := *(*complex64)(unsafe.Pointer(p))
@@ -298,6 +273,32 @@ var encOps = [...]func(*Encoder, *encEngine, uintptr){
 	},
 }
 
+func encDictAnyOp(enc *Encoder, engine *encEngine, p uintptr) {
+	v := *(*map[string]interface{})(unsafe.Pointer(p))
+	if v == nil {
+		enc.b.Write(encNil)
+		return
+	}
+	enc.writeSize(len(v))
+	for k, elem := range v {
+		enc.writeSize(len(k))
+		enc.b.Write([]byte(k))
+		enc.encode(elem)
+	}
+}
+
+func encSliceAnyOp(enc *Encoder, engine *encEngine, p uintptr) {
+	v := *(*[]interface{})(unsafe.Pointer(p))
+	if v == nil {
+		enc.b.Write(encNil)
+		return
+	}
+	enc.writeSize(len(v))
+	for _, elem := range v {
+		enc.encode(elem)
+	}
+}
+
 type Encoder struct {
 	b       *bytes.Buffer
 	dup     bool
@@ -336,7 +337,7 @@ func (enc *Encoder) encode(v interface{}) {
 		enc.b.Write(encByte)
 	case []byte:
 		enc.b.Write(encByteSlice)
-		enc.writeByteSlice(value, enc.b)
+		enc.writeByteSlice(value)
 	case complex64:
 		enc.b.Write(encComplex64)
 		enc.writeFloat32(real(value))
@@ -376,9 +377,6 @@ func (enc *Encoder) encode(v interface{}) {
 	case map[string]interface{}:
 		enc.b.Write(encDictAny)
 		enc.writeDict(value, enc.b)
-	case rpc.Header:
-		enc.b.Write(encHeader)
-		enc.writeDict(value, enc.b)
 	case string:
 		enc.b.Write(encString)
 		enc.writeSize(len(value))
@@ -415,9 +413,7 @@ func (enc *Encoder) encodeValue(rv reflect.Value) {
 
 	rt := rv.Type()
 	if engine, present := enc.engines[rt]; present {
-		if !engine.explicit {
-			enc.b.Write(engine.typeId)
-		}
+		enc.b.Write(engine.typeId)
 		engine.runner(enc, engine, unsafeAddr(rv))
 		return
 	}
@@ -431,9 +427,7 @@ func (enc *Encoder) encodeValue(rv reflect.Value) {
 	}
 
 	enc.checkinEngine(engine)
-	if !engine.explicit {
-		enc.b.Write(engine.typeId)
-	}
+	enc.b.Write(engine.typeId)
 	engine.runner(enc, engine, unsafeAddr(rv))
 
 }
@@ -454,76 +448,13 @@ func (enc *Encoder) checkinEngine(engine *encEngine) {
 	}
 }
 
-// var forcekey bool
-// buf := enc.b
-// typ := v.Type()
-// keytype := typ.Key()
-// elemtype := typ.Elem()
-// if keytype.Kind() == reflect.String {
-// 	if elemtype == anyInterfaceType {
-// 		buf.Write(encDictAny)
-// 		enc.writeDict(v.Interface().(map[string]interface{}), buf)
-// 		return
-// 	} else {
-// 		buf.Write(encDict)
-// 	}
-// } else {
-// 	buf.Write(encMap)
-// 	if keytype == anyInterfaceType {
-// 		buf.Write(encAny)
-// 		forcekey = true
-// 	} else {
-// 		forcekey = enc.writeEncType(keytype)
-// 	}
-// }
-// var forceval bool
-// if elemtype == anyInterfaceType {
-// 	buf.Write(encAny)
-// 	forceval = true
-// } else {
-// 	forceval = enc.writeEncType(elemtype)
-// }
-
-// for _, key := range v.MapKeys() {
-// 	enc.encode(key.Interface(), forcekey)
-// 	enc.encode(v.MapIndex(key).Interface(), forceval)
-// }
-
-// 	case dictEngine:
-// 		elem := engine.elems[0]
-// 		enc.b.Write(encDict)
-// 		enc.b.Write(elem.typ)
-// 		// if enc.raw {
-// 		// 	enc.writeDict(v.Interface().(map[string]interface{}), enc.b)
-// 		// 	return
-// 		// }
-// 		// if v.IsNil() {
-// 		// 	enc.b.Write(encNil)
-// 		// 	return
-// 		// }
-// 		// enc.writeSize(v.Len(), enc.b)
-// 		// if elem.raw {
-// 		// case int64:
-
-// 		// }
-// 	case mapEngine:
-// 		key, elem := engine.elems[0], engine.elems[1]
-// 		enc.b.Write(encMap)
-// 		enc.b.Write(key.typ)
-// 		enc.b.Write(elem.typ)
-// 		if v.IsNil() {
-// 			enc.b.Write(encNil)
-// 			return
-// 		}
-// 		enc.writeSize(v.Len(), enc.b)
-
-func (enc *Encoder) writeByteSlice(value []byte, buf *bytes.Buffer) {
+func (enc *Encoder) writeByteSlice(value []byte) {
 	if value == nil {
-		buf.Write(encNil)
+		enc.b.Write(encNil)
 		return
 	}
 	enc.writeSize(len(value))
-	buf.Write(value)
+	enc.b.Write(value)
 }
 
 func (enc *Encoder) writeDict(value map[string]interface{}, buf *bytes.Buffer) {
@@ -919,7 +850,6 @@ func compileEncEngine(rt reflect.Type) (*encEngine, error) {
 	kind := rt.Kind()
 
 	if op := encBaseOps[kind]; op > 0 {
-		engine.i = op
 		engine.runner = encOps[op]
 		engine.typeId = encTypeIndicator[op]
 		return engine, nil
@@ -928,24 +858,13 @@ func compileEncEngine(rt reflect.Type) (*encEngine, error) {
 	switch rt.Kind() {
 	case reflect.Slice:
 		et := rt.Elem()
-		ekind := et.Kind()
-		if op := encSliceOps[ekind]; op > 0 {
-			engine.i = op
+		if op := encSliceOps[et.Kind()]; op > 0 {
 			engine.runner = encOps[op]
 			engine.typeId = encTypeIndicator[op]
 			return engine, nil
 		}
-		if ekind == reflect.Slice {
-			if op := encSliceSliceOps[et.Elem().Kind()]; op > 0 {
-				engine.i = op
-				engine.runner = encOps[op]
-				engine.typeId = encTypeIndicator[op]
-				return engine, nil
-			}
-		}
 		if et == anyInterfaceType {
-			engine.i = SliceAny
-			engine.runner = encOps[SliceAny]
+			engine.runner = encSliceAnyOp
 			engine.typeId = encSliceAny
 			return engine, nil
 		}
@@ -953,26 +872,23 @@ func compileEncEngine(rt reflect.Type) (*encEngine, error) {
 		if err != nil {
 			return nil, err
 		}
-		switch elemEngine.typ {
-		default:
-			engine.typeId = []byte{Slice, Any}
-		case indirEngine:
-			if elemEngine.explicit {
-				engine.typeId = []byte{Slice, Any}
-			} else {
+		if elemEngine.typ == indirEngine && elemEngine.elems[0].engine.typ == rawEngine {
+			switch elemEngine.typeId[0] {
+			case Byte:
+				engine.typeId = encByteSlice
+			case String:
+				engine.typeId = encStringSlice
+			default:
 				engine.typeId = append([]byte{Slice}, elemEngine.typeId...)
 			}
-		case rawEngine:
-			engine.typeId = []byte{Slice, byte(elemEngine.i)}
-		case structEngine:
+		} else {
 			engine.typeId = append([]byte{Slice}, elemEngine.typeId...)
 		}
 		engine.elems = []*encElem{&encElem{engine: elemEngine, offset: et.Size()}}
-		engine.explicit = true
 		engine.runner = encEngineRunners[sliceEngine]
 		engine.typ = sliceEngine
 	case reflect.Interface:
-		engine.explicit = true
+		engine.rt = rt
 		engine.runner = encEngineRunners[reflectEngine]
 		engine.typ = reflectEngine
 		engine.typeId = encAny
@@ -989,19 +905,22 @@ func compileEncEngine(rt reflect.Type) (*encEngine, error) {
 		if err != nil {
 			return nil, err
 		}
-		if elemEngine.typ == rawEngine || elemEngine.typ == structEngine {
-			engine.explicit = false
-		} else {
-			engine.explicit = true
-		}
 		engine.elems = []*encElem{&encElem{engine: elemEngine}}
 		engine.i = i
 		engine.runner = encEngineRunners[indirEngine]
 		engine.typ = indirEngine
 		engine.typeId = elemEngine.typeId
-	// case reflect.Map:
-	// 	engine.elems = make([]*encElem, 2)
-	// 	engine.typ = mapEngine
+	case reflect.Map:
+		kt := rt.Key()
+		et := rt.Elem()
+		if kt.Kind() == reflect.String {
+			if et.Kind() == reflect.Interface {
+				engine.runner = encDictAnyOp
+				engine.typeId = encDictAny
+				return engine, nil
+			}
+		}
+		return nil, Error("unsupported encoding engine type: " + rt.String())
 	case reflect.Struct:
 		engine.elems = make([]*encElem, 0)
 		n := 0
@@ -1043,7 +962,7 @@ func compileEncEngine(rt reflect.Type) (*encEngine, error) {
 		engine.typeId = append([]byte{Struct}, EncodeUint64(nextEncId)...)
 		nextEncId += 1
 	default:
-		raise(Error("unknown type to compile an encoding engine: " + rt.String()))
+		return nil, Error("unsupported encoding engine type: " + rt.String())
 	}
 
 	encEngines[rt] = engine
