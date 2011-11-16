@@ -33,9 +33,9 @@ const (
 )
 
 var (
-	anyInterfaceType = reflect.TypeOf(interface{}(nil))
-	encEngines       = map[reflect.Type]*encEngine{}
-	nextEncId        = uint64(baseId)
+	bigDecimalType = reflect.TypeOf(&big.Decimal{})
+	encEngines     = map[reflect.Type]*encEngine{}
+	nextEncId      = uint64(baseId)
 )
 
 var (
@@ -68,7 +68,6 @@ var encSliceOps = [255]int{
 var (
 	encAny         = []byte{Any}
 	encBigDecimal  = []byte{BigDecimal}
-	encBigInt      = []byte{BigInt}
 	encBool        = []byte{Bool}
 	encByte        = []byte{Byte}
 	encByteSlice   = []byte{ByteSlice}
@@ -79,7 +78,6 @@ var (
 	encFloat64     = []byte{Float64}
 	encInt32       = []byte{Int32}
 	encInt64       = []byte{Int64}
-	encItem        = []byte{Item}
 	encMap         = []byte{Map}
 	encNil         = []byte{Nil}
 	encSlice       = []byte{Slice}
@@ -103,7 +101,6 @@ var (
 var encTypeIndicator = [...][]byte{
 	Any:         encAny,
 	BigDecimal:  encBigDecimal,
-	BigInt:      encBigInt,
 	Bool:        encBool,
 	Byte:        encByte,
 	ByteSlice:   encByteSlice,
@@ -114,7 +111,6 @@ var encTypeIndicator = [...][]byte{
 	Float64:     encFloat64,
 	Int32:       encInt32,
 	Int64:       encInt64,
-	Item:        encItem,
 	Map:         encMap,
 	Nil:         encNil,
 	Slice:       encSlice,
@@ -273,6 +269,13 @@ var encOps = [...]func(*Encoder, *encEngine, uintptr){
 	},
 }
 
+func encBigDecimalOp(enc *Encoder, engine *encEngine, p uintptr) {
+	v := *(**big.Decimal)(unsafe.Pointer(p))
+	rep := EncodeBigDecimal(v)
+	enc.writeSize(len(rep))
+	enc.b.Write(rep)
+}
+
 func encDictAnyOp(enc *Encoder, engine *encEngine, p uintptr) {
 	v := *(*map[string]interface{})(unsafe.Pointer(p))
 	if v == nil {
@@ -320,11 +323,6 @@ func (enc *Encoder) encode(v interface{}) {
 	case *big.Decimal:
 		enc.b.Write(encBigDecimal)
 		val := EncodeBigDecimal(value)
-		enc.writeSize(len(val))
-		enc.b.Write(val)
-	case *big.Int:
-		enc.b.Write(encBigInt)
-		val := EncodeBigInt(value)
 		enc.writeSize(len(val))
 		enc.b.Write(val)
 	case bool:
@@ -863,7 +861,7 @@ func compileEncEngine(rt reflect.Type) (*encEngine, error) {
 			engine.typeId = encTypeIndicator[op]
 			return engine, nil
 		}
-		if et == anyInterfaceType {
+		if et.Kind() == reflect.Interface {
 			engine.runner = encSliceAnyOp
 			engine.typeId = encSliceAny
 			return engine, nil
@@ -893,6 +891,11 @@ func compileEncEngine(rt reflect.Type) (*encEngine, error) {
 		engine.typ = reflectEngine
 		engine.typeId = encAny
 	case reflect.Ptr:
+		if rt == bigDecimalType {
+			engine.runner = encBigDecimalOp
+			engine.typeId = encBigDecimal
+			return engine, nil
+		}
 		i := 1
 		for {
 			rt = rt.Elem()

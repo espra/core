@@ -14,7 +14,6 @@ const (
 	Nil = iota
 	Any
 	BigDecimal
-	BigInt
 	Bool
 	Byte
 	ByteSlice
@@ -25,7 +24,6 @@ const (
 	Float64
 	Int32
 	Int64
-	Item
 	Map
 	Slice
 	String
@@ -50,7 +48,6 @@ var typeNames = map[byte]string{
 	Nil:         "nil",
 	Any:         "interface{}",
 	BigDecimal:  "*big.Decimal",
-	BigInt:      "*big.Int",
 	Bool:        "bool",
 	Byte:        "byte",
 	ByteSlice:   "[]byte",
@@ -61,7 +58,6 @@ var typeNames = map[byte]string{
 	Float64:     "float64",
 	Int32:       "int32",
 	Int64:       "int64",
-	Item:        "*Item",
 	Map:         "map",
 	Slice:       "[]",
 	String:      "string",
