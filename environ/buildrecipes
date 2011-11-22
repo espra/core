@@ -21,24 +21,12 @@ def make64(cmd, extra=['--64']):
 
 RECIPES['ampify'] = [{
     'type': 'git',
-    'requires': ['go'],
+    'requires': ['go', 'golibs'],
     'path': ROOT,
     'before': lambda: chdir(join(SRC, 'amp')),
     'commands': [
         [MAKE, 'install']
         ]
-    }]
-
-# ------------------------------------------------------------------------------
-# berkeleydb
-# ------------------------------------------------------------------------------
-
-RECIPES['berkeleydb'] = [{
-    'version': '4.8.30',
-    'hash': 'aad516a6e991e1e48dd45ba410f0b74c465bc54fb2ad04e00df60594f30a256c',
-    'before': lambda: chdir('build_unix'),
-    'config_command': '../dist/configure',
-    'config_flags': ['--enable-cxx', '--prefix', LOCAL],
     }]
 
 # ------------------------------------------------------------------------------
@@ -143,29 +131,18 @@ RECIPES['go'] = [{
     }]
 
 # ------------------------------------------------------------------------------
-# keyspace
+# golibs
 # ------------------------------------------------------------------------------
 
-def copy_keyspace_py_lib():
-    directory = join(getcwd(), 'bin', 'python')
-    pylibs = join(ROOT, 'third_party', 'pylibs')
-    mkdir(pylibs)
-    for file in listdir(directory):
-        if file.endswith('.so') or file.endswith('.py'):
-            copy(join(directory, file), join(pylibs, file))
+GOLIBS_PATH = 'third_party/golibs'
 
-RECIPES['keyspace'] = [{
-    'requires': ['python'],
-    'version': '1.8.0',
-    'hash': '5f6425411eff961e1bf9122aa3f59a898cee4af0fcd7a1abe29b84a3cf6539e2',
-    'after': copy_keyspace_py_lib,
-    'env': {
-        'PREFIX': LOCAL
-        },
+RECIPES['golibs'] = [{
+    'type': 'git',
+    'requires': ['go'],
+    'path': GOLIBS_PATH,
+    'before': lambda: chdir(join(GOLIBS_PATH, 'snappy')),
     'commands': [
-        [MAKE],
-        [MAKE, 'install'],
-        [MAKE, 'pythonlib']
+        [MAKE, 'install']
         ]
     }]
 
@@ -233,34 +210,6 @@ RECIPES['node'] = [{
     }]
 
 # ------------------------------------------------------------------------------
-# nginx
-# ------------------------------------------------------------------------------
-
-NGINX = join(LOCAL, 'share', 'nginx')
-NGINX_TMP = join(NGINX, 'tmp')
-
-RECIPES['nginx'] = [{
-    'requires': ['openssl', 'pcre', 'zlib'],
-    'version': '0.7.67',
-    'hash': '7dba22b0e17a996af4ec409084f38d33a3cbc5c678abb980470dc932c9200e8f',
-    'before': lambda: mkdir(NGINX_TMP),
-    'config_flags': [
-        '--with-http_stub_status_module',
-        '--prefix=%s' % NGINX,
-        '--sbin-path=%s' % join(BIN, 'nginx'),
-        '--conf-path=%s' % join(NGINX, 'etc', 'nginx.conf'),
-        '--pid-path=%s' % join(NGINX, 'var', 'nginx.pid'),
-        '--error-log-path=%s' % join(NGINX, 'var', 'error.log'),
-        '--http-log-path=%s' % join(NGINX, 'var', 'access.log'),
-        '--http-client-body-temp-path=%s' % join(NGINX_TMP, 'http_client'),
-        '--http-proxy-temp-path=%s' % join(NGINX_TMP, 'proxy'),
-        '--http-fastcgi-temp-path=%s' % join(NGINX_TMP, 'fastcgi'),
-        '--with-cc-opt=-I%s' % INCLUDE, '--with-ld-opt=-L%s' % LIB,
-        '--with-ipv6', '--with-http_ssl_module'
-        ]
-    }]
-
-# ------------------------------------------------------------------------------
 # openssl
 # ------------------------------------------------------------------------------
 
@@ -295,16 +244,6 @@ RECIPES['openssl'] = [{
         [MAKE],
         [MAKE, 'install']
         ]
-    }]
-
-# ------------------------------------------------------------------------------
-# pcre
-# ------------------------------------------------------------------------------
-
-RECIPES['pcre'] = [{
-    'requires': ['zlib'],
-    'version': '8.10',
-    'hash': 'c82ac809d5bd0a281400ec4b4368ce1d9f93b589c42bd9b413f8dfc187c9541d'
     }]
 
 # ------------------------------------------------------------------------------
@@ -400,16 +339,6 @@ RECIPES['ucd'] = [{
     'version': '5.2.0',
     'hash': '12363cd8793148283551a69478ec42220c9e43c91d4dd77557df5d5265199e51',
     'type': 'resource'
-    }]
-
-# ------------------------------------------------------------------------------
-# yuicompressor
-# ------------------------------------------------------------------------------
-
-RECIPES['yuicompressor'] = [{
-    'version': '2.4.2',
-    'hash': '1289ef00c770d9559a826542ff30a2197891915ef973ea9c7cdc0be613f6a108',
-    'type': 'jar'
     }]
 
 # ------------------------------------------------------------------------------
