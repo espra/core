@@ -1,10 +1,10 @@
-# Public Domain (-) 2010-2011 The Ampify Authors.
+# Public Domain (-) 2011 The Ampify Authors.
 # See the Ampify UNLICENSE file for details.
 
 include $(GOROOT)/src/Make.inc
 
-TARG=amp/pyksproxy
+TARG=amp/messaging
 GOFILES=\
-        pyksproxy.go\
+        messaging.go\
 
 include $(GOROOT)/src/Make.pkg
