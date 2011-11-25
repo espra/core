@@ -125,7 +125,7 @@ func signalRotation(logger *FileLogger, signalChannel chan string) {
 	}
 }
 
-func AddFileLogger(name string, directory string, rotate int, logType int) (logger *FileLogger, err os.Error) {
+func AddFileLogger(name string, directory string, rotate int, logType int) (logger *FileLogger, err error) {
 	logger = &FileLogger{
 		name:      name,
 		directory: directory,

@@ -17,14 +17,14 @@ type CommandError struct {
 	Args    []string
 }
 
-func (err *CommandError) String() string {
+func (err *CommandError) Error() string {
 	return fmt.Sprintf("Couldn't successfully execute: %s %v", err.Command, err.Args)
 }
 
 // Return the output from running the given command
-func GetOutput(args []string) (output string, error os.Error) {
+func GetOutput(args []string) (output string, error error) {
 	var (
-		buffer *bytes.Buffer
+		buffer  *bytes.Buffer
 		process *os.Process
 	)
 	read_pipe, write_pipe, err := os.Pipe()

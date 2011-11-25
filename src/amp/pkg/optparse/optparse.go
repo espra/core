@@ -8,9 +8,9 @@ package optparse
 import (
 	"amp/structure"
 	"amp/yaml"
-	"exec"
 	"fmt"
 	"os"
+	"os/exec"
 	"strconv"
 	"strings"
 )
@@ -39,7 +39,7 @@ func ListCompleter(items ...string) *listCompleter {
 // Utility Functions
 // -----------------------------------------------------------------------------
 
-func error(message string, v ...interface{}) {
+func exit(message string, v ...interface{}) {
 	if len(v) == 0 {
 		fmt.Fprint(os.Stderr, message)
 	} else {
@@ -339,11 +339,11 @@ func (op *OptionParser) Parse(args []string) (remainder []string) {
 			}
 		}
 		if noOpt {
-			error("%s: error: no such option: %s\n", args[0], arg)
+			exit("%s: error: no such option: %s\n", args[0], arg)
 		}
 		if opt.dest != "" {
 			if idx == argLength {
-				error("%s: error: %s option requires an argument\n", args[0], arg)
+				exit("%s: error: %s option requires an argument\n", args[0], arg)
 			}
 		}
 		if opt.valueType == "bool" {
@@ -359,18 +359,18 @@ func (op *OptionParser) Parse(args []string) (remainder []string) {
 			idx += 1
 		} else if opt.valueType == "string" {
 			if idx == argLength {
-				error("%s: error: no value specified for %s\n", args[0], arg)
+				exit("%s: error: no value specified for %s\n", args[0], arg)
 			}
 			*opt.stringValue = args[idx+1]
 			opt.defined = true
 			idx += 2
 		} else if opt.valueType == "int" {
 			if idx == argLength {
-				error("%s: error: no value specified for %s\n", args[0], arg)
+				exit("%s: error: no value specified for %s\n", args[0], arg)
 			}
 			intValue, err := strconv.Atoi(args[idx+1])
 			if err != nil {
-				error("%s: error: couldn't convert %s value '%s' to an integer\n", args[0], arg, args[idx+1])
+				exit("%s: error: couldn't convert %s value '%s' to an integer\n", args[0], arg, args[idx+1])
 			}
 			*opt.intValue = intValue
 			opt.defined = true
@@ -383,7 +383,7 @@ func (op *OptionParser) Parse(args []string) (remainder []string) {
 
 	for _, opt := range op.options {
 		if opt.requiredFlag && !opt.defined {
-			error("%s: error: required: %s", args[0], opt)
+			exit("%s: error: required: %s", args[0], opt)
 		}
 	}
 
@@ -391,7 +391,7 @@ func (op *OptionParser) Parse(args []string) (remainder []string) {
 
 }
 
-func (op *OptionParser) ParseConfig(filename string, args []string) (err os.Error) {
+func (op *OptionParser) ParseConfig(filename string, args []string) (err error) {
 
 	data, err := yaml.ParseDictFile(filename)
 	if err != nil {
@@ -405,7 +405,7 @@ func (op *OptionParser) ParseConfig(filename string, args []string) (err os.Erro
 		value, ok := data[config]
 		if !ok {
 			if opt.requiredConfig {
-				error("%s: error: required: %s", args[0], opt)
+				exit("%s: error: required: %s", args[0], opt)
 			} else {
 				continue
 			}
@@ -416,14 +416,14 @@ func (op *OptionParser) ParseConfig(filename string, args []string) (err os.Erro
 			} else if value == "false" || value == "off" || value == "no" {
 				*opt.boolValue = false
 			} else {
-				error("%s: error: invalid boolean value for %s: %q\n", args[0], config, value)
+				exit("%s: error: invalid boolean value for %s: %q\n", args[0], config, value)
 			}
 		} else if opt.valueType == "string" {
 			*opt.stringValue = value
 		} else if opt.valueType == "int" {
 			intValue, err := strconv.Atoi(value)
 			if err != nil {
-				error("%s: error: couldn't convert the %s value %q to an integer\n", args[0], config, value)
+				exit("%s: error: couldn't convert the %s value %q to an integer\n", args[0], config, value)
 			}
 			*opt.intValue = intValue
 		}
@@ -555,7 +555,7 @@ func Subcommands(name, version string, commands map[string]func([]string, string
 			exe := fmt.Sprintf("%s-%s", strings.Replace(name, " ", "-", -1), command)
 			exePath, err := exec.LookPath(exe)
 			if err != nil {
-				error("ERROR: Couldn't find '%s'\n", exe)
+				exit("ERROR: Couldn't find '%s'\n", exe)
 			}
 
 			args[0] = exe
@@ -567,16 +567,16 @@ func Subcommands(name, version string, commands map[string]func([]string, string
 				})
 
 			if err != nil {
-				error(fmt.Sprintf("ERROR: %s: %s\n", exe, err))
+				exit(fmt.Sprintf("ERROR: %s: %s\n", exe, err))
 			}
 
 			_, err = process.Wait(0)
 			if err != nil {
-				error(fmt.Sprintf("ERROR: %s: %s\n", exe, err))
+				exit(fmt.Sprintf("ERROR: %s: %s\n", exe, err))
 			}
 
 		} else {
-			error(fmt.Sprintf("%s: error: no such option: %s\n", name, command))
+			exit(fmt.Sprintf("%s: error: no such option: %s\n", name, command))
 		}
 		os.Exit(0)
 	}
@@ -595,7 +595,7 @@ func Subcommands(name, version string, commands map[string]func([]string, string
 			}
 
 			if len(helpArgs) != 1 {
-				error("ERROR: Unknown command '%s'\n", strings.Join(helpArgs, " "))
+				exit("ERROR: Unknown command '%s'\n", strings.Join(helpArgs, " "))
 			}
 
 			command := helpArgs[0]
