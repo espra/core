@@ -94,13 +94,6 @@ func AddConsoleLogger() {
 	AddReceiver(console.receiver, MixedLog)
 }
 
-func AddConsoleFilter(typeId string, filter Filter) {
-	if filter == nil {
-		return
-	}
-	ConsoleFilters[typeId] = filter
-}
-
 func DisableConsoleColors() {
 	colorify = false
 }

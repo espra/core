@@ -38,14 +38,7 @@ type Record struct {
 	Type  string
 }
 
-func Info(v ...interface{}) {
-	record := &Record{false, []interface{}{fmt.Sprint(v...)}, "m"}
-	for _, receiver := range InfoReceivers {
-		receiver <- record
-	}
-}
-
-func Infof(format string, v ...interface{}) {
+func Info(format string, v ...interface{}) {
 	record := &Record{false, []interface{}{fmt.Sprintf(format, v...)}, "m"}
 	for _, receiver := range ErrorReceivers {
 		receiver <- record
@@ -59,14 +52,7 @@ func InfoData(typeId string, v ...interface{}) {
 	}
 }
 
-func Error(v ...interface{}) {
-	record := &Record{true, []interface{}{fmt.Sprint(v...)}, "m"}
-	for _, receiver := range ErrorReceivers {
-		receiver <- record
-	}
-}
-
-func Errorf(format string, v ...interface{}) {
+func Error(format string, v ...interface{}) {
 	record := &Record{true, []interface{}{fmt.Sprintf(format, v...)}, "m"}
 	for _, receiver := range ErrorReceivers {
 		receiver <- record
@@ -75,6 +61,13 @@ func Errorf(format string, v ...interface{}) {
 
 func ErrorData(typeId string, v ...interface{}) {
 	record := &Record{true, v, typeId}
+	for _, receiver := range ErrorReceivers {
+		receiver <- record
+	}
+}
+
+func StandardError(err error) {
+	record := &Record{true, []interface{}{err}, "m"}
 	for _, receiver := range ErrorReceivers {
 		receiver <- record
 	}
