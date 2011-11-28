@@ -10,7 +10,7 @@ package runtime
 
 import (
 	"amp/command"
-	"amp/logging"
+	"amp/log"
 	"amp/optparse"
 	"fmt"
 	"os"
@@ -35,21 +35,13 @@ var (
 // Signal Handling
 // -----------------------------------------------------------------------------
 
-var signalHandlers = make(map[os.UnixSignal]func())
-
-func RegisterSignalHandler(signal os.UnixSignal, handler func()) {
-	signalHandlers[signal] = handler
-}
-
-func ClearSignalHandler(signal os.UnixSignal) {
-	signalHandlers[signal] = func() {}, false
-}
+var SignalHandlers = make(map[os.UnixSignal]func())
 
 func handleSignals() {
 	var sig os.Signal
 	for {
 		sig = <-signal.Incoming
-		handler, found := signalHandlers[sig.(os.UnixSignal)]
+		handler, found := SignalHandlers[sig.(os.UnixSignal)]
 		if found {
 			handler()
 		}
@@ -73,6 +65,7 @@ func RegisterExitHandler(handler func()) {
 }
 
 func Exit(code int) {
+	log.Wait()
 	RunExitHandlers()
 	os.Exit(code)
 }
@@ -81,17 +74,13 @@ func Exit(code int) {
 // Error Handling
 // -----------------------------------------------------------------------------
 
-func Error(message string, v ...interface{}) {
-	if len(v) == 0 {
-		fmt.Fprint(os.Stderr, message)
-	} else {
-		fmt.Fprintf(os.Stderr, message, v...)
-	}
+func Error(format string, v ...interface{}) {
+	log.Error(format, v...)
 	Exit(1)
 }
 
-func StandardError(err os.Error) {
-	fmt.Fprintf(os.Stderr, "ERROR: %s\n", err)
+func StandardError(err error) {
+	log.StandardError(err)
 	Exit(1)
 }
 
@@ -102,12 +91,12 @@ func StandardError(err os.Error) {
 func CreatePidFile(path string) {
 	pidFile, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY, 0666)
 	if err != nil {
-		Error("ERROR: %s\n", err)
+		StandardError(err)
 	}
 	fmt.Fprintf(pidFile, "%d", os.Getpid())
 	err = pidFile.Close()
 	if err != nil {
-		Error("ERROR: %s\n", err)
+		StandardError(err)
 	}
 }
 
@@ -121,7 +110,7 @@ type Lock struct {
 	acquired bool
 }
 
-func GetLock(directory string, name string) (lock *Lock, err os.Error) {
+func GetLock(directory string, name string) (lock *Lock, err error) {
 	file := path.Join(directory, fmt.Sprintf("%s-%d.lock", name, os.Getpid()))
 	lockFile, err := os.OpenFile(file, os.O_CREATE|os.O_WRONLY, 0666)
 	if err != nil {
@@ -162,14 +151,6 @@ func JoinPath(directory, path string) string {
 }
 
 // -----------------------------------------------------------------------------
-// Process Profile
-// -----------------------------------------------------------------------------
-
-func SetProfile(profile string) {
-	Profile = profile
-}
-
-// -----------------------------------------------------------------------------
 // Process Initialisation
 // -----------------------------------------------------------------------------
 
@@ -184,17 +165,15 @@ func Init() {
 // PID file for the current process.
 func InitProcess(name, runPath string) {
 
-	pidFile := fmt.Sprintf("%s.pid", name)
-
 	// Get the runtime lock to ensure we only have one process of any given name
 	// running within the same run path at any time.
 	_, err := GetLock(runPath, name)
 	if err != nil {
-		Error("ERROR: Couldn't successfully acquire a process lock:\n\n\t%s\n\n", err)
+		Error("Couldn't successfully acquire a process lock:\n\n\t%s\n", err)
 	}
 
 	// Write the process ID into a file for use by external scripts.
-	go CreatePidFile(filepath.Join(runPath, pidFile))
+	go CreatePidFile(filepath.Join(runPath, name+".pid"))
 
 }
 
@@ -202,12 +181,12 @@ func InitProcess(name, runPath string) {
 // Process Default Runtime Opts
 // -----------------------------------------------------------------------------
 
-func DefaultOpts(name string, opts *optparse.OptionParser, argv []string, consoleFilter logging.Filter) (bool, string, string) {
+func DefaultOpts(name string, opts *optparse.OptionParser, argv []string) (bool, string, string) {
 
 	var (
 		configPath        string
 		instanceDirectory string
-		err               os.Error
+		err               error
 	)
 
 	debug := opts.Bool([]string{"-d", "--debug"}, false,
@@ -290,28 +269,27 @@ func DefaultOpts(name string, opts *optparse.OptionParser, argv []string, consol
 
 	switch *logRotate {
 	case "daily":
-		rotate = logging.RotateDaily
+		rotate = log.RotateDaily
 	case "hourly":
-		rotate = logging.RotateHourly
+		rotate = log.RotateHourly
 	case "never":
-		rotate = logging.RotateNever
+		rotate = log.RotateNever
 	default:
-		Error("ERROR: Unknown log rotation format %q\n", *logRotate)
+		Error("Unknown log rotation format %q", *logRotate)
 	}
 
 	if !*noConsoleLog {
-		logging.AddConsoleLogger()
-		logging.AddConsoleFilter(consoleFilter)
+		log.AddConsoleLogger()
 	}
 
-	_, err = logging.AddFileLogger(name, logPath, rotate, logging.InfoLog)
+	_, err = log.AddFileLogger(name, logPath, rotate, log.InfoLog)
 	if err != nil {
-		Error("ERROR: Couldn't initialise logfile: %s\n", err)
+		Error("Couldn't initialise logfile: %s", err)
 	}
 
-	_, err = logging.AddFileLogger("error", logPath, rotate, logging.ErrorLog)
+	_, err = log.AddFileLogger("error", logPath, rotate, log.ErrorLog)
 	if err != nil {
-		Error("ERROR: Couldn't initialise logfile: %s\n", err)
+		Error("Couldn't initialise logfile: %s", err)
 	}
 
 	// Initialise the runtime -- which will run the process on multiple
@@ -368,14 +346,22 @@ func GetCPUCount() (count int) {
 // Package Initialiser
 // -----------------------------------------------------------------------------
 
-// Set the ``runtime.CPUCount`` variable to the number of CPUs detected.
 func init() {
+
+	// Set the ``runtime.CPUCount`` variable to the number of CPUs detected.
 	CPUCount = GetCPUCount()
+
+	// Verify that the ``AMPIFY_ROOT`` env variable has been set.
 	AmpifyRoot = os.Getenv("AMPIFY_ROOT")
 	if AmpifyRoot == "" {
-		Error("ERROR: The AMPIFY_ROOT environment variable hasn't been set.\n")
+		fmt.Fprintf(os.Stderr,
+			"ERROR: The AMPIFY_ROOT environment variable hasn't been set.\n")
+		Exit(1)
 	}
-	RegisterSignalHandler(os.SIGINT, func() { Exit(0) })
-	RegisterSignalHandler(os.SIGTERM, func() { Exit(0) })
+
+	// Register default handlers for SIGINT and SIGTERM.
+	SignalHandlers[os.SIGINT] = func() { Exit(0) }
+	SignalHandlers[os.SIGTERM] = func() { Exit(0) }
 	go handleSignals()
+
 }
