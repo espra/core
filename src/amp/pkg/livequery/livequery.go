@@ -250,7 +250,6 @@ func (pubsub *PubSub) Subscribe(sqid string, keys []string, keys2 []string) {
 
 func (pubsub *PubSub) Cleanup(expire int64, interval int64) {
 
-	blankSubs := make([]*Subscription, 0)
 	queries := pubsub.queries
 	refmap := pubsub.refmap
 	sessions := pubsub.sessions
@@ -278,8 +277,8 @@ func (pubsub *PubSub) Cleanup(expire int64, interval int64) {
 		}
 
 		// Remove those queries.
-		for ref, query := range removeQueries {
-			queries[ref] = query, false
+		for ref := range removeQueries {
+			delete(queries, ref)
 		}
 
 		// Loop through the affected subscription keys and modify the
@@ -288,7 +287,7 @@ func (pubsub *PubSub) Cleanup(expire int64, interval int64) {
 			subs := subscriptions[key]
 			subsize := len(subs)
 			if remsize == subsize {
-				subscriptions[key] = blankSubs, false
+				delete(subscriptions, key)
 			} else {
 				newsubs := make([]*Subscription, subsize-remsize)
 				idx := 0
@@ -310,8 +309,8 @@ func (pubsub *PubSub) Cleanup(expire int64, interval int64) {
 		}
 
 		// Remove those sessions.
-		for sid, session := range removeSessions {
-			sessions[sid] = session, false
+		for sid := range removeSessions {
+			delete(sessions, sid)
 		}
 
 		pubsub.mutex.Unlock()
