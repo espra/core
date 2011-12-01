@@ -4,36 +4,26 @@
 PACKAGES=\
 	argo\
 	big\
-	crypto\
 	command\
-	db\
 	encoding\
 	livequery\
-	logging\
+	log\
 	lzf\
-	master\
 	model\
-	nodule\
 	optparse\
-	protocol\
-	pyksproxy\
 	refmap\
 	runtime\
-	server\
 	structure\
 	tlsconf\
-	url\
 	yaml\
-	web\
 
 NOBENCH=\
 	command\
 	encoding\
 	livequery\
-	logging\
+	log\
 	lzf\
 	optparse\
-	pyksproxy\
 	refmap\
 	runtime\
 	server\
@@ -46,8 +36,7 @@ NOBENCH=\
 NOTEST=\
 	command\
 	encoding\
-	logging\
-	pyksproxy\
+	log\
 	server\
 	tlsconf\
 	web\
@@ -92,19 +81,19 @@ test.dirs: pkgroot.test $(addsuffix .test, $(TEST))
 	+cd pkg/$* && $(make) test
 
 pkgroot.bench:
-	+cd pkg && $(make) bench
+	# +cd pkg && $(make) bench
 
 pkgroot.clean:
-	+cd pkg && $(make) clean
+	# +cd pkg && $(make) clean
 
 pkgroot.install:
-	+cd pkg && $(make) install
+	# +cd pkg && $(make) install
 
 pkgroot.nuke:
-	+cd pkg && $(make) nuke
+	# +cd pkg && $(make) nuke
 
 pkgroot.test:
-	+cd pkg && $(make) test
+	# +cd pkg && $(make) test
 
 bench: bench.dirs
 
@@ -118,7 +107,7 @@ nuke: nuke.dirs
 	@cd cmd/amp && $(make) nuke
 
 install: install.dirs
-	@cd cmd/amp && $(make) install
+	#cd cmd/amp && $(make) install
 
 test: test.dirs
 
@@ -128,10 +117,9 @@ test: test.dirs
 
 argo.install: big.install
 livequery.install: refmap.install
-logging.install: encoding.install
+log.install: encoding.install
 optparse.install: structure.install yaml.install
-pyksproxy.install: runtime.install
-runtime.install: command.install logging.install optparse.install
-server.install: logging.install tlsconf.install
+runtime.install: command.install log.install optparse.install
+server.install: log.install tlsconf.install
 tlsconf.install: runtime.install
 web.install: optparse.install structure.install
