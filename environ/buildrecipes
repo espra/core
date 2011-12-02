@@ -167,7 +167,7 @@ RECIPES['libnatpmp'] = [{
 
 MAKEUCD_SCRIPT = join(ENVIRON, 'makeucd')
 UCD_DATA_FILE = join(SHARE, 'ucd', 'UnicodeData.txt')
-UCD_JS_FILE = join(SRC, 'coffee', 'ucd.js')
+UCD_JS_FILE = join(SRC, 'js', 'ucd.js')
 
 RECIPES['makeucd'] = [{
     'requires': ['ucd'],

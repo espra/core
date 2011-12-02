@@ -43,8 +43,8 @@ func (refmap *Map) Delete(s string) {
 	if !found {
 		return
 	}
-	refmap.Lookup[s] = ref, false
-	refmap.Info[ref] = &Ref{}, false
+	delete(refmap.Lookup, s)
+	delete(refmap.Info, ref)
 }
 
 func (refmap *Map) DeleteRef(v uint64) {
@@ -54,8 +54,8 @@ func (refmap *Map) DeleteRef(v uint64) {
 	if !found {
 		return
 	}
-	refmap.Lookup[ref.s] = v, false
-	refmap.Info[v] = ref, false
+	delete(refmap.Lookup, ref.s)
+	delete(refmap.Info, v)
 }
 
 func (refmap *Map) Get(s string) uint64 {
@@ -92,8 +92,8 @@ func (refmap *Map) Decref(s string, decref int) {
 	i := refmap.Info[ref]
 	v := i.v - uint64(decref)
 	if v <= 0 {
-		refmap.Lookup[i.s] = Zero, false
-		refmap.Info[ref] = i, false
+		delete(refmap.Lookup, i.s)
+		delete(refmap.Info, ref)
 	}
 }
 

@@ -7,14 +7,13 @@
 package server
 
 import (
-	"http"
 	"fmt"
+	"net/http"
 )
 
 type HTTPRedirector struct {
-	Log        func(int, int, string, *http.Request)
-	Message    string
 	HSTS       string
+	Message    string
 	PingPath   string
 	Pong       []byte
 	PongLength string
@@ -24,12 +23,11 @@ type HTTPRedirector struct {
 func (redirector *HTTPRedirector) ServeHTTP(conn http.ResponseWriter, req *http.Request) {
 
 	if req.URL.Path == redirector.PingPath {
-		headers := conn.Header()
-		headers.Set("Content-Type", "text/plain")
-		headers.Set("Content-Length", redirector.PongLength)
+		conn.Header().Set("Content-Type", "text/plain")
+		conn.Header().Set("Content-Length", redirector.PongLength)
 		conn.WriteHeader(http.StatusOK)
 		conn.Write(redirector.Pong)
-		redirector.Log(HTTP_PING, http.StatusOK, req.Host, req)
+		logWebRequest(HTTP_PING, req)
 		return
 	}
 
@@ -44,13 +42,10 @@ func (redirector *HTTPRedirector) ServeHTTP(conn http.ResponseWriter, req *http.
 		url = "/"
 	}
 
-	if redirector.HSTS != "" {
-		conn.Header().Set("Strict-Transport-Security", redirector.HSTS)
-	}
-
 	conn.Header().Set("Location", url)
+	conn.Header().Set("Strict-Transport-Security", redirector.HSTS)
 	conn.WriteHeader(http.StatusMovedPermanently)
 	fmt.Fprintf(conn, redirector.Message, url)
-	redirector.Log(HTTP_REDIRECT, http.StatusMovedPermanently, req.Host, req)
+	logWebRequest(HTTP_REDIRECT, req)
 
 }

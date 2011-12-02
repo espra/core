@@ -6,9 +6,9 @@ package nodule
 import (
 	"amp/runtime"
 	"bytes"
-	"exp/template"
 	"os"
 	"strings"
+	"template"
 )
 
 type Config struct {
@@ -59,7 +59,7 @@ func EvalStrings(name string, list []string, data interface{}) ([]string, os.Err
 		} else {
 			tpl := template.New(name)
 			buf := &bytes.Buffer{}
-			err := tpl.Parse(value)
+			tpl, err := tpl.Parse(value)
 			if err != nil {
 				return nil, err
 			}

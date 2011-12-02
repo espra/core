@@ -1,7 +1,7 @@
 // Public Domain (-) 2010-2011 The Ampify Authors.
 // See the Ampify UNLICENSE file for details.
 
-package logging
+package log
 
 import (
 	"fmt"
@@ -58,7 +58,9 @@ func (logger *FileLogger) log() {
 			} else {
 				logger.file.Write([]byte{'I'})
 			}
-			fmt.Fprintf(logger.file, "%v", Now)
+			mutex.RLock()
+			fmt.Fprintf(logger.file, "%v", now)
+			mutex.RUnlock()
 			for i := 0; i < argLength; i++ {
 				message := strconv.Quote(fmt.Sprint(record.Items[i]))
 				fmt.Fprintf(logger.file, "\xfe%s", message[0:len(message)-1])
@@ -117,7 +119,9 @@ func signalRotation(logger *FileLogger, signalChannel chan string) {
 		interval = 3000000000
 	}
 	for {
-		filename = logger.GetFilename(UTC)
+		mutex.RLock()
+		filename = logger.GetFilename(utc)
+		mutex.RUnlock()
 		if filename != logger.filename {
 			signalChannel <- filename
 		}
@@ -125,14 +129,16 @@ func signalRotation(logger *FileLogger, signalChannel chan string) {
 	}
 }
 
-func AddFileLogger(name string, directory string, rotate int, logType int) (logger *FileLogger, err os.Error) {
+func AddFileLogger(name string, directory string, rotate int, logType int) (logger *FileLogger, err error) {
 	logger = &FileLogger{
 		name:      name,
 		directory: directory,
 		rotate:    rotate,
 		receiver:  make(chan *Record, 100),
 	}
-	filename := logger.GetFilename(UTC)
+	mutex.RLock()
+	filename := logger.GetFilename(utc)
+	mutex.RUnlock()
 	pointer := FixUpLog(filename)
 	file, err := os.OpenFile(filename, os.O_CREATE|os.O_WRONLY, 0666)
 	if err != nil {

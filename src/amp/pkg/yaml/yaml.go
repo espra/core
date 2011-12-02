@@ -14,9 +14,8 @@ package yaml
 
 import (
 	"bytes"
-	"io/ioutil"
 	"fmt"
-	"os"
+	"io/ioutil"
 	"strconv"
 	"strings"
 )
@@ -99,7 +98,7 @@ func setValue(elem *Elem, value string) {
 	}
 }
 
-func getKeyValue(lineno int, line string, needkey bool) (key, value string, err os.Error) {
+func getKeyValue(lineno int, line string, needkey bool) (key, value string, err error) {
 	split := strings.SplitN(line, ":", 2)
 	if needkey {
 		if len(split) != 2 {
@@ -152,7 +151,7 @@ func trim(value string) string {
 	return value
 }
 
-func Parse(input string) (data *Data, err os.Error) {
+func Parse(input string) (data *Data, err error) {
 
 	var (
 		elem   *Elem
@@ -219,7 +218,7 @@ func Parse(input string) (data *Data, err os.Error) {
 			if value != "" {
 				subkey, subvalue, _ := getKeyValue(lineno, value, false)
 				if subkey != "" {
-					// XXX Handle maps nested within lists.
+					// TODO(tav): Handle maps nested within lists.
 					_ = subvalue
 				} else {
 					setValue(listElem, value)
@@ -243,7 +242,7 @@ func Parse(input string) (data *Data, err os.Error) {
 
 }
 
-func ParseFile(filename string) (*Data, os.Error) {
+func ParseFile(filename string) (*Data, error) {
 	input, err := ioutil.ReadFile(filename)
 	if err != nil {
 		return nil, err
@@ -272,7 +271,7 @@ func ParseDict(input string) map[string]string {
 	return data
 }
 
-func ParseDictFile(filename string) (map[string]string, os.Error) {
+func ParseDictFile(filename string) (map[string]string, error) {
 	input, err := ioutil.ReadFile(filename)
 	if err != nil {
 		return nil, err

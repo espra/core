@@ -3,11 +3,11 @@
 
 include $(GOROOT)/src/Make.inc
 
-TARG=amp/logging
+TARG=amp/log
 GOFILES=\
 		console.go\
 		file.go\
-        logging.go\
+		log.go\
 		network.go\
 
 include $(GOROOT)/src/Make.pkg

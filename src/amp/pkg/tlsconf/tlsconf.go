@@ -9,16 +9,15 @@ package tlsconf
 import (
 	"amp/runtime"
 	"crypto/rand"
-	"crypto/x509"
 	"crypto/tls"
+	"crypto/x509"
 	"io/ioutil"
-	"os"
 	"time"
 )
 
 var Config *tls.Config
 
-func GenConfig(file string) (config *tls.Config, err os.Error) {
+func GenConfig(file string) (config *tls.Config, err error) {
 	data, err := ioutil.ReadFile(file)
 	if err != nil {
 		return nil, err
@@ -36,7 +35,7 @@ func GenConfig(file string) (config *tls.Config, err os.Error) {
 // Set the ``tlsconf.Config`` variable.
 func Init() {
 	path := runtime.AmpifyRoot + "/environ/local/share/cacerts/ca.cert"
-	var err os.Error
+	var err error
 	Config, err = GenConfig(path)
 	if err != nil {
 		runtime.Error("ERROR: Couldn't load %s: %s\n", path, err)
