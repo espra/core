@@ -219,6 +219,11 @@ func DefaultOpts(name string, opts *optparse.OptionParser, argv []string) (bool,
 		Exit(0)
 	}
 
+	// Enable the console logger early.
+	if !*noConsoleLog {
+		log.AddConsoleLogger()
+	}
+
 	// Assume the parent directory of the config as the instance directory.
 	if len(args) >= 1 {
 		configPath, err = filepath.Abs(filepath.Clean(args[0]))
@@ -276,10 +281,6 @@ func DefaultOpts(name string, opts *optparse.OptionParser, argv []string) (bool,
 		rotate = log.RotateNever
 	default:
 		Error("Unknown log rotation format %q", *logRotate)
-	}
-
-	if !*noConsoleLog {
-		log.AddConsoleLogger()
 	}
 
 	_, err = log.AddFileLogger(name, logPath, rotate, log.InfoLog)
