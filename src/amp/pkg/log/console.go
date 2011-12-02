@@ -60,19 +60,21 @@ func (logger *ConsoleLogger) log() {
 			}
 			if record.Error {
 				prefix = prefixErr
-				status = "ERROR: "
+				status = " ERROR:"
 			} else {
 				prefix = prefixInfo
 				status = ""
 			}
 			mutex.RLock()
-			fmt.Fprintf(file, "%s[%s-%s-%s %s:%s:%s] %s", prefix,
+			fmt.Fprintf(file, "%s[%s-%s-%s %s:%s:%s]%s", prefix,
 				encoding.PadInt64(utc.Year, 4), encoding.PadInt(utc.Month, 2),
 				encoding.PadInt(utc.Day, 2), encoding.PadInt(utc.Hour, 2),
 				encoding.PadInt(utc.Minute, 2), encoding.PadInt(utc.Second, 2),
 				status)
 			mutex.RUnlock()
-			fmt.Fprint(file, items...)
+			for _, item := range items {
+				fmt.Fprintf(file, " %v", item)
+			}
 			file.Write(suffix)
 		case <-checker:
 			if len(logger.receiver) > 0 {
