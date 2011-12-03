@@ -14,7 +14,7 @@ define 'argo', (exports, root) ->
   exports.decode = (stream) ->
     val
 
-  exports.types =
+  exports.types = TYPES =
     Nil:            0
     Any:            1
     BigDecimal:     2
@@ -29,59 +29,74 @@ define 'argo', (exports, root) ->
     Int32:          11
     Int64:          12
     Map:            13
-    Nil:            14
-    Slice:          15
-    String:         16
-    StringSlice:    17
-    Struct:         18
-    StructInfo:     19
-    Uint32:         20
-    Uint64:         21
-    sentinel:       22
+    Slice:          14
+    String:         15
+    StringSlice:    16
+    Struct:         17
+    StructInfo:     18
+    Uint32:         19
+    Uint64:         20
+    sentinel:       21
 
-define()
+  exports.ArgoType = class ArgoType
+    constructor: (@value) ->
 
-class ArgoType
-  constructor: (@value) ->
+  exports.Nil = class Nil extends ArgoType
+    type: TYPES.Nil
 
-class Any extends ArgoType
+  exports.Any = class Any extends ArgoType
+    type: TYPES.Any
 
-class BigDecimal extends ArgoType
+  exports.BigDecimal = class BigDecimal extends Any
+    type: TYPES.BigDecimal
 
-class Bool extends ArgoType
+  exports.Bool = class Bool extends Any
+    type: TYPES.Bool
 
-class Byte extends ArgoType
+  exports.Byte = class Byte extends Any
+    type: TYPES.Bool
 
-class Complex64 extends ArgoType
+  exports.Complex64 = class Complex64 extends Any
+    type: TYPES.Complex64
 
-class Complex128 extends ArgoType
+  exports.Complex128 = class Complex128 extends Any
+    type: TYPES.Complex128
 
-class Float32 extends ArgoType
+  exports.Float32 = class Float32 extends Any
+    type: TYPES.Float32
 
-class Float64 extends ArgoType
+  exports.Float64 = class Float64 extends Any
+    type: TYPES.Float64
 
-class Int32 extends ArgoType
+  exports.Int32 = class Int32 extends Any
+    type: TYPES.Int32
 
-class Int64 extends ArgoType
+  exports.Int64 = class Int64 extends Any
+    type: TYPES.Int64
 
-class Nil extends ArgoType
+  exports.String = class String extends Any
+    type: TYPES.String
 
-class String extends ArgoType
+  exports.Uint32 = class Uint32 extends Any
+    type: TYPES.Uint32
 
-class Uint32 extends ArgoType
+  exports.Uint64 = class Uint64 extends Any
+    type: TYPES.Uint64
 
-class Uint64 extends ArgoType
+  exports.Dict = class Dict extends Any
+    type: TYPES.Dict
 
-class Dict extends ArgoType
+  exports.Slice = class Slice extends Any
+    type: TYPES.Slice
 
-class Slice extends ArgoType
+  exports.ByteSlice = class ByteSlice extends Any
+    type: TYPES.ByteSlice
 
-class ByteSlice extends ArgoType
-  
-class StringSlice extends ArgoType
+  exports.StringSlice = class StringSlice extends Any
+    type: TYPES.StringSlice
 
-class Struct extends ArgoType
+  exports.Struct = class Struct extends Any
+    type: TYPES.Struct
 
-class Map extends ArgoType
-
-
+  exports.Map = class Map extends Any
+    type: TYPES.Map
