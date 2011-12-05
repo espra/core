@@ -4,9 +4,10 @@
 # ByteBuffer
 # ==========
 #
-# ByteBuffer is a layer around typed array with automatic extension built in.
+# ByteBuffer is a layer around typed arrays with automatic extension built in.
+ # Based on Go's bytes.Buffer
 
-define 'argo', (exports, root) ->
+define 'argo.util', (exports, root) ->
 
   # Read operations
   READOP =
@@ -15,11 +16,10 @@ define 'argo', (exports, root) ->
     opRead: 2
 
   exports.ByteBuffer = class ByteBuffer
-    # Based on Go's bytes.Buffer
     constructor: (@buf, @off=0, @lastRead=0, @bootstrap=new ArrayBuffer(64)) ->
 
     # Get bytes from buffer
-    bytes: -> @buf[@off...]
+    bytes: -> @buf.slice(@off)
 
     # Get length from offset
     len: -> @buf.byteLength - @off
@@ -37,14 +37,14 @@ define 'argo', (exports, root) ->
       m = @len()
       if m is 0 and @off isnt 0
         @truncate(0)
-      # Go has slices built in, here we check the buffer backing the Int8Array 
+      # Go has slices built in, here we check the buffer backing the Uint8Array 
       if @buf.byteLength+n > @buf.buffer.byteLength
         if !@buf and n <=  @bootstrap.byteLength # Avoid reallocation for small buffers
           @buf.buffer = @bootstrap.buffer
         else
-          old = new Int8Array(@buf)
+          old = new Uint8Array(@buf)
           buf = new ArrayBuffer(2*@buf.byteLength+n)
-          temp = new Int8Array(buf)
+          temp = new Uint8Array(buf)
           temp.set(old.subarray())
           @buf = temp
           @off = 0

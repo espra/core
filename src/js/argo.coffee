@@ -14,7 +14,7 @@ define 'argo', (exports, root) ->
   exports.decode = (stream) ->
     val
 
-  exports.types = TYPES =
+  exports.TYPES = TYPES =
     Nil:            0
     Any:            1
     BigDecimal:     2
