@@ -36,7 +36,6 @@ define 'argo', (exports, root) ->
     StructInfo:     18
     Uint32:         19
     Uint64:         20
-    sentinel:       21
 
   exports.ArgoType = class ArgoType
     constructor: (@value) ->
