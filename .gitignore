@@ -12,7 +12,7 @@ environ/local
 environ/receipts
 
 src/amp/amp/amp
-src/coffee/*.js
+src/js/*.js
 src/nodule/static/files/css/*.css
 src/nodule/static/files/js/*.js
 src/nodule/urlfetch/urlfetch
