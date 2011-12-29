@@ -74,7 +74,7 @@ func setValue(elem *Elem, value string) {
 		elem.String = value[1 : valueLength-1]
 	} else if match, floatesque := matchNumber(value); match {
 		if floatesque {
-			floatval, err := strconv.Atof64(value)
+			floatval, err := strconv.ParseFloat(value, 64)
 			if err == nil {
 				elem.Type = Float
 				elem.Float = floatval
@@ -83,7 +83,7 @@ func setValue(elem *Elem, value string) {
 				elem.String = value
 			}
 		} else {
-			intval, err := strconv.Atoi64(value)
+			intval, err := strconv.ParseInt(value, 10, 64)
 			if err == nil {
 				elem.Type = Int
 				elem.Int = intval
