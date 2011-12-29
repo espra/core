@@ -26,7 +26,7 @@ func GenConfig(file string) (config *tls.Config, err error) {
 	roots.AppendCertsFromPEM(data)
 	config = &tls.Config{
 		Rand:    rand.Reader,
-		Time:    time.Seconds,
+		Time:    time.Now,
 		RootCAs: roots,
 	}
 	return config, nil
