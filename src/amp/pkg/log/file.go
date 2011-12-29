@@ -71,7 +71,7 @@ func (logger *FileLogger) log() {
 
 }
 
-func (logger *FileLogger) GetFilename(timestamp *time.Time) string {
+func (logger *FileLogger) GetFilename(timestamp time.Time) string {
 	var suffix string
 	switch logger.rotate {
 	case RotateNever:
@@ -108,7 +108,7 @@ func FixUpLog(filename string) (pointer int) {
 }
 
 func signalRotation(logger *FileLogger, signalChannel chan string) {
-	var interval int64
+	var interval time.Duration
 	var filename string
 	switch logger.rotate {
 	case RotateDaily:
@@ -120,7 +120,7 @@ func signalRotation(logger *FileLogger, signalChannel chan string) {
 	}
 	for {
 		mutex.RLock()
-		filename = logger.GetFilename(utc)
+		filename = logger.GetFilename(now)
 		mutex.RUnlock()
 		if filename != logger.filename {
 			signalChannel <- filename
@@ -137,7 +137,7 @@ func AddFileLogger(name string, directory string, rotate int, logType int) (logg
 		receiver:  make(chan *Record, 100),
 	}
 	mutex.RLock()
-	filename := logger.GetFilename(utc)
+	filename := logger.GetFilename(now)
 	mutex.RUnlock()
 	pointer := FixUpLog(filename)
 	file, err := os.OpenFile(filename, os.O_CREATE|os.O_WRONLY, 0666)

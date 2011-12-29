@@ -66,12 +66,14 @@ func (logger *ConsoleLogger) log() {
 				status = ""
 			}
 			mutex.RLock()
-			fmt.Fprintf(file, "%s[%s-%s-%s %s:%s:%s]%s", prefix,
-				encoding.PadInt64(utc.Year, 4), encoding.PadInt(utc.Month, 2),
-				encoding.PadInt(utc.Day, 2), encoding.PadInt(utc.Hour, 2),
-				encoding.PadInt(utc.Minute, 2), encoding.PadInt(utc.Second, 2),
-				status)
+			year, month, day := now.Date()
+			hour, minute, second := now.Clock()
 			mutex.RUnlock()
+			fmt.Fprintf(file, "%s[%s-%s-%s %s:%s:%s]%s", prefix,
+				encoding.PadInt(year, 4), encoding.PadInt(int(month), 2),
+				encoding.PadInt(day, 2), encoding.PadInt(hour, 2),
+				encoding.PadInt(minute, 2), encoding.PadInt(second, 2),
+				status)
 			for _, item := range items {
 				fmt.Fprintf(file, " %v", item)
 			}

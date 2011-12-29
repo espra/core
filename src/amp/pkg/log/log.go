@@ -26,8 +26,7 @@ const (
 
 var (
 	mutex          sync.RWMutex
-	now            = time.Seconds()
-	utc            = time.UTC()
+	now            = time.Now()
 	ErrorReceivers = make([]chan *Record, 0)
 	InfoReceivers  = make([]chan *Record, 0)
 )
@@ -98,10 +97,9 @@ func init() {
 	// Setup a goroutine to update the time every second.
 	go func() {
 		for {
-			<-time.After(1000000000)
+			<-time.After(time.Second)
 			mutex.Lock()
-			now = time.Seconds()
-			utc = time.UTC()
+			now = time.Now()
 			mutex.Unlock()
 		}
 	}()
