@@ -45,7 +45,7 @@ type PubSub struct {
 // Listen
 // -----------------------------------------------------------------------------
 
-func (pubsub *PubSub) Listen(sid string, qids []string, timeout int64) (result map[string][]string, refresh map[string]int, ok bool) {
+func (pubsub *PubSub) Listen(sid string, qids []string, timeout time.Duration) (result map[string][]string, refresh map[string]int, ok bool) {
 
 	sqids := make([]string, len(qids))
 	for idx, qid := range qids {
@@ -65,7 +65,7 @@ func (pubsub *PubSub) Listen(sid string, qids []string, timeout int64) (result m
 		return nil, refresh, false
 	}
 
-	now := time.Seconds()
+	now := time.Now().UnixNano()
 	pubsub.mutex.Lock()
 
 	session, found := pubsub.sessions[sid]
@@ -200,7 +200,7 @@ func (pubsub *PubSub) Subscribe(sqid string, keys []string, keys2 []string) {
 		keys = append(keys, keys2...)
 	}
 
-	now := time.Seconds()
+	now := time.Now().UnixNano()
 	sqidRef := pubsub.refmap.Create(sqid)
 	queries := pubsub.queries
 	sessions := pubsub.sessions
@@ -248,7 +248,7 @@ func (pubsub *PubSub) Subscribe(sqid string, keys []string, keys2 []string) {
 // Cleanup
 // -----------------------------------------------------------------------------
 
-func (pubsub *PubSub) Cleanup(expire int64, interval int64) {
+func (pubsub *PubSub) Cleanup(expire int64, interval time.Duration) {
 
 	queries := pubsub.queries
 	refmap := pubsub.refmap
@@ -256,7 +256,7 @@ func (pubsub *PubSub) Cleanup(expire int64, interval int64) {
 	subscriptions := pubsub.subscriptions
 
 	for {
-		now := time.Seconds()
+		now := time.Now().UnixNano()
 		pubsub.mutex.Lock()
 
 		removeKeys := make(map[string]int)
