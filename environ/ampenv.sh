@@ -1,6 +1,6 @@
 #! /bin/bash
 
-# Public Domain (-) 2010-2011 The Ampify Authors.
+# Public Domain (-) 2010-2012 The Ampify Authors.
 # See the Ampify UNLICENSE file for details.
 
 # ==========================
@@ -147,7 +147,7 @@ case $_OS_NAME in
 	*) echo "ERROR: Unknown system operating system: ${_OS_NAME}"
 esac
 
-_ENV_VAL=$AMPIFY_ROOT/src/python:$_THIRD_PARTY/tavutil:$_THIRD_PARTY/yatiblog:$_THIRD_PARTY/pylibs:$AMPIFY_ROOT/environ:$_THIRD_PARTY/assetgen
+_ENV_VAL=$AMPIFY_ROOT/src/python:$_THIRD_PARTY/tavutil:$_THIRD_PARTY/yatiblog:$_THIRD_PARTY/pylibs:$AMPIFY_ROOT/environ:$_THIRD_PARTY/assetgen:$_THIRD_PARTY/bolt
 
 if [ "x$PRE_AMPENV_PYTHONPATH" != "x" ]; then
 	export PYTHONPATH=$_ENV_VAL:$PRE_AMPENV_PYTHONPATH
