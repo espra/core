@@ -15,7 +15,7 @@ if [[ "x$BASH_SOURCE" == "x" ]]; then
 	exit
 fi
 
-_OS_NAME=$(uname -s | tr [[:upper:]] [[:lower:]])
+_OS_NAME=$(uname -s | tr 'A-Z' 'a-z')
 
 # ------------------------------------------------------------------------------
 # Usage
