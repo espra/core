@@ -413,7 +413,7 @@ def ensure_git_version(version=(1, 7)):
             'git', '--version', redirect_stdout=True,
             redirect_stderr=True, reterror=True
             )
-        ver = ver[0].splitlines()[0].split()[-1]
+        ver = ver[0].splitlines()[0].split()[2]
         ver = tuple(int(part) for part in ver.split('.'))
         if ver < version:
             raise RuntimeError("Invalid version")
