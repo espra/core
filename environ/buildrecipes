@@ -141,8 +141,7 @@ RECIPES['pylibs'] = [{
 
 TAVUTIL_ROOT = join(THIRD_PARTY, 'tavutil')
 TAVUTIL_PYX_FILES = glob(join(TAVUTIL_ROOT, 'tavutil', '*.pyx'))
-if PLATFORM != 'darwin':
-    TAVUTIL_PYX_FILES.remove(join(TAVUTIL_ROOT, 'tavutil', 'darwinsandbox.pyx'))
+TAVUTIL_PYX_FILES.remove(join(TAVUTIL_ROOT, 'tavutil', 'darwinsandbox.pyx'))
 
 TAVUTIL_SO_FILES = [
     file.rsplit('.pyx', 1)[0] + '.so' for file in TAVUTIL_PYX_FILES
