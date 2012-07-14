@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 
-# Public Domain (-) 2010-2011 The Ampify Authors.
+# Public Domain (-) 2010-2012 The Ampify Authors.
 # See the Ampify UNLICENSE file for details.
 
 """
@@ -8,141 +8,281 @@
 Javascript UCD Generator
 ========================
 
-This script generates a ``ucd.js`` file from the Unicode Character Database
-(UCD).
+This script generates a ``ucd.js`` file from version 6.1.0 of the Unicode
+Character Database (UCD). It exports the following functionality::
 
-Currently works for Unicode 5.2.
+  .isCurrency(rune) -> bool
+  .isDigit(rune) -> bool
+  .isLetter(rune) -> bool
+  .isSpace(rune) -> bool
 
 """
 
 from __future__ import with_statement
+from os.path import abspath, dirname, join
 
 import sys
 
-data = {}
-ranges = []
-in_range = False
-
-if not len(sys.argv[1:]) == 2:
-    print "Usage: makeucd <path-to-unicodedata> <output-file>"
+if not len(sys.argv[1:]) >= 2:
+    print "Usage: makeucd <path-to-unicodedata-file> <output-file> [--debug]"
     sys.exit()
 
+if len(sys.argv) >= 4 and sys.argv[3] == '--debug':
+    DEBUG = 1
+else:
+    DEBUG = 0
+
+py_range = range
+unused = set()
+
+currencies_table = []
+digits_bases = []
+digits_table = []
+letters_table = []
+spaces_table = []
+tables = [[], letters_table, digits_table, spaces_table, currencies_table]
+
+def save(type, range, tables=tables):
+    if not range:
+        return range
+    table = tables[type]
+    _range = []
+    for cp in range:
+        if _range:
+            if cp == (_range[-1] + 1):
+                if len(_range) == 1:
+                    _range.append(cp)
+                else:
+                    _range[1] = cp
+            else:
+                table.append(_range)
+                _range = []
+        else:
+            _range.append(cp)
+    if _range:
+        table.append(_range)
+    return []
+
 with open(sys.argv[1], 'rb') as ucd:
+    current = None
+    range = []
+    in_range = 0
     for line in ucd:
         line = line.split(';')
         codepoint = int(line[0], 16)
-        name, category = line[1:3]
         if in_range:
-            ranges[-1].extend([codepoint, category])
-            in_range = False
+            range.extend(py_range(range[-1]+1, codepoint+1))
+            in_range = 0
+            continue
+        name, category = line[1:3]
+        if category in ('Ll', 'Lm', 'Lo', 'Lt', 'Lu'):
+            if current and current != 1:
+                range = save(current, range)
+            current = 1
+        elif category == 'Nd':
+            if current and current != 2:
+                range = save(current, range)
+            if line[7] == '0':
+                digits_bases.append(codepoint)
+            current = 2
+        elif category == 'Zs':
+            if current and current != 3:
+                range = save(current, range)
+            current = 3
+        elif category == 'Sc':
+            if current and current != 4:
+                range = save(current, range)
+            current = 4
+        elif category in ('Zl', 'Zp'):
+            continue
+        else:
+            unused.add(category)
+            continue
+        range.append(codepoint)
         if name.endswith('First>'):
-            ranges.append([codepoint])
-            in_range = True
-        if category not in data:
-            data[category] = []
-        data[category].append(codepoint)
+            in_range = 1
 
-groupings = {
-    "CasedLetters": "Ll | Lt | Lu",
-    "Letters": "Ll | Lm | Lo | Lt | Lu",
-    "Marks": "Mc | Me | Mn",
-    "Numbers": "Nd | Nl | No",
-    "Other": "Cc | Cf | Cn | Co | Cs",
-    "Punctuations": "Pc | Pd | Pe | Pf | Pi | Po | Ps",
-    "Symbols": "Sc | Sk | Sm | So",
-    "Separators": "Zl | Zp | Zs"
-    }
+def merge(*tables):
+    new = []
+    for table in tables:
+        new.extend(table)
+    new = sorted(new, key=lambda x: x[0])
+    if len(new) <= 1:
+        return new
+    prev = new[0]
+    final = []; push = final.append
+    for x in new[1:]:
+        if (x[0] - prev[-1]) == 1:
+            prev = [prev[0], x[-1]]
+        else:
+            push(prev)
+            prev = x
+            continue
+    push(prev)
+    return final
+
+if DEBUG:
+    print
 
 output = []; out = output.append
-def trim(output):
-    output[-1] = output[-1][:-2] + '\n'
 
-categories = sorted(data.keys())
-groups = sorted(groupings.keys())
-last_category = len(categories) - 1
+def dump(table, out=out, max_block=12):
+    sp = '    '
+    out('    // Prioritise the ASCII check.')
+    out('    if (c < 128) {')
+    ranges = []
+    while 1:
+        if table[0][0] < 128:
+            ranges.append(table.pop(0))
+        else:
+            break
+    if ranges:
+        if len(ranges) == 1:
+            wl = wr = ''
+        else:
+            wl = '('
+            wr = ')'
+        buf = []; push = buf.append
+        for r in ranges:
+            if len(r) == 2:
+                push('(c >= %d && c <= %d)' % (r[0], r[1]))
+            else:
+                push('(c == %d)' % (r[0]))
+        out('      if %s%s%s { return true; }' % (wl, ' || '.join(buf), wr))
+    out('      return false;')
+    out('    };')
+    start = 128
+    i = 0
+    while 1:
+        ranges = table[i:i+max_block]
+        if not ranges:
+            break
+        stop = ranges[-1][-1]
+        i += max_block
+        if len(ranges) == 1:
+            out('    if (c >= %d) {' % start)
+            wl = wr = ''
+        else:
+            out('    if (c >= %d && c <= %d) {'  % (start, stop))
+            wl = '('
+            wr = ')'
+        buf = []; push = buf.append
+        for r in ranges:
+            if len(r) == 2:
+                push('(c >= %d && c <= %d)' % (r[0], r[1]))
+            else:
+                push('(c == %d)' % (r[0]))
+        out('      if %s%s%s { return true; }' % (wl, ' || '.join(buf), wr))
+        out('      return false;')
+        out('    };')
+        start = stop + 1
 
-out("""
-// Generated by makeucd
+def dump(table, out=out, max_block=12):
+    sp = '    '
+    out('    // Prioritise the ASCII check.')
+    out('    if (c < 128) {')
+    ranges = []
+    while 1:
+        if table[0][0] < 128:
+            ranges.append(table.pop(0))
+        else:
+            break
+    if ranges:
+        if len(ranges) == 1:
+            wl = wr = ''
+        else:
+            wl = '('
+            wr = ')'
+        buf = []; push = buf.append
+        for r in ranges:
+            if len(r) == 2:
+                push('(c >= %d && c <= %d)' % (r[0], r[1]))
+            else:
+                push('(c == %d)' % (r[0]))
+        out('      if %s%s%s { return true; }' % (wl, ' || '.join(buf), wr))
+    out('      return false;')
+    out('    };')
+    start = 128
+    i = 0
+    while 1:
+        ranges = table[i:i+max_block]
+        if not ranges:
+            break
+        stop = ranges[-1][-1]
+        i += max_block
+        more = 1
+        wl = wr = ''
+        if not table[i:i+max_block]:
+            more = 0
+            sp = ''
+            if len(ranges) != 1:
+                wl = '('
+                wr = ')'
+        if more:
+            if len(ranges) == 1:
+                out('    if (c >= %d) {' % start)
+            else:
+                out('    if (c >= %d && c <= %d) {'  % (start, stop))
+                wl = '('
+                wr = ')'
+            sp = '  '
+        buf = []; push = buf.append
+        for r in ranges:
+            if len(r) == 2:
+                push('(c >= %d && c <= %d)' % (r[0], r[1]))
+            else:
+                push('(c == %d)' % (r[0]))
+        out(sp+'    if %s%s%s { return true; }' % (wl, ' || '.join(buf), wr))
+        if more:
+            out('      return false;')
+            out('    };')
+        start = stop + 1
+
+out("""// Generated by:
+//
+//     $ %s
 //
 // DO NOT EDIT
 
-(function () {
+define('ucd', function(exports, root) {
 
-var version = "5.2.0",
-    Categories,
-    CategoryRanges,
-    CategoryNames,
-""")
+  exports.UCD_VERSION = "6.1.0";
 
-for group in groups:
-    out("    %s,\n" % group)
+  exports.DIGITS_BASES = %r;
 
-for idx, category in enumerate(categories):
-    out("    %s = %i,\n" % (category, 1 << idx))
+  exports.isCurrency = function(c) {""" % (' '.join(sys.argv), digits_bases))
 
-out("    Unknown = Cn = 0;\n\n")
-out("CategoryNames = {\n")
-out('    0: "Unknown",\n')
+dump(currencies_table)
 
-for idx, category in enumerate(categories):
-    out('    %s: "%s",\n' % (1 << idx, category))
+out("""    return false;
+  };
 
-trim(output)
-out("};\n\n")
-out("Categories = {")
+  exports.isDigit = function(c) {""")
 
-for idx, category in enumerate(categories):
-    out("\n    // General Category: %s\n" % category)
-    codepoints = sorted(data[category])
-    for cp in codepoints:
-        out("    %s: %s,\n" % (cp, category))
+dump(digits_table)
 
-trim(output)
-out("};\n\n")
-out("CategoryRanges = [\n")
+out("""    return false;
+  };
 
-for catrange in ranges:
-    out("    [%i, %i, %s],\n" % tuple(catrange))
+  exports.isLetter = function(c) {""")
 
-trim(output)
-out("];\n")
+dump(letters_table)
 
-out("""
-// Various grouped general categories.
+out("""    return false;
+  };
 
-""")
+  exports.isSpace = function(c) {""")
 
-for group in groups:
-    out("%s = %s;\n" % (group, groupings[group]))
+dump(spaces_table)
 
-out("""
-if ((typeof process !== "undefined") && (process !== null)) {
-    ucd = exports;
-} else {
-    this.ucd = ucd = {};
-}
+out("""    return false;
+  };
 
-ucd.version = version;
-ucd.Categories = Categories;
-ucd.CategoryRanges = CategoryRanges;
-ucd.CategoryNames = CategoryNames;
-""")
+});""")
 
-for category in categories:
-    # print "    %s = ucd.%s," % (category, category)
-    out("ucd.%s = %s;\n" % (category, category))
-
-for group in groups:
-    # print "    %s = ucd.%s," % (group, group)
-    out("ucd.%s = %s;\n" % (group, group))
-
-out("ucd.Unknown = Unknown;")
-
-out("""
-
-})();
-""")
+if DEBUG:
+    print "# Unused Categories:\n\n\t%s\n" % ' '.join(sorted(unused))
 
 ucd_file = open(sys.argv[2], 'wb')
-ucd_file.write(''.join(output))
+ucd_file.write('\n'.join(output))
 ucd_file.close()
