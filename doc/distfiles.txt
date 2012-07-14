@@ -11,9 +11,9 @@ Ampify makes use of a number of different open source libraries and platforms.
 Unfortunately, given the use of bleeding edge versions, it's not reasonable to
 expect users to have the required versions already installed on their systems.
 
-To resolve this issue, an ``amp build`` mechanism is provided to download and
-compile the various dependencies on demand. This document describes the manner
-in which the various package distfiles (source tarballs) are generated.
+To resolve this issue, an ``redpill build`` mechanism is provided to download
+and compile the various dependencies on demand. This document describes the
+manner in which the various package distfiles (source tarballs) are generated.
 
 The packages will generally be stripped of things like documentation and
 examples in order to minimise the bandwidth requirement. And in some cases, the
@@ -41,36 +41,40 @@ desire.
   * Use the ``1.0.5`` version number instead of ``1.0.4``.
   * Generate a shared ``.dylib`` file on OS X.
 
-**readline**
+**cacerts**
 
-  The distfile is generated from the ``readline 6.1`` version and everything
-  except for the ``Makefile.in`` files are removed from the following
-  directories::
+  The distfile consists of the ``ca.cert`` file which is generated from
+  `Mozilla's Root Certificates file
+  <https://mxr.mozilla.org/mozilla/source/security/nss/lib/ckfw/builtins/certdata.txt?raw=1>`_
+  using Adam Langley's `extract-nss-root-certs utility
+  <https://github.com/agl/extract-nss-root-certs>`_.
 
-    doc/
-    examples/
+**go**
 
-  The ``Makefile.in`` files are patched to do nothing on ``make install``.
+  The distfile is generated from the `Go repository on Google Code
+  <http://code.google.com/p/go/source/checkout>`_ which is checked out with the
+  command::
 
-**openssl**
+  .. syntax:: bash
 
-  The distfile is generated from the ``openssl 0.9.8o`` version and is patched
-  to support various TLS extensions:
+    $ hg clone https://code.google.com/p/go/
 
-  * `False Start <https://tools.ietf.org/html/draft-bmoeller-tls-falsestart>`_
+  The following files and directories are then stripped::
 
-  * `Snap Start <http://tools.ietf.org/html/draft-agl-tls-snapstart>`_
+    .hg/
+    .hgignore
+    .hgtags
+    doc
+    test
 
-  * `Next Protocol Negotiation
-    <http://tools.ietf.org/html/draft-agl-tls-nextprotoneg>`_
+  The ``src/cmd/dist/build.c`` file is then patched to comment out the line::
 
-**zlib**
+    // xremove(bpathf(&b, "%s/VERSION.cache", goroot));
 
-  The distfile is generated from the ``zlib 1.2.5`` version and is stripped of
-  the following directories::
+  And, finally, the output of ``dist version`` is saved to a ``VERSION.cache``
+  file in the root directory before the distfile is tarballed.
 
-    contrib/
-    doc/
-    examples/
-    old/
+**ucd**
 
+  The distfile is generated from the public `Unicode Character Database files
+  <http://unicode.org/Public/UNIDATA/>`_.
