@@ -1,8 +1,7 @@
 requires: base
 packages:
 - cacerts
-- go
+- golibs
 - makeucd
-- node
 - pylibs
 - tavutil

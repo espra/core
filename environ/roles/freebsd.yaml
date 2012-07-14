@@ -1,9 +1,0 @@
-requires: base
-packages:
-- ampify
-- cacerts
-- go
-- makeucd
-- node
-- pylibs
-- tavutil

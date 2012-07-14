@@ -1,19 +1,9 @@
 #! /usr/bin/env python
 
-# Public Domain (-) 2010-2011 The Ampify Authors.
+# Public Domain (-) 2010-2012 The Ampify Authors.
 # See the Ampify UNLICENSE file for details.
 
 """The redpill build recipes for Ampify."""
-
-if NUMBER_OF_CPUS > 1:
-    PARALLEL = '-j%i' % NUMBER_OF_CPUS
-else:
-    PARALLEL = ''
-
-def make64(cmd, extra=['--64']):
-    if ARCH == 'amd64':
-        cmd.extend(extra)
-    return cmd
 
 # ------------------------------------------------------------------------------
 # ampify
@@ -71,19 +61,9 @@ RECIPES['bzip2'] = [{
 # ------------------------------------------------------------------------------
 
 RECIPES['cacerts'] = [{
-    'version': '1.2',
-    'hash': '3957a8fbeb5cb7c22299a99a88acc66e19239d50d31306079e2b8daf15ccb83f',
+    'version': '2012.06.28',
+    'hash': '0e59b432b607c9af7c1cc18e4c3e13213b0d1c87bb786623f4978897beeb2106',
     'type': 'resource'
-    }]
-
-# ------------------------------------------------------------------------------
-# closure
-# ------------------------------------------------------------------------------
-
-RECIPES['closure'] = [{
-    'version': '2010-03-24',
-    'hash': '43281e5b891fac5156dedd47773982cfd931a2233e3b586b966ca1a701e5783e',
-    'type': 'jar'
     }]
 
 # ------------------------------------------------------------------------------
@@ -92,39 +72,19 @@ RECIPES['closure'] = [{
 
 go_install_path = join(LOCAL, 'go')
 
-def before_go_install():
-    if exists(go_install_path):
-        rmtree(go_install_path)
-    from commands import getoutput
-    version = "%s %s\n" % (
-        getoutput(
-            'git describe --tags --abbrev=0 --match '
-            '"[wr]e[el][ke][la][ys][e.][2.][02r][0-9]*"'
-            ),
-        getoutput("git describe --always --abbrev=8 --dirty=+")
-        )
-    version_file = open('VERSION', 'w')
-    version_file.write(version)
-    version_file.close()
-    chdir('src')
-
 def after_go_install():
     mkdir(go_install_path)
     copytree(join('..', 'pkg'), join(go_install_path, 'pkg'))
-    go_src = join(go_install_path, 'src')
-    mkdir(go_src)
-    for path in listdir('.'):
-        if path.startswith('Make'):
-            copy(path, join(go_src, path))
+    copytree(join('..', 'src'), join(go_install_path, 'src'))
 
 RECIPES['go'] = [{
-    'type': 'git',
-    'path': 'third_party/go',
-    'before': before_go_install,
+    'version': '13728',
+    'hash': '6a0a6e10b5caa6310bb04c8ee3a4133ad598604e6fbc9d321c75d621e5da030e',
+    'before': lambda: chdir('src'),
     'after': after_go_install,
     'env': {
-        'GOROOT': environ['GOROOT_ORIGINAL']
-        },
+        'GOROOT_FINAL': go_install_path
+    },
     'commands': [
         ['./make.bash']
         ]
@@ -134,31 +94,14 @@ RECIPES['go'] = [{
 # golibs
 # ------------------------------------------------------------------------------
 
-GOLIBS_PATH = 'third_party/golibs'
-
 RECIPES['golibs'] = [{
     'type': 'git',
     'requires': ['go'],
-    'path': GOLIBS_PATH,
-    'before': lambda: chdir(join(GOLIBS_PATH, 'snappy')),
+    'path': 'third_party/golibs',
+    'before': lambda: chdir('src'),
     'commands': [
-        [MAKE, 'install']
+        ['go', 'install', '-v', 'snappy']
         ]
-    }]
-
-# ------------------------------------------------------------------------------
-# libnatpmp
-# ------------------------------------------------------------------------------
-
-RECIPES['libnatpmp'] = [{
-    'requires': ['python'],
-    'version': '20100202',
-    'hash': '8236d11bb83f13fdc5967a78fa7f5e43a429ab2e59b01e2c4991627e621162e2',
-    'commands': [
-        [MAKE],
-        [sys.executable, 'setup.py', 'build_ext', '-i']
-        ],
-    'after': lambda: copy('libnatpmp.so', join(ROOT, 'third_party', 'pylibs'))
     }]
 
 # ------------------------------------------------------------------------------
@@ -180,73 +123,6 @@ RECIPES['makeucd'] = [{
     }]
 
 # ------------------------------------------------------------------------------
-# miniupnpc
-# ------------------------------------------------------------------------------
-
-RECIPES['miniupnpc'] = [{
-    'requires': ['python'],
-    'version': '1.4.20100609',
-    'hash': 'dfc902939514a752235890572211a8dfa5e4b97b31d47e5952281fca7c4767f7',
-    'commands': [
-        [MAKE],
-        [sys.executable, 'setup.py', 'build_ext', '-i']
-        ],
-    'after': lambda: copy('miniupnpc.so', join(ROOT, 'third_party', 'pylibs'))
-    }]
-
-# ------------------------------------------------------------------------------
-# nodejs
-# ------------------------------------------------------------------------------
-
-RECIPES['node'] = [{
-    'version': '0.4.11',
-    'hash': '6273050e81c4256d8a1917981b6b6a23841d996ec89c7cca3a2428a980eb0f04'
-    }, {
-    'version': '0.3.6.16',
-    'hash': 'ed325a5ffa2247fd89732e826aed36d517a13b84df6145d4c89832e687b199a5'
-    }, {
-    'version': '0.2.0',
-    'hash': '0116ff380a63271e684e05a80207cb8e01b40797d831b6c8c92a3658b860efb5'
-    }]
-
-# ------------------------------------------------------------------------------
-# openssl
-# ------------------------------------------------------------------------------
-
-OPENSSL_PLATFORM = {
-    ('darwin', '386'): 'darwin-i386-cc',
-    ('darwin', 'amd64'): 'darwin64-x86_64-cc',
-    ('linux', '386'): 'linux-generic32',
-    ('linux', 'amd64'): 'linux-generic64'
-    }[PLATFORM, ARCH]
-
-class OpenSSLError(Exception):
-    """Signify an error configuring OpenSSL."""
-
-def configure_openssl(): # Workaround for bug in subprocess.Popen.
-    from commands import getstatusoutput
-    cmd = ['./Configure', OPENSSL_PLATFORM, 'shared', 'no-idea', 'no-krb5',
-        'no-mdc2', 'zlib', '--prefix=%s' % LOCAL,
-         '--openssldir=%s' % join(SHARE, 'ssl'), '-L%s' % LIB, '-I%s' % INCLUDE]
-    log("Running: %s" % ' '.join(cmd))
-    status, output = getstatusoutput(' '.join(cmd))
-    if status:
-        print output
-        raise OpenSSLError("Error configuring OpenSSL!")
-
-RECIPES['openssl'] = [{
-    'requires': ['zlib'],
-    'version': '1.0.0e',
-    'hash': 'c185c13927cb5c1af9d4865424d5d51a8c1a8b82657ed5e9026b13ca119428bd',
-    'commands': [
-        configure_openssl,
-        [MAKE, 'depend'],
-        [MAKE],
-        [MAKE, 'install']
-        ]
-    }]
-
-# ------------------------------------------------------------------------------
 # pylibs
 # ------------------------------------------------------------------------------
 
@@ -256,52 +132,6 @@ RECIPES['pylibs'] = [{
     'after': lambda: rmdir('build'),
     'commands': [
         [sys.executable, 'setup.py', 'build_ext', '-i']
-        ]
-    }]
-
-# ------------------------------------------------------------------------------
-# python
-# ------------------------------------------------------------------------------
-
-RECIPES['python'] = [{
-    'requires': ['bzip2', 'openssl', 'readline', 'zlib'],
-    'version': '2.7',
-    'hash': 'f559ac6bf5a112c63659c631f3ad27f41ecc3d8c64ea5873da1bfa50b738f125',
-    'after': lambda: rmdir(join(LOCAL, 'lib', 'python2.7', 'test')),
-    'config_flags': [
-        '--enable-unicode=ucs2', '--enable-ipv6', '--prefix=%s' % LOCAL
-        ],
-    'env': {
-        'CPPFLAGS': CPPFLAGS,
-        'LDFLAGS': LDFLAGS
-        }
-    }]
-
-# ------------------------------------------------------------------------------
-# readline
-# ------------------------------------------------------------------------------
-
-RECIPES['readline'] = [{
-    'version': '6.1',
-    'hash': '336f955389fb3a91915e845d8e0919e5191af61c52d827d0e95e728a44a16ec4',
-    'config_flags': [
-        '--infodir=%s' % join(LOCAL, 'share', 'info'), '--prefix=%s' % LOCAL
-        ]
-    }]
-
-# ------------------------------------------------------------------------------
-# setuptools
-# ------------------------------------------------------------------------------
-
-PYTHON_LIBS_DIRECTORY = join(LOCAL, 'lib', 'python')
-
-RECIPES['setuptools'] = [{
-    'type': 'python',
-    'version': '0.6c11',
-    'hash': '534d31d2551b4be8040127969db9aa7236b6ec58148293d5ebb476c8fee2c408',
-    'before': lambda: mkdir(PYTHON_LIBS_DIRECTORY),
-    'commands': [
-        [sys.executable, 'setup.py', 'install']
         ]
     }]
 
@@ -320,7 +150,6 @@ TAVUTIL_SO_FILES = [
 
 RECIPES['tavutil'] = [{
     'type': 'makelike',
-    'requires': ['setuptools'],
     'before': lambda: chdir(TAVUTIL_ROOT),
     'depends': TAVUTIL_PYX_FILES + [join(TAVUTIL_ROOT, 'setup.py')],
     'outputs': TAVUTIL_SO_FILES,
@@ -336,18 +165,7 @@ RECIPES['tavutil'] = [{
 # ------------------------------------------------------------------------------
 
 RECIPES['ucd'] = [{
-    'version': '5.2.0',
-    'hash': '12363cd8793148283551a69478ec42220c9e43c91d4dd77557df5d5265199e51',
+    'version': '6.1.0',
+    'hash': '981244922d09ef634cbcca22ca341ececafdd33551f21645ff9190e97ed5e230',
     'type': 'resource'
-    }]
-
-# ------------------------------------------------------------------------------
-# zlib
-# ------------------------------------------------------------------------------
-
-RECIPES['zlib'] = [{
-    'version': '1.2.5',
-    'hash': 'cbd4d0d617e901470cbe60bc483fdb95122de8baf8b08d96e3c8928ae483f1ca',
-    'config_flags': make64(['--shared']),
-    'make_flags': ['install', 'prefix=%s' % LOCAL]
     }]

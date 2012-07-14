@@ -1,4 +1,4 @@
-# Public Domain (-) 2004-2011 The Ampify Authors.
+# Public Domain (-) 2004-2012 The Ampify Authors.
 # See the Ampify UNLICENSE file for details.
 
 """
@@ -46,10 +46,6 @@ except ImportError:
 
 __version__ = (0, 0, 0)
 __release__ = '.'.join(map(str, __version__))
-
-__authors__ = {
-    0x01: ('tav', 'tav@espians.com')
-    }
 
 # ------------------------------------------------------------------------------
 # Print Functions
@@ -432,6 +428,30 @@ def ensure_java_version(version=(1, 6), title='Java 6+ runtime'):
     except Exception:
         exit('ERROR: %s not found!' % title)
 
+def ensure_node_version(version=(0, 8, 2)):
+    try:
+        ver = do(
+            'node', '-v', redirect_stdout=True,
+            redirect_stderr=True, reterror=True
+            )
+        ver = tuple(map(int, ver[0][1:].strip().split('.')))
+        if ver < version:
+            raise RuntimeError("Invalid version")
+    except Exception:
+        exit('ERROR: Node.js %s+ not found!' % '.'.join(map(str, version)))
+
+def ensure_ruby_version(version=(1, 8, 7)):
+    try:
+        ver = do(
+            'ruby', '-v', redirect_stdout=True,
+            redirect_stderr=True, reterror=True
+            )
+        ver = tuple(map(int, ver[0].strip().split()[1].strip().split('.')))
+        if ver < version:
+            raise RuntimeError("Invalid version")
+    except Exception:
+        exit('ERROR: Ruby %s+ not found!' % '.'.join(map(str, version)))
+
 # ------------------------------------------------------------------------------
 # Build Recipes Initialiser
 # ------------------------------------------------------------------------------
@@ -658,6 +678,8 @@ def install_packages(types=BUILD_TYPES):
     ensure_gcc_version()
     ensure_git_version()
     ensure_java_version()
+    ensure_node_version()
+    ensure_ruby_version()
 
     for directory in [
         BUILD_WORKING_DIRECTORY, LOCAL, BIN, SHARE, TMP
@@ -897,7 +919,7 @@ def cleanup_install():
 # Virgin Build Handler
 # ------------------------------------------------------------------------------
 
-VIRGIN_BUILD = not exists(join(LOCAL, 'bin', 'python'))
+VIRGIN_BUILD = not exists(join(LOCAL, 'bin', 'bsdiff'))
 
 def build_base_and_reload():
     load_role('base')
