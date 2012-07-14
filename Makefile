@@ -1,4 +1,4 @@
-# Public Domain (-) 2010-2011 The Ampify Authors.
+# Public Domain (-) 2010-2012 The Ampify Authors.
 # See the Ampify UNLICENSE file for details.
 
 # ------------------------------------------------------------------------------
@@ -32,7 +32,8 @@ nuke: clean
 	rm -rf .sass-cache
 	rm -rf environ/local
 	rm -rf environ/receipts
-	rm -f src/coffee/ucd.js
+	rm -rf pkg
+	rm -f src/js/ucd.js
 
 test:
 	@cd src/amp && make test
