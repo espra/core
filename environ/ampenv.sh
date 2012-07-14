@@ -160,7 +160,7 @@ else
 	fi
 fi
 
-_ENV_VAL=$_THIRD_PARTY/vows/lib:$_THIRD_PARTY/jslibs:$_THIRD_PARTY/coffee-script/lib:$_THIRD_PARTY/uglify-js
+_ENV_VAL=$_THIRD_PARTY/vows/lib:$_THIRD_PARTY/coffee-script/lib:$_THIRD_PARTY/uglify-js
 
 if [ "x$PRE_AMPENV_NODE_PATH" != "x" ]; then
 	export NODE_PATH=$_ENV_VAL:$PRE_AMPENV_PATH
@@ -188,9 +188,8 @@ fi
 # Go Related Variables
 # ------------------------------------------------------------------------------
 
-export GOROOT_ORIGINAL=$_THIRD_PARTY/go
-export GOROOT=$AMPIFY_LOCAL/go
 export GOBIN=$AMPIFY_LOCAL/bin
+export GOPATH=$AMPIFY_ROOT:$_THIRD_PARTY/golibs
 
 case $_OS_NAME in
 	darwin) export GOOS="darwin";;
