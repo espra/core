@@ -53,7 +53,7 @@ desire.
 
   The distfile is generated from the `Go repository on Google Code
   <http://code.google.com/p/go/source/checkout>`_ which is checked out with the
-  command::
+  command:
 
   .. syntax:: bash
 
