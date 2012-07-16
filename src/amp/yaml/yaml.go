@@ -14,10 +14,14 @@ package yaml
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"io/ioutil"
+	"reflect"
 	"strconv"
 	"strings"
+	"unicode"
+	"unicode/utf8"
 )
 
 const (
@@ -406,6 +410,57 @@ func (data *Data) GetStringList(key string, subkeys ...string) (value []string, 
 		}
 	}
 	return value, true
+}
+
+var NeedPointerStructError = errors.New("yaml error: can only decode into pointer structs")
+
+func (data *Data) LoadStruct(v interface{}) error {
+	rv := reflect.ValueOf(v)
+	if rv.Type().Kind() != reflect.Ptr {
+		return NeedPointerStructError
+	}
+	rv = rv.Elem()
+	rt := rv.Type()
+	if rt.Kind() != reflect.Struct {
+		return NeedPointerStructError
+	}
+	for i := 0; i < rt.NumField(); i++ {
+		field := rt.Field(i)
+		if field.Anonymous {
+			continue
+		}
+		var name string
+		if tag := field.Tag.Get("yaml"); tag != "" {
+			if tag == "-" {
+				continue
+			}
+			name = tag
+		}
+		if name == "" {
+			name = field.Name
+			rune, _ := utf8.DecodeRuneInString(name)
+			if !unicode.IsUpper(rune) {
+				continue
+			}
+		}
+		switch ft := field.Type; ft.Kind() {
+		case reflect.String:
+			v, _ := data.GetString(name)
+			rv.Field(i).SetString(v)
+		case reflect.Int64:
+			v, _ := data.GetInt(name)
+			rv.Field(i).SetInt(v)
+		case reflect.Bool:
+			v, _ := data.GetBool(name)
+			rv.Field(i).SetBool(v)
+		case reflect.Slice:
+			if ft.Elem().Kind() == reflect.String {
+				v, _ := data.GetStringList(name)
+				rv.Field(i).Set(reflect.ValueOf(v))
+			}
+		}
+	}
+	return nil
 }
 
 func (data *Data) Size() int {
