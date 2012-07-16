@@ -424,6 +424,7 @@ func (data *Data) LoadStruct(v interface{}) error {
 	if rt.Kind() != reflect.Struct {
 		return NeedPointerStructError
 	}
+	buf := &bytes.Buffer{}
 	for i := 0; i < rt.NumField(); i++ {
 		field := rt.Field(i)
 		if field.Anonymous {
@@ -437,11 +438,32 @@ func (data *Data) LoadStruct(v interface{}) error {
 			name = tag
 		}
 		if name == "" {
-			name = field.Name
-			rune, _ := utf8.DecodeRuneInString(name)
+			fname := field.Name
+			rune, _ := utf8.DecodeRuneInString(fname)
 			if !unicode.IsUpper(rune) {
 				continue
 			}
+			buf.Reset()
+			prevCap := true
+			for idx, char := range fname {
+				if idx == 0 {
+					buf.WriteRune(unicode.ToLower(char))
+					continue
+				}
+				if unicode.IsUpper(char) {
+					if prevCap {
+						buf.WriteRune(unicode.ToLower(char))
+					} else {
+						buf.WriteRune('-')
+						buf.WriteRune(unicode.ToLower(char))
+						prevCap = true
+					}
+				} else {
+					buf.WriteRune(char)
+					prevCap = false
+				}
+			}
+			name = buf.String()
 		}
 		switch ft := field.Type; ft.Kind() {
 		case reflect.String:
