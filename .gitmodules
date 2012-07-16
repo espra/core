@@ -33,4 +33,4 @@
 	url = https://github.com/tav/assetgen.git
 [submodule "third_party/bolt"]
 	path = third_party/bolt
-	url = https://github.com/tav/bolt.git
+	url = https://github.com/tav/bolt-python.git
