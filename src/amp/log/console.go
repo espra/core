@@ -10,12 +10,13 @@ import (
 )
 
 var (
-	ConsoleFilters = make(map[string]Filter)
-	colors         = map[string]string{"info": "32", "error": "31"}
-	colorify       = true
-	checker        = make(chan int, 1)
-	waiter         = make(chan int, 1)
-	waitable       = false
+	ConsoleFilters   = make(map[string]Filter)
+	colors           = map[string]string{"info": "32", "error": "31"}
+	colorify         = true
+	checker          = make(chan int, 1)
+	consoleTimestamp = true
+	waiter           = make(chan int, 1)
+	waitable         = false
 )
 
 type Filter func(items []interface{}) (bool, []interface{})
@@ -60,20 +61,24 @@ func (logger *ConsoleLogger) log() {
 			}
 			if record.Error {
 				prefix = prefixErr
-				status = " ERROR:"
+				status = "ERROR:"
 			} else {
 				prefix = prefixInfo
 				status = ""
 			}
-			mutex.RLock()
-			year, month, day := now.Date()
-			hour, minute, second := now.Clock()
-			mutex.RUnlock()
-			fmt.Fprintf(file, "%s[%s-%s-%s %s:%s:%s]%s", prefix,
-				encoding.PadInt(year, 4), encoding.PadInt(int(month), 2),
-				encoding.PadInt(day, 2), encoding.PadInt(hour, 2),
-				encoding.PadInt(minute, 2), encoding.PadInt(second, 2),
-				status)
+			if consoleTimestamp {
+				mutex.RLock()
+				year, month, day := now.Date()
+				hour, minute, second := now.Clock()
+				mutex.RUnlock()
+				fmt.Fprintf(file, "%s[%s-%s-%s %s:%s:%s] %s", prefix,
+					encoding.PadInt(year, 4), encoding.PadInt(int(month), 2),
+					encoding.PadInt(day, 2), encoding.PadInt(hour, 2),
+					encoding.PadInt(minute, 2), encoding.PadInt(second, 2),
+					status)
+			} else {
+				fmt.Fprintf(file, "%s%s", prefix, status)
+			}
 			for _, item := range items {
 				fmt.Fprintf(file, " %v", item)
 			}
@@ -100,6 +105,10 @@ func AddConsoleLogger() {
 
 func DisableConsoleColors() {
 	colorify = false
+}
+
+func DisableConsoleTimestamp() {
+	consoleTimestamp = false
 }
 
 func SetConsoleColors(mapping map[string]string) {
