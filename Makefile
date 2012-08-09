@@ -33,7 +33,7 @@ nuke: clean
 	rm -rf environ/local
 	rm -rf environ/receipts
 	rm -rf pkg
-	rm -f src/js/ucd.js
+	rm -f src/coffee/ucd.js
 
 test:
 	@cd src/amp && make test
