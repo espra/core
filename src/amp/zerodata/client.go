@@ -27,7 +27,7 @@ func newPad() *pad {
 	}
 }
 
-type ZeroDataClient struct {
+type Client struct {
 	mutex  sync.Mutex
 	pads   []*pad
 	secret []byte
@@ -35,7 +35,7 @@ type ZeroDataClient struct {
 	web    *http.Client
 }
 
-func (c *ZeroDataClient) Call(service string, req interface{}, resp interface{}) error {
+func (c *Client) Call(service string, req interface{}, resp interface{}) error {
 	c.mutex.Lock()
 	i := len(c.pads) - 1
 	var p *pad
@@ -96,8 +96,8 @@ func (c *ZeroDataClient) Call(service string, req interface{}, resp interface{})
 	return nil
 }
 
-func NewClient(secret []byte, url string) *ZeroDataClient {
-	return &ZeroDataClient{
+func NewClient(secret []byte, url string) *Client {
+	return &Client{
 		secret: secret,
 		url:    url,
 		web:    &http.Client{},
