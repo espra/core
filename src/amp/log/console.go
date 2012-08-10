@@ -61,7 +61,7 @@ func (logger *ConsoleLogger) log() {
 			}
 			if record.Error {
 				prefix = prefixErr
-				status = "ERROR:"
+				status = "ERROR: "
 			} else {
 				prefix = prefixInfo
 				status = ""
@@ -79,8 +79,12 @@ func (logger *ConsoleLogger) log() {
 			} else {
 				fmt.Fprintf(file, "%s%s", prefix, status)
 			}
-			for _, item := range items {
-				fmt.Fprintf(file, " %v", item)
+			for idx, item := range items {
+				if idx == 0 {
+					fmt.Fprintf(file, "%v", item)
+				} else {
+					fmt.Fprintf(file, " %v", item)
+				}
 			}
 			file.Write(suffix)
 		case <-checker:
