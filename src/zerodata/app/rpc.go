@@ -5,7 +5,9 @@ package zerodata
 
 import (
 	"appengine"
+	"appengine/datastore"
 	"encoding/gob"
+	"io"
 	"net/http"
 	"reflect"
 )
@@ -57,8 +59,16 @@ func handleRPC(ctx appengine.Context, w http.ResponseWriter, r *http.Request) {
 		enc := gob.NewEncoder(w)
 		enc.Encode(ov.Interface())
 	} else {
-		err = ev[0].Interface().(error)
-		w.Write([]byte{'0'})
+		switch ev[0].Interface().(error) {
+		case datastore.ErrNoSuchEntity:
+			w.Write([]byte{'2'})
+		case datastore.Done:
+			w.Write([]byte{'3'})
+		case io.EOF:
+			w.Write([]byte{'4'})
+		default:
+			w.Write([]byte{'0'})
+		}
 		w.Write([]byte(err.Error()))
 	}
 
