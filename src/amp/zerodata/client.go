@@ -4,7 +4,7 @@
 package zerodata
 
 import (
-	// "amp/dbi"
+	"amp/dbi"
 	"bytes"
 	"encoding/gob"
 	"errors"
@@ -13,11 +13,23 @@ import (
 	"sync"
 )
 
+type pad struct {
+	buf  *bytes.Buffer
+	enc  *gob.Encoder
+	rbuf [512]byte
+}
+
+func newPad() *pad {
+	buf := &bytes.Buffer{}
+	return &pad{
+		buf: buf,
+		enc: gob.NewEncoder(buf),
+	}
+}
+
 type ZeroDataClient struct {
-	buf    *bytes.Buffer
-	enc    *gob.Encoder
 	mutex  sync.Mutex
-	rbuf   [512]byte
+	pads   []*pad
 	secret []byte
 	url    string
 	web    *http.Client
@@ -25,40 +37,59 @@ type ZeroDataClient struct {
 
 func (c *ZeroDataClient) Call(service string, req interface{}, resp interface{}) error {
 	c.mutex.Lock()
-	c.buf.Reset()
-	c.buf.Write(c.secret)
-	err := c.enc.Encode(req)
-	if err != nil {
+	i := len(c.pads) - 1
+	var p *pad
+	if i >= 0 {
+		p = c.pads[i]
+		c.pads = c.pads[:i]
 		c.mutex.Unlock()
+	} else {
+		c.mutex.Unlock()
+		p = newPad()
+	}
+	defer func() {
+		p.buf.Reset()
+		c.mutex.Lock()
+		c.pads = append(c.pads, p)
+		c.mutex.Unlock()
+	}()
+	p.buf.Write(c.secret)
+	err := p.enc.Encode(req)
+	if err != nil {
 		return err
 	}
-	r, err := c.web.Post(c.url+service, "rpc/gob", c.buf)
-	c.mutex.Unlock()
+	r, err := c.web.Post(c.url+service, "rpc/gob", p.buf)
 	if err != nil {
 		return err
 	}
 	defer r.Body.Close()
 	if r.StatusCode != 200 {
-		n, err := r.Body.Read(c.rbuf[:])
+		n, err := r.Body.Read(p.rbuf[:])
 		if err != nil && err != io.EOF {
 			return err
 		}
-		return errors.New(string(c.rbuf[:n]))
+		return errors.New(string(p.rbuf[:n]))
 	}
-	_, err = r.Body.Read(c.rbuf[:1])
+	_, err = r.Body.Read(p.rbuf[:1])
 	if err != nil {
 		return err
 	}
-	switch c.rbuf[0] {
+	switch p.rbuf[0] {
 	case '0':
-		n, err := r.Body.Read(c.rbuf[:])
+		n, err := r.Body.Read(p.rbuf[:])
 		if err != nil && err != io.EOF {
 			return err
 		}
-		return errors.New(string(c.rbuf[:n]))
+		return errors.New(string(p.rbuf[:n]))
 	case '1':
 		dec := gob.NewDecoder(r.Body)
 		dec.Decode(resp)
+	case '2':
+		return dbi.EntityNotFound
+	case '3':
+		return dbi.StopIteration
+	case '4':
+		return io.EOF
 	default:
 		return errors.New("rpc: invalid gob response header")
 	}
@@ -66,10 +97,7 @@ func (c *ZeroDataClient) Call(service string, req interface{}, resp interface{})
 }
 
 func NewClient(secret []byte, url string) *ZeroDataClient {
-	buf := &bytes.Buffer{}
 	return &ZeroDataClient{
-		buf:    buf,
-		enc:    gob.NewEncoder(buf),
 		secret: secret,
 		url:    url,
 		web:    &http.Client{},
