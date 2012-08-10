@@ -22,6 +22,9 @@ func getKey(ctx appengine.Context, key *dbi.Key) *datastore.Key {
 }
 
 func retKey(key *datastore.Key) *dbi.Key {
+	if key == nil {
+		return nil
+	}
 	return &dbi.Key{
 		Kind:     key.Kind(),
 		StringID: key.StringID(),
@@ -52,7 +55,7 @@ func DeleteMulti(ctx appengine.Context, keys []*dbi.Key, ok bool) error {
 	return datastore.DeleteMulti(ctx, xkeys)
 }
 
-func Get(ctx appengine.Context, key *dbi.Key, entity *dbi.Entity) error {
+func Get(ctx appengine.Context, key *dbi.Key, entity *datastore.PropertyList) error {
 	return datastore.Get(ctx, getKey(ctx, key), entity)
 }
 
@@ -64,7 +67,12 @@ func GetMulti(ctx appengine.Context, keys []*dbi.Key, entities *dbi.EntityList) 
 	return datastore.GetMulti(ctx, xkeys, entities.List)
 }
 
-func Put(ctx appengine.Context, kv *dbi.KeyValue, rkey *dbi.Key) error {
+type KeyValue struct {
+	Key   *dbi.Key
+	Value datastore.PropertyList
+}
+
+func Put(ctx appengine.Context, kv KeyValue, rkey *dbi.Key) error {
 	key, err := datastore.Put(ctx, getKey(ctx, kv.Key), &kv.Value)
 	if err != nil {
 		return err

@@ -40,7 +40,7 @@ func handleRPC(ctx appengine.Context, w http.ResponseWriter, r *http.Request) {
 	err := dec.Decode(iv.Interface())
 
 	if err != nil {
-		panic("bad request: couldn't decode the input parameter")
+		panic("bad request: couldn't decode the input parameter: " + err.Error())
 	}
 
 	if !s.inPtr {
@@ -52,12 +52,12 @@ func handleRPC(ctx appengine.Context, w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "rpc/gob")
 
-	err = ev[0].Interface().(error)
-	if err == nil {
+	if ev[0].IsNil() {
 		w.Write([]byte{'1'})
 		enc := gob.NewEncoder(w)
 		enc.Encode(ov.Interface())
 	} else {
+		err = ev[0].Interface().(error)
 		w.Write([]byte{'0'})
 		w.Write([]byte(err.Error()))
 	}
@@ -67,7 +67,7 @@ func handleRPC(ctx appengine.Context, w http.ResponseWriter, r *http.Request) {
 type service struct {
 	function reflect.Value
 	in       reflect.Type
-	inPtr      bool
+	inPtr    bool
 	out      reflect.Type
 }
 
@@ -91,7 +91,7 @@ func register(name string, v interface{}) *service {
 	s := &service{
 		function: rv,
 		in:       rt.In(1),
-		inPtr: rt.In(1).Kind() == reflect.Ptr,
+		inPtr:    rt.In(1).Kind() == reflect.Ptr,
 		out:      rt.In(2),
 	}
 	services[name] = s
