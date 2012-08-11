@@ -310,7 +310,9 @@ func DefaultOpts(name string, opts *optparse.OptionParser, argv []string) (bool,
 	Init()
 
 	// Initialise the process-related resources.
-	InitProcess(name, runPath)
+	if Platform != "windows" {
+		InitProcess(name, runPath)
+	}
 
 	return *debug, instanceDirectory, runPath
 
