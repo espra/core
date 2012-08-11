@@ -18,7 +18,6 @@ build:
 	@./environ/redpill build
 
 clean:
-	@cd src/amp && make nuke
 	rm -rf src/python/ampify/build
 	rm -rf third_party/pylibs/build
 
@@ -35,8 +34,6 @@ nuke: clean
 	rm -rf pkg
 	rm -f src/coffee/ucd.js
 
-test:
-	@cd src/amp && make test
-
 update:
-	@./environ/git-update
+	@git pull
+	@git submodule update --init
