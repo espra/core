@@ -6,7 +6,6 @@ package amp
 import (
 	"amp/rpc"
 	"io"
-	"os"
 )
 
 type Context struct {
@@ -43,7 +42,7 @@ type Request struct {
 	Header rpc.Header
 }
 
-func (req *Request) Return(vals ...interface{}) (err os.Error) {
+func (req *Request) Return(vals ...interface{}) (err error) {
 	return nil
 }
 

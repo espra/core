@@ -4,21 +4,16 @@
 package rpc
 
 import (
+	"errors"
 	"reflect"
 	"unicode"
 	"unicode/utf8"
 )
 
-type Error string
-
-func (err Error) Error() string {
-	return string(err)
-}
-
 var (
-	ErrNotFound     error = Error("amp header: key not found")
-	ErrPtrExpected  error = Error("amp header: expected pointer type")
-	ErrTypeMismatch error = Error("amp header: type mismatch")
+	ErrNotFound     = errors.New("amp header: key not found")
+	ErrPtrExpected  = errors.New("amp header: expected pointer type")
+	ErrTypeMismatch = errors.New("amp header: type mismatch")
 )
 
 type Header map[string]interface{}
@@ -114,9 +109,9 @@ func setValue(src, dst reflect.Value) (err error) {
 			} else {
 				switch ft.Kind() {
 				case reflect.Bool:
-					field.SetBool(value.Internal.(bool))
+					field.SetBool(value.Bool())
 				case reflect.String:
-					field.SetString(value.Internal.(string))
+					field.SetString(value.String())
 				case reflect.Slice:
 					if vt.Elem().Kind() != reflect.Interface {
 						return ErrTypeMismatch
@@ -134,7 +129,7 @@ func setValue(src, dst reflect.Value) (err error) {
 					}
 					field.Set(sl)
 				default:
-					return Error("amp header: unsupported type: " + ft.Kind().String())
+					return errors.New("amp header: unsupported type: " + ft.Kind().String())
 				}
 			}
 		} else if ft.Kind() == reflect.Struct && vt.Kind() == reflect.Map && vt.Key().Kind() == reflect.String && vt.Elem().Kind() == reflect.Interface {
