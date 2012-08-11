@@ -444,25 +444,7 @@ func (data *Data) LoadStruct(v interface{}) error {
 				continue
 			}
 			buf.Reset()
-			prevCap := true
-			for idx, char := range fname {
-				if idx == 0 {
-					buf.WriteRune(unicode.ToLower(char))
-					continue
-				}
-				if unicode.IsUpper(char) {
-					if prevCap {
-						buf.WriteRune(unicode.ToLower(char))
-					} else {
-						buf.WriteRune('-')
-						buf.WriteRune(unicode.ToLower(char))
-						prevCap = true
-					}
-				} else {
-					buf.WriteRune(char)
-					prevCap = false
-				}
-			}
+			NormaliseID(buf, fname)
 			name = buf.String()
 		}
 		switch ft := field.Type; ft.Kind() {
@@ -511,5 +493,30 @@ func (elem *Elem) Display(buffer *bytes.Buffer, indent string) {
 		}
 	case Null:
 		fmt.Fprint(buffer, "null")
+	}
+}
+
+func NormaliseID(buf *bytes.Buffer, id string) {
+	prevCap := true
+	for idx, char := range id {
+		if idx == 0 {
+			buf.WriteRune(unicode.ToLower(char))
+			continue
+		}
+		if unicode.IsUpper(char) {
+			if prevCap {
+				buf.WriteRune(unicode.ToLower(char))
+			} else {
+				buf.WriteRune('-')
+				buf.WriteRune(unicode.ToLower(char))
+				prevCap = true
+			}
+		} else if char == '_' {
+			buf.WriteRune('-')
+			prevCap = false
+		} else {
+			buf.WriteRune(char)
+			prevCap = false
+		}
 	}
 }
