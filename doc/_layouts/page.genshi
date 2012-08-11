@@ -32,7 +32,7 @@ ${Markup(content)}
 	<div>A brief overview of how to get involved with Ampify development.</div>
   </li>
   <li>
-	<a href="planfile.html">Planfile</a>
+	<a href="https://planfile.herokuapp.com/ampify">Planfile</a>
 	<div>The technical architecture and planfile for Ampify.</div>
   </li>
   <li>

@@ -15,7 +15,7 @@ core.
 
   <div class="lead-button">
     <a href="building-ampify.html">BUILD AMPIFY</a>
-    <a href="planfile.html">PLANFILE</a>
+    <a href="https://planfile.herokuapp.com/ampify">PLANFILE</a>
     <a href="getting-involved.html">GET INVOLVED</a>
   </div>
   <hr class="clear" />
