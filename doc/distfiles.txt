@@ -11,7 +11,7 @@ Ampify makes use of a number of different open source libraries and platforms.
 Unfortunately, given the use of bleeding edge versions, it's not reasonable to
 expect users to have the required versions already installed on their systems.
 
-To resolve this issue, an ``redpill build`` mechanism is provided to download
+To resolve this issue, the ``redpill build`` mechanism is provided to download
 and compile the various dependencies on demand. This document describes the
 manner in which the various package distfiles (source tarballs) are generated.
 
