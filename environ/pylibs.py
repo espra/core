@@ -13,7 +13,6 @@ for path in [
     join_path(AMPIFY_ROOT, 'third_party', 'pylibs'),
     join_path(AMPIFY_ROOT, 'third_party', 'yatiblog'),
     join_path(AMPIFY_ROOT, 'third_party', 'tavutil'),
-    join_path(AMPIFY_ROOT, 'third_party', 'bolt'),
     join_path(AMPIFY_ROOT, 'third_party', 'assetgen'),
     join_path(AMPIFY_ROOT, 'src', 'python'),
     ]:
