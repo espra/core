@@ -116,9 +116,9 @@ case $_OS_NAME in
 		else
 			if [ "x$DYLD_FALLBACK_LIBRARY_PATH" != "x" ]; then
 				export PRE_AMPENV_DYLD_FALLBACK_LIBRARY_PATH=$DYLD_FALLBACK_LIBRARY_PATH
-				export DYLD_FALLBACK_LIBRARY_PATH=$AMPIFY_LOCAL/lib:$AMPIFY_LOCAL/freeswitch/lib:$DYLD_FALLBACK_LIBRARY_PATH:/usr/local/lib:/usr/lib
+				export DYLD_FALLBACK_LIBRARY_PATH=$AMPIFY_LOCAL/lib:$DYLD_FALLBACK_LIBRARY_PATH:/usr/local/lib:/usr/lib
 			else
-				export DYLD_FALLBACK_LIBRARY_PATH=$AMPIFY_LOCAL/lib:$AMPIFY_LOCAL/freeswitch/lib:/usr/local/lib:/usr/lib
+				export DYLD_FALLBACK_LIBRARY_PATH=$AMPIFY_LOCAL/lib:/usr/local/lib:/usr/lib
 			fi
 		fi
 		export DYLD_LIBRARY_PATH=/this/path/should/not/exist;;
@@ -147,7 +147,7 @@ case $_OS_NAME in
 	*) echo "ERROR: Unknown system operating system: ${_OS_NAME}"
 esac
 
-_ENV_VAL=$AMPIFY_ROOT/src/python:$_THIRD_PARTY/tavutil:$_THIRD_PARTY/yatiblog:$_THIRD_PARTY/pylibs:$AMPIFY_ROOT/environ:$_THIRD_PARTY/assetgen:$_THIRD_PARTY/bolt
+_ENV_VAL=$AMPIFY_ROOT/src/python:$_THIRD_PARTY/tavutil:$_THIRD_PARTY/yatiblog:$_THIRD_PARTY/pylibs:$AMPIFY_ROOT/environ:$_THIRD_PARTY/assetgen
 
 if [ "x$PRE_AMPENV_PYTHONPATH" != "x" ]; then
 	export PYTHONPATH=$_ENV_VAL:$PRE_AMPENV_PYTHONPATH
@@ -157,19 +157,6 @@ else
 		export PYTHONPATH=$_ENV_VAL:$PYTHONPATH
 	else
 		export PYTHONPATH=$_ENV_VAL
-	fi
-fi
-
-_ENV_VAL=$_THIRD_PARTY/vows/lib:$_THIRD_PARTY/coffee-script/lib:$_THIRD_PARTY/uglify-js
-
-if [ "x$PRE_AMPENV_NODE_PATH" != "x" ]; then
-	export NODE_PATH=$_ENV_VAL:$PRE_AMPENV_PATH
-else
-	if [ "x$NODE_PATH" != "x" ]; then
-		export PRE_AMPENV_NODE_PATH=$NODE_PATH
-		export NODE_PATH=$_ENV_VAL:$NODE_PATH
-	else
-		export NODE_PATH=$_ENV_VAL
 	fi
 fi
 
@@ -189,7 +176,7 @@ fi
 # ------------------------------------------------------------------------------
 
 export GOBIN=$AMPIFY_LOCAL/bin
-export GOPATH=$AMPIFY_ROOT:$_THIRD_PARTY/golibs
+export GOPATH=$AMPIFY_ROOT:$_THIRD_PARTY/golibs:$_THIRD_PARTY/bolt
 
 case $_OS_NAME in
 	darwin) export GOOS="darwin";;
@@ -238,6 +225,7 @@ if test "$PS1"; then
 	complete -o default -F _amp_completion live-server
 	complete -o default -F _amp_completion redpill
 	complete -o default -F _amp_completion urlfetch
+	complete -o default -F _amp_completion wifistat
 
 	# And, finally, register files with specific commands.
 	complete -f -X '!*.go' 5g 6g 8g
