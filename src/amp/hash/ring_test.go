@@ -16,7 +16,7 @@ func TestRing(t *testing.T) {
 		t.Logf("Mismatching bucket length: expected %d, got %d.", 2*defaultRingWeight, r.Len())
 	}
 	for _, key := range []string{"hello", "world", "yes"} {
-		if _, ok := r.FindString(key); !ok {
+		if _, ok := r.Find([]byte(key)); !ok {
 			t.Logf("Error finding match for %s", key)
 		}
 	}

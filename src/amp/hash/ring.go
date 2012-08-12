@@ -12,7 +12,7 @@ import (
 	"sync"
 )
 
-const defaultRingWeight = 100
+const defaultBucketsPerNode = 100
 
 var crcTable = crc32.MakeTable(crc32.Castagnoli)
 
@@ -34,20 +34,20 @@ type Ring struct {
 }
 
 func (r *Ring) Add(node string) {
-	r.AddWithOpts(node, defaultRingWeight, true)
+	r.AddWithOpts(node, defaultBucketsPerNode, true)
 }
 
-func (r *Ring) AddWithOpts(node string, weight int, refresh bool) {
+func (r *Ring) AddWithOpts(node string, numberOfBuckets int, refresh bool) {
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
 	if refresh {
 		r.remove(node)
 	}
 	i, hash := 0, sha512.New()
-	for i < weight {
+	for i < numberOfBuckets {
 		hash.Write([]byte(node))
 		d := hash.Sum(nil)
-		m := weight - i
+		m := numberOfBuckets - i
 		if m > 64 {
 			m = 64
 		}
@@ -77,7 +77,7 @@ func (r *Ring) Find(key []byte) (string, bool) {
 	i, j := 0, n
 	for i < j {
 		p := i + (j-i)/2
-		if !(r.buckets[p].id >= c) {
+		if r.buckets[p].id < c {
 			i = p + 1
 		} else {
 			j = p
@@ -87,10 +87,6 @@ func (r *Ring) Find(key []byte) (string, bool) {
 		i = 0
 	}
 	return r.buckets[i].node, true
-}
-
-func (r *Ring) FindString(key string) (string, bool) {
-	return r.Find([]byte(key))
 }
 
 func (r *Ring) remove(node string) {
@@ -135,7 +131,7 @@ func (r *Ring) String() string {
 func NewRing(nodes ...string) *Ring {
 	r := &Ring{}
 	for _, node := range nodes {
-		r.AddWithOpts(node, defaultRingWeight, false)
+		r.AddWithOpts(node, defaultBucketsPerNode, false)
 	}
 	sort.Sort(r)
 	return r
