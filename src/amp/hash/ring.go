@@ -89,6 +89,50 @@ func (r *Ring) Find(key []byte) (string, bool) {
 	return r.buckets[i].node, true
 }
 
+func (r *Ring) FindMultiple(key []byte, count int) ([]string, bool) {
+	r.mutex.RLock()
+	defer r.mutex.RUnlock()
+	if count <= 0 {
+		return nil, true
+	}
+	c, n := crc32.Update(0, crcTable, key), len(r.buckets)
+	if n == 0 {
+		return nil, false
+	}
+	i, j := 0, n
+	for i < j {
+		p := i + (j-i)/2
+		if r.buckets[p].id < c {
+			i = p + 1
+		} else {
+			j = p
+		}
+	}
+	if i == n {
+		i = 0
+	}
+	first := i
+	found := []string{r.buckets[i].node}
+outer:
+	for count > len(found) {
+		i += 1
+		if i == n {
+			i = 0
+		}
+		if i == first {
+			return found, false
+		}
+		next := r.buckets[i].node
+		for _, node := range found {
+			if node == next {
+				continue outer
+			}
+		}
+		found = append(found, next)
+	}
+	return found, true
+}
+
 func (r *Ring) remove(node string) {
 	i := 0
 	for {
