@@ -29,15 +29,11 @@ func (s buckets) Swap(i, j int)      { s[i], s[j] = s[j], s[i] }
 
 // Ring provides support for consistent hashing.
 type Ring struct {
-	buckets
-	mutex sync.RWMutex
+	buckets buckets
+	mutex   sync.RWMutex
 }
 
-func (r *Ring) Add(node string) {
-	r.AddWithOpts(node, defaultBucketsPerNode, true)
-}
-
-func (r *Ring) AddWithOpts(node string, numberOfBuckets int, refresh bool) {
+func (r *Ring) add(node string, numberOfBuckets int, refresh bool) {
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
 	if refresh {
@@ -63,8 +59,16 @@ func (r *Ring) AddWithOpts(node string, numberOfBuckets int, refresh bool) {
 		}
 	}
 	if refresh {
-		sort.Sort(r)
+		sort.Sort(r.buckets)
 	}
+}
+
+func (r *Ring) Add(node string) {
+	r.add(node, defaultBucketsPerNode, true)
+}
+
+func (r *Ring) AddWithOpts(node string, numberOfBuckets int) {
+	r.add(node, numberOfBuckets, true)
 }
 
 func (r *Ring) Find(key []byte) (string, bool) {
@@ -93,7 +97,7 @@ func (r *Ring) FindMultiple(key []byte, count int) ([]string, bool) {
 	r.mutex.RLock()
 	defer r.mutex.RUnlock()
 	if count <= 0 {
-		return nil, true
+		return nil, false
 	}
 	c, n := crc32.Update(0, crcTable, key), len(r.buckets)
 	if n == 0 {
@@ -120,7 +124,7 @@ outer:
 			i = 0
 		}
 		if i == first {
-			return found, false
+			break
 		}
 		next := r.buckets[i].node
 		for _, node := range found {
@@ -164,7 +168,7 @@ func (r *Ring) String() string {
 	r.mutex.RLock()
 	defer r.mutex.RUnlock()
 	buf := &bytes.Buffer{}
-	fmt.Fprintf(buf, "[%d]ring{\n", r.Len())
+	fmt.Fprintf(buf, "[%d]ring{\n", r.buckets.Len())
 	for _, bucket := range r.buckets {
 		fmt.Fprintf(buf, "\t%d\t%s\n", bucket.id, bucket.node)
 	}
@@ -175,8 +179,8 @@ func (r *Ring) String() string {
 func NewRing(nodes ...string) *Ring {
 	r := &Ring{}
 	for _, node := range nodes {
-		r.AddWithOpts(node, defaultBucketsPerNode, false)
+		r.add(node, defaultBucketsPerNode, false)
 	}
-	sort.Sort(r)
+	sort.Sort(r.buckets)
 	return r
 }
