@@ -5,6 +5,7 @@ package zerodata
 
 import (
 	"amp/dbi"
+	"amp/tlsconf"
 	"bytes"
 	"encoding/gob"
 	"errors"
@@ -96,10 +97,13 @@ func (c *Client) Call(service string, req interface{}, resp interface{}) error {
 	return nil
 }
 
-func NewClient(secret []byte, url string) *Client {
+func NewClient(serverURL string, secretKey []byte, transport http.RoundTripper) *Client {
+	if transport == nil {
+		transport = &http.Transport{TLSClientConfig: tlsconf.Config}
+	}
 	return &Client{
-		secret: secret,
-		url:    url,
-		web:    &http.Client{},
+		secret: secretKey,
+		url:    serverURL,
+		web:    &http.Client{Transport: transport},
 	}
 }
