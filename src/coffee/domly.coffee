@@ -7,6 +7,7 @@ define 'amp', (exports, root) ->
   events = {}
   evid = 1
   isArray = Array.isArray
+  lastid = 1
 
   propFix =
     $: "className"
@@ -23,7 +24,7 @@ define 'amp', (exports, root) ->
     tabindex: "tabIndex"
     usemap: "useMap"
 
-  buildDOM = (data, parent) ->
+  buildDOM = (data, parent, setID) ->
     l = data.length
     if l >= 1
       tag = data[0] # TODO(tav): use this to check which attrs are valid.
@@ -55,11 +56,20 @@ define 'amp', (exports, root) ->
           elem.appendChild document.createTextNode child
         else
           buildDOM child, elem
+    if setID
+      id = elem['id']
+      if not id
+        elem['id'] = id = "$#{lastid++}"
+      return id
     return
 
-  exports.domly = (data, target) ->
+  exports.domly = (data, target, retElem) ->
     frag = doc.createDocumentFragment()
-    buildDOM data, frag
+    if retElem
+      id = buildDOM data, frag, true
+      target.appendChild frag
+      return doc.getElementById id
+    buildDOM data, frag, false
     target.appendChild frag
     return
 
