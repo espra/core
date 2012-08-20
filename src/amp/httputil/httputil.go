@@ -205,6 +205,8 @@ func Parse(r *http.Request, key string) *Acceptable {
 				weight: 1.0,
 			})
 		}
+	} else if key == "Accept-Encoding" {
+		a.codings = true
 	}
 	if len(a.opts) > 0 {
 		sort.Sort(a.opts)
