@@ -168,7 +168,7 @@ func Parse(r *http.Request, key string) *Acceptable {
 				opt.wildcard = true
 			} else if strings.HasSuffix(part, "/*") {
 				opt.metaPrefix = part[:len(part)-1]
-				opt.metaWildcard = !strings.Contains(opt.metaPrefix, "/")
+				opt.metaWildcard = strings.Count(opt.metaPrefix, "/") == 1
 			}
 		case "Accept-Charset":
 			if part == "*" {
