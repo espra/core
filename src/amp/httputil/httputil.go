@@ -1,6 +1,7 @@
 // Public Domain (-) 2012 The Ampify Authors.
 // See the Ampify UNLICENSE file for details.
 
+// http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html
 package httputil
 
 import (
@@ -28,8 +29,8 @@ func (s AcceptOptions) Len() int      { return len(s) }
 func (s AcceptOptions) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
 
 func (s AcceptOptions) Less(i, j int) bool {
-	if s[i].weight > s[j].weight {
-		return true
+	if s[i].weight != s[j].weight {
+		return s[i].weight > s[j].weight
 	}
 	if s[i].wildcard || s[j].wildcard || s[i].metaWildcard || s[j].metaWildcard {
 		if s[i].wildcard {
@@ -132,6 +133,14 @@ func (a *Acceptable) FindPreferred(values ...string) []string {
 	return matches
 }
 
+func (a *Acceptable) Options() []string {
+	opts := make([]string, len(a.opts))
+	for i, opt := range a.opts {
+		opts[i] = opt.value
+	}
+	return opts
+}
+
 // Parse handles special HTTP header fields like Accept-Encoding and returns a
 // queryable object.
 func Parse(r *http.Request, key string) *Acceptable {
@@ -147,6 +156,7 @@ func Parse(r *http.Request, key string) *Acceptable {
 		weight := 1.0
 		if len(parts) >= 2 {
 			for _, qvalue := range parts[1:] {
+				qvalue = strings.TrimSpace(qvalue)
 				if len(qvalue) >= 3 && qvalue[:2] == "q=" {
 					weight, err = strconv.ParseFloat(qvalue[2:], 64)
 					if err != nil {
