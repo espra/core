@@ -183,7 +183,7 @@ func InitProcess(name, runPath string) {
 // Process Default Runtime Opts
 // -----------------------------------------------------------------------------
 
-func DefaultOpts(name string, opts *optparse.OptionParser, argv []string) (bool, string, string) {
+func DefaultOpts(name string, opts *optparse.OptionParser, argv []string) (bool, string, string, string) {
 
 	var (
 		configPath        string
@@ -314,7 +314,7 @@ func DefaultOpts(name string, opts *optparse.OptionParser, argv []string) (bool,
 		InitProcess(name, runPath)
 	}
 
-	return *debug, instanceDirectory, runPath
+	return *debug, instanceDirectory, runPath, logPath
 
 }
 
