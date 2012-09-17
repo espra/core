@@ -218,7 +218,9 @@ func (t *Transport) updateToken(tok *Token, v url.Values) error {
 		return errors.New("Unknown token format")
 	}
 	tok.AccessToken = b.Access
-	tok.RefreshToken = b.Refresh
+	if len(b.Refresh) > 0 {
+		tok.RefreshToken = b.Refresh
+	}
 	if b.ExpiresIn == 0 {
 		tok.Expiry = time.Time{}
 	} else {
