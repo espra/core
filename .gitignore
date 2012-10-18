@@ -11,20 +11,6 @@ doc/website/*.html
 environ/local
 environ/receipts
 
-src/amp/amp/amp
-src/coffee/*.js
-src/nodule/static/files/css/*.css
-src/nodule/static/files/js/*.js
-src/nodule/urlfetch/urlfetch
-src/nodule/webserver/webserver
-
-src/zerodata/app.yaml
-
-# minified css/js files
-
-*.min.js
-*.min.css
-
 # hidden files/directories
 
 .bzr
@@ -46,6 +32,7 @@ src/zerodata/app.yaml
 *.8
 *.a
 *.dylib
+*.dSYM
 *.egg
 *.jar
 *.la
