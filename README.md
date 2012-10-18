@@ -1,12 +1,11 @@
 ![Ampify](https://github.com/downloads/tav/ampify/logo.ampify.smallest.png)
 
-This is the repo for Ampify — an open and decentralised social platform.  
-For comparison, perhaps imagine a bastardised mix between Git, Facebook,  
-Unix, IRC, App Engine, [Xanadu] and Wikis.
+This is the repo for Ampify — an open and decentralised app platform. It  
+is intended as a successor to the Open Web and as a replacement for closed  
+platforms like iOS and Facebook.
 
-The goal for the final 1.0 release is to have a fully decentralised "internet  
-operating system" style platform. We're currently working towards an initial  
-release for the end of this year — [see the planfile].
+We're currently working towards an initial release for mid-2013, with a final  
+1.0 release at the end of 2013 — [see the planfile for more info].
 
 **Getting Started**
 
@@ -17,20 +16,27 @@ release for the end of this year — [see the planfile].
 
 For more info, please see the `doc` directory or visit:
 
-* online docs: [http://ampify.it]
-* mailing list: [http://groups.google.com/group/ampify]
-* plan file: [http://ampify.it/planfile.html]
+* online docs: [http://ampify.net]
 * irc channel: [irc://irc.freenode.net/esp], [irc logs]
+* mailing list: [http://groups.google.com/group/ampify]
+* plan file: [https://plan.espians.com/ampify]
+* review server: [https://gitreview.com/ampify]
 
 **Contribute**
 
-To contribute any patches, simply fork this repository using GitHub  
-and create a new branch for your work:
+We've made a tool called `git-review` to make it really easy for you  
+to contribute. If you haven't used it before, just install it with  
+the following command:
+
+    $ sudo easy_install git-review
+
+Then, to contribute any patches, simply create a new branch for your  
+work:
 
     $ git checkout -b name-for-your-patch
 
 And to submit it for review, make sure you've added yourself to the  
-`AUTHORS` file and then run:
+`AUTHORS` file and run:
 
     $ git review submit
 
@@ -48,10 +54,8 @@ into the [public domain]. The major contributors so far have been:
 
 * [tav] — creator of Ampify and BDFL.
 
-* [Mamading Ceesay], evangineer — co-architect.
-
-* [James Arthur], thruflo — implemented various trust map  
-  iterations; dolumns; invented thruflo transactions.
+* [Mamading Ceesay], evangineer — helped think through many of  
+  the facets of Ampify.
 
 * [Sean B. Palmer], sbp — implemented various aspects including  
   field trees; historian; even coined the name Ampify.
@@ -59,14 +63,23 @@ into the [public domain]. The major contributors so far have been:
 * [Mathew Ryden], oierw — designed many aspects of the overlay  
   network, crypto and networking protocols.
 
+* [Tom Salfield], salfield — helped work through a lot of the  
+  datastore and application programming layers.
+
 * [Yan Minagawa], yncyrydybyl — pioneered experimentation with  
   many of the Ampify concepts and co-designed the interface.
 
-* [Maciej Fijalkowski], fijal — implemented the bridge between  
-  WebKit and PyPy-based interpreters; JIT sandbox.
-
 * [Øyvind Selbek], talonlzr — designed aspects of the service  
   architecture, including video encoding.
+
+* [James Arthur], thruflo — implemented various trust map  
+  iterations; dolumns; invented thruflo transactions.
+
+* [Seyi Ogunyemi], micrypt — working on actually implementing  
+  the core of Ampify!
+
+* [Maciej Fijalkowski], fijal — implemented the bridge between  
+  WebKit and PyPy-based interpreters; JIT sandbox.
 
 * [David Pinto], happyseaurchin — co-designed the micro-syntax  
   and elements of the minimal user interface.
@@ -77,7 +90,7 @@ into the [public domain]. The major contributors so far have been:
 See the [authors], [credits] and [pecu allocations] for a full listing  
 of all the awesome people who've helped over the years.
 
-—
+—  
 Enjoy, tav <<tav@espians.com>>
 
 
@@ -85,20 +98,20 @@ Enjoy, tav <<tav@espians.com>>
 
 
 [Xanadu]: http://en.wikipedia.org/wiki/Project_Xanadu
-[see the planfile]: http://ampify.it/planfile.html
+[see the planfile]: https://plan.espians.com/ampify
 
-[Ampify Authors]: http://ampify.it/authors.html
-[public domain]: http://ampify.it/unlicense.html
+[Ampify Authors]: http://ampify.net/authors.html
+[public domain]: http://ampify.net/unlicense.html
 
-[authors]: http://ampify.it/authors.html
-[credits]: http://ampify.it/credits.html
+[authors]: http://ampify.net/authors.html
+[credits]: http://ampify.net/credits.html
 [pecu allocations]: http://tav.espians.com/pecu-allocations-by-tav.html
 
-[http://ampify.it]: http://ampify.it
-[http://ampify.it/planfile.html]: http://ampify.it/planfile.html
+[http://ampify.net]: http://ampify.net
+[https://plan.espians.com/ampify]: https://plan.espians.com/ampify
 [http://groups.google.com/group/ampify]: http://groups.google.com/group/ampify
 [irc://irc.freenode.net/esp]: irc://irc.freenode.net/esp
-[irc logs]: http://irclogs.ampify.it
+[irc logs]: http://irclogs.ampify.net
 
 [David Pinto]: http://twitter.com/happyseaurchin
 [James Arthur]: http://thruflo.com
@@ -107,6 +120,8 @@ Enjoy, tav <<tav@espians.com>>
 [Mamading Ceesay]: http://twitter.com/evangineer
 [Mathew Ryden]: https://github.com/oierw
 [Øyvind Selbek]: http://twitter.com/talonlzr
+[Seyi Ogunyemi]: http://micrypt.com
 [Sean B. Palmer]: http://inamidst.com
 [tav]: http://tav.espians.com
+[Tom Salfield]: https://twitter.com/tsalfield
 [Yan Minagawa]: http://delicious.com/t
