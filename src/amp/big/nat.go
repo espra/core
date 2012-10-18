@@ -1,1 +1,0 @@
-../../../environ/local/go/src/pkg/math/big/nat.go
