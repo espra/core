@@ -1,7 +1,7 @@
 ![Ampify](https://github.com/downloads/tav/ampify/logo.ampify.smallest.png)
 
-This is the repo for Ampify — an open and decentralised app platform. It  
-is intended as a successor to the Open Web and as a replacement for closed  
+This is the repo for Ampify — an open and decentralised app platform. It is  
+intended as a successor to the Open Web and as a replacement for closed  
 platforms like iOS and Facebook.
 
 We're currently working towards an initial release for mid-2013, with a final  
@@ -98,7 +98,7 @@ Enjoy, tav <<tav@espians.com>>
 
 
 [Xanadu]: http://en.wikipedia.org/wiki/Project_Xanadu
-[see the planfile]: https://plan.espians.com/ampify
+[see the planfile for more info]: https://plan.espians.com/ampify
 
 [Ampify Authors]: http://ampify.net/authors.html
 [public domain]: http://ampify.net/unlicense.html
@@ -108,8 +108,9 @@ Enjoy, tav <<tav@espians.com>>
 [pecu allocations]: http://tav.espians.com/pecu-allocations-by-tav.html
 
 [http://ampify.net]: http://ampify.net
-[https://plan.espians.com/ampify]: https://plan.espians.com/ampify
 [http://groups.google.com/group/ampify]: http://groups.google.com/group/ampify
+[https://gitreview.com/ampify]: https://gitreview.com/ampify
+[https://plan.espians.com/ampify]: https://plan.espians.com/ampify
 [irc://irc.freenode.net/esp]: irc://irc.freenode.net/esp
 [irc logs]: http://irclogs.ampify.net
 
