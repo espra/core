@@ -33,4 +33,4 @@ if [ $version_check_status -ne 0 ]; then
 	exit $version_check_status
 fi
 
-python -m redpill $@
+PYTHONPATH=$AMPIFY_ROOT/environ:$PYTHONPATH python -m redpill $@

@@ -14,6 +14,7 @@ The redpill bootstraps you into the world of Ampify.
 
 import os
 import sys
+import subprocess
 import tarfile
 import traceback
 
@@ -29,11 +30,21 @@ from thread import start_new_thread
 from time import sleep
 from urllib import urlopen
 
-from simplejson import loads as decode_json
-from tavutil.env import run_command, CommandNotFound
-from tavutil.optcomplete import autocomplete, ListCompleter
-from tavutil.optcomplete import make_autocompleter, parse_options
-from yaml import safe_load as decode_yaml
+try:
+    from simplejson import loads as decode_json
+except ImportError:
+    from json import loads as decode_json
+
+try:
+    from tavutil.optcomplete import autocomplete, ListCompleter
+    from tavutil.optcomplete import make_autocompleter, parse_options
+except ImportError:
+    autocomplete = None
+
+try:
+    from yaml import safe_load as decode_yaml
+except ImportError:
+    decode_yaml = None
 
 try:
     from multiprocessing import cpu_count
@@ -44,7 +55,7 @@ except ImportError:
 # Metadata
 # ------------------------------------------------------------------------------
 
-__version__ = (0, 0, 0)
+__version__ = (0, 1, 0)
 __release__ = '.'.join(map(str, __version__))
 
 # ------------------------------------------------------------------------------
@@ -100,6 +111,118 @@ else:
         )
 
 NUMBER_OF_CPUS = cpu_count()
+
+# -----------------------------------------------------------------------------
+# Fill in for tavutil.optcomplete.parse_options
+# -----------------------------------------------------------------------------
+
+if not autocomplete:
+    class CompletionResult(Exception):
+        def __init__(self, result):
+            self.result = result
+
+    def parse_options(parser, argv, completer=None, exit_if_no_args=False):
+        if completer:
+            raise CompletionResult(parser)
+        if (argv == ['--help']) or (argv == ['-h']):
+            parser.print_help()
+            sys.exit(1)
+        options, args = parser.parse_args(argv)
+        if exit_if_no_args and not args:
+            parser.print_help()
+            sys.exit(1)
+        return options, args
+
+# -----------------------------------------------------------------------------
+# Fill in for yaml.loads
+# -----------------------------------------------------------------------------
+
+if not decode_yaml:
+    def decode_yaml(s):
+        data = {}
+        for line in s.splitlines():
+            line = line.strip()
+            if line.startswith('#'):
+                continue
+            if line.endswith(':'):
+                data[line[:-1]] = xs = []
+                continue
+            if line.startswith('-'):
+                xs.append(line[1:].strip())
+        return data
+
+# -----------------------------------------------------------------------------
+# Command Execution
+# -----------------------------------------------------------------------------
+
+def exit_cmd(message, error_code=1):
+    """Write an error message to stderr and exit with the given error_code."""
+    sys.stderr.write(message + '\n')
+    sys.exit(error_code)
+
+class CommandNotFound(Exception):
+    """Exception raised when a command line app could not be found."""
+
+def run_command(
+    args, retcode=False, reterror=False, exit_on_error=False, error_message="",
+    log=None, redirect_stdout=True, redirect_stderr=True, cwd=None,
+    shell=sys.platform.startswith('win'), env=None, universal_newlines=True
+    ):
+    """Execute the command with the given options."""
+
+    log_message = "%s cwd=%s" % (' '.join(args), cwd or getcwd())
+    if log:
+        if hasattr(log, '__call__'):
+            log(log_message)
+        else:
+            sys.stderr.write("Running command: " + log_message + '\n')
+
+    if redirect_stdout:
+        stdout = subprocess.PIPE
+    else:
+        stdout = None
+
+    if redirect_stderr:
+        stderr = subprocess.PIPE
+    else:
+        stderr = None
+
+    try:
+        process = subprocess.Popen(
+            args, stdout=stdout, stderr=stderr, shell=shell, cwd=cwd, env=env,
+            universal_newlines=universal_newlines
+            )
+        out, err = process.communicate()
+    except OSError:
+        error = sys.exc_info()[1]
+        if error.errno == 2:
+            if not error.filename:
+                if exit_on_error:
+                    exit_cmd("Couldn't find the %r command!" % args[0])
+                raise CommandNotFound(args[0])
+            raise error
+        if exit_on_error:
+            exit_cmd("Error running: %s\n\n%s" % (log_message, error_message))
+        raise
+
+    if process.returncode and exit_on_error:
+        if stderr:
+            exit_extra = error_message or err
+        else:
+            exit_extra = error_message or out
+        if exit_extra:
+            exit_cmd("Error running: %s\n\n%s" % (log_message, exit_extra))
+        else:
+            exit_cmd("Error running: %s" % log_message)
+
+    if retcode:
+        if reterror:
+            return out, err, process.returncode
+        return out, process.returncode
+
+    if reterror:
+        return out, err
+    return out
 
 # ------------------------------------------------------------------------------
 # Utility Functions
@@ -677,9 +800,6 @@ def install_packages(types=BUILD_TYPES):
 
     ensure_gcc_version()
     ensure_git_version()
-    ensure_java_version()
-    ensure_node_version()
-    ensure_ruby_version()
 
     for directory in [
         BUILD_WORKING_DIRECTORY, LOCAL, BIN, SHARE, TMP
@@ -955,11 +1075,14 @@ def main(argv=None, show_help=False):
     \nSee `redpill help <command>` for more info on a specific command.""" %
     (__doc__, major_listing, mini_listing))
 
-    autocomplete(
-        OptionParser(add_help_option=False),
-        ListCompleter(AUTOCOMPLETE_COMMANDS.keys()),
-        subcommands=AUTOCOMPLETE_COMMANDS
-        )
+    if autocomplete:
+        autocomplete(
+            OptionParser(add_help_option=False),
+            ListCompleter(AUTOCOMPLETE_COMMANDS.keys()),
+            subcommands=AUTOCOMPLETE_COMMANDS
+            )
+    elif 'OPTPARSE_AUTO_COMPLETE' in environ:
+        sys.exit(1)
 
     if not argv:
         show_help = True
@@ -1237,20 +1360,24 @@ MINI_COMMANDS = {
 # Command Autocompletion
 # ------------------------------------------------------------------------------
 
-AUTOCOMPLETE_COMMANDS = MAJOR_COMMANDS.copy()
+if autocomplete:
 
-AUTOCOMPLETE_COMMANDS['help'] = lambda completer: (
-    OptionParser(add_help_option=False),
-    ListCompleter(MAJOR_COMMANDS.keys() + MINI_COMMANDS.keys())
-    )
+    AUTOCOMPLETE_COMMANDS = MAJOR_COMMANDS.copy()
 
-no_autocomplete = lambda completer: (OptionParser(add_help_option=False), None)
+    AUTOCOMPLETE_COMMANDS['help'] = lambda completer: (
+        OptionParser(add_help_option=False),
+        ListCompleter(MAJOR_COMMANDS.keys() + MINI_COMMANDS.keys())
+        )
 
-for command in MINI_COMMANDS:
-    AUTOCOMPLETE_COMMANDS[command] = no_autocomplete
+    no_autocomplete = lambda completer: (
+        OptionParser(add_help_option=False), None
+        )
 
-for command in AUTOCOMPLETE_COMMANDS.values():
-    command.autocomplete = make_autocompleter(command)
+    for command in MINI_COMMANDS:
+        AUTOCOMPLETE_COMMANDS[command] = no_autocomplete
+
+    for command in AUTOCOMPLETE_COMMANDS.values():
+        command.autocomplete = make_autocompleter(command)
 
 # ------------------------------------------------------------------------------
 # Script Runner
