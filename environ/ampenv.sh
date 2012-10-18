@@ -96,7 +96,7 @@ function _have () {
 export AMPIFY_LOCAL=$AMPIFY_ROOT/environ/local
 
 _THIRD_PARTY=$AMPIFY_ROOT/third_party
-_ENV_VAL=$AMPIFY_ROOT/environ:$AMPIFY_LOCAL/bin:$_THIRD_PARTY/git-review/bin
+_ENV_VAL=$AMPIFY_ROOT/environ:$AMPIFY_LOCAL/bin
 
 if [ "x$PRE_AMPENV_PATH" != "x" ]; then
 	export PATH=$_ENV_VAL:$PRE_AMPENV_PATH
@@ -112,7 +112,7 @@ fi
 case $_OS_NAME in
 	darwin)
 		if [ "x$PRE_AMPENV_DYLD_FALLBACK_LIBRARY_PATH" != "x" ]; then
-			export DYLD_FALLBACK_LIBRARY_PATH=$AMPIFY_LOCAL/lib:$AMPIFY_LOCAL/freeswitch/lib:$PRE_AMPENV_DYLD_FALLBACK_LIBRARY_PATH:/usr/local/lib:/usr/lib
+			export DYLD_FALLBACK_LIBRARY_PATH=$AMPIFY_LOCAL/lib:$PRE_AMPENV_DYLD_FALLBACK_LIBRARY_PATH:/usr/local/lib:/usr/lib
 		else
 			if [ "x$DYLD_FALLBACK_LIBRARY_PATH" != "x" ]; then
 				export PRE_AMPENV_DYLD_FALLBACK_LIBRARY_PATH=$DYLD_FALLBACK_LIBRARY_PATH
@@ -147,19 +147,6 @@ case $_OS_NAME in
 	*) echo "ERROR: Unknown system operating system: ${_OS_NAME}"
 esac
 
-_ENV_VAL=$AMPIFY_ROOT/src/python:$_THIRD_PARTY/tavutil:$_THIRD_PARTY/yatiblog:$_THIRD_PARTY/pylibs:$AMPIFY_ROOT/environ:$_THIRD_PARTY/assetgen
-
-if [ "x$PRE_AMPENV_PYTHONPATH" != "x" ]; then
-	export PYTHONPATH=$_ENV_VAL:$PRE_AMPENV_PYTHONPATH
-else
-	if [ "x$PYTHONPATH" != "x" ]; then
-		export PRE_AMPENV_PYTHONPATH=$PYTHONPATH
-		export PYTHONPATH=$_ENV_VAL:$PYTHONPATH
-	else
-		export PYTHONPATH=$_ENV_VAL
-	fi
-fi
-
 if [ "x$PRE_AMPENV_MANPATH" != "x" ]; then
 	export MANPATH=$AMPIFY_ROOT/doc/man:$AMPIFY_LOCAL/share/man:$PRE_AMPENV_MANPATH
 else
@@ -172,24 +159,24 @@ else
 fi
 
 # ------------------------------------------------------------------------------
+# CA Cert Location Specifier
+# ------------------------------------------------------------------------------
+
+export CACERT=$AMPIFY_LOCAL/share/cacerts/ca.cert
+
+# ------------------------------------------------------------------------------
 # Go Related Variables
 # ------------------------------------------------------------------------------
 
 export GOBIN=$AMPIFY_LOCAL/bin
-export GOPATH=$AMPIFY_ROOT:$_THIRD_PARTY/golibs:$_THIRD_PARTY/bolt
-
-case $_OS_NAME in
-	darwin) export GOOS="darwin";;
-	freebsd) export GOOS="freebsd";;
-	linux) export GOOS="linux";;
-	*) echo "ERROR: Unknown system operating system: ${_OS_NAME}"
-esac
 
 # ------------------------------------------------------------------------------
-# Native-Client Related Variables
+# Rust Related Variables
 # ------------------------------------------------------------------------------
 
-export NACL_ROOT=$AMPIFY_LOCAL/third_party/nativeclient
+export RUSTBIN=$AMPIFY_LOCAL/bin
+export RUSTBUILD=$AMPIFY_ROOT/build
+export RUSTPATH=$AMPIFY_ROOT/src
 
 # ------------------------------------------------------------------------------
 # Auto-completing Function
@@ -217,14 +204,19 @@ if test "$PS1"; then
 	# Register the completers.
 	complete -o default -F _amp_completion amp
 	complete -o default -F _amp_completion ampnode
+	complete -o default -F _amp_completion ampstore
 	complete -o default -F _amp_completion assetgen
+	complete -o default -F _amp_completion blobnode
+	complete -o default -F _amp_completion bloqi
 	complete -o default -F _amp_completion bolt
-	complete -o default -F _amp_completion frontend
 	complete -o default -F _amp_completion git-review
 	complete -o default -F _amp_completion git-slave
 	complete -o default -F _amp_completion live-server
+	complete -o default -F _amp_completion live-store
+	complete -o default -F _amp_completion naaga
 	complete -o default -F _amp_completion redpill
-	complete -o default -F _amp_completion urlfetch
+	complete -o default -F _amp_completion review-server
+	complete -o default -F _amp_completion rusty
 	complete -o default -F _amp_completion wifistat
 
 	# And, finally, register files with specific commands.
