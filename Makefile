@@ -43,9 +43,11 @@ endif
 nuke: clean
 	rm -rf environ/local
 	rm -rf environ/receipts
+	rm -rf third_party/rust/build
+	rm -rf third_party/rusty/build
 
 update:
-ifeq ($(branch),masters)
+ifeq ($(branch),master)
 	@git pull origin master
 	@git submodule update --init
 else ifeq ($(git),)
