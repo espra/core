@@ -1164,10 +1164,10 @@ def check():
     log("Checking the latest commits on GitHub.", PROGRESS)
     commit_info = urlopen(environ.get(
         'REDPILL_CHECK_URL',
-        'https://github.com/api/v2/json/commits/list/tav/ampify/master'
+        'https://api.github.com/repos/tav/ampify/branches/master'
         )).read()
 
-    latest_revision_id = decode_json(commit_info)['commits'][0]['id']
+    latest_revision_id = decode_json(commit_info)['commit']['sha']
 
     if revision_id != latest_revision_id:
         exit("A new version is available. Please run `git update`.")
