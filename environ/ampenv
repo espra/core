@@ -18,10 +18,9 @@ fi
 _OS_NAME=$(uname -s | tr 'A-Z' 'a-z')
 
 # ------------------------------------------------------------------------------
-# Usage
+# Self Execution
 # ------------------------------------------------------------------------------
 
-# Exit if we're not sourced and echo usage example if possible.
 if [ "x$0" == "x$BASH_SOURCE" ]; then
 	LSOF=$(lsof -p $$ 2> /dev/null | grep -E "/"$(basename $0)"$")
 	case $_OS_NAME in
@@ -32,15 +31,26 @@ if [ "x$0" == "x$BASH_SOURCE" ]; then
 		freebsd)
 			__FILE=$(echo $LSOF | sed -E s/'^([^\/]+)\/'/'\/'/1 2>/dev/null);;
 		*)
-			echo "ERROR: You need to source this script and not run it directly!";
+			echo "ERROR: The $_OS_NAME operating system is not yet supported.";
 			exit
 	esac
+	if [ "x$#" != "x0" ]; then
+		source $__FILE
+		exec $@
+	fi
+	echo "Usage: ampenv runs differently depending on how it's invoked."
 	echo
-	echo "Usage:"
+	echo "ampenv <command> [<param1> <param2> ...]"
 	echo
-	echo "    source $__FILE"
+	echo "    Execute shell commands with the Ampify environment set."
+	echo "    For example, to run 'redpill build', just do:"
 	echo
-	echo "You might want to add the above line to your .bashrc or equivalent."
+	echo "        $ ampenv redpill build"
+	echo
+	echo "source $__FILE"
+	echo
+	echo "    Extend your shell with the Ampify environment. You may"
+	echo "    even want to add the above line to your .bashrc file."
 	echo
 	exit
 fi
@@ -68,11 +78,11 @@ fi
 # Try to determine the absolute path of the enclosing root directory.
 cd "$(dirname $BASH_SOURCE)" || return $?
 
-export AMPIFY_ENVIRON_DIRECTORY=`pwd -P 2> /dev/null` || return $?
+_ENVIRON_DIRECTORY=`pwd -P 2> /dev/null` || return $?
 
 cd $OLDPWD || return $?
 
-export AMPIFY_ROOT=$(dirname $AMPIFY_ENVIRON_DIRECTORY)
+export AMPIFY_ROOT=$(dirname $_ENVIRON_DIRECTORY)
 
 # Exit if ``$AMPIFY_ROOT`` is not set.
 if [ "x$AMPIFY_ROOT" == "x" ]; then
@@ -95,7 +105,6 @@ function _have () {
 
 export AMPIFY_LOCAL=$AMPIFY_ROOT/environ/local
 
-_THIRD_PARTY=$AMPIFY_ROOT/third_party
 _ENV_VAL=$AMPIFY_ROOT/environ:$AMPIFY_LOCAL/bin
 
 if [ "x$PRE_AMPENV_PATH" != "x" ]; then
@@ -144,7 +153,7 @@ case $_OS_NAME in
 				export LD_LIBRARY_PATH=$AMPIFY_LOCAL/lib
 			fi
 		fi;;
-	*) echo "ERROR: Unknown system operating system: ${_OS_NAME}"
+	*) echo "ERROR: The $_OS_NAME operating system is not yet supported."
 esac
 
 if [ "x$PRE_AMPENV_MANPATH" != "x" ]; then
@@ -171,6 +180,12 @@ export CACERT=$AMPIFY_LOCAL/share/cacerts/ca.cert
 export GOBIN=$AMPIFY_LOCAL/bin
 
 # ------------------------------------------------------------------------------
+# Redpill Related Variables
+# ------------------------------------------------------------------------------
+
+export REDPILL_ENVIRON=$_ENVIRON_DIRECTORY
+
+# ------------------------------------------------------------------------------
 # Rust Related Variables
 # ------------------------------------------------------------------------------
 
@@ -184,7 +199,7 @@ export RUSTPATH=$AMPIFY_ROOT/src
 
 # This function sets the special ``OPTPARSE_AUTO_COMPLETE`` environment variable
 # which can be used by commands to figure out whether they should auto-complete.
-_amp_completion() {
+_optparse_completion() {
 	COMPREPLY=( $( \
 	COMP_LINE=$COMP_LINE  COMP_POINT=$COMP_POINT \
 	COMP_WORDS="${COMP_WORDS[*]}"  COMP_CWORD=$COMP_CWORD \
@@ -202,28 +217,22 @@ if test "$PS1"; then
 	shopt -s extglob progcomp
 
 	# Register the completers.
-	complete -o default -F _amp_completion amp
-	complete -o default -F _amp_completion ampnode
-	complete -o default -F _amp_completion ampstore
-	complete -o default -F _amp_completion assetgen
-	complete -o default -F _amp_completion blobnode
-	complete -o default -F _amp_completion bloqi
-	complete -o default -F _amp_completion bolt
-	complete -o default -F _amp_completion git-review
-	complete -o default -F _amp_completion git-slave
-	complete -o default -F _amp_completion live-server
-	complete -o default -F _amp_completion live-store
-	complete -o default -F _amp_completion naaga
-	complete -o default -F _amp_completion redpill
-	complete -o default -F _amp_completion review-server
-	complete -o default -F _amp_completion rusty
-	complete -o default -F _amp_completion wifistat
-
-	# And, finally, register files with specific commands.
-	complete -f -X '!*.go' 5g 6g 8g
-	complete -f -X '!*.5' 5l
-	complete -f -X '!*.6' 6l
-	complete -f -X '!*.8' 8l
+	complete -o default -F _optparse_completion amp
+	complete -o default -F _optparse_completion ampnode
+	complete -o default -F _optparse_completion ampstore
+	complete -o default -F _optparse_completion assetgen
+	complete -o default -F _optparse_completion blobnode
+	complete -o default -F _optparse_completion bloqi
+	complete -o default -F _optparse_completion bolt
+	complete -o default -F _optparse_completion git-review
+	complete -o default -F _optparse_completion git-slave
+	complete -o default -F _optparse_completion live-server
+	complete -o default -F _optparse_completion live-store
+	complete -o default -F _optparse_completion naaga
+	complete -o default -F _optparse_completion redpill
+	complete -o default -F _optparse_completion review-server
+	complete -o default -F _optparse_completion rusty
+	complete -o default -F _optparse_completion wifistat
 
 fi
 
@@ -232,4 +241,4 @@ fi
 # ------------------------------------------------------------------------------
 
 unset _BASH_MAJOR_VERSION _BASH_MINOR_VERSION _BASH_VERSION
-unset _ENV_VAL _have _OS_NAME _THIRD_PARTY
+unset _ENV_VAL _ENVIRON_DIRECTORY _have _OS_NAME
