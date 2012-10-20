@@ -1,24 +1,40 @@
 # Public Domain (-) 2010-2012 The Ampify Authors.
 # See the Ampify UNLICENSE file for details.
 
-branch = $(shell git rev-parse --abbrev-ref HEAD)
 git = $(shell which git)
+ifeq ($(git),)
+  branch = unknown
+else
+  branch = $(shell git rev-parse --abbrev-ref HEAD)
+endif
+
+redpill = $(shell which redpill)
 yatiblog = $(shell which yatiblog)
 
 # ------------------------------------------------------------------------------
 # we declare our phonies so they stop telling us that targets are up-to-date
 # ------------------------------------------------------------------------------
 
-.PHONY: all build clean docs nuke test update
+.PHONY: build clean docs nuke test update
 
 # ------------------------------------------------------------------------------
 # our rules, starting with the default
 # ------------------------------------------------------------------------------
 
-all: update build
-
 build:
-	@./environ/redpill build
+ifeq ($(redpill),)
+	@echo
+	@echo "!! ERROR: You need to install redpill to build Ampify."
+	@echo
+	@echo "   To install redpill, run:"
+	@echo
+	@echo "       sudo easy_install redpill"
+	@echo
+	@echo
+	@exit 1
+else
+	@./environ/ampenv redpill build
+endif
 
 clean:
 	rm -rf build
@@ -28,11 +44,9 @@ ifeq ($(yatiblog),)
 	@echo
 	@echo "!! ERROR: You need to install yatiblog to generate the documentation."
 	@echo
-	@echo "   To install yatiblog, run the equivalent of the following for your"
-	@echo "   Python version:"
+	@echo "   To install yatiblog, run:"
 	@echo
-	@echo
-	@echo "       sudo easy_install-2.7 yatiblog"
+	@echo "       sudo easy_install yatiblog"
 	@echo
 	@echo
 	@exit 1
@@ -45,6 +59,9 @@ nuke: clean
 	rm -rf environ/receipts
 	rm -rf third_party/rust/build
 	rm -rf third_party/rusty/build
+
+test: build
+	@./environ/ampenv rusty test pkg
 
 update:
 ifeq ($(branch),master)
