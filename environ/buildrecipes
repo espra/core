@@ -11,48 +11,10 @@
 
 RECIPES['ampify'] = [{
     'type': 'git',
-    'requires': ['go', 'golibs'],
-    'path': ROOT,
-    'before': lambda: chdir(join(SRC, 'amp')),
+    'requires': ['cacerts', 'makeucd', 'rusty'],
+    'path': '../',
     'commands': [
-        [MAKE, 'install']
-        ]
-    }]
-
-# ------------------------------------------------------------------------------
-# bsdiff
-# ------------------------------------------------------------------------------
-
-def install_bsdiff():
-    copy('bsdiff', join(BIN, 'bsdiff'))
-    copy('bspatch', join(BIN, 'bspatch'))
-
-RECIPES['bsdiff'] = [{
-    'requires': ['bzip2'],
-    'version': '4.3',
-    'hash': '6f43c5246cdb60e58134144b72328918eb4a23c2a28880914f3431a76fbf657b',
-    'after': install_bsdiff,
-    'commands': [
-        [MAKE],
-        ]
-    }]
-
-# ------------------------------------------------------------------------------
-# bzip2
-# ------------------------------------------------------------------------------
-
-if PLATFORM == 'darwin':
-    BZIP2_MAKEFILE = 'Makefile-libbz2_dylib'
-else:
-    BZIP2_MAKEFILE = 'Makefile-libbz2_so'
-
-RECIPES['bzip2'] = [{
-    'version': '1.0.5',
-    'hash': 'edda8d2c38106dfd88a2fc4610d2aa85d869effc0a30f206c78100bf99703585',
-    'commands': [
-        [MAKE, 'install', 'PREFIX=%s' % LOCAL],
-        [MAKE, 'clean'],
-        [MAKE, '-f', BZIP2_MAKEFILE, 'all', 'PREFIX=%s' % LOCAL]
+        ['rusty', 'install', 'amp']
         ]
     }]
 
@@ -91,71 +53,53 @@ RECIPES['go'] = [{
     }]
 
 # ------------------------------------------------------------------------------
-# golibs
-# ------------------------------------------------------------------------------
-
-RECIPES['golibs'] = [{
-    'type': 'git',
-    'requires': ['go'],
-    'path': 'third_party/golibs',
-    'before': lambda: chdir('src'),
-    'commands': [
-        ['go', 'install', '-v', 'snappy']
-        ]
-    }]
-
-# ------------------------------------------------------------------------------
 # makeucd
 # ------------------------------------------------------------------------------
 
 MAKEUCD_SCRIPT = join(ENVIRON, 'makeucd')
 UCD_DATA_FILE = join(SHARE, 'ucd', 'UnicodeData.txt')
-UCD_JS_FILE = join(SRC, 'coffee', 'ucd.js')
+UCD_OUTPUT_FILE = join(dirname(ENVIRON), 'src', 'pkg', 'ucd', 'ucd.rs')
 
 RECIPES['makeucd'] = [{
     'requires': ['ucd'],
     'type': 'makelike',
     'depends': [MAKEUCD_SCRIPT],
-    'outputs': [UCD_JS_FILE],
+    'outputs': [UCD_OUTPUT_FILE],
     'commands': [
-        [MAKEUCD_SCRIPT, UCD_DATA_FILE, UCD_JS_FILE]
+        [MAKEUCD_SCRIPT, UCD_DATA_FILE, UCD_OUTPUT_FILE]
         ]
     }]
 
 # ------------------------------------------------------------------------------
-# pylibs
+# rust
 # ------------------------------------------------------------------------------
 
-RECIPES['pylibs'] = [{
+def setup_rust():
+    mkdir('build')
+    chdir('build')
+
+RECIPES['rust'] = [{
     'type': 'git',
-    'path': 'third_party/pylibs',
-    'after': lambda: rmdir('build'),
+    'path': '../third_party/rust',
+    'before': setup_rust,
     'commands': [
-        [sys.executable, 'setup.py', 'build_ext', '-i']
+        ['../configure', '--disable-valgrind', '--disable-docs',
+         '--prefix=%s'% LOCAL],
+        ['make'],
+        ['make', 'install']
         ]
     }]
 
 # ------------------------------------------------------------------------------
-# tavutil
+# rusty
 # ------------------------------------------------------------------------------
 
-TAVUTIL_ROOT = join(THIRD_PARTY, 'tavutil')
-TAVUTIL_PYX_FILES = glob(join(TAVUTIL_ROOT, 'tavutil', '*.pyx'))
-TAVUTIL_PYX_FILES.remove(join(TAVUTIL_ROOT, 'tavutil', 'darwinsandbox.pyx'))
-
-TAVUTIL_SO_FILES = [
-    file.rsplit('.pyx', 1)[0] + '.so' for file in TAVUTIL_PYX_FILES
-    ]
-
-RECIPES['tavutil'] = [{
-    'type': 'makelike',
-    'before': lambda: chdir(TAVUTIL_ROOT),
-    'depends': TAVUTIL_PYX_FILES + [join(TAVUTIL_ROOT, 'setup.py')],
-    'outputs': TAVUTIL_SO_FILES,
-    'after': lambda: rmdir('build'),
+RECIPES['rusty'] = [{
+    'type': 'git',
+    'requires': ['rust'],
+    'path': '../third_party/rusty',
     'commands': [
-        lambda: [remove(path) for path in TAVUTIL_SO_FILES if isfile(path)],
-        [sys.executable, 'setup.py', 'build_ext', '-i']
+        ['make', 'install']
         ]
     }]
 
