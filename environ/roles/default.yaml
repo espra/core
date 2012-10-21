@@ -1,6 +1,3 @@
 packages:
-- cacerts
-- golibs
-- makeucd
-- pylibs
-- tavutil
+- ampify
+- go
