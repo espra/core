@@ -2,4 +2,9 @@
 # See the Ampify UNLICENSE file for details.
 
 distfiles-url-base: http://cloud.github.com/downloads/tav/ampify/distfile.
+
+ensure:
+    gcc: "4.0"
+    git: "1.7"
+
 repo-check-url: https://api.github.com/repos/tav/ampify/branches/master
