@@ -1,32 +1,32 @@
-// Public Domain (-) 2012 The Ampify Authors.
+// Public Domain (-) 2012-2013 The Ampify Authors.
 // See the Ampify UNLICENSE file for details.
 
-//= Package hash defines traits and utility methods for hash functions.
+//= The hash module defines traits and utility methods for hash functions.
 
 // Hash is the trait implemented by all hash functions.
 pub trait Hash {
-    fn block_size() -> int;
-    fn digest() -> ~[byte];
-    fn digest_size() -> int;
-    fn reset();
-    fn update(msg: & [byte]);
+    fn block_size(self) -> int;
+    fn digest(self) -> ~[u8];
+    fn digest_size(self) -> int;
+    fn reset(&mut self);
+    fn update(&mut self, msg: &[u8]);
 }
 
 // HashUtil is a utility trait that is auto-implemented for all Hash
 // implementations.
 pub trait HashUtil {
-    fn hexdigest() -> ~str;
-    fn update(msg: & str);
+    fn hexdigest(self) -> ~str;
+    fn update(&mut self, msg: &str);
 }
 
-impl <A: Hash> A: HashUtil {
+impl<A: Hash> HashUtil for A {
 
-    fn hexdigest() -> ~str {
+    fn hexdigest(self) -> ~str {
         let mut d = ~"";
         for vec::each(self.digest()) |b| { d += fmt!("%02x",*b as uint) }
         return d;
     }
 
-    fn update(msg: & str) { self.update(str::to_bytes(msg)); }
+    fn update(&mut self, msg: &str) { self.update(str::to_bytes(msg)); }
 
 }

@@ -1,7 +1,8 @@
-// Public Domain (-) 2012 The Ampify Authors.
+// Public Domain (-) 2012-2013 The Ampify Authors.
 // See the Ampify UNLICENSE file for details.
 
-//= Package sha256 implements the SHA-256 hash algorithm defined in FIPS 180-4.
+//= The sha256 module implements the SHA-256 hash algorithm defined in FIPS
+//= 180-4.
 use hash::Hash;
 
 const block_size: int = 64;
@@ -30,7 +31,7 @@ const k: [u32 * 64] =
      0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2];
 
 struct sha256 {
-    b: [mut byte * 64],
+    b: [mut u8 * 64],
     h: [mut u32 * 8],
     mut l: u64,
     mut n: uint,
@@ -39,7 +40,7 @@ struct sha256 {
 impl sha256 {
 
     #[inline(always)]
-    fn compute_block() {
+    fn compute_block(&mut self) {
         let mut h0 = self.h[0];
         let mut h1 = self.h[1];
         let mut h2 = self.h[2];
@@ -60,17 +61,17 @@ impl sha256 {
 
 }
 
-impl sha256: Hash {
+impl Hash for sha256 {
 
-    fn block_size() -> int { block_size }
+    fn block_size(self) -> int { block_size }
 
-    fn digest() -> ~[byte] {
+    fn digest(self) -> ~[u8] {
         ~[1, 2, 37]
     }
 
-    fn digest_size() -> int { digest_size }
+    fn digest_size(self) -> int { digest_size }
 
-    fn reset() {
+    fn reset(&mut self) {
         self.h[0] = i0;
         self.h[1] = i1;
         self.h[2] = i2;
@@ -83,12 +84,12 @@ impl sha256: Hash {
         self.n = 0;
     }
 
-    fn update(msg: &[byte]) {
+    fn update(&mut self, msg: &[u8]) {
         let mut l = msg.len();
         self.l += l as u64;
         if self.n > 0 {
             if l > 64 - self.n {
-                l = 64 - self.n;
+                // l = 64 - self.n;
             }
         }
     }
