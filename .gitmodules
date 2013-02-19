@@ -1,27 +1,3 @@
-[submodule "third_party/git-review"]
-	path = third_party/git-review
-	url = https://github.com/tav/git-review.git
-[submodule "third_party/golibs"]
-	path = third_party/golibs
-	url = https://github.com/tav/golibs.git
-[submodule "third_party/pylibs"]
-	path = third_party/pylibs
-	url = https://github.com/tav/pylibs.git
-[submodule "third_party/sass"]
-	path = third_party/sass
-	url = https://github.com/tav/sass.git
-[submodule "third_party/tavutil"]
-	path = third_party/tavutil
-	url = https://github.com/tav/tavutil.git
-[submodule "third_party/yatiblog"]
-	path = third_party/yatiblog
-	url = https://github.com/tav/yatiblog.git
-[submodule "third_party/assetgen"]
-	path = third_party/assetgen
-	url = https://github.com/tav/assetgen.git
-[submodule "third_party/bolt"]
-	path = third_party/bolt
-	url = https://github.com/tav/bolt.git
 [submodule "third_party/rust"]
 	path = third_party/rust
 	url = https://github.com/mozilla/rust
