@@ -15,7 +15,7 @@
 //                  );
 //
 // Then add the various options that you want it to handle by specifying the
-// `flags` and a brief help `info` for the specific option type, e.g.
+// `flags` and a brief help `usage` for the specific option type, e.g.
 //
 //     let indent = opts.int(["-i", "--indent"], "number of spaces to use for indentation");
 //     let output = opts.str(["-o", "--output"], "the path to write the output to");
@@ -52,7 +52,7 @@
 //
 // In order to be user-friendly, `-h`/`--help` and `-v`/`--version` options are
 // automatically added when you call `parse()`. These use the `usage`, `version`
-// and option `info` parameters you specified to auto-generate helpful output,
+// and option `usage` parameters you specified to auto-generate helpful output,
 // e.g.
 //
 // ```
@@ -121,11 +121,11 @@
 use core::option::{Option, None, Some};
 
 pub trait Completer {
-    fn complete() -> ~[~str];
+    fn complete(self) -> ~[~str];
 }
 
 impl Completer for ~[~str] {
-    fn complete() -> ~[~str] {
+    fn complete(self) -> ~[~str] {
         copy self
     }
 }
@@ -136,28 +136,28 @@ pub fn list_complete(items: &[&str]) -> Option<@Completer> {
 
 // The Value trait.
 pub trait Value {
-    fn set(&str) -> Option<~str>;
-    fn string() -> ~str;
+    fn set(&mut self, &str) -> Option<~str>;
+    fn string(self) -> ~str;
 }
 
-type Bool = @mut bool;
+type Bool = bool;
 
 impl Value for Bool {
-    fn set(s: &str) -> Option<~str> {
+    fn set(&mut self, s: &str) -> Option<~str> {
         if s.len() != 0 {
             *self = true;
         }
         None
     }
-    fn string() -> ~str {
-        fmt!("%?", *self)
+    fn string(self) -> ~str {
+        fmt!("%?", self)
     }
 }
 
-type I64 = @mut i64;
+type I64 = i64;
 
 impl Value for I64 {
-    fn set(s: &str) -> Option<~str> {
+    fn set(&mut self, s: &str) -> Option<~str> {
         match i64::from_str(s) {
             Some(x) => {
                 *self = x;
@@ -166,15 +166,15 @@ impl Value for I64 {
             None => Some(fmt!("strconv: unable to convert %s to an i64", s))
         }
     }
-    fn string() -> ~str {
-        fmt!("%?", *self)
+    fn string(self) -> ~str {
+        fmt!("%?", self)
     }
 }
 
-type Int = @mut int;
+type Int = int;
 
 impl Value for Int {
-    fn set(s: &str) -> Option<~str> {
+    fn set(&mut self, s: &str) -> Option<~str> {
         match int::from_str(s) {
             Some(x) => {
                 *self = x;
@@ -183,27 +183,27 @@ impl Value for Int {
             None => Some(fmt!("strconv: unable to convert %s to an int", s))
         }
     }
-    fn string() -> ~str {
-        fmt!("%d", *self)
+    fn string(self) -> ~str {
+        fmt!("%d", self)
     }
 }
 
-type Str = @mut @str;
+type Str = @str;
 
 impl Value for Str {
-    fn set(s: &str) -> Option<~str> {
+    fn set(&mut self, s: &str) -> Option<~str> {
         *self = s.to_managed();
         None
     }
-    fn string() -> ~str {
-        fmt!("\"%s\"", *self)
+    fn string(self) -> ~str {
+        fmt!("\"%s\"", self)
     }
 }
 
-type U64 = @mut u64;
+type U64 = u64;
 
 impl Value for U64 {
-    fn set(s: &str) -> Option<~str> {
+    fn set(&mut self, s: &str) -> Option<~str> {
         match u64::from_str(s) {
             Some(x) => {
                 *self = x;
@@ -212,15 +212,15 @@ impl Value for U64 {
             None => Some(fmt!("strconv: unable to convert %s to a u64", s))
         }
     }
-    fn string() -> ~str {
-        fmt!("%?", *self)
+    fn string(self) -> ~str {
+        fmt!("%?", self)
     }
 }
 
-type Uint = @mut uint;
+type Uint = uint;
 
 impl Value for Uint {
-    fn set(s: &str) -> Option<~str> {
+    fn set(&mut self, s: &str) -> Option<~str> {
         match uint::from_str(s) {
             Some(x) => {
                 *self = x;
@@ -229,8 +229,8 @@ impl Value for Uint {
             None => Some(fmt!("strconv: unable to convert %s to a uint", s))
         }
     }
-    fn string() -> ~str {
-        fmt!("%?", *self)
+    fn string(self) -> ~str {
+        fmt!("%?", self)
     }
 }
 
@@ -250,7 +250,9 @@ fn default_required(prog: &str, arg: &str) {
 
 fn exit(print: &const ErrPrinter, prog: &str, arg: &str) {
     (*print)(prog, arg);
-    libc::exit(1);
+    unsafe {
+        libc::exit(1);
+    }
 }
 
 fn get_prog_name(arg: &str) -> ~str {
@@ -280,17 +282,17 @@ pub struct OptionParser {
 
 impl OptionParser {
 
-    fn bool(&self, flags: &[&str], info: &str) -> @mut bool {
-        self._bool(flags, info)
+    fn bool(&self, flags: &[&str], usage: &str) -> @mut bool {
+        self._bool(flags, usage)
     }
 
-    fn bool(&self, flag: &str, info: &str) -> @mut bool {
-        self._bool(~[flag], info)
+    fn bool(&self, flag: &str, usage: &str) -> @mut bool {
+        self._bool(~[flag], usage)
     }
 
-    priv fn _bool(&self, flags: &[&str], info: &str) -> @mut bool {
+    priv fn _bool(&self, flags: &[&str], usage: &str) -> @mut bool {
         let mut val = @mut false;
-        self._option(flags, info, true, val as Value);
+        self._option(flags, usage, true, val as Value);
         val
     }
 
@@ -299,93 +301,93 @@ impl OptionParser {
         return self;
     }
 
-    fn i64(&self, flags: &[&str], info: &str) -> @mut i64 {
-        self._i64(flags, info, 0)
+    fn i64(&self, flags: &[&str], usage: &str) -> @mut i64 {
+        self._i64(flags, usage, 0)
     }
 
-    fn i64(&self, flag: &str, info: &str) -> @mut i64 {
-        self._i64(~[flag], info, 0)
+    fn i64(&self, flag: &str, usage: &str) -> @mut i64 {
+        self._i64(~[flag], usage, 0)
     }
 
-    fn i64(&self, flags: &[&str], info: &str, default: i64) -> @mut i64 {
-        self._i64(flags, info, default)
+    fn i64(&self, flags: &[&str], usage: &str, default: i64) -> @mut i64 {
+        self._i64(flags, usage, default)
     }
 
-    fn i64(&self, flag: &str, info: &str, default: i64) -> @mut i64 {
-        self._i64(~[flag], info, default)
+    fn i64(&self, flag: &str, usage: &str, default: i64) -> @mut i64 {
+        self._i64(~[flag], usage, default)
     }
 
-    priv fn _i64(&self, flags: &[&str], info: &str, default: i64) -> @mut i64 {
+    priv fn _i64(&self, flags: &[&str], usage: &str, default: i64) -> @mut i64 {
         let mut val = @mut default;
-        self._option(flags, info, false, val as Value);
+        self._option(flags, usage, false, val as Value);
         val
     }
 
-    fn int(&self, flags: &[&str], info: &str) -> @mut int {
-        self._int(flags, info, 0)
+    fn int(&self, flags: &[&str], usage: &str) -> @mut int {
+        self._int(flags, usage, 0)
     }
 
-    fn int(&self, flag: &str, info: &str) -> @mut int {
-        self._int(~[flag], info, 0)
+    fn int(&self, flag: &str, usage: &str) -> @mut int {
+        self._int(~[flag], usage, 0)
     }
 
-    fn int(&self, flags: &[&str], info: &str, default: int) -> @mut int {
-        self._int(flags, info, default)
+    fn int(&self, flags: &[&str], usage: &str, default: int) -> @mut int {
+        self._int(flags, usage, default)
     }
 
-    fn int(&self, flag: &str, info: &str, default: int) -> @mut int {
-        self._int(~[flag], info, default)
+    fn int(&self, flag: &str, usage: &str, default: int) -> @mut int {
+        self._int(~[flag], usage, default)
     }
 
-    priv fn _int(&self, flags: &[&str], info: &str, default: int) -> @mut int {
+    priv fn _int(&self, flags: &[&str], usage: &str, default: int) -> @mut int {
         let mut val = @mut default;
-        self._option(flags, info, false, val as Value);
+        self._option(flags, usage, false, val as Value);
         val
     }
 
-    fn str(&self, flags: &[&str], info: &str) -> @mut @str {
-        self._str(flags, info, "")
+    fn str(&self, flags: &[&str], usage: &str) -> @mut @str {
+        self._str(flags, usage, "")
     }
 
-    fn str(&self, flag: &str, info: &str) -> @mut @str {
-        self._str(~[flag], info, "")
+    fn str(&self, flag: &str, usage: &str) -> @mut @str {
+        self._str(~[flag], usage, "")
     }
 
-    fn str(&self, flags: &[&str], info: &str, default: &str) -> @mut @str {
-        self._str(flags, info, default)
+    fn str(&self, flags: &[&str], usage: &str, default: &str) -> @mut @str {
+        self._str(flags, usage, default)
     }
 
-    fn str(&self, flag: &str, info: &str, default: &str) -> @mut @str {
-        self._str(~[flag], info, default)
+    fn str(&self, flag: &str, usage: &str, default: &str) -> @mut @str {
+        self._str(~[flag], usage, default)
     }
 
-    priv fn _str(&self, flags: &[&str], info: &str, default: &str) -> @mut @str {
+    priv fn _str(&self, flags: &[&str], usage: &str, default: &str) -> @mut @str {
         let mut val = @mut default.to_managed();
-        self._option(flags, info, false, val as Value);
+        self._option(flags, usage, false, val as Value);
         val
     }
 
-    fn option(&self, flags: &[&str], info: &str, value: @Value) {
-        self._option(flags, info, false, value)
+    fn option(&self, flags: &[&str], usage: &str, value: @Value) {
+        self._option(flags, usage, false, value)
     }
 
-    fn option(&self, flag: &str, info: &str, value: @Value) {
-        self._option(~[flag], info, false, value)
+    fn option(&self, flag: &str, usage: &str, value: @Value) {
+        self._option(~[flag], usage, false, value)
     }
 
-    priv fn _option(&self, flags: &[&str], info: &str, implicit: bool, value: @Value) {
+    priv fn _option(&self, flags: &[&str], usage: &str, implicit: bool, value: @Value) {
         let mut flag_config = ~"";
         let mut flag_long = ~"";
         let mut flag_short = ~"";
         for flags.each |f| {
             let flag = str::from_slice(*f);
             if flag.starts_with("--") {
-                flag_long = move flag;
+                flag_long = flag;
             } else if flag.starts_with("-") {
-                flag_short = move flag;
+                flag_short = flag;
             } else {
                 flag_long = ~"--" + flag;
-                flag_config = move flag;
+                flag_config = flag;
                 // fail fmt!("optparse: invalid flag: %s", flag);
             }
         }
@@ -393,10 +395,10 @@ impl OptionParser {
             completer: self.next_completer,
             defined: false,
             dest: copy self.next_dest,
-            flag_long: move flag_long,
-            flag_short: move flag_short,
+            flag_long: flag_long,
+            flag_short: flag_short,
             implicit: implicit,
-            info: str::from_slice(info),
+            usage: str::from_slice(usage),
             required_flag: if self.next_required && flag_config.len() != 0 {
                 false
             } else {
@@ -404,7 +406,7 @@ impl OptionParser {
             },
             required_conf: self.next_required,
             value: value,
-            flag_config: move flag_config,
+            flag_config: flag_config,
         });
         self.next_completer = None;
         self.next_dest = ~"";
@@ -431,7 +433,7 @@ impl OptionParser {
         let retargs: ~[~str] = ~[];
         let arglen = args.len();
         if arglen < 1 {
-            return move retargs;
+            return retargs;
         }
         let optslen = self.opts.len();
         let mut i = 0;
@@ -452,11 +454,11 @@ impl OptionParser {
             }
             i += 1;
         }
-        exit(&mut self.err_no_such_option, get_prog_name(args[0]), "name");
-        move retargs
+        // exit(&mut self.err_no_such_option, get_prog_name(args[0]), "name");
+        retargs
     }
 
-    fn print_config_file(name: &str) {
+    fn print_config_file(self, name: &str) {
         io::println(name)
     }
 
@@ -465,47 +467,52 @@ impl OptionParser {
         return self;
     }
 
-    fn u64(&self, flags: &[&str], info: &str) -> @mut u64 {
-        self._u64(flags, info, 0)
+    fn set_main_completer(&self, completer: Option<@Completer>) -> &self/OptionParser {
+        self.completer = completer;
+        return self;
     }
 
-    fn u64(&self, flag: &str, info: &str) -> @mut u64 {
-        self._u64(~[flag], info, 0)
+    fn u64(&self, flags: &[&str], usage: &str) -> @mut u64 {
+        self._u64(flags, usage, 0)
     }
 
-    fn u64(&self, flags: &[&str], info: &str, default: u64) -> @mut u64 {
-        self._u64(flags, info, default)
+    fn u64(&self, flag: &str, usage: &str) -> @mut u64 {
+        self._u64(~[flag], usage, 0)
     }
 
-    fn u64(&self, flag: &str, info: &str, default: u64) -> @mut u64 {
-        self._u64(~[flag], info, default)
+    fn u64(&self, flags: &[&str], usage: &str, default: u64) -> @mut u64 {
+        self._u64(flags, usage, default)
     }
 
-    priv fn _u64(&self, flags: &[&str], info: &str, default: u64) -> @mut u64 {
+    fn u64(&self, flag: &str, usage: &str, default: u64) -> @mut u64 {
+        self._u64(~[flag], usage, default)
+    }
+
+    priv fn _u64(&self, flags: &[&str], usage: &str, default: u64) -> @mut u64 {
         let mut val = @mut default;
-        self._option(flags, info, false, val as Value);
+        self._option(flags, usage, false, val as Value);
         val
     }
 
-    fn uint(&self, flags: &[&str], info: &str) -> @mut uint {
-        self._uint(flags, info, 0)
+    fn uint(&self, flags: &[&str], usage: &str) -> @mut uint {
+        self._uint(flags, usage, 0)
     }
 
-    fn uint(&self, flag: &str, info: &str) -> @mut uint {
-        self._uint(~[flag], info, 0)
+    fn uint(&self, flag: &str, usage: &str) -> @mut uint {
+        self._uint(~[flag], usage, 0)
     }
 
-    fn uint(&self, flags: &[&str], info: &str, default: uint) -> @mut uint {
-        self._uint(flags, info, default)
+    fn uint(&self, flags: &[&str], usage: &str, default: uint) -> @mut uint {
+        self._uint(flags, usage, default)
     }
 
-    fn uint(&self, flag: &str, info: &str, default: uint) -> @mut uint {
-        self._uint(~[flag], info, default)
+    fn uint(&self, flag: &str, usage: &str, default: uint) -> @mut uint {
+        self._uint(~[flag], usage, default)
     }
 
-    priv fn _uint(&self, flags: &[&str], info: &str, default: uint) -> @mut uint {
+    priv fn _uint(&self, flags: &[&str], usage: &str, default: uint) -> @mut uint {
         let mut val = @mut default;
-        self._option(flags, info, false, val as Value);
+        self._option(flags, usage, false, val as Value);
         val
     }
 
@@ -524,10 +531,10 @@ struct OptValue {
     flag_long: ~str,
     flag_short: ~str,
     implicit: bool,
-    info: ~str,
+    usage: ~str,
     required_conf: bool,
     required_flag: bool,
-    value: @Value
+    mut value: @Value
 }
 
 pub fn new(usage: ~str, version: ~str) -> ~OptionParser {
