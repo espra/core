@@ -22,7 +22,7 @@ Getting Involved
   <pre>
   server: irc.freenode.net
   channel: #esp
-  chatlogs: <a href="http://irclogs.ampify.it">irclogs.ampify.it</a>
+  chatlogs: <a href="http://irclogs.ampify.net">irclogs.ampify.net</a>
   </pre>
 
 |*| Subscribe to the `Ampify Mailing List
@@ -59,7 +59,7 @@ if you're new to Git.
 
   # Make any changes and submit updates until the
   # reviewers give a LGTM (Looks Good To Me) reply
-  # on http://gitreview.com -- that's all!
+  # on https://gitreview.com -- that's all!
 
 
 .. raw:: html

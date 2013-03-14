@@ -99,6 +99,6 @@ $(function () {
             tweet_suffix_img = "</a>";
             tweet_suffix_lnk = '@'+selected+'</a>';
         }
-        $('<td class="footer-follow">'+tweet_prefix+'<img src="http://static.ampify.it/profile.'+selected+'.jpg" alt="@'+selected+'" width="69px" height="86px" />'+tweet_suffix_img+'<div>'+tweet_prefix+tweet_suffix_lnk+extra+'</div></td>').appendTo(container);
+        $('<td class="footer-follow">'+tweet_prefix+'<img src="http://static.ampify.net/profile.'+selected+'.jpg" alt="@'+selected+'" width="69px" height="86px" />'+tweet_suffix_img+'<div>'+tweet_prefix+tweet_suffix_lnk+extra+'</div></td>').appendTo(container);
     }
 });

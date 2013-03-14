@@ -3,39 +3,36 @@
 <?python
 
   section_data = [
-      ('Home', 'http://ampify.it', True, True),
+      ('Home', 'http://ampify.net', True, True),
       ('Source Code', 'https://github.com/tav/ampify', True, True),
-      ('Bug Tracker', 'http://githubissues.heroku.com/#tav/ampify', True, True),
+      ('Bug Tracker', 'https://github.com/tav/ampify/issues', True, True),
       ('Mailing List', 'http://groups.google.com/group/ampify', True, True),
-      ('IRC Logs', 'http://irclogs.ampify.it', True, True),
+      ('IRC Logs', 'http://irclogs.ampify.net', True, True),
       ('Review Server', 'http://gitreview.com/activity/ampify', True, True),
-      # ('Espra Stream', 'http://espra.com/zero/#ampify', True, True),
       # ('Wiki', 'http://wiki.github.com/tav/ampify/', False, False),
-      # ('Download', 'http://ampify.it/download.html', False, False),
-      # ('Changelog', 'http://ampify.it/changelog.html', False, False),
+      # ('Download', 'http://ampify.net/download.html', False, False),
+      # ('Changelog', 'http://ampify.net/changelog.html', False, False),
       ]
 
 ?>
-<head>
-	<title py:if="defined('title')">Ampify :: ${title}</title>
-	<title py:if="not defined('title')">Ampify :: A Decentralised Social Platform</title>
-	<meta http-equiv="content-language" content="en" />
-	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
-	<meta name="author" content="${site_author}" />
-	<meta name="description" content="${site_description}" />
-	<meta name="copyright" content="${site_license}" />
-	<meta name="document-rating" content="general" />
-	<link rel="stylesheet" type="text/css" media="screen" title="default" href="css/site.css" />
-	<link rel="alternate" type="application/rss+xml" title="RSS Feed for Ampify" href="http://feeds.feedburner.com/ampify" />
-	<py:if test="defined('typekit')">
-	<script type="text/javascript" src="http://use.typekit.com/hdt8sni.js"></script>
-	<script type="text/javascript">try{Typekit.load();}catch(e){}</script>
-	</py:if>
-	<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
-	<script type="text/javascript" src="js/site.js"></script>
-</head>
+<meta charset=utf-8>
+<title py:if="defined('title')">Ampify :: ${title}</title>
+<title py:if="not defined('title')">Ampify :: A Decentralised Application Platform</title>
+<meta http-equiv="content-language" content="en" />
+<meta name="author" content="${site_author}" />
+<meta name="description" content="${site_description}" />
+<meta name="copyright" content="${site_license}" />
+<meta name="document-rating" content="general" />
+<link rel="stylesheet" media="screen" title="default" href="css/site.css" />
+<link rel="alternate" type="application/rss+xml" title="RSS Feed for Ampify" href="http://feeds.feedburner.com/ampify" />
+<py:if test="defined('typekit')">
+<script src="http://use.typekit.com/hdt8sni.js"></script>
+<script>try{Typekit.load();}catch(e){}</script>
+</py:if>
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+<script src="js/site.js"></script>
 <body>
-<script type="text/javascript">
+<script>
 	var _gaq = [['_setAccount', '${analytics_id}'], ['_trackPageview']];
 	if (document.location.protocol !== 'file:') {
 		(function() {
@@ -50,14 +47,14 @@
 
 <div id="header">
 	<div id="menu-follow">
-		<div><a href="http://www.facebook.com/Espians" title="Join Espians on Facebook"><img src="http://static.ampify.it/icon.facebook.gif" alt="Join Espians on Facebook" width="15px" height="15px" /></a></div>
-		<div><a href="http://twitter.com/tav" title="Follow @tav on Twitter"><img src="http://static.ampify.it/icon.twitter.gif" alt="Follow @tav on Twitter" width="14px" height="14px" /></a></div>
-		<div><a href="https://github.com/tav/ampify" title="Fork Ampify on GitHub"><img src="http://static.ampify.it/icon.github.png" alt="Fork Ampify on GitHub" width="15px" height="15px" /></a></div>
-		<div><a href="http://feeds.feedburner.com/ampify" title="Subscribe to the RSS Feed"><img src="http://static.ampify.it/icon.rss.png" alt="Subscribe to the RSS Feed" width="14px" height="14px" /></a></div>
+		<div><a href="http://www.facebook.com/Espians" title="Join Espians on Facebook"><img src="http://static.ampify.net/icon.facebook.gif" alt="Join Espians on Facebook" width="15px" height="15px" /></a></div>
+		<div><a href="http://twitter.com/tav" title="Follow @tav on Twitter"><img src="http://static.ampify.net/icon.twitter.gif" alt="Follow @tav on Twitter" width="14px" height="14px" /></a></div>
+		<div><a href="https://github.com/tav/ampify" title="Fork Ampify on GitHub"><img src="http://static.ampify.net/icon.github.png" alt="Fork Ampify on GitHub" width="15px" height="15px" /></a></div>
+		<div><a href="http://feeds.feedburner.com/ampify" title="Subscribe to the RSS Feed"><img src="http://static.ampify.net/icon.rss.png" alt="Subscribe to the RSS Feed" width="14px" height="14px" /></a></div>
 	</div>
-	<div id="logo"><a href="http://ampify.it"><img src="http://static1.ampify.it/logo.ampify.smallerstill.png" alt="Ampify" width="250px" height="56px" /></a></div>
+	<div id="logo"><a href="http://ampify.net"><img src="http://static1.ampify.net/logo.ampify.smallerstill.png" alt="Ampify" width="250px" height="56px" /></a></div>
 	<div id="menu-lang">
-		<a href="" title="Select Language" onclick="return reveal_language_options();"><img src="http://static.ampify.it/gfx.flag-uk.jpg" alt="Select Language" width="22px" height="15px" /></a>
+		<a href="" title="Select Language" onclick="return reveal_language_options();"><img src="http://static.ampify.net/gfx.flag-uk.jpg" alt="Select Language" width="22px" height="15px" /></a>
 		<br />
 		<form id="menu-lang-form"><select id="menu-lang-select" onchange="google_translate_page(this);">
 			<option value="" id="select_language">Select Language</option>
@@ -135,7 +132,7 @@ ${Markup(content)}
 	<py:for each="idx, (menu_item, menu_url, menu_show_top, menu_show_bottom) in enumerate(section_data)"><py:if test="menu_show_bottom"><a href="${menu_url}">${menu_item.upper()}</a><span py:if="idx != last_menu_idx" class="menu-sub-sep"> &middot; </span></py:if></py:for>
   </div>
   <div>
-	<a href="http://espra.com/#help-spread-the-word" title="Help Spread The Word"><img src="http://static.ampify.it/gfx.help-spread-the-word.png" id="spread-button" alt="Help Spread The Word" width="372px" height="30px" /></a>
+	<a href="http://espra.com/#help-spread-the-word" title="Help Spread The Word"><img src="http://static.ampify.net/gfx.help-spread-the-word.png" id="spread-button" alt="Help Spread The Word" width="372px" height="30px" /></a>
   </div>
 </div>
 <hr class="clear" />

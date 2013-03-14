@@ -362,4 +362,4 @@ e.g.
 
   [ <a href="#table-of-contents" class="table-of-contents-handler">Table of Contents</a> ]
 
-.. _irc logs: http://irclogs.ampify.it
+.. _irc logs: http://irclogs.ampify.net

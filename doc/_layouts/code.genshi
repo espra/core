@@ -35,7 +35,7 @@ license: Public Domain
   <h1 class="title" py:if="defined('title')">${Markup(title)}</h1>
 </td>
 <td class="code-source">
-  <div id="code-logo"><a href="code.html" title="View All Code Documentation!"><img src="http://static.ampify.it/logo.ampify.smallest.png" width="200px" height="45px" alt="" /></a></div>
+  <div id="code-logo"><a href="code.html" title="View All Code Documentation!"><img src="http://static.ampify.net/logo.ampify.smallest.png" width="200px" height="45px" alt="" /></a></div>
 </td>
 </tr>
 <tr py:for="idx, (docs, code) in enumerate(content)">
@@ -54,7 +54,7 @@ license: Public Domain
 <td class="code-source">
   <br /><br /><br />
   <div class="center"><py:if test="defined('__by__')">
-	This file was last updated by <a href="mailto:${__by__}">${__by__.split('@')[0] or 'unknown'}</a> on ${__updated__.strftime('%B %d, %Y')} @ <a href="https://github.com/tav/ampify/commits/master/${__gitpath__}">${__updated__.strftime('%H:%M')}</a> &nbsp;<a href="https://github.com/tav/ampify/raw/master/UNLICENSE"><img src="http://static.ampify.it/gfx.public-domain.png" width="20px" height="20px" alt="Public Domain" class="absmiddle" /></a>
+	This file was last updated by <a href="mailto:${__by__}">${__by__.split('@')[0] or 'unknown'}</a> on ${__updated__.strftime('%B %d, %Y')} @ <a href="https://github.com/tav/ampify/commits/master/${__gitpath__}">${__updated__.strftime('%H:%M')}</a> &nbsp;<a href="https://github.com/tav/ampify/raw/master/UNLICENSE"><img src="http://static.ampify.net/gfx.public-domain.png" width="20px" height="20px" alt="Public Domain" class="absmiddle" /></a>
   </py:if></div>
   <br />
 </td>

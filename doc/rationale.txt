@@ -22,7 +22,7 @@ are wasted on working around technical incompatabilities and shortcomings.
 .. raw:: html
 
     <div class="center"><img
-      src="http://static.ampify.it/img.dev-platform-options-2009.png" alt=""
+      src="http://static.ampify.net/img.dev-platform-options-2009.png" alt=""
       width="512px" height="384px" class="boxed"
       /></div>
 
