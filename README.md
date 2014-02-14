@@ -19,7 +19,7 @@ For more info, please see the `doc` directory or visit:
 * online docs: [http://ampify.net]
 * irc channel: [irc://irc.freenode.net/esp], [irc logs]
 * mailing list: [http://groups.google.com/group/ampify]
-* plan file: [https://plan.espians.com/ampify]
+* plan file: [http://plan.ampify.net]
 * review server: [https://gitreview.com/ampify]
 
 **Contribute**
@@ -110,7 +110,7 @@ Enjoy, tav <<tav@espians.com>>
 [http://ampify.net]: http://ampify.net
 [http://groups.google.com/group/ampify]: http://groups.google.com/group/ampify
 [https://gitreview.com/ampify]: https://gitreview.com/ampify
-[https://plan.espians.com/ampify]: https://plan.espians.com/ampify
+[http://plan.ampify.net]: http://plan.ampify.net
 [irc://irc.freenode.net/esp]: irc://irc.freenode.net/esp
 [irc logs]: http://irclogs.ampify.net
 
