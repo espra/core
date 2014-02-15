@@ -98,7 +98,7 @@ Enjoy, tav <<tav@espians.com>>
 
 
 [Xanadu]: http://en.wikipedia.org/wiki/Project_Xanadu
-[see the planfile for more info]: https://plan.espians.com/ampify
+[see the planfile for more info]: http://plan.ampify.net
 
 [Ampify Authors]: http://ampify.net/authors.html
 [public domain]: http://ampify.net/unlicense.html
