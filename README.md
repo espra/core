@@ -1,4 +1,4 @@
-![Ampify](https://github.com/downloads/tav/ampify/logo.ampify.smallest.png)
+![Ampify](https://cloud.github.com/downloads/tav/ampify/logo.ampify.smallest.png)
 
 This is the repo for Ampify — an open and decentralised app platform. It is  
 intended as a successor to the Open Web and as a replacement for closed  
