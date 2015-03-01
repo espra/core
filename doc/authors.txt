@@ -1,7 +1,0 @@
----
-layout: page
-license: Public Domain
-title: Ampify Authors
----
-
-.. include:: ../AUTHORS
