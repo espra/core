@@ -7,13 +7,13 @@ title: Credits
 Credits
 =======
 
-In addition to the official `Ampify Authors <authors.html>`_ and `those credited
+In addition to the official `Amp Authors <authors.html>`_ and `those credited
 with pecu allocations <http://tav.espians.com/pecu-allocations-by-tav.html>`_, a
 number of individuals have proved instrumental in the technical design and
-development of Ampify. They are acknowledged here in chronological order of
-their involvement:
+development of Amp. They are acknowledged here in chronological order of their
+involvement:
 
-* `tav <http://tav.espians.com>`_ -- creator of Ampify and BDFL.
+* `tav <http://tav.espians.com>`_ -- creator of Amp and BDFL.
 
 * `Tim Jenks <http://www.jenkz.org>`_, ``Jenkz``
 
@@ -119,7 +119,7 @@ their involvement:
 
 * Fenton Whelan, ``fentonius``
 
-  * For being there when the original Plexnet vision (the old name for Ampify)
+  * For being there when the original Plexnet vision (the old name for Amp)
     came to be, back in summer 2001.
 
 * `Aaron Swartz <http://www.aaronsw.com/weblog/>`_, ``AaronSw``
@@ -178,7 +178,7 @@ their involvement:
 
 * `Yan Minagawa <http://t.crew.c-base.org>`_, ``t`` / ``yncyrydybyl``
 
-  * Pioneered experimentation with many of the Ampify concepts.
+  * Pioneered experimentation with many of the Amp concepts.
 
   * Co-designed the ueberlein interface.
 
@@ -232,7 +232,7 @@ their involvement:
 
 * `David Pinto <http://twitter.com/happyseaurchin>`_, ``happyseaurchin``
 
-  * Helped figure out and define much of Tent from which Ampify's micro-syntax
+  * Helped figure out and define much of Tent from which Amp's micro-syntax
     is derived.
 
   * Co-designed various elements of the minimal user interface.
