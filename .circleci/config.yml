@@ -1,0 +1,24 @@
+version: 2
+jobs:
+  build:
+    docker:
+      - image: circleci/golang@sha256:a06ff94ee3c06ad3e0d438c9a7459467c4033cd350c5e15a50323e90ef6dee4f # 1.12.7
+    steps:
+      - checkout
+      - setup_remote_docker
+      - restore_cache:
+          keys:
+            - mod-{{ checksum "go.mod" }}
+      - run:
+          command: environ/ci.sh
+          name: Build and test
+      - save_cache:
+          key: mod-{{ checksum "go.mod" }}
+          paths:
+            - /go/pkg/mod
+      - run:
+          command: |
+            bash <(curl -s https://codecov.io/bash)
+          name: Upload coverage report
+          when: on_success
+    working_directory: /go/src/ampify.dev
