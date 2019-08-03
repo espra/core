@@ -10,6 +10,8 @@ import (
 	"strings"
 )
 
+const slackURL = "https://join.slack.com/t/ampifyhq/shared_invite/enQtNzAzNzMzNDExNjAzLWM2YmE3MjFkNGQ3OTgyM2U4Yjc2ZjIyMjI1MjE1YTk1MjIxNzRhMTMzMzVjNWJhZTUwOGJiMGM1ZTFlZGI5OGQ"
+
 var goMeta = []byte(`<!doctype html>
 <meta name="go-import" content="ampify.dev git https://github.com/ampify/amp">
 <meta name="go-source" content="ampify.dev https://github.com/ampify/amp https://github.com/ampify/amp/tree/master{/dir} https://github.com/ampify/amp/blob/master{/dir}/{file}#L{line}">`)
@@ -38,6 +40,8 @@ func handle(w http.ResponseWriter, r *http.Request) {
 			}
 			http.Redirect(w, r, "https://godoc.org/ampify.dev/"+strings.Join(split[1:], "/"), http.StatusFound)
 			return
+		case "slack":
+			http.Redirect(w, r, slackURL, http.StatusFound)
 		}
 	}
 	http.Redirect(w, r, "https://github.com/ampify/amp", http.StatusFound)
