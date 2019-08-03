@@ -1,0 +1,3 @@
+dispatch:
+  - service: default
+    url: "ampify.dev/*"
