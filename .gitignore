@@ -1,75 +1,19 @@
-# specific files/directories
+# System-wide excludes
 
-.articlestore
-.build
-.build-lock
-.latest
+*.DS_Store
 
-build
+# Generated files
 
-doc/website/*.html
-environ/local
-environ/receipts
+*.gen.go
+*.pb.go
 
-# hidden files/directories
+# Go-related
 
-.bzr
-.bzrignore
-.DS_Store
-.hg
-.hgignore
-.lock-wscript
-.sass-cache
-.sconsign*
-.svn
-
-# file patterns
-
-*#*
-*~
-*.5
-*.6
-*.8
-*.a
-*.dylib
-*.dSYM
-*.egg
-*.jar
-*.la
-*.lo
-*.o
 *.out
-*.pyc
-*.pyo
-*.so
-*.swp
-*.tar.bz2
-*.tar.gz
-*.tbz
-*.tbz2
-*.tgz
-*.rdb
+cpu.prof
+mem.prof
 
-_testmain.go
+# NodeJS-related
 
-# file patterns (xcode)
-
-*.mode1v3
-*.mode2v3
-*~.nib
-*.pbxuser
-*.perspective
-*.perspectivev3
-*.swp
-*.tm_build_errors
-
-# file patterns (windows)
-
-*.dll
-*.exe
-*.ilk
-*.lib
-*.ncb
-*.pdb
-*.suo
-*.vcproj.*.*.user
+node_modules
+package-lock.json
