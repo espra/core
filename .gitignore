@@ -4,6 +4,7 @@
 
 # Generated files
 
+coverage.txt
 *.gen.go
 *.pb.go
 
