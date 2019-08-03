@@ -1,0 +1,8 @@
+# This file defines who will be automatically requested for review whenever
+# someone opens a PR with files matching a specified filepath pattern.
+#
+# See https://help.github.com/en/articles/about-code-owners for more info.
+#
+# KEEP THIS FILE SORTED. Order is important. Last match takes precedence.
+
+*                                      @tav
