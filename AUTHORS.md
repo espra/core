@@ -32,14 +32,14 @@ you make to Amp ("The Work") are:
   under an appropriate open source license which gives you the right to submit
   that work with modifications under the same open source license as indicated
   in the contents of the files pertaining to that Contribution or defined within
-  a top-level [`THIRDPARTY.md`] file.
+  a top-level [`THIRDPARTY.yaml`] file.
 
 You also acknowledge that this is a public project and that all Contributions
 you make, the record of those Contributions, along with any personal information
 that you submit with them, are intended to be maintained indefinitely, and may
 be redistributed via any medium.
 
-[`thirdparty.md`]: THIRDPARTY.md
+[`thirdparty.yaml`]: THIRDPARTY.yaml
 [`unlicense.md`]: UNLICENSE.md
 
 <!-- Please keep these links in the same order as the authors list above, thanks! -->

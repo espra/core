@@ -7,9 +7,9 @@ their Contributions to Amp ("The Work").
 
 This does not apply to works authored by third parties ("Third Party Works")
 which come with their own copyright and licensing terms. These terms may be
-defined in explicit files as specified within an optional [`THIRDPARTY.md`] file
-or specified as part of the contents of licensed files. We recommend you read
-them as their terms may differ from the terms below.
+defined in explicit files as specified within an optional [`THIRDPARTY.yaml`]
+file or specified as part of the contents of licensed files. We recommend you
+read them as their terms may differ from the terms below.
 
 With the exception of Third Party Works, all files in this repository are
 covered by this UNLICENSE. If desired, an informative header like the following
@@ -177,6 +177,6 @@ filed.
   law adapts to the post intellectual property reality.
 
 [`authors.md`]: AUTHORS.md
-[`thirdparty.md`]: THIRDPARTY.md
+[`thirdparty.yaml`]: THIRDPARTY.yaml
 [creative commons cc0 1.0 universal]: https://creativecommons.org/publicdomain/zero/1.0/legalcode
 [patent grant]: https://github.com/golang/go/blob/master/PATENTS
