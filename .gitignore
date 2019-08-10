@@ -1,20 +1,32 @@
 # System-wide excludes
 
-*.DS_Store
+.DS_Store
 
 # Generated files
 
-coverage.txt
 *.gen.go
 *.pb.go
+coverage.txt
 
-# Go-related
+# Go
 
 *.out
 cpu.prof
 mem.prof
 
-# NodeJS-related
+# IDEs
+
+*~
+.idea/
+.vscode/
+
+# NodeJS
 
 node_modules
 package-lock.json
+
+# Rust
+
+*.rs.bk
+/target/
+Cargo.lock
