@@ -7,7 +7,7 @@ import (
 	"os"
 	"testing"
 
-	"ampify.dev/pkg/mock/osexit"
+	"ampify.dev/go/mock/osexit"
 )
 
 var osExit = os.Exit

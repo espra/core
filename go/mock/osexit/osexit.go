@@ -61,6 +61,14 @@ func Func(code int) {
 	mu.Unlock()
 }
 
+// Reset resets the state of the mock function.
+func Reset() {
+	mu.Lock()
+	called = false
+	status = 0
+	mu.Unlock()
+}
+
 // Set returns the mock os.Exit function after calling Reset.
 func Set() func(int) {
 	Reset()
@@ -74,12 +82,4 @@ func Status() int {
 	s := status
 	mu.RUnlock()
 	return s
-}
-
-// Reset resets the state of the mock function.
-func Reset() {
-	mu.Lock()
-	called = false
-	status = 0
-	mu.Unlock()
 }
