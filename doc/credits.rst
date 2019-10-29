@@ -7,7 +7,8 @@ title: Credits
 Credits
 =======
 
-In addition to the official `Ampify Authors <authors.html>`_ and `those credited
+In addition to the official `Ampify Authors
+<https://github.com/espra/ampify/blob/master/AUTHORS.md>`_ and `those credited
 with pecu allocations <http://tav.espians.com/pecu-allocations-by-tav.html>`_, a
 number of individuals have proved instrumental in the technical design and
 development of Ampify. They are acknowledged here in chronological order of
