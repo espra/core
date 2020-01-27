@@ -3,7 +3,7 @@
 
 variable "base_project_id" {
   type        = string
-  description = "The ID of the Google Cloud project for Base"
+  description = "The ID of the Google Cloud base project"
 }
 
 variable "google_billing_account" {
