@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"time"
 )
 
 const (
@@ -45,6 +46,9 @@ func handle(w http.ResponseWriter, r *http.Request) {
 			}
 			http.Redirect(w, r, "https://godoc.org/dappui.com/"+strings.Join(split[1:], "/"), http.StatusFound)
 			return
+		case "health":
+			w.Write([]byte("OK"))
+			return
 		case "slack":
 			http.Redirect(w, r, slackInviteURL, http.StatusFound)
 			return
@@ -54,13 +58,39 @@ func handle(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
+	isProd = os.Getenv("PRODUCTION") == "1"
 	http.HandleFunc("/", handle)
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "8080"
-	} else {
-		isProd = true
-	}
-	log.Printf("Listening on http://localhost:%s\n", port)
-	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%s", port), nil))
+	go func() {
+		port := 8080
+		if isProd {
+			port = 80
+		}
+		srv := &http.Server{
+			Addr:         fmt.Sprintf(":%d", port),
+			Handler:      http.DefaultServeMux,
+			ReadTimeout:  10 * time.Second,
+			WriteTimeout: 10 * time.Second,
+		}
+		log.Printf("Listening on http://localhost%s\n", srv.Addr)
+		if err := srv.ListenAndServe(); err != nil {
+			log.Fatalf("Failed to run HTTP server: %s", err)
+		}
+	}()
+	go func() {
+		port := 8443
+		if isProd {
+			port = 443
+		}
+		srv := &http.Server{
+			Addr:         fmt.Sprintf(":%d", port),
+			Handler:      http.DefaultServeMux,
+			ReadTimeout:  10 * time.Second,
+			WriteTimeout: 10 * time.Second,
+		}
+		log.Printf("Listening on https://localhost%s\n", srv.Addr)
+		if err := srv.ListenAndServeTLS("selfsigned/tls.cert", "selfsigned/tls.key"); err != nil {
+			log.Fatalf("Failed to run HTTPS server: %s", err)
+		}
+	}()
+	select {}
 }
