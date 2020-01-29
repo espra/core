@@ -195,6 +195,12 @@ resource "google_compute_region_instance_group_manager" "website" {
   }
 }
 
+resource "google_compute_ssl_policy" "website" {
+  min_tls_version = "TLS_1_2"
+  name            = "website"
+  profile         = "RESTRICTED"
+}
+
 resource "google_compute_target_http_proxy" "website" {
   name    = "website"
   url_map = google_compute_url_map.website.self_link
@@ -203,6 +209,7 @@ resource "google_compute_target_http_proxy" "website" {
 resource "google_compute_target_https_proxy" "website" {
   name             = "website"
   ssl_certificates = [google_compute_managed_ssl_certificate.website.self_link]
+  ssl_policy       = google_compute_ssl_policy.website.self_link
   url_map          = google_compute_url_map.website.self_link
 }
 
