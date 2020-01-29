@@ -6,10 +6,10 @@
 ENVIRON_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
 source "${ENVIRON_DIR}/common.sh"
 
-cd "${ENVIRON_DIR}/../infra/terraform"
+cd "${ENVIRON_DIR}/../infra/provider"
 
 print_progress "Building terraform-provider-core"
-go build -o provider.bin ./provider
+go build -o provider.bin ./
 OUTFILE=terraform-provider-core.v$(./provider.bin version)
 
 mkdir -p ~/.terraform.d/plugins
