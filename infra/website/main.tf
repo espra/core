@@ -211,6 +211,13 @@ resource "google_compute_url_map" "website" {
   name            = "website"
 }
 
+resource "google_logging_project_sink" "loadbalancer" {
+  name                   = "website-loadbalancer"
+  destination            = "storage.googleapis.com/${var.loadbalancer_logs_bucket}"
+  filter                 = "resource.type=\"http_load_balancer\" AND (resource.labels.forwarding_rule_name=\"website-ipv4-http\" OR resource.labels.forwarding_rule_name=\"website-ipv4-https\" OR resource.labels.forwarding_rule_name=\"website-ipv6-http\" OR resource.labels.forwarding_rule_name=\"website-ipv6-https\")"
+  unique_writer_identity = true
+}
+
 resource "google_project_iam_member" "datastore" {
   member = "serviceAccount:${google_service_account.website.email}"
   role   = "roles/datastore.user"
@@ -221,8 +228,19 @@ resource "google_service_account" "website" {
   display_name = "Website Service Account"
 }
 
+resource "google_storage_bucket" "loadbalancer_logs" {
+  name = var.loadbalancer_logs_bucket
+}
+
 resource "google_storage_bucket_iam_member" "container_registry" {
   bucket = "artifacts.${var.base_project_id}.appspot.com"
   member = "serviceAccount:${google_service_account.website.email}"
   role   = "roles/storage.objectViewer"
+}
+
+resource "google_storage_bucket_iam_member" "loadbalancer_logs" {
+  depends_on = [google_storage_bucket.loadbalancer_logs]
+  bucket     = var.loadbalancer_logs_bucket
+  member     = google_logging_project_sink.loadbalancer.writer_identity
+  role       = "roles/storage.objectCreator"
 }
