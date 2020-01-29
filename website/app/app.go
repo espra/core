@@ -31,6 +31,7 @@ func handle(w http.ResponseWriter, r *http.Request) {
 			http.Redirect(w, r, url.String(), http.StatusMovedPermanently)
 			return
 		}
+		w.Header().Set("Strict-Transport-Security", "max-age=31536000; includeSubDomains; preload")
 	}
 	if r.URL.Query().Get("go-get") != "" {
 		w.Write([]byte(goGetHeader))
@@ -61,12 +62,11 @@ func main() {
 	isProd = os.Getenv("PRODUCTION") == "1"
 	http.HandleFunc("/", handle)
 	go func() {
-		port := 8080
 		if isProd {
-			port = 80
+			return
 		}
 		srv := &http.Server{
-			Addr:         fmt.Sprintf(":%d", port),
+			Addr:         ":8080",
 			Handler:      http.DefaultServeMux,
 			ReadTimeout:  10 * time.Second,
 			WriteTimeout: 10 * time.Second,
