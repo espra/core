@@ -55,7 +55,7 @@ echo 00 >ca.serial
 
 mkdir -p tmp
 
-openssl ecparam -genkey -name secp521r1 -out tls.key
+openssl genrsa -out tls.key 1024
 openssl req \
     -days 365 \
     -key tls.key \
