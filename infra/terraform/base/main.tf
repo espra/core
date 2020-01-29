@@ -27,6 +27,10 @@ resource "google_project_service" "base_compute" {
   service = "compute.googleapis.com"
 }
 
+resource "google_project_service" "base_container_registry" {
+  service = "containerregistry.googleapis.com"
+}
+
 resource "google_project_service" "base_datastore" {
   service = "datastore.googleapis.com"
 }
