@@ -6,6 +6,10 @@ terraform {
   }
 }
 
+provider "core" {
+  version = "= 0.0.1"
+}
+
 provider "google" {
   project = var.base_project_id
   region  = "us-central1"
@@ -18,6 +22,10 @@ provider "google-beta" {
   version = "= 3.5.0"
 }
 
+data "core_sourcehash" "website" {
+  paths = ["../../website"]
+}
+
 data "google_compute_image" "cos" {
   family  = "cos-stable"
   project = "cos-cloud"
@@ -25,6 +33,12 @@ data "google_compute_image" "cos" {
 
 data "google_compute_network" "default" {
   name = "default"
+}
+
+resource "core_container" "website" {
+  repo   = "gcr.io/${var.base_project_id}/website"
+  source = "../../website"
+  tag    = data.core_sourcehash.website.digest
 }
 
 resource "google_compute_backend_service" "website" {
@@ -121,6 +135,7 @@ resource "google_compute_health_check" "website_loadbalancer" {
 }
 
 resource "google_compute_instance_template" "website" {
+  depends_on           = [core_container.website]
   description          = "Template for creating Website instances"
   instance_description = "Website"
   machine_type         = "n1-standard-1"
@@ -138,10 +153,7 @@ resource "google_compute_instance_template" "website" {
     gce-container-declaration = yamlencode({
       spec = {
         containers = [{
-          image = "gcr.io/${var.base_project_id}/website:first"
-          securityContext = {
-            privileged = true
-          }
+          image = core_container.website.image
         }]
         restartPolicy = "Always"
       }
