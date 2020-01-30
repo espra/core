@@ -8,6 +8,7 @@ import (
 	"os"
 	"runtime"
 
+	"dappui.com/infra/provider/container"
 	"dappui.com/infra/provider/sourcehash"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/plugin"
@@ -31,6 +32,9 @@ func main() {
 			return &schema.Provider{
 				DataSourcesMap: map[string]*schema.Resource{
 					"core_sourcehash": sourcehash.Resource(),
+				},
+				ResourcesMap: map[string]*schema.Resource{
+					"core_container": container.Resource(),
 				},
 			}
 		},
