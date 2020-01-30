@@ -10,8 +10,10 @@ cd "${ENVIRON_DIR}/../infra/provider"
 
 print_progress "Building terraform-provider-core"
 go build -o provider.bin ./
-OUTFILE=terraform-provider-core.v$(./provider.bin version)
 
-mkdir -p ~/.terraform.d/plugins
-mv provider.bin ~/.terraform.d/plugins/${OUTFILE}
+OSARCH=$(./provider.bin osarch)
+OUTFILE=terraform-provider-core_v$(./provider.bin version)
+
+mkdir -p "${HOME}/.terraform.d/plugins/${OSARCH}"
+mv provider.bin "${HOME}/.terraform.d/plugins/${OSARCH}/${OUTFILE}"
 print_success "Successfully installed ${OUTFILE}"
