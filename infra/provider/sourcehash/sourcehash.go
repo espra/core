@@ -13,13 +13,16 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"path/filepath"
 	"sort"
 
+	"dappui.com/pkg/sys"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 )
 
-var newline = []byte{'\n'}
+var (
+	fs      = sys.OSFileSystem
+	newline = []byte{'\n'}
+)
 
 // Resource returns the schema definition for the sourcehash datasource.
 func Resource() *schema.Resource {
@@ -48,7 +51,7 @@ func read(d *schema.ResourceData, meta interface{}) error {
 		path := elem.(string)
 		id.Write([]byte(path))
 		id.Write(newline)
-		info, err := os.Lstat(path)
+		info, err := fs.Lstat(path)
 		if err != nil {
 			return fmt.Errorf("sourcehash: failed to stat path %q: %s", path, err)
 		}
@@ -56,7 +59,7 @@ func read(d *schema.ResourceData, meta interface{}) error {
 			seen[path] = struct{}{}
 			continue
 		}
-		if err := filepath.Walk(path, func(path string, info os.FileInfo, err error) error {
+		if err := fs.Walk(path, func(path string, info os.FileInfo, err error) error {
 			if err != nil {
 				return err
 			}
@@ -78,7 +81,7 @@ func read(d *schema.ResourceData, meta interface{}) error {
 	for _, file := range files {
 		hasher.Write([]byte(file))
 		hasher.Write(newline)
-		f, err := os.Open(file)
+		f, err := fs.Open(file)
 		if err != nil {
 			return fmt.Errorf("sourcehash: failed to open file %q: %s", file, err)
 		}
