@@ -8,7 +8,6 @@ package container
 
 import (
 	"fmt"
-	"os"
 	"os/exec"
 
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
@@ -45,11 +44,9 @@ func Resource() *schema.Resource {
 func build(repo string, d *schema.ResourceData, meta interface{}) error {
 	source := d.Get("source").(string)
 	tag := d.Get("tag").(string)
-	if err := os.Chdir(source); err != nil {
-		return fmt.Errorf("container: failed to change directory to %q: %s", source, err)
-	}
 	image := repo + ":" + tag
 	cmd := exec.Command("docker", "build", "-t", image, ".")
+	cmd.Dir = source
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("container: failed to build the %q image:\n\n%s", image, string(out))
