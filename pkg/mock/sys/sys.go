@@ -7,7 +7,6 @@ package sys
 import (
 	"bytes"
 	"errors"
-	"fmt"
 	"os"
 	"path/filepath"
 	"sort"
@@ -20,6 +19,7 @@ import (
 
 var (
 	errCloseFailure = errors.New("sys: failed to close file")
+	errOpenFailure  = errors.New("sys: failed to open file")
 	errReadFailure  = errors.New("sys: failed to read file")
 	errStatFailure  = errors.New("sys: failed to stat file")
 )
@@ -65,6 +65,7 @@ type FileInfo struct {
 	data      string
 	dir       bool
 	failClose bool
+	failOpen  bool
 	failRead  bool
 	failStat  bool
 	name      string
@@ -73,6 +74,12 @@ type FileInfo struct {
 // FailClose will mark a file to fail when its Close method is called.
 func (f *FileInfo) FailClose() *FileInfo {
 	f.failClose = true
+	return f
+}
+
+// FailOpen will return an error for Open calls at the current path.
+func (f *FileInfo) FailOpen() *FileInfo {
+	f.failOpen = true
 	return f
 }
 
@@ -150,7 +157,6 @@ func (f *FileSystem) Mkdir(path string) *FileInfo {
 		dir:  true,
 		name: name,
 	}
-	fmt.Printf("CREATING DIR %q\n", path)
 	f.files[path] = info
 	path = dir
 	for path != "/" {
@@ -159,7 +165,6 @@ func (f *FileSystem) Mkdir(path string) *FileInfo {
 			break
 		}
 		dir, name := filepath.Split(path)
-		fmt.Printf("CREATING DIR %q\n", path)
 		f.files[path] = &FileInfo{
 			dir:  true,
 			name: name,
@@ -171,11 +176,15 @@ func (f *FileSystem) Mkdir(path string) *FileInfo {
 
 // Open implements the interface for sys.Filesystem.
 func (f *FileSystem) Open(path string) (sys.File, error) {
+	path = filepath.Clean("/" + path)
 	f.mu.RLock()
-	defer f.mu.RUnlock()
 	info, ok := f.files[path]
+	f.mu.RUnlock()
 	if !ok {
 		return nil, os.ErrNotExist
+	}
+	if info.failOpen {
+		return nil, errOpenFailure
 	}
 	if info.failStat {
 		return nil, errStatFailure
@@ -189,6 +198,7 @@ func (f *FileSystem) Open(path string) (sys.File, error) {
 
 // Stat implements the interface for sys.Filesystem.
 func (f *FileSystem) Stat(path string) (os.FileInfo, error) {
+	path = filepath.Clean("/" + path)
 	f.mu.RLock()
 	info, ok := f.files[path]
 	f.mu.RUnlock()
@@ -206,7 +216,7 @@ func (f *FileSystem) Walk(root string, walkFn filepath.WalkFunc) error {
 	f.mu.RLock()
 	defer f.mu.RUnlock()
 	paths := []string{}
-	root = filepath.Clean(root)
+	root = filepath.Clean("/" + root)
 	dir := root + "/"
 	if root == "/" {
 		dir = "/"

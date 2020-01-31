@@ -67,6 +67,11 @@ func TestFS(t *testing.T) {
 	if err := f.Close(); err == nil {
 		t.Fatal("successfully closed file marked to FailClose")
 	}
+	path = "/fail/to/open"
+	fs.WriteFile(path, "data").FailOpen()
+	if f, err = fs.Open(path); err == nil {
+		t.Fatal("successfully opened file marked to FailOpen")
+	}
 	info, err = fs.Stat("/some/other")
 	if err != nil {
 		t.Fatalf("failed to stat directory: %s", err)
