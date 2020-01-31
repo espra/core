@@ -1,3 +1,3 @@
-module espra.com/website
+module dappui.com/website/app
 
 go 1.13
