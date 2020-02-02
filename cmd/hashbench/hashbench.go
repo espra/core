@@ -12,7 +12,6 @@ import (
 	"fmt"
 	"hash"
 	"io"
-	"log"
 	"math/rand"
 	"time"
 
@@ -152,11 +151,7 @@ func main() {
 		10 * bytesize.MB,
 		100 * bytesize.MB,
 	} {
-		bytes, err := size.Int()
-		if err != nil {
-			log.Fatalf("Invalid bytesize: %s", err)
-		}
-		data := make([]byte, bytes)
+		data := make([]byte, size.MustInt())
 		rand.Seed(123456789)
 		rand.Read(data)
 		fmt.Printf("## Running benchmark for data of size %s\n\n", size)
