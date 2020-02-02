@@ -17,9 +17,9 @@ func TestResource(t *testing.T) {
 	if err := r.InternalValidate(nil, false); err != nil {
 		t.Fatalf("unable to validate the resource with a nil schema map: %s", err)
 	}
-	digest := "7a4d64e9271b460aa92f75a4726bba165784153d32fbc9268dd63d64d20d02d0"
-	testRead(t, r, digest, "test")
-	testRead(t, r, digest, "test", "test/a")
+	digest := "99b02d6b635b4f07afc9ec5d946be85fda9d864d659f330d594cbd6eaec44168"
+	testRead(t, r, digest, "testdata")
+	testRead(t, r, digest, "testdata", "testdata/a")
 	testReadFailure(t, r, func(fs *sys.FileSystem) {
 		fs.Mkdir("test").FailStat()
 	})

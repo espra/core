@@ -17,7 +17,7 @@ func TestResource(t *testing.T) {
 	data := r.Data(&terraform.InstanceState{
 		Attributes: map[string]string{
 			"repo":   "docker.pkg.github.com/dappui/core/container-test",
-			"source": "test/success",
+			"source": "testdata/success",
 			"tag":    "latest",
 		},
 	})
@@ -30,7 +30,7 @@ func TestResource(t *testing.T) {
 	data = r.Data(&terraform.InstanceState{
 		Attributes: map[string]string{
 			"repo":   "docker.pkg.github.com/dappui/core/container-test",
-			"source": "test/failure",
+			"source": "testdata/failure",
 			"tag":    "latest",
 		},
 	})
@@ -40,7 +40,7 @@ func TestResource(t *testing.T) {
 	data = r.Data(&terraform.InstanceState{
 		Attributes: map[string]string{
 			"repo":   "docker.pkg.github.com/site/invalid/invalid",
-			"source": "test/success",
+			"source": "testdata/success",
 			"tag":    "latest",
 		},
 	})
