@@ -37,6 +37,15 @@ func (v Value) Int() (int, error) {
 	return int(v), nil
 }
 
+// MustInt returns the value as an int. It panics if the value overflows the
+// platform int.
+func (v Value) MustInt() int {
+	if v > maxInt {
+		panic(fmt.Errorf("bytesize: value %d (%s) overflows platform int", v, v.String()))
+	}
+	return int(v)
+}
+
 // String produces a human-readable representation of the byte size value as a
 // sequence of decimal numbers followed by a unit suffix. Where possible, the
 // unit yielding the smallest possible string representation with a single unit
