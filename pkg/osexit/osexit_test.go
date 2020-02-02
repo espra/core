@@ -7,7 +7,7 @@ import (
 	"os"
 	"testing"
 
-	"dappui.com/pkg/mock/osexit"
+	"dappui.com/pkg/osexit"
 )
 
 var osExit = os.Exit
