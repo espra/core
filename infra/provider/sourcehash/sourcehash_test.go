@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"testing"
 
-	"dappui.com/pkg/mock/sys"
+	"dappui.com/pkg/mockfs"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/terraform"
 )
@@ -20,19 +20,19 @@ func TestResource(t *testing.T) {
 	digest := "99b02d6b635b4f07afc9ec5d946be85fda9d864d659f330d594cbd6eaec44168"
 	testRead(t, r, digest, "testdata")
 	testRead(t, r, digest, "testdata", "testdata/a")
-	testReadFailure(t, r, func(fs *sys.FileSystem) {
+	testReadFailure(t, r, func(fs *mockfs.FileSystem) {
 		fs.Mkdir("test").FailStat()
 	})
-	testReadFailure(t, r, func(fs *sys.FileSystem) {
+	testReadFailure(t, r, func(fs *mockfs.FileSystem) {
 		fs.WriteFile("test/x", "data").FailClose()
 	})
-	testReadFailure(t, r, func(fs *sys.FileSystem) {
+	testReadFailure(t, r, func(fs *mockfs.FileSystem) {
 		fs.WriteFile("test/x", "data").FailOpen()
 	})
-	testReadFailure(t, r, func(fs *sys.FileSystem) {
+	testReadFailure(t, r, func(fs *mockfs.FileSystem) {
 		fs.WriteFile("test/x", "data").FailRead()
 	})
-	testReadFailure(t, r, func(fs *sys.FileSystem) {
+	testReadFailure(t, r, func(fs *mockfs.FileSystem) {
 		fs.WriteFile("test/x", "data").FailStat()
 	})
 }
@@ -54,8 +54,8 @@ func testRead(t *testing.T, r *schema.Resource, expected string, paths ...string
 	}
 }
 
-func testReadFailure(t *testing.T, r *schema.Resource, init func(*sys.FileSystem)) {
-	mock := sys.NewFileSystem()
+func testReadFailure(t *testing.T, r *schema.Resource, init func(*mockfs.FileSystem)) {
+	mock := mockfs.New()
 	fs = mock
 	mock.WriteFile("test/a", "some data")
 	init(mock)

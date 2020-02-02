@@ -1,7 +1,7 @@
 // Public Domain (-) 2020-present, The Core Authors.
 // See the Core UNLICENSE file for details.
 
-package sys
+package mockfs
 
 import (
 	"io"
@@ -10,7 +10,7 @@ import (
 )
 
 func TestFS(t *testing.T) {
-	fs := NewFileSystem()
+	fs := New()
 	path := "/path/to/test"
 	fs.WriteFile(path, "hello world")
 	info, err := fs.Stat(path)

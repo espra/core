@@ -1,8 +1,8 @@
 // Public Domain (-) 2020-present, The Core Authors.
 // See the Core UNLICENSE file for details.
 
-// Package sys mocks interactions with the operating system.
-package sys
+// Package mockfs mocks interactions with the filesystem.
+package mockfs
 
 import (
 	"bytes"
@@ -18,10 +18,10 @@ import (
 )
 
 var (
-	errCloseFailure = errors.New("sys: failed to close file")
-	errOpenFailure  = errors.New("sys: failed to open file")
-	errReadFailure  = errors.New("sys: failed to read file")
-	errStatFailure  = errors.New("sys: failed to stat file")
+	errCloseFailure = errors.New("mockfs: failed to close file")
+	errOpenFailure  = errors.New("mockfs: failed to open file")
+	errReadFailure  = errors.New("mockfs: failed to read file")
+	errStatFailure  = errors.New("mockfs: failed to stat file")
 )
 
 // File provides a mock implementation of the sys.File interface.
@@ -260,8 +260,8 @@ func (f *FileSystem) WriteFile(path string, data string) *FileInfo {
 	return info
 }
 
-// NewFileSystem returns a mockable filesystem for testing purposes.
-func NewFileSystem() *FileSystem {
+// New returns a mockable filesystem for testing purposes.
+func New() *FileSystem {
 	return &FileSystem{
 		files: map[string]*FileInfo{
 			"/": &FileInfo{
