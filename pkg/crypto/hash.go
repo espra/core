@@ -36,6 +36,9 @@ type Hash interface {
 	// XOF returns a Reader for an eXtendable-Output Function. The state of the
 	// Reader is independent of changes to the Hash's state, so it's safe to
 	// keep writing more data after instantiating a Reader.
+	//
+	// If a Hash does not support being treated as an XOF, then it should
+	// document this fact, and return a DummyReader to satisfy the interface.
 	XOF() io.Reader
 }
 
