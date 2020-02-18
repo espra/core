@@ -9,7 +9,7 @@ import (
 	"io"
 )
 
-// Hash algorithms.
+// The defined set of cryptographic hash algorithms that we support.
 const (
 	BLAKE3     HashAlgorithm = 1 + iota // import dappui.com/pkg/blake3
 	Kangaroo12                          // import dappui.com/pkg/kangaroo12
@@ -43,7 +43,9 @@ type Hash interface {
 // another package.
 type HashAlgorithm uint
 
-// New instantiates a
+// New instantiates a new Hash for the HashAlgorithm. It panics if the
+// HashAlgorithm has not been defined within this package or if an
+// implementation has not been registered via a call to RegisterHash.
 func (h HashAlgorithm) New() Hash {
 	if h > 0 && h < maxHash {
 		if f := hashes[h]; f != nil {
@@ -51,7 +53,7 @@ func (h HashAlgorithm) New() Hash {
 		}
 		panic(fmt.Errorf("crypto: %s implementation has not been registered", h))
 	}
-	panic(fmt.Errorf("crypto: unknown hash algorithm (%d)", h))
+	panic(fmt.Errorf("crypto: unknown HashAlgorithm (%d)", h))
 }
 
 func (h HashAlgorithm) String() string {
@@ -61,16 +63,16 @@ func (h HashAlgorithm) String() string {
 	case Kangaroo12:
 		return "Kangaroo12"
 	default:
-		return fmt.Sprintf("Unknown Hash Algorithm (%d)", h)
+		return fmt.Sprintf("Unknown HashAlgorithm (%d)", h)
 	}
 }
 
 // RegisterHash registers a function that returns a new instance of the given
-// hash function. This is intended to be called from the init function in
+// HashAlgorithm. This is intended to be called from the init function in
 // packages that implement hash functions.
 func RegisterHash(alg HashAlgorithm, f func() Hash) {
 	if alg == 0 || alg >= maxHash {
-		panic(fmt.Errorf("crypto: RegisterHash called on undefined hash algorithm (%d)", alg))
+		panic(fmt.Errorf("crypto: RegisterHash called on unknown HashAlgorithm (%d)", alg))
 	}
 	hashes[alg] = f
 }
