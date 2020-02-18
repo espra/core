@@ -2,24 +2,12 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-//  +build !amd64 gccgo
+// +build !amd64 gccgo
 
 package kangaroo12
 
 // rc stores the round constants for use in the ι step.
-var rc = [24]uint64{
-	0x0000000000000001,
-	0x0000000000008082,
-	0x800000000000808A,
-	0x8000000080008000,
-	0x000000000000808B,
-	0x0000000080000001,
-	0x8000000080008081,
-	0x8000000000008009,
-	0x000000000000008A,
-	0x0000000000000088,
-	0x0000000080008009,
-	0x000000008000000A,
+var rc = [12]uint64{
 	0x000000008000808B,
 	0x800000000000008B,
 	0x8000000000008089,
@@ -34,14 +22,14 @@ var rc = [24]uint64{
 	0x8000000080008008,
 }
 
-// keccakF1600 applies the Keccak permutation to a 1600b-wide
+// keccakP1600 applies 12 rounds of the Keccak-p permutation to a 1600bit-wide
 // state represented as a slice of 25 uint64s.
-func keccakF1600(a *[25]uint64) {
-	// Implementation translated from Keccak-inplace.c
-	// in the keccak reference code.
+func keccakP1600(a *[25]uint64) {
+	// Implementation translated from Keccak-inplace.c in the Keccak reference
+	// code.
 	var t, bc0, bc1, bc2, bc3, bc4, d0, d1, d2, d3, d4 uint64
 
-	for i := 0; i < 24; i += 4 {
+	for i := 0; i < 12; i += 4 {
 		// Combines the 5 steps in each round into 2 steps.
 		// Unrolls 4 rounds per loop and spreads some steps across rounds.
 

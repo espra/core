@@ -6,7 +6,7 @@
 
 package kangaroo12
 
-// This function is implemented in keccakf_amd64.s.
+// This function is implemented in keccak_amd64.s.
 
 //go:noescape
-func keccakF1600(a *[25]uint64)
+func keccakP1600(a *[25]uint64)
