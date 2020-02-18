@@ -27,7 +27,7 @@ type Hash interface {
 	// Reset resets the Hash to its initial state.
 	Reset()
 	// Size returns the number of bytes Sum will return.
-	Size()
+	Size() int
 	// Sum appends the digest of the current state to b and returns the
 	// resulting slice. It does not change the underlying state.
 	Sum(b []byte) []byte
