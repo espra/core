@@ -1,0 +1,16 @@
+# This metadata file defines the copyright and licensing terms for files within
+# Core ("The Work") which are based on works authored by third parties.
+
+go:
+  terms:
+    - doc/license/go/LICENSE
+    - doc/license/go/PATENTS
+  files:
+    - pkg/crypto/hash.go
+    - pkg/kangaroo12/keccakf.go
+    - pkg/kangaroo12/keccakf_amd64.go
+    - pkg/kangaroo12/keccakf_amd64.s
+    - pkg/kangaroo12/state.go
+    - pkg/kangaroo12/xor.go
+    - pkg/kangaroo12/xor_generic.go
+    - pkg/kangaroo12/xor_unaligned.go
