@@ -71,43 +71,25 @@ func (k *k12) clone() *k12 {
 	return &ret
 }
 
-// Adapted from David Wong's implementation of Kangaroo12:
-// https://github.com/mimoo/GoKangarooTwelve
-func (k *k12) encodeLength(n int) []byte {
-	var offset int
-	if n == 0 {
-		offset = 8
-	} else {
-		binary.BigEndian.PutUint64(k.buf[0:], uint64(n))
-		for offset = 0; offset < 9; offset++ {
-			if k.buf[offset] != 0 {
-				break
-			}
-		}
-	}
-	k.buf[8] = byte(8 - offset)
-	return k.buf[offset:9]
-}
-
 func (k *k12) finalize() *sponge {
 	// Fast-path small messages.
 	if k.count == 0 && (k.written+len(k.custom)+9) < chunkSize {
 		meta := k.meta.clone()
 		meta.absorb(k.custom)
-		meta.absorb(k.encodeLength(len(k.custom)))
+		meta.absorb(encodeLength(len(k.custom)))
 		meta.finalize(0x07)
 		return meta
 	}
 	k = k.clone()
 	k.write(k.custom)
-	k.write(k.encodeLength(len(k.custom)))
+	k.write(encodeLength(len(k.custom)))
 	if k.count == 0 {
 		k.meta.finalize(0x07)
 	} else {
 		k.chunk.finalize(0x0b)
 		k.chunk.squeeze(k.buf[:])
 		k.meta.absorb(k.buf[:])
-		k.meta.absorb(k.encodeLength(k.count))
+		k.meta.absorb(encodeLength(k.count))
 		k.meta.absorb([]byte{0xff, 0xff})
 		k.meta.finalize(0x06)
 	}
@@ -161,6 +143,27 @@ func New() crypto.Hash {
 	h.chunk.init()
 	h.meta.init()
 	return h
+}
+
+// Adapted from David Wong's implementation of Kangaroo12:
+// https://github.com/mimoo/GoKangarooTwelve
+func encodeLength(n int) []byte {
+	var (
+		buf    [9]byte
+		offset int
+	)
+	if n == 0 {
+		offset = 8
+	} else {
+		binary.BigEndian.PutUint64(buf[0:], uint64(n))
+		for offset = 0; offset < 9; offset++ {
+			if buf[offset] != 0 {
+				break
+			}
+		}
+	}
+	buf[8] = byte(8 - offset)
+	return buf[offset:]
 }
 
 func init() {
