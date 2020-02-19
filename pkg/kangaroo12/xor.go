@@ -19,7 +19,7 @@ func (s *storageBuf) asBytes() *[rate]byte {
 
 // copyOut copies uint64s to a byte buffer.
 func copyOut(s *sponge, buf []byte) {
-	for i := 0; len(b) >= 8; i++ {
+	for i := 0; len(buf) >= 8; i++ {
 		binary.LittleEndian.PutUint64(buf, s.a[i])
 		buf = buf[8:]
 	}
