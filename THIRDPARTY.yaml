@@ -7,10 +7,9 @@ go:
     - doc/license/go/PATENTS
   files:
     - pkg/crypto/hash.go
-    - pkg/kangaroo12/keccakf.go
-    - pkg/kangaroo12/keccakf_amd64.go
-    - pkg/kangaroo12/keccakf_amd64.s
-    - pkg/kangaroo12/state.go
+    - pkg/kangaroo12/keccak.go
+    - pkg/kangaroo12/keccak_amd64.go
+    - pkg/kangaroo12/keccak_amd64.s
+    - pkg/kangaroo12/sponge.go
     - pkg/kangaroo12/xor.go
-    - pkg/kangaroo12/xor_generic.go
     - pkg/kangaroo12/xor_unaligned.go
