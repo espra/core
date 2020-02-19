@@ -33,6 +33,35 @@ var tests = []struct {
 	{genCustom(3), gen0xff(7), 32, "75d2f86a2e644566726b4fbcfc5657b9dbcf070c7b0dca06450ab291d7443bcf"},
 }
 
+func TestHash(t *testing.T) {
+	h := crypto.Kangaroo12.New()
+	size := h.BlockSize()
+	if size != 168 {
+		t.Errorf("unexpected block size value: got %d, want 168", size)
+	}
+	size = h.Size()
+	if size != 32 {
+		t.Errorf("unexpected digest size value: got %d, want 32", size)
+	}
+	const edgecase = 8184
+	data := [edgecase]byte{}
+	h.Write(data[:])
+	digest := hex.EncodeToString(h.Sum(nil))
+	want := "0ee0496ec20705da30be2e03279dae386148b9cca11eb152167ed932c23cd65f"
+	if digest != want {
+		t.Errorf("got mismatching digest: got %q, want %q", digest, want)
+	}
+	h.Reset()
+	h.Write(data[:4092])
+	clone := h.Clone()
+	h.Reset()
+	clone.Write(data[:4092])
+	digest = hex.EncodeToString(clone.Sum(nil))
+	if digest != want {
+		t.Errorf("got mismatching digest: got %q, want %q", digest, want)
+	}
+}
+
 func TestVectors(t *testing.T) {
 	for i, tt := range tests {
 		var h crypto.Hash
