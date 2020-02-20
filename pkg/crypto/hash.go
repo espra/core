@@ -26,20 +26,21 @@ type Hash interface {
 	Clone() Hash
 	// Reset resets the Hash to its initial state.
 	Reset()
-	// Size returns the number of bytes Sum will return.
+	// Size returns the number of bytes Sum will append.
 	Size() int
 	// Sum appends the digest of the current state to b and returns the
 	// resulting slice. It does not change the underlying state.
 	Sum(b []byte) []byte
 	// Write absorbs more data into the Hash's state. It never returns an error.
 	io.Writer
-	// XOF returns a Reader for an eXtendable-Output Function. The state of the
-	// Reader is independent of changes to the Hash's state, so it's safe to
-	// keep writing more data after instantiating a Reader.
+	// XOF returns an eXtendable-Output Function for the current state of the
+	// Hash. The state of the XOF should be independent of changes to the Hash's
+	// state, so that it's safe to keep writing more data after instantiating
+	// the XOF.
 	//
 	// If a Hash does not support being treated as an XOF, then it should
-	// document this fact, and return a DummyReader to satisfy the interface.
-	XOF() io.Reader
+	// document this fact, and return a DummyXOF to satisfy the interface.
+	XOF() XOF
 }
 
 // HashAlgorithm identifies a cryptographic hash function that is implemented in
@@ -68,6 +69,20 @@ func (h HashAlgorithm) String() string {
 	default:
 		return fmt.Sprintf("Unknown HashAlgorithm (%d)", h)
 	}
+}
+
+// XOF represents an eXtendable-Output Function.
+type XOF interface {
+	// Read reads more output from the XOF. It returns io.EOF if the limit has
+	// been reached.
+	io.Reader
+	// ReadAt reads len(p) bytes into p starting at the given offset. It returns
+	// io.EOF if the limit has been reached or ErrReadAtUnsupported if the XOF
+	// is not seekable, and thus does not support ReadAt.
+	//
+	// ReadAt should not affect nor be affected by the Read offset. Clients of
+	// ReadAt should be able to execute parallel ReadAt calls on the same XOF.
+	ReadAt(p []byte, offset uint64) (int, error)
 }
 
 // RegisterHash registers a function that returns a new instance of the given

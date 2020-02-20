@@ -5,15 +5,25 @@
 package crypto
 
 import (
+	"errors"
 	"io"
 )
 
-// DummyReader implements the io.Reader interface and will return an EOF on all
-// calls to Read.
-var DummyReader = dummyReader{}
+// Error values.
+var (
+	ErrReadAtUnsupported = errors.New("crypto: this XOF does not support ReadAt")
+)
 
-type dummyReader struct{}
+// DummyXOF implements the XOF interface and will return errors on all method
+// calls.
+var DummyXOF XOF = dummyXOF{}
 
-func (d dummyReader) Read(p []byte) (int, error) {
+type dummyXOF struct{}
+
+func (d dummyXOF) Read(p []byte) (int, error) {
 	return 0, io.EOF
+}
+
+func (d dummyXOF) ReadAt(p []byte, offset uint64) (int, error) {
+	return 0, ErrReadAtUnsupported
 }
