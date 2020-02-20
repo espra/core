@@ -51,6 +51,10 @@ func TestHash(t *testing.T) {
 	if digest != want {
 		t.Errorf("got mismatching digest: got %q, want %q", digest, want)
 	}
+	xof := h.XOF()
+	if _, err := xof.ReadAt(nil, 1024); err == nil {
+		t.Errorf("unexpected successful ReadAt call")
+	}
 	h.Reset()
 	h.Write(data[:4092])
 	clone := h.Clone()

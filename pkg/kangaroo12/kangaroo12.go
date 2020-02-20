@@ -8,7 +8,6 @@ package kangaroo12
 
 import (
 	"encoding/binary"
-	"io"
 
 	"dappui.com/pkg/crypto"
 )
@@ -60,7 +59,7 @@ func (k *k12) Write(p []byte) (int, error) {
 	return len(p), nil
 }
 
-func (k *k12) XOF() io.Reader {
+func (k *k12) XOF() crypto.XOF {
 	return k.finalize()
 }
 

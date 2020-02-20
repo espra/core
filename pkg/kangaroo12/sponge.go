@@ -4,6 +4,10 @@
 
 package kangaroo12
 
+import (
+	"dappui.com/pkg/crypto"
+)
+
 type sponge struct {
 	a       [25]uint64 // main state
 	buf     []byte     // points into storage
@@ -13,6 +17,10 @@ type sponge struct {
 func (s *sponge) Read(p []byte) (int, error) {
 	s.squeeze(p)
 	return len(p), nil
+}
+
+func (s *sponge) ReadAt(p []byte, offset uint64) (int, error) {
+	return 0, crypto.ErrReadAtUnsupported
 }
 
 func (s *sponge) absorb(p []byte) {
