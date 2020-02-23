@@ -50,6 +50,8 @@ var iv = [8]uint32{
 
 type hash struct {
 	counter int
+	key     [8]uint32
+	flags   uint32
 	written int
 }
 
@@ -105,7 +107,15 @@ func (h *hash) write(p []byte) {
 // material can be provided by writing to the returned hash, before reading the
 // derived key from the XOF.
 func DeriveKey(context string) crypto.Hash {
-	return &hash{}
+	h := &hash{
+		key:   iv,
+		flags: flagDeriveKeyContext,
+	}
+	h.write([]byte(context))
+	bytes32ToWords(h.Sum(nil), &h.key)
+	h.Reset()
+	h.flags = flagDeriveKeyMaterial
+	return h
 }
 
 // Keyed instantiates a keyed instance of BLAKE3 for use in constructing MACs
@@ -115,10 +125,28 @@ func Keyed(key []byte) (crypto.Hash, error) {
 	if len(key) != keySize {
 		return nil, errInvalidKeySize
 	}
-	return &hash{}, nil
+	h := &hash{
+		flags: flagKeyedHash,
+	}
+	bytes32ToWords(key, &h.key)
+	return h, nil
 }
 
 // New instantiates an instance of BLAKE3.
 func New() crypto.Hash {
-	return &hash{}
+	return &hash{
+		key: iv,
+	}
+}
+
+func bytes32ToWords(b []byte, w *[8]uint32) {
+	_ = b[31] // bounds check hint to the compiler
+	w[0] = uint32(b[0]) | uint32(b[1])<<8 | uint32(b[2])<<16 | uint32(b[3])<<24
+	w[1] = uint32(b[4]) | uint32(b[5])<<8 | uint32(b[6])<<16 | uint32(b[7])<<24
+	w[2] = uint32(b[8]) | uint32(b[9])<<8 | uint32(b[10])<<16 | uint32(b[11])<<24
+	w[3] = uint32(b[12]) | uint32(b[13])<<8 | uint32(b[14])<<16 | uint32(b[15])<<24
+	w[4] = uint32(b[16]) | uint32(b[17])<<8 | uint32(b[18])<<16 | uint32(b[19])<<24
+	w[5] = uint32(b[20]) | uint32(b[21])<<8 | uint32(b[22])<<16 | uint32(b[23])<<24
+	w[6] = uint32(b[24]) | uint32(b[25])<<8 | uint32(b[26])<<16 | uint32(b[27])<<24
+	w[7] = uint32(b[28]) | uint32(b[29])<<8 | uint32(b[30])<<16 | uint32(b[31])<<24
 }
