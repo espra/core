@@ -34,12 +34,18 @@ var tests = []struct {
 }
 
 func TestDigester(t *testing.T) {
+	buf := make([]byte, 32)
 	d := NewDigester()
 	for i, tt := range tests {
 		if tt.custom != "" || tt.length != 32 {
 			continue
 		}
-		digest := hex.EncodeToString(d.Digest(tt.data))
+		digest := hex.EncodeToString(d.Digest(tt.data, nil))
+		if digest != tt.want {
+			t.Errorf("got mismatching digest for test vector %d: got %q, want %q", i+1, digest, tt.want)
+		}
+		d.Digest(tt.data, buf[:0])
+		digest = hex.EncodeToString(buf)
 		if digest != tt.want {
 			t.Errorf("got mismatching digest for test vector %d: got %q, want %q", i+1, digest, tt.want)
 		}

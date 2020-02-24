@@ -104,7 +104,7 @@ func (s *sponge) squeeze(p []byte) {
 	}
 }
 
-func (s *sponge) sum(dsbyte byte, b []byte) []byte {
+func (s *sponge) sum(dsbyte byte, b []byte) {
 	s.buf = append(s.buf, dsbyte)
 	zerosStart := len(s.buf)
 	s.buf = s.storage.asBytes()[:rate]
@@ -115,5 +115,4 @@ func (s *sponge) sum(dsbyte byte, b []byte) []byte {
 	xorIn(s, s.buf)
 	keccakP1600(&s.a)
 	copyOut(s, b)
-	return b
 }
