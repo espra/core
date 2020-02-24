@@ -9,9 +9,9 @@ import (
 )
 
 // Parallel processes the data with the given number of threads and returns a
-// Reader for use as an XOF. Use a nil customIdent and read the first 32 bytes
-// from the Reader to use as a traditional hash function.
-func Parallel(threads int, customIdent []byte, data []byte) io.Reader {
+// Reader for use as an XOF. Use an empty string as the customIdent and read the
+// first 32 bytes from the Reader to use as a traditional hash function.
+func Parallel(threads int, customIdent string, data []byte) io.Reader {
 	data = append(data, customIdent...)
 	data = append(data, encodeLength(len(customIdent))...)
 	count := (len(data) + chunkSize - 1) / chunkSize

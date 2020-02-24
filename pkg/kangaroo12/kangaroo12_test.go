@@ -25,12 +25,25 @@ var tests = []struct {
 	{"", genData(2), 32, "0c315ebcdedbf61426de7dcf8fb725d1e74675d7f5327a5067f367b108ecb67c"},
 	{"", genData(3), 32, "cb552e2ec77d9910701d578b457ddf772c12e322e4ee7fe417f92c758f0d59d0"},
 	{"", genData(4), 32, "8701045e22205345ff4dda05555cbb5c3af1a771c2b89baef37db43d9998b9fe"},
-	{"", genData(5), 32, "844d610933b1b9963cbdeb5ae3b6b05cc7cbd67ceedf883eb678a0a8e0371682"},
 	{"", genData(6), 32, "3c390782a8a4e89fa6367f72feaaf13255c8d95878481d3cd8ce85f58e880af8"},
+	{"", genData(5), 32, "844d610933b1b9963cbdeb5ae3b6b05cc7cbd67ceedf883eb678a0a8e0371682"},
 	{genCustom(0), nil, 32, "fab658db63e94a246188bf7af69a133045f46ee984c56e3c3328caaf1aa1a583"},
 	{genCustom(1), gen0xff(1), 32, "d848c5068ced736f4462159b9867fd4c20b808acc3d5bc48e0b06ba0a3762ec4"},
 	{genCustom(2), gen0xff(3), 32, "c389e5009ae57120854c2e8c64670ac01358cf4c1baf89447a724234dc7ced74"},
 	{genCustom(3), gen0xff(7), 32, "75d2f86a2e644566726b4fbcfc5657b9dbcf070c7b0dca06450ab291d7443bcf"},
+}
+
+func TestDigester(t *testing.T) {
+	d := NewDigester()
+	for i, tt := range tests {
+		if tt.custom != "" || tt.length != 32 {
+			continue
+		}
+		digest := hex.EncodeToString(d.Digest(tt.data))
+		if digest != tt.want {
+			t.Errorf("got mismatching digest for test vector %d: got %q, want %q", i+1, digest, tt.want)
+		}
+	}
 }
 
 func TestHash(t *testing.T) {
@@ -95,7 +108,7 @@ func TestVectors(t *testing.T) {
 
 func TestVectorsParallel(t *testing.T) {
 	for i, tt := range tests {
-		xof := Parallel(4, []byte(tt.custom), tt.data)
+		xof := Parallel(4, tt.custom, tt.data)
 		buf := make([]byte, tt.length)
 		xof.Read(buf)
 		if tt.length > 64 {

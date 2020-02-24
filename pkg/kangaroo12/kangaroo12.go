@@ -152,13 +152,12 @@ func encodeLength(n int) []byte {
 		offset int
 	)
 	if n == 0 {
-		offset = 8
-	} else {
-		binary.BigEndian.PutUint64(buf[0:], uint64(n))
-		for offset = 0; offset < 9; offset++ {
-			if buf[offset] != 0 {
-				break
-			}
+		return buf[8:]
+	}
+	binary.BigEndian.PutUint64(buf[0:], uint64(n))
+	for offset = 0; offset < 9; offset++ {
+		if buf[offset] != 0 {
+			break
 		}
 	}
 	buf[8] = byte(8 - offset)
