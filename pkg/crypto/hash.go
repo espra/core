@@ -21,9 +21,9 @@ var hashes = [maxHash]func() Hash{}
 // Digester represents a cryptographic hash function optimized for producing
 // digests.
 type Digester interface {
-	// Digest hashes all of the given data and returns the resulting digest. The
-	// returned byte slice should not be retained across Digest calls.
-	Digest(data []byte) []byte
+	// Digest hashes all of the given data and appends the digest to b and
+	// returns the resulting slice.
+	Digest(data []byte, b []byte) []byte
 }
 
 // Hash represents a cryptographic hash function.
