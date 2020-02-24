@@ -18,6 +18,14 @@ const (
 
 var hashes = [maxHash]func() Hash{}
 
+// Digester represents a cryptographic hash function optimized for producing
+// digests.
+type Digester interface {
+	// Digest hashes all of the given data and returns the resulting digest. The
+	// returned byte slice should not be retained across Digest calls.
+	Digest(data []byte) []byte
+}
+
 // Hash represents a cryptographic hash function.
 type Hash interface {
 	// BlockSize returns the Hash's underlying block size.
