@@ -20,19 +20,19 @@ func Resource() *schema.Resource {
 		Delete: schema.Noop,
 		Read:   schema.Noop,
 		Schema: map[string]*schema.Schema{
-			"image": &schema.Schema{
+			"image": {
 				Computed: true,
 				Type:     schema.TypeString,
 			},
-			"repo": &schema.Schema{
+			"repo": {
 				Required: true,
 				Type:     schema.TypeString,
 			},
-			"source": &schema.Schema{
+			"source": {
 				Required: true,
 				Type:     schema.TypeString,
 			},
-			"tag": &schema.Schema{
+			"tag": {
 				Required: true,
 				Type:     schema.TypeString,
 			},

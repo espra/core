@@ -264,7 +264,7 @@ func (f *FileSystem) WriteFile(path string, data string) *FileInfo {
 func New() *FileSystem {
 	return &FileSystem{
 		files: map[string]*FileInfo{
-			"/": &FileInfo{
+			"/": {
 				dir: true,
 			},
 		},

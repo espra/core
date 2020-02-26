@@ -29,11 +29,11 @@ func Resource() *schema.Resource {
 	return &schema.Resource{
 		Read: read,
 		Schema: map[string]*schema.Schema{
-			"digest": &schema.Schema{
+			"digest": {
 				Computed: true,
 				Type:     schema.TypeString,
 			},
-			"paths": &schema.Schema{
+			"paths": {
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
 				},
