@@ -2,10 +2,18 @@
 # Core ("The Work") which are based on works authored by third parties.
 
 go:
+  sources:
+    - https://github.com/golang/crypto
+    - https://github.com/golang/sys
   terms:
     - doc/license/go/LICENSE
     - doc/license/go/PATENTS
   files:
+    - pkg/cpu/cpu_gc_x86.go
+    - pkg/cpu/cpu_gccgo_x86.c
+    - pkg/cpu/cpu_gccgo_x86.go
+    - pkg/cpu/cpu_x86.go
+    - pkg/cpu/cpu_x86.s
     - pkg/crypto/hash.go
     - pkg/kangaroo12/keccak.go
     - pkg/kangaroo12/keccak_amd64.go
