@@ -1,6 +1,14 @@
 # This metadata file defines the copyright and licensing terms for files within
 # Core ("The Work") which are based on works authored by third parties.
 
+avo:
+  sources:
+    - https://github.com/mmcloughlin/avo
+  terms:
+    - doc/license/avo/LICENSE
+  files:
+    - cmd/genasm/asm/asm.go
+
 go:
   sources:
     - https://github.com/golang/crypto
