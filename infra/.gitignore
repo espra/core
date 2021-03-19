@@ -1,4 +1,0 @@
-.terraform
-private/
-secret.auto.tfvars
-secret.tf
