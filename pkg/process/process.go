@@ -5,6 +5,7 @@
 package process
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"os/signal"
@@ -121,11 +122,29 @@ func Lock(directory string, name string) error {
 	return nil
 }
 
+// ReapOrphans reaps orphaned child processes and returns whether there are any
+// unterminated child processes that are still active.
+//
+// This is currently a no-op on all platforms except Linux.
+func ReapOrphans() bool {
+	return reap()
+}
+
 // ResetHandlers drops all currently registered handlers.
 func ResetHandlers() {
 	mu.Lock()
 	registry = map[os.Signal][]func(){}
 	mu.Unlock()
+}
+
+// RunReaper continuously attempts to reap orphaned child processes until the
+// given context is cancelled.
+//
+// On Linux, this will register the current process as a child subreaper, and
+// attempt to reap child processes whenever SIGCHLD is received. On all other
+// platforms, this is currently a no-op.
+func RunReaper(ctx context.Context) {
+	runReaper(ctx)
 }
 
 // SetExitHandler registers the given handler function to run when receiving
