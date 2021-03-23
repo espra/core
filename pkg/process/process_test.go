@@ -180,7 +180,7 @@ func mktemp(t *testing.T) string {
 }
 
 func reset() {
-	exit = osexit.Set()
+	OSExit = osexit.Set()
 	testMode = true
 	ResetHandlers()
 	resetExiting()

@@ -14,8 +14,11 @@ import (
 	"syscall"
 )
 
+// OSExit is the function used to terminate the current process. It defaults to
+// os.Exit, but can be overridden for testing purposes.
+var OSExit = os.Exit
+
 var (
-	exit         = os.Exit
 	exitDisabled bool
 	exiting      bool
 	mu           sync.RWMutex // protects exitDisabled, exiting, registry
@@ -81,7 +84,7 @@ func Exit(code int) {
 	for _, handler := range handlers {
 		handler()
 	}
-	exit(code)
+	OSExit(code)
 }
 
 // Init tries to acquire a process lock and write the PID file for the current
@@ -191,7 +194,7 @@ func handleSignals() {
 			}
 			if !disabled {
 				if sig == syscall.SIGTERM || sig == os.Interrupt {
-					exit(1)
+					OSExit(1)
 				}
 			}
 			if testMode {
