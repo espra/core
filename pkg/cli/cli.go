@@ -13,11 +13,13 @@ import (
 	"web4.cc/pkg/process"
 )
 
+var _ Command = (*Version)(nil)
+
 // Command specifies the minimal set of methods that a Command needs to
 // implement. Commands wishing to have more fine-grained control, can also
 // implement the Completer and Usage interfaces.
 type Command interface {
-	Info() string
+	Info() *Info
 	Run(c *Context) error
 }
 
@@ -30,13 +32,16 @@ type Completer interface {
 // Context provides a way to access processed command line info at specific
 // points within the command hierarchy.
 type Context struct {
-	args   []string
-	cmd    Command
-	name   string
-	opts   []*Option
-	parent *Context
-	root   *Context
-	sub    Subcommands
+	args      []string
+	cmd       Command
+	envprefix string
+	flags     []*Flag
+	name      string
+	parent    *Context
+	root      *Context
+	showenv   bool
+	skipenv   bool
+	sub       Subcommands
 }
 
 // Args returns the command line arguments for the current context.
@@ -68,16 +73,29 @@ func (c *Context) Name() string {
 	return c.name
 }
 
-// Options returns the command line arguments for the current context.
-func (c *Context) Options() []*Option {
-	opts := make([]*Option, len(c.opts))
-	copy(opts, c.opts)
-	return opts
+// Flags returns the command line flags for the current context.
+func (c *Context) Flags() []*Flag {
+	flags := make([]*Flag, len(c.flags))
+	copy(flags, c.flags)
+	return flags
 }
 
 // Parent returns the parent of the current context.
 func (c *Context) Parent() *Context {
 	return c.parent
+}
+
+// PrintUsage outputs the command's help text to stdout.
+func (c *Context) PrintUsage() {
+	fmt.Print(c.usage())
+}
+
+// Program returns the program name, i.e. the command name for the root context.
+func (c *Context) Program() string {
+	if c.root == nil {
+		return c.name
+	}
+	return c.root.name
 }
 
 // Root returns the root context.
@@ -88,54 +106,95 @@ func (c *Context) Root() *Context {
 	return c.root
 }
 
-// RootName returns the command name for the root context.
-func (c *Context) RootName() string {
-	if c.root == nil {
-		return c.name
-	}
-	return c.root.name
-}
-
-// Usage returns the generated usage for the current context.
+// Usage returns the help text for a command. Commands wishing to override the
+// auto-generated help text, must implement the Usage interface.
 func (c *Context) Usage() string {
 	return c.usage()
 }
 
-// Option defines the command line option derived from a Command struct.
-type Option struct {
-	cmpl  int
-	env   []string
-	field int
-	help  string
-	long  []string
-	req   bool
-	short []string
+// Flag defines a command line flag derived from a Command struct.
+type Flag struct {
+	cmpl    int
+	env     []string
+	field   int
+	help    string
+	hide    bool
+	inherit bool
+	label   string
+	long    []string
+	multi   bool
+	req     bool
+	short   []string
+	typ     string
 }
 
-// Env returns the environment variables associated with the option.
-func (o *Option) Env() []string {
-	return clone(o.env)
+// Env returns the environment variables associated with the flag.
+func (f *Flag) Env() []string {
+	return clone(f.env)
 }
 
-// Help returns the help info for the option.
-func (o *Option) Help() string {
-	return o.help
+// Help returns the help info for the flag.
+func (f *Flag) Help() string {
+	return f.help
 }
 
-// LongFlags returns the long flags associated with the option.
-func (o *Option) LongFlags() []string {
-	return clone(o.long)
+// Hidden returns whether the flag should be hidden from help output.
+func (f *Flag) Hidden() bool {
+	return f.hide
 }
 
-// Required returns whether the option has been marked as required.
-func (o *Option) Required() bool {
-	return o.req
+// Inherited returns whether the flag will be inherited by any subcommands.
+func (f *Flag) Inherited() bool {
+	return f.inherit
 }
 
-// ShortFlags returns the short flags associated with the option.
-func (o *Option) ShortFlags() []string {
-	return clone(o.short)
+// Label returns the descriptive label for the flag option. This is primarily
+// used to generate the usage help text, e.g.
+//
+//     --input-file path
+//
+// Boolean flags will always result in an empty string as the label. For all
+// other types, the following sources are used in priority order:
+//
+// - Any non-empty value set using the "label" struct tag on the field.
+//
+// - Any labels that can be extracted from the help info by looking for the
+// first non-whitespace separated set of characters enclosed within {braces}
+// within the "help" struct tag on the field.
+//
+// - The field type, e.g. string, int, duration, etc. For non-builtin types,
+// this will simply state "value".
+func (f *Flag) Label() string {
+	return f.label
 }
+
+// LongFlags returns the associated long flags.
+func (f *Flag) LongFlags() []string {
+	return clone(f.long)
+}
+
+// Multi returns whether the flag can be set multiple times.
+func (f *Flag) Multi() bool {
+	return f.multi
+}
+
+// Required returns whether the flag has been marked as required.
+func (f *Flag) Required() bool {
+	return f.req
+}
+
+// ShortFlags returns the associated short flags.
+func (f *Flag) ShortFlags() []string {
+	return clone(f.short)
+}
+
+// Info
+type Info struct {
+	Short string
+}
+
+// Option configures the root context.
+type Option func(c *Context)
 
 // Subcommands defines the field type for defining subcommands on a struct.
 type Subcommands map[string]Command
@@ -151,8 +210,10 @@ type Usage interface {
 // version info.
 type Version string
 
-func (v Version) Info() string {
-	return "Show the #{RootName} version info"
+func (v Version) Info() *Info {
+	return &Info{
+		Short: "Show the #{Program} version info",
+	}
 }
 
 func (v Version) Run(c *Context) error {
@@ -161,11 +222,11 @@ func (v Version) Run(c *Context) error {
 }
 
 type plain struct {
-	info string
+	info *Info
 	run  func(c *Context) error
 }
 
-func (p plain) Info() string {
+func (p plain) Info() *Info {
 	return p.info
 }
 
@@ -173,23 +234,68 @@ func (p plain) Run(c *Context) error {
 	return p.run(c)
 }
 
-// FromFunc will define a new Command from the given run function and info
+// EnvPrefix overrides the default prefix of the program name when automatically
+// deriving environment variables.
+//
+// Use an empty string if the environment variables should be unprefixed. For
+// non-empty values, if the given prefix doesn't end in an underscore, one will
+// be appended automatically.
+//
+// This function will panic if the given prefix is not made up of uppercase
+// letters and underscores.
+func EnvPrefix(s string) func(*Context) {
+	for i := 0; i < len(s); i++ {
+		if !isEnvChar(s[i]) {
+			panic(fmt.Errorf("cli: invalid env prefix: %q", s))
+		}
+	}
+	if s != "" {
+		if s[len(s)-1] != '_' {
+			s += "_"
+		}
+	}
+	return func(c *Context) {
+		c.envprefix = s
+	}
+}
+
+// FromFunc will define a new Command from the given run function and short info
 // string. It's useful for defining commands where there's no need to handle any
-// command line options.
+// command line flags.
 func FromFunc(run func(c *Context) error, info string) Command {
-	return plain{info, run}
+	return plain{
+		info: &Info{Short: info},
+		run:  run,
+	}
+}
+
+// SkipEnv disables the automatic derivation of environment variable names from
+// the exported field names of Command structs.
+func SkipEnv(c *Context) {
+	c.skipenv = true
+}
+
+// ShowEnv emits the associated environment variable names when auto-generating
+// usage text.
+func ShowEnv(c *Context) {
+	c.showenv = true
 }
 
 // Run processes the command line arguments in the context of the given Command.
 // The given program name will be used to auto-generate usage text and error
 // messages.
-func Run(name string, cmd Command, args []string) error {
+func Run(name string, cmd Command, args []string, opts ...Option) error {
 	if len(args) < 1 {
 		return fmt.Errorf("cli: missing program name in the given args slice")
 	}
-	c, err := newContext(name, cmd, args, nil)
+	c, err := newContext(name, cmd, args[1:], nil)
 	if err != nil {
 		return err
+	}
+	upper := strings.ToUpper(name)
+	c.envprefix = strings.ReplaceAll(upper, "-", "_") + "_"
+	for _, opt := range opts {
+		opt(c)
 	}
 	return c.run()
 }
@@ -199,9 +305,9 @@ func Run(name string, cmd Command, args []string) error {
 // of 1 on failure, and 0 on success.
 //
 // The function will use process.Exit instead of os.Exit so that registered exit
-// handlers will be triggered.
-func RunThenExit(name string, cmd Command) {
-	err := Run(name, cmd, os.Args)
+// handlers will run.
+func RunThenExit(name string, cmd Command, opts ...Option) {
+	err := Run(name, cmd, os.Args, opts...)
 	if err != nil {
 		printErrorf("%s failed: %s", name, err)
 		process.Exit(1)
