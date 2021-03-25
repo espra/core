@@ -14,11 +14,23 @@ import (
 )
 
 var (
+	typeCompletion      = reflect.TypeOf(&Completion{})
+	typeContext         = reflect.TypeOf(&Context{})
 	typeDuration        = reflect.TypeOf(time.Duration(0))
 	typeSubcommands     = reflect.TypeOf(Subcommands{})
 	typeTextUnmarshaler = reflect.TypeOf((*encoding.TextUnmarshaler)(nil)).Elem()
 	typeTime            = reflect.TypeOf(time.Time{})
 )
+
+func (c *Context) help() string {
+	impl, ok := c.cmd.(Helper)
+	if ok {
+		return impl.Help(c)
+	}
+	b := strings.Builder{}
+	b.WriteByte('\n')
+	return b.String()
+}
 
 func (c *Context) init() error {
 	ptr := false
@@ -78,9 +90,9 @@ outer:
 		}
 		flag.long = append(flag.long, lflag)
 		seen[lflag] = field.Name
-		root := c.Root()
-		if !root.skipenv {
-			env := root.envprefix + name.ToScreamingSnake()
+		optspec := c.Root().opts
+		if optspec.autoenv {
+			env := optspec.envprefix + name.ToScreamingSnake()
 			if prev, ok := seen[env]; ok {
 				return fmt.Errorf(
 					"cli: the derived environment variable %s for field %s conflicts with %s on %s",
@@ -104,6 +116,14 @@ outer:
 			if opt == "-" {
 				continue outer
 			}
+			if opt == "!autoenv" {
+				flag.env = flag.env[1:]
+				continue
+			}
+			if opt == "!autoflag" {
+				flag.long = flag.long[1:]
+				continue
+			}
 			if opt == "hide" {
 				flag.hide = true
 				continue
@@ -114,14 +134,6 @@ outer:
 			}
 			if opt == "require" {
 				flag.req = true
-				continue
-			}
-			if opt == "skip:env" {
-				flag.env = flag.env[1:]
-				continue
-			}
-			if opt == "skip:flag" {
-				flag.long = flag.long[1:]
 				continue
 			}
 			if strings.HasPrefix(opt, "-") {
@@ -191,6 +203,12 @@ outer:
 						opt, field.Name, oriType,
 					)
 				}
+				if errmsg := isCompleter(meth.Type); errmsg != "" {
+					return fmt.Errorf(
+						"cli: invalid completer method %s for field %s on %s: %s",
+						opt, field.Name, oriType, errmsg,
+					)
+				}
 				if flag.cmpl != -1 {
 					return fmt.Errorf(
 						"cli: completer already set for field %s on %s",
@@ -227,21 +245,16 @@ outer:
 }
 
 func (c *Context) run() error {
-	if err := c.init(); err != nil {
-		return err
+	if c.parent != nil || !c.opts.validate {
+		if err := c.init(); err != nil {
+			return err
+		}
 	}
-	// root := c.root == nil
-	return c.cmd.Run(c)
-}
-
-func (c *Context) usage() string {
-	impl, ok := c.cmd.(Usage)
-	if ok {
-		return impl.Usage(c)
+	cmd, ok := c.cmd.(Runner)
+	if !ok {
+		return nil
 	}
-	b := strings.Builder{}
-	b.WriteByte('\n')
-	return b.String()
+	return cmd.Run(c)
 }
 
 func extractLabel(help string) (string, string) {
@@ -342,6 +355,24 @@ func getFlagType(rt reflect.Type, slice bool) string {
 	}
 }
 
+// NOTE(tav): These checks need to be kept in sync with any changes to the
+// Completer interface.
+func isCompleter(rt reflect.Type) string {
+	if n := rt.NumIn(); n != 2 {
+		return fmt.Sprintf("method must have 1 argument, not %d", n-1)
+	}
+	if in := rt.In(1); in != typeContext {
+		return fmt.Sprintf("method's argument must be a *cli.Context, not %s", in)
+	}
+	if rt.NumOut() != 1 {
+		return "method must have only one return value"
+	}
+	if out := rt.Out(0); out != typeCompletion {
+		return fmt.Sprintf("method's return value must be a *cli.Completion, not %s", out)
+	}
+	return ""
+}
+
 func isEnvChar(char byte) bool {
 	return char == '_' || (char >= 'A' && char <= 'Z') || (char >= '0' && char <= '9')
 }
@@ -350,36 +381,72 @@ func isFlagChar(char byte) bool {
 	return char == '-' || (char >= 'a' && char <= 'z') || (char >= '0' && char <= '9')
 }
 
-func newContext(name string, cmd Command, args []string, parent *Context) (*Context, error) {
-	if err := validateName(name); err != nil {
-		return nil, err
-	}
-	if cmd == nil {
-		fname := name
-		if parent != nil {
-			fname = parent.FullName() + " " + name
+func isValidName(name string) bool {
+	for i := 0; i < len(name); i++ {
+		char := name[i]
+		if char == '-' || (char >= 'a' && char <= 'z') {
+			continue
 		}
-		return nil, fmt.Errorf("cli: the Command instance for %q is nil", fname)
+		return false
+	}
+	return true
+}
+
+func newContext(name string, cmd Command, args []string, parent *Context) (*Context, error) {
+	if !isValidName(name) {
+		if parent == nil {
+			return nil, fmt.Errorf("cli: invalid program name: %q", name)
+		}
+		fname := parent.FullName()
+		return nil, fmt.Errorf("cli: invalid name %q for %q subcommand", name, fname)
 	}
 	c := &Context{
 		args: args,
 		cmd:  cmd,
 		name: name,
 	}
-	if parent != nil {
+	if parent == nil {
+		c.opts = &optspec{
+			autoenv:  true,
+			validate: true,
+		}
+	} else {
 		c.parent = parent
-		c.root = parent.root
 	}
 	return c, nil
 }
 
-func validateName(name string) error {
-	for i := 0; i < len(name); i++ {
-		char := name[i]
-		if char == '-' || (char >= 'a' && char <= 'z') {
+func newRoot(name string, cmd Command, args []string, opts ...Option) (*Context, error) {
+	if cmd == nil {
+		return nil, fmt.Errorf("cli: the Command instance for %q is nil", name)
+	}
+	c, err := newContext(name, cmd, args, nil)
+	if err != nil {
+		return nil, err
+	}
+	upper := strings.ToUpper(name)
+	c.opts.envprefix = strings.ReplaceAll(upper, "-", "_") + "_"
+	for _, opt := range opts {
+		opt(c)
+	}
+	return c, nil
+}
+
+func validate(c *Context) error {
+	if err := c.init(); err != nil {
+		return err
+	}
+	for name, cmd := range c.sub {
+		if cmd == nil {
 			continue
 		}
-		return fmt.Errorf("cli: invalid command name: %q", name)
+		sub, err := newContext(name, cmd, nil, c)
+		if err != nil {
+			return err
+		}
+		if err := validate(sub); err != nil {
+			return err
+		}
 	}
 	return nil
 }

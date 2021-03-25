@@ -2,6 +2,10 @@
 // See the Web4 UNLICENSE file for details.
 
 // Package cli provides an easy way to build command line applications.
+//
+// If the value for a subcommand is nil, it is treated as if the command didn't
+// even exist. This is useful for disabling the builtin subcommands like
+// completion and help.
 package cli
 
 import (
@@ -15,33 +19,32 @@ import (
 
 var _ Command = (*Version)(nil)
 
-// Command specifies the minimal set of methods that a Command needs to
-// implement. Commands wishing to have more fine-grained control, can also
-// implement the Completer and Usage interfaces.
+// Command specifies the basic interface that a command needs to implement. For
+// more fine-grained control, commands can also implement the Completer, Helper,
+// and Runner interfaces.
 type Command interface {
 	Info() *Info
-	Run(c *Context) error
 }
 
-// Completer defines the interface that a Command should implement if it wants
+// Completer defines the interface that a command should implement if it wants
 // to provide custom autocompletion on command line arguments.
 type Completer interface {
-	Complete()
+	Complete(c *Context) Completion
+}
+
+type Completion struct {
 }
 
 // Context provides a way to access processed command line info at specific
 // points within the command hierarchy.
 type Context struct {
-	args      []string
-	cmd       Command
-	envprefix string
-	flags     []*Flag
-	name      string
-	parent    *Context
-	root      *Context
-	showenv   bool
-	skipenv   bool
-	sub       Subcommands
+	args   []string
+	cmd    Command
+	flags  []*Flag
+	name   string
+	opts   *optspec
+	parent *Context
+	sub    Subcommands
 }
 
 // Args returns the command line arguments for the current context.
@@ -68,6 +71,12 @@ func (c *Context) FullName() string {
 	return strings.Join(path, " ")
 }
 
+// Help returns the help text for a command. Commands wishing to override the
+// auto-generated help text, must implement the Helper interface.
+func (c *Context) Help() string {
+	return c.help()
+}
+
 // Name returns the command name for the current context.
 func (c *Context) Name() string {
 	return c.name
@@ -85,31 +94,26 @@ func (c *Context) Parent() *Context {
 	return c.parent
 }
 
-// PrintUsage outputs the command's help text to stdout.
-func (c *Context) PrintUsage() {
-	fmt.Print(c.usage())
+// PrintHelp outputs the command's help text to stdout.
+func (c *Context) PrintHelp() {
+	fmt.Print(c.help())
 }
 
 // Program returns the program name, i.e. the command name for the root context.
 func (c *Context) Program() string {
-	if c.root == nil {
+	root := c.Root()
+	if root == nil {
 		return c.name
 	}
-	return c.root.name
+	return root.name
 }
 
 // Root returns the root context.
 func (c *Context) Root() *Context {
-	if c.root == nil {
-		return c
+	for c.parent != nil {
+		c = c.parent
 	}
-	return c.root
-}
-
-// Usage returns the help text for a command. Commands wishing to override the
-// auto-generated help text, must implement the Usage interface.
-func (c *Context) Usage() string {
-	return c.usage()
+	return c
 }
 
 // Flag defines a command line flag derived from a Command struct.
@@ -149,7 +153,7 @@ func (f *Flag) Inherited() bool {
 }
 
 // Label returns the descriptive label for the flag option. This is primarily
-// used to generate the usage help text, e.g.
+// used to generate the help text, e.g.
 //
 //     --input-file path
 //
@@ -188,6 +192,13 @@ func (f *Flag) ShortFlags() []string {
 	return clone(f.short)
 }
 
+// Helper defines the interface that a command should implement if it wants
+// fine-grained control over the help text. Otherwise, the text is
+// auto-generated from the command name, Info() output, and struct fields.
+type Helper interface {
+	Help(c *Context) string
+}
+
 // Info
 type Info struct {
 	Short string
@@ -196,15 +207,14 @@ type Info struct {
 // Option configures the root context.
 type Option func(c *Context)
 
+// Runner defines the interface that a command should implement to handle
+// command line arguments.
+type Runner interface {
+	Run(c *Context) error
+}
+
 // Subcommands defines the field type for defining subcommands on a struct.
 type Subcommands map[string]Command
-
-// Usage defines the interface that a Command should implement if it wants
-// fine-grained control over the usage output. Otherwise, the usage is
-// auto-generated from the command name, Info() output, and struct fields.
-type Usage interface {
-	Usage(c *Context) string
-}
 
 // Version provides a default implementation to use as a subcommand to output
 // version info.
@@ -234,6 +244,13 @@ func (p plain) Run(c *Context) error {
 	return p.run(c)
 }
 
+type optspec struct {
+	autoenv   bool
+	envprefix string
+	showenv   bool
+	validate  bool
+}
+
 // EnvPrefix overrides the default prefix of the program name when automatically
 // deriving environment variables.
 //
@@ -255,7 +272,7 @@ func EnvPrefix(s string) func(*Context) {
 		}
 	}
 	return func(c *Context) {
-		c.envprefix = s
+		c.opts.envprefix = s
 	}
 }
 
@@ -269,33 +286,40 @@ func FromFunc(run func(c *Context) error, info string) Command {
 	}
 }
 
-// SkipEnv disables the automatic derivation of environment variable names from
-// the exported field names of Command structs.
-func SkipEnv(c *Context) {
-	c.skipenv = true
+// NoAutoEnv disables the automatic derivation of environment variable names
+// from the exported field names of Command structs.
+func NoAutoEnv(c *Context) {
+	c.opts.autoenv = false
 }
 
-// ShowEnv emits the associated environment variable names when auto-generating
-// usage text.
-func ShowEnv(c *Context) {
-	c.showenv = true
+// NoValidate disables the automatic validation of all commands and subcommands.
+// Validation adds to the startup time, and can be instead done by calling the
+// Validate function directly from within tests.
+func NoValidate(c *Context) {
+	c.opts.validate = false
+}
+
+// ShowEnvHelp emits the associated environment variable names when
+// auto-generating help text.
+func ShowEnvHelp(c *Context) {
+	c.opts.showenv = true
 }
 
 // Run processes the command line arguments in the context of the given Command.
-// The given program name will be used to auto-generate usage text and error
+// The given program name will be used to auto-generate help text and error
 // messages.
 func Run(name string, cmd Command, args []string, opts ...Option) error {
 	if len(args) < 1 {
-		return fmt.Errorf("cli: missing program name in the given args slice")
+		return fmt.Errorf("cli: missing executable path in the given args slice")
 	}
-	c, err := newContext(name, cmd, args[1:], nil)
+	c, err := newRoot(name, cmd, args[1:], opts...)
 	if err != nil {
 		return err
 	}
-	upper := strings.ToUpper(name)
-	c.envprefix = strings.ReplaceAll(upper, "-", "_") + "_"
-	for _, opt := range opts {
-		opt(c)
+	if c.opts.validate {
+		if err := validate(c); err != nil {
+			return err
+		}
 	}
 	return c.run()
 }
@@ -313,6 +337,17 @@ func RunThenExit(name string, cmd Command, opts ...Option) {
 		process.Exit(1)
 	}
 	process.Exit(0)
+}
+
+// Validate ensures that the given Command and all descendants have compliant
+// struct tags and command names. Without this, validation only happens for the
+// specific commands when they are executed on the command line.
+func Validate(name string, cmd Command, opts ...Option) error {
+	c, err := newRoot(name, cmd, nil, opts...)
+	if err != nil {
+		return err
+	}
+	return validate(c)
 }
 
 func clone(xs []string) []string {
