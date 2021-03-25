@@ -17,7 +17,10 @@ import (
 	"web4.cc/pkg/process"
 )
 
-var _ Command = (*Version)(nil)
+var (
+	_ cmdrunner = (*Version)(nil)
+	_ cmdrunner = (*plain)(nil)
+)
 
 // Command specifies the basic interface that a command needs to implement. For
 // more fine-grained control, commands can also implement the Completer, Helper,
@@ -59,6 +62,13 @@ func (c *Context) Command() Command {
 	return c.cmd
 }
 
+// Flags returns the command line flags for the current context.
+func (c *Context) Flags() []*Flag {
+	flags := make([]*Flag, len(c.flags))
+	copy(flags, c.flags)
+	return flags
+}
+
 // FullName returns the space separated sequence of command names, all the way
 // from the root to the current context.
 func (c *Context) FullName() string {
@@ -80,13 +90,6 @@ func (c *Context) Help() string {
 // Name returns the command name for the current context.
 func (c *Context) Name() string {
 	return c.name
-}
-
-// Flags returns the command line flags for the current context.
-func (c *Context) Flags() []*Flag {
-	flags := make([]*Flag, len(c.flags))
-	copy(flags, c.flags)
-	return flags
 }
 
 // Parent returns the parent of the current context.
@@ -231,6 +234,11 @@ func (v Version) Run(c *Context) error {
 	return nil
 }
 
+type cmdrunner interface {
+	Command
+	Runner
+}
+
 type plain struct {
 	info *Info
 	run  func(c *Context) error
@@ -252,24 +260,18 @@ type optspec struct {
 }
 
 // EnvPrefix overrides the default prefix of the program name when automatically
-// deriving environment variables.
+// deriving environment variables. Use an empty string if the environment
+// variables should be unprefixed.
 //
-// Use an empty string if the environment variables should be unprefixed. For
-// non-empty values, if the given prefix doesn't end in an underscore, one will
-// be appended automatically.
-//
-// This function will panic if the given prefix is not made up of uppercase
-// letters and underscores.
+// This function will panic if the given prefix is not empty or made up of
+// uppercase letters and underscores. Non-empty values must not have a trailing
+// underscore. One will be appended automatically.
 func EnvPrefix(s string) func(*Context) {
-	for i := 0; i < len(s); i++ {
-		if !isEnvChar(s[i]) {
-			panic(fmt.Errorf("cli: invalid env prefix: %q", s))
-		}
+	if !isEnv(s) {
+		panic(fmt.Errorf("cli: invalid env prefix: %q", s))
 	}
 	if s != "" {
-		if s[len(s)-1] != '_' {
-			s += "_"
-		}
+		s += "_"
 	}
 	return func(c *Context) {
 		c.opts.envprefix = s
@@ -350,6 +352,8 @@ func Validate(name string, cmd Command, opts ...Option) error {
 	return validate(c)
 }
 
+// NOTE(tav): We return copies of slices to callers so that they don't
+// accidentally mutate them.
 func clone(xs []string) []string {
 	ys := make([]string, len(xs))
 	copy(ys, xs)

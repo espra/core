@@ -124,15 +124,15 @@ outer:
 				flag.long = flag.long[1:]
 				continue
 			}
-			if opt == "hide" {
+			if opt == "hidden" {
 				flag.hide = true
 				continue
 			}
-			if opt == "inherit" {
+			if opt == "inherited" {
 				flag.inherit = true
 				continue
 			}
-			if opt == "require" {
+			if opt == "required" {
 				flag.req = true
 				continue
 			}
@@ -140,7 +140,7 @@ outer:
 				if strings.ToLower(opt) != opt {
 					goto invalid
 				}
-				if len(opt) == 2 && isFlagChar(opt[1]) {
+				if len(opt) == 2 && isShortFlag(opt[1]) {
 					sflag := opt[1:]
 					if prev, ok := seen[sflag]; ok {
 						return fmt.Errorf(
@@ -154,10 +154,8 @@ outer:
 				}
 				if strings.HasPrefix(opt, "--") && len(opt) >= 4 {
 					lflag := opt[2:]
-					for j := 0; j < len(lflag); j++ {
-						if !isFlagChar(lflag[j]) {
-							goto invalid
-						}
+					if !isLongFlag(lflag) {
+						goto invalid
 					}
 					if prev, ok := seen[lflag]; ok {
 						return fmt.Errorf(
@@ -176,24 +174,21 @@ outer:
 				)
 			}
 			if opt == strings.ToUpper(opt) {
-				isEnv := true
-				for j := 0; j < len(opt); j++ {
-					if !isEnvChar(opt[i]) {
-						isEnv = false
-						break
-					}
+				if !isEnv(opt) {
+					return fmt.Errorf(
+						"cli: invalid environment variable %q found for field %s on %s",
+						opt, field.Name, oriType,
+					)
 				}
-				if isEnv {
-					if prev, ok := seen[opt]; ok {
-						return fmt.Errorf(
-							"cli: the environment variable %s for field %s conflicts with %s on %s",
-							opt, field.Name, prev, oriType,
-						)
-					}
-					flag.env = append(flag.env, opt)
-					seen[opt] = field.Name
-					continue
+				if prev, ok := seen[opt]; ok {
+					return fmt.Errorf(
+						"cli: the environment variable %s for field %s conflicts with %s on %s",
+						opt, field.Name, prev, oriType,
+					)
 				}
+				flag.env = append(flag.env, opt)
+				seen[opt] = field.Name
+				continue
 			}
 			if strings.HasPrefix(opt, "Complete") {
 				meth, ok := oriType.MethodByName(opt)
@@ -373,12 +368,57 @@ func isCompleter(rt reflect.Type) string {
 	return ""
 }
 
-func isEnvChar(char byte) bool {
-	return char == '_' || (char >= 'A' && char <= 'Z') || (char >= '0' && char <= '9')
+func isEnv(env string) bool {
+	last := len(env) - 1
+	for i := 0; i < len(env); i++ {
+		char := env[i]
+		if i == 0 {
+			if char < 'A' || char > 'Z' {
+				return false
+			}
+			continue
+		}
+		if char == '_' {
+			if i == last {
+				return false
+			}
+			continue
+		}
+		if (char >= 'A' && char <= 'Z') || (char >= '0' && char <= '9') {
+			continue
+		}
+		return false
+	}
+	return true
 }
 
-func isFlagChar(char byte) bool {
-	return char == '-' || (char >= 'a' && char <= 'z') || (char >= '0' && char <= '9')
+func isLongFlag(flag string) bool {
+	last := len(flag) - 1
+	for i := 0; i < len(flag); i++ {
+		char := flag[i]
+		if i == 0 {
+			if char < 'a' || char > 'z' {
+				return false
+			}
+			continue
+		}
+		if char == '-' {
+			if i == last {
+				return false
+			}
+			continue
+		}
+		if (char >= 'a' && char <= 'z') || (char >= '0' && char <= '9') {
+			continue
+		}
+		return false
+	}
+	return true
+}
+
+func isShortFlag(char byte) bool {
+	return (char >= 'a' && char <= 'z') || (char >= 'A' && char <= 'Z') ||
+		(char >= '0' && char <= '9')
 }
 
 func isValidName(name string) bool {
