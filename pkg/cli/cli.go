@@ -9,13 +9,30 @@
 package cli
 
 import (
+	"errors"
 	"fmt"
 	"os"
-	"sort"
 	"strings"
 
 	"web4.cc/pkg/process"
 )
+
+// Invalid argument types.
+const (
+	UnspecifiedInvalidArg InvalidArgType = iota
+	InvalidEnv
+	InvalidFlag
+	InvalidValue
+	MissingFlag
+	MissingValue
+	RepeatedFlag
+	UnknownSubcommand
+)
+
+// ErrInvalidArg indicates that there was an invalid command line argument. It
+// can be used as the target to errors.Is to test if the returned error from Run
+// calls was as a result of mistyped command line arguments.
+var ErrInvalidArg = errors.New("cli: invalid command line argument")
 
 var (
 	_ cmdrunner = (*Version)(nil)
@@ -23,10 +40,10 @@ var (
 )
 
 // Command specifies the basic interface that a command needs to implement. For
-// more fine-grained control, commands can also implement the Completer, Helper,
-// and Runner interfaces.
+// more fine-grained control, commands can also implement any of the Completer,
+// Helper, InvalidArgHelper, and Runner interfaces.
 type Command interface {
-	Info() *Info
+	About() *Info
 }
 
 // Completer defines the interface that a command should implement if it wants
@@ -47,12 +64,29 @@ type Context struct {
 	name   string
 	opts   *optspec
 	parent *Context
-	sub    Subcommands
+	subs   Subcommands
 }
 
 // Args returns the command line arguments for the current context.
 func (c *Context) Args() []string {
 	return clone(c.args)
+}
+
+// ChildContext tries to create a child Context for a subcommand.
+func (c *Context) ChildContext(subcommand string) (*Context, error) {
+	cmd := c.subs[subcommand]
+	if cmd == nil {
+		return nil, c.InvalidArg(UnknownSubcommand, subcommand, nil, nil)
+	}
+	sub := &Context{
+		cmd:    cmd,
+		name:   subcommand,
+		parent: c,
+	}
+	if err := sub.init(); err != nil {
+		return nil, err
+	}
+	return sub, nil
 }
 
 // Command returns the Command associated with the current context. By doing a
@@ -75,9 +109,8 @@ func (c *Context) FullName() string {
 	path := []string{c.name}
 	for c.parent != nil {
 		c = c.parent
-		path = append(path, c.name)
+		path = append([]string{c.name}, path...)
 	}
-	sort.Sort(sort.Reverse(sort.StringSlice(path)))
 	return strings.Join(path, " ")
 }
 
@@ -85,6 +118,37 @@ func (c *Context) FullName() string {
 // auto-generated help text, must implement the Helper interface.
 func (c *Context) Help() string {
 	return c.help()
+}
+
+func (c *Context) InvalidArg(typ InvalidArgType, arg string, flag *Flag, err error) error {
+	ia := &InvalidArg{
+		Arg:     arg,
+		Context: c,
+		Err:     err,
+		Flag:    flag,
+		Type:    typ,
+	}
+	impl, ok := c.cmd.(InvalidArgHelper)
+	if ok {
+		printHelp(impl.InvalidArg(ia))
+		return ia
+	}
+	x := c
+	for x.parent != nil {
+		x = x.parent
+		impl, ok := x.cmd.(InvalidArgHelper)
+		if ok {
+			printHelp(impl.InvalidArg(ia))
+			return ia
+		}
+	}
+	printErrorf(ia.Details())
+	help := c.contextualHelp(ia)
+	if help != "" {
+		fmt.Println("")
+		printHelp(help)
+	}
+	return ia
 }
 
 // Name returns the command name for the current context.
@@ -99,7 +163,7 @@ func (c *Context) Parent() *Context {
 
 // PrintHelp outputs the command's help text to stdout.
 func (c *Context) PrintHelp() {
-	fmt.Print(c.help())
+	printHelp(c.help())
 }
 
 // Program returns the program name, i.e. the command name for the root context.
@@ -119,6 +183,18 @@ func (c *Context) Root() *Context {
 	return c
 }
 
+// Default makes it super easy to create tools with subcommands. Just
+// instantiate the struct, with the relevant Info, Subcommands, and pass it to
+// RunThenExit.
+type Default struct {
+	Info        *Info `cli:"-"`
+	Subcommands Subcommands
+}
+
+func (d *Default) About() *Info {
+	return d.Info
+}
+
 // Flag defines a command line flag derived from a Command struct.
 type Flag struct {
 	cmpl    int
@@ -126,11 +202,12 @@ type Flag struct {
 	field   int
 	help    string
 	hide    bool
-	inherit bool
 	label   string
 	long    []string
 	multi   bool
 	req     bool
+	setEnv  bool
+	setFlag bool
 	short   []string
 	typ     string
 }
@@ -148,11 +225,6 @@ func (f *Flag) Help() string {
 // Hidden returns whether the flag should be hidden from help output.
 func (f *Flag) Hidden() bool {
 	return f.hide
-}
-
-// Inherited returns whether the flag will be inherited by any subcommands.
-func (f *Flag) Inherited() bool {
-	return f.inherit
 }
 
 // Label returns the descriptive label for the flag option. This is primarily
@@ -197,7 +269,7 @@ func (f *Flag) ShortFlags() []string {
 
 // Helper defines the interface that a command should implement if it wants
 // fine-grained control over the help text. Otherwise, the text is
-// auto-generated from the command name, Info() output, and struct fields.
+// auto-generated from the command name, About() output, and struct fields.
 type Helper interface {
 	Help(c *Context) string
 }
@@ -205,6 +277,89 @@ type Helper interface {
 // Info
 type Info struct {
 	Short string
+}
+
+// InvalidArg
+type InvalidArg struct {
+	Arg     string
+	Context *Context
+	Err     error
+	Flag    *Flag
+	Type    InvalidArgType
+}
+
+func (i *InvalidArg) Details() string {
+	// root := i.Context.parent == nil
+	name := i.Context.FullName()
+	// if !root {
+	// name = "subcommand " + name
+	// }
+	switch i.Type {
+	case InvalidFlag:
+		return fmt.Sprintf("%s: invalid flag %q", name, i.Arg)
+	case MissingFlag:
+		flag := i.Flag
+		if len(flag.long) > 0 {
+			return fmt.Sprintf("%s: missing required flag --%s", name, flag.long[0])
+		}
+		if len(flag.short) > 0 {
+			return fmt.Sprintf("%s: missing required flag -%s", name, flag.short[0])
+		}
+		return fmt.Sprintf("%s: missing required env %s", name, flag.env[0])
+	case UnknownSubcommand:
+		return fmt.Sprintf("%s: unknown command %q", name, i.Arg)
+	default:
+		return fmt.Sprintf("%#v\nType: %s", i, i.Type)
+	}
+	return "boom"
+}
+
+func (i *InvalidArg) Error() string {
+	return fmt.Sprintf("cli: invalid command line argument: %s", i.Details())
+}
+
+func (i *InvalidArg) Is(target error) bool {
+	return target == ErrInvalidArg
+}
+
+// InvalidArgHelper defines the interface that a command should implement to
+// control the error output when an invalid command line argument is
+// encountered.
+//
+// The returned string is assumed to be contextual help based on the InvalidArg,
+// and will be emitted to stdout. Non-empty strings will have a newline appended
+// to them if they don't already include one.
+//
+// If this interface isn't implemented, commands will default to printing an
+// error about the invalid argument to stderr, followed by auto-generated
+// contextual help text.
+type InvalidArgHelper interface {
+	InvalidArg(ia *InvalidArg) string
+}
+
+type InvalidArgType int
+
+func (i InvalidArgType) String() string {
+	switch i {
+	case UnspecifiedInvalidArg:
+		return "UnspecifiedInvalidArg"
+	case InvalidEnv:
+		return "InvalidEnv"
+	case InvalidFlag:
+		return "InvalidFlag"
+	case InvalidValue:
+		return "InvalidValue"
+	case MissingFlag:
+		return "MissingFlag"
+	case MissingValue:
+		return "MissingValue"
+	case RepeatedFlag:
+		return "RepeatedFlag"
+	case UnknownSubcommand:
+		return "UnknownSubcommand"
+	default:
+		return "UnknownInvalidArg"
+	}
 }
 
 // Option configures the root context.
@@ -223,9 +378,9 @@ type Subcommands map[string]Command
 // version info.
 type Version string
 
-func (v Version) Info() *Info {
+func (v Version) About() *Info {
 	return &Info{
-		Short: "Show the #{Program} version info",
+		Short: "Show the {Program} version info",
 	}
 }
 
@@ -244,7 +399,7 @@ type plain struct {
 	run  func(c *Context) error
 }
 
-func (p plain) Info() *Info {
+func (p plain) About() *Info {
 	return p.info
 }
 
@@ -259,13 +414,22 @@ type optspec struct {
 	validate  bool
 }
 
-// EnvPrefix overrides the default prefix of the program name when automatically
-// deriving environment variables. Use an empty string if the environment
-// variables should be unprefixed.
+// AutoEnv enables the automatic derivation of environment variable names from
+// the exported field names of Command structs. By default, the program name
+// will be converted to SCREAMING_CASE with a trailing underscore, and used as a
+// prefix for all generated environment variables. This can be controlled using
+// the EnvPrefix Option.
+func AutoEnv(c *Context) {
+	c.opts.autoenv = true
+}
+
+// EnvPrefix enables AutoEnv and overrides the default prefix of the program
+// name when automatically deriving environment variables. Use an empty string
+// if the environment variables should be unprefixed.
 //
-// This function will panic if the given prefix is not empty or made up of
-// uppercase letters and underscores. Non-empty values must not have a trailing
-// underscore. One will be appended automatically.
+// This function will panic if the given prefix is not empty or is invalid, i.e.
+// not made up of uppercase letters and underscores. Non-empty values must not
+// have a trailing underscore. One will be appended automatically.
 func EnvPrefix(s string) func(*Context) {
 	if !isEnv(s) {
 		panic(fmt.Errorf("cli: invalid env prefix: %q", s))
@@ -274,6 +438,7 @@ func EnvPrefix(s string) func(*Context) {
 		s += "_"
 	}
 	return func(c *Context) {
+		c.opts.autoenv = true
 		c.opts.envprefix = s
 	}
 }
@@ -282,29 +447,17 @@ func EnvPrefix(s string) func(*Context) {
 // string. It's useful for defining commands where there's no need to handle any
 // command line flags.
 func FromFunc(run func(c *Context) error, info string) Command {
-	return plain{
+	return &plain{
 		info: &Info{Short: info},
 		run:  run,
 	}
 }
 
-// NoAutoEnv disables the automatic derivation of environment variable names
-// from the exported field names of Command structs.
-func NoAutoEnv(c *Context) {
-	c.opts.autoenv = false
-}
-
 // NoValidate disables the automatic validation of all commands and subcommands.
 // Validation adds to the startup time, and can be instead done by calling the
-// Validate function directly from within tests.
+// Validate function from within tests.
 func NoValidate(c *Context) {
 	c.opts.validate = false
-}
-
-// ShowEnvHelp emits the associated environment variable names when
-// auto-generating help text.
-func ShowEnvHelp(c *Context) {
-	c.opts.showenv = true
 }
 
 // Run processes the command line arguments in the context of the given Command.
@@ -326,19 +479,33 @@ func Run(name string, cmd Command, args []string, opts ...Option) error {
 	return c.run()
 }
 
-// RunThenExit provides a utility function for the common case of calling Run
-// with os.Args, printing the error on failure, and exiting with a status code
-// of 1 on failure, and 0 on success.
+// RunThenExit provides a utility function that:
 //
-// The function will use process.Exit instead of os.Exit so that registered exit
-// handlers will run.
+// * Calls Run with os.Args.
+//
+// * If Run returns an error, prints the error as long as it's not InvalidArg
+// related.
+//
+// * Exits with a status code of 0 on success, 2 on InvalidArg, and 1 otherwise.
+//
+// The function will use process.Exit instead of os.Exit so that any registered
+// exit handlers will run.
 func RunThenExit(name string, cmd Command, opts ...Option) {
 	err := Run(name, cmd, os.Args, opts...)
 	if err != nil {
-		printErrorf("%s failed: %s", name, err)
+		if errors.Is(err, ErrInvalidArg) {
+			process.Exit(2)
+		}
+		printErrorf("%s: %s", name, err)
 		process.Exit(1)
 	}
 	process.Exit(0)
+}
+
+// ShowEnvHelp emits the associated environment variable names when
+// auto-generating help text.
+func ShowEnvHelp(c *Context) {
+	c.opts.showenv = true
 }
 
 // Validate ensures that the given Command and all descendants have compliant
@@ -361,5 +528,16 @@ func clone(xs []string) []string {
 }
 
 func printErrorf(format string, args ...interface{}) {
-	fmt.Fprintf(os.Stderr, format+"\n", args...)
+	fmt.Fprintf(os.Stderr, "ERROR\nERROR\t"+format+"\nERROR\n", args...)
+}
+
+func printHelp(help string) {
+	if help == "" {
+		return
+	}
+	if help[len(help)-1] != '\n' {
+		fmt.Print(help + "\n")
+	} else {
+		fmt.Print(help)
+	}
 }

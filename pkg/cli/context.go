@@ -6,6 +6,7 @@ package cli
 import (
 	"encoding"
 	"fmt"
+	"os"
 	"reflect"
 	"strings"
 	"time"
@@ -22,14 +23,34 @@ var (
 	typeTime            = reflect.TypeOf(time.Time{})
 )
 
+func (c *Context) contextualHelp(ia *InvalidArg) string {
+	b := strings.Builder{}
+	b.WriteString("Contextual Usage: \n")
+	return b.String()
+}
+
+func (c *Context) defaultHelp() string {
+	b := strings.Builder{}
+	b.WriteString("Default Usage: ")
+	b.WriteString(c.FullName())
+	b.WriteByte('\n')
+	return b.String()
+}
+
 func (c *Context) help() string {
 	impl, ok := c.cmd.(Helper)
 	if ok {
 		return impl.Help(c)
 	}
-	b := strings.Builder{}
-	b.WriteByte('\n')
-	return b.String()
+	x := c
+	for x.parent != nil {
+		x = x.parent
+		impl, ok := x.cmd.(Helper)
+		if ok {
+			return impl.Help(c)
+		}
+	}
+	return c.defaultHelp()
 }
 
 func (c *Context) init() error {
@@ -40,13 +61,46 @@ func (c *Context) init() error {
 		ptr = true
 		rv = rv.Elem()
 	}
-	// Extract the subcommands mapping if a field with the right name and type
-	// exists on a struct.
+	// If it's a struct, ensure the original type is a pointer, and extract the
+	// subcommands mapping if a field with the right name and type exists.
 	rt := rv.Type()
 	if rv.Kind() == reflect.Struct {
+		if !ptr {
+			if c.parent == nil {
+				return fmt.Errorf(
+					"cli: invalid Command for %q: Command structs must be pointers, not %s",
+					c.name, oriType,
+				)
+			}
+			return fmt.Errorf(
+				"cli: invalid Command for the %q subcommand: Command structs must be pointers, not %s",
+				c.FullName(), oriType,
+			)
+		}
 		field, ok := rt.FieldByName("Subcommands")
-		if ok && field.Type == typeSubcommands {
-			c.sub = rv.FieldByName("Subcommands").Interface().(Subcommands)
+		if ok {
+			if field.Type != typeSubcommands {
+				return fmt.Errorf(
+					"cli: the Subcommands field on %s is not cli.Subcommands",
+					oriType,
+				)
+			}
+			subs := rv.FieldByName("Subcommands").Interface().(Subcommands)
+			if c.parent == nil {
+				for name, sub := range subs {
+					c.subs[name] = sub
+				}
+			} else {
+				c.subs = subs
+			}
+		}
+		// Check for potential typo.
+		_, ok = rt.FieldByName("SubCommands")
+		if ok {
+			return fmt.Errorf(
+				"cli: invalid field SubCommands on %s: did you mean Subcommands?",
+				oriType,
+			)
 		}
 	} else {
 		ptr = false
@@ -62,8 +116,11 @@ outer:
 	for i := 0; i < flen; i++ {
 		field := rt.Field(i)
 		tag := field.Tag
-		// Skip invalid fields.
+		// Skip invalid fields and special fields.
 		if field.PkgPath != "" || field.Anonymous || tag == "" {
+			continue
+		}
+		if field.Name == "Subcommands" {
 			continue
 		}
 		// Process the field name.
@@ -108,6 +165,7 @@ outer:
 			flag.help, flag.label = extractLabel(flag.help)
 		}
 		// Process the cli tag.
+		skipenv := false
 		for _, opt := range strings.Split(tag.Get("cli"), " ") {
 			opt = strings.TrimSpace(opt)
 			if opt == "" {
@@ -117,7 +175,10 @@ outer:
 				continue outer
 			}
 			if opt == "!autoenv" {
-				flag.env = flag.env[1:]
+				if optspec.autoenv {
+					flag.env = flag.env[1:]
+					skipenv = true
+				}
 				continue
 			}
 			if opt == "!autoflag" {
@@ -126,10 +187,6 @@ outer:
 			}
 			if opt == "hidden" {
 				flag.hide = true
-				continue
-			}
-			if opt == "inherited" {
-				flag.inherit = true
 				continue
 			}
 			if opt == "required" {
@@ -228,28 +285,205 @@ outer:
 		}
 		if strings.HasPrefix(flag.typ, "[]") {
 			flag.multi = true
+			max := 0
+			if optspec.autoenv {
+				max++
+			}
+			if skipenv {
+				max--
+			}
+			if len(flag.env) > max {
+				return fmt.Errorf(
+					"cli: environment variables are not supported for slice types, as used for field %s on %s",
+					field.Name, oriType,
+				)
+			}
+			flag.env = nil
 		}
 		if flag.typ == "bool" {
 			flag.label = ""
 		} else if flag.label == "" {
 			flag.label = flag.typ
 		}
+		// Error on missing env/flags.
+		if len(flag.long) == 0 && len(flag.short) == 0 && len(flag.env) == 0 {
+			if flag.multi {
+				return fmt.Errorf(
+					"cli: missing flags for field %s on %s", field.Name, oriType,
+				)
+			}
+			return fmt.Errorf(
+				"cli: missing flags or environment variables for field %s on %s",
+				field.Name, oriType,
+			)
+		}
 		c.flags = append(c.flags, flag)
 	}
 	return nil
 }
 
-func (c *Context) run() error {
-	if c.parent != nil || !c.opts.validate {
+func (c *Context) run() (err error) {
+	// Initialize the Context.
+	root := c.parent == nil
+	if !root || !c.opts.validate {
 		if err := c.init(); err != nil {
 			return err
 		}
 	}
-	cmd, ok := c.cmd.(Runner)
-	if !ok {
+	// Process the environment variables.
+	for _, flag := range c.flags {
+		for _, env := range flag.env {
+			val := os.Getenv(env)
+			if val == "" {
+				continue
+			}
+			if err := c.setEnv(flag, val); err != nil {
+				return c.InvalidArg(InvalidEnv, val, nil, err)
+			}
+		}
+	}
+	// Process the command line arguments.
+	var (
+		help  bool
+		fList []string
+		fName string
+		lArgs []string
+		long  bool
+		pArg  string
+		pFlag *Flag
+		rArgs []string
+	)
+outer:
+	for i := 0; i < len(c.args); i++ {
+		arg := c.args[i]
+		// Handle any pending flag value.
+		if pFlag != nil {
+			if len(arg) > 0 && arg[0] == '-' {
+				return c.InvalidArg(MissingValue, pArg, nil, nil)
+			}
+			if err := c.setFlag(pFlag, arg); err != nil {
+				return err
+			}
+			pFlag = nil
+			continue outer
+		}
+		// Skip flag processing if we see a double-dash.
+		if arg == "--" {
+			i++
+			for ; i < len(c.args); i++ {
+				rArgs = append(rArgs, c.args[i])
+			}
+			break outer
+		}
+		// Handle new flags.
+		if strings.HasPrefix(arg, "-") {
+			if strings.HasPrefix(arg, "--") {
+				if len(arg) == 3 {
+					return c.InvalidArg(InvalidFlag, arg, nil, nil)
+				}
+				if arg == "--help" {
+					help = true
+					continue outer
+				}
+				fName = arg[2:]
+				long = true
+			} else if len(arg) == 1 {
+				rArgs = append(rArgs, "-")
+				continue outer
+			} else {
+				if len(arg) != 2 {
+					return c.InvalidArg(InvalidFlag, arg, nil, nil)
+				}
+				fName = arg[1:]
+				long = false
+			}
+			for _, flag := range c.flags {
+				if long {
+					fList = flag.long
+				} else {
+					fList = flag.short
+				}
+				for _, name := range fList {
+					if name != fName {
+						continue
+					}
+					if flag.typ == "bool" {
+						if err := c.setFlag(flag, "1"); err != nil {
+							return err
+						}
+						continue outer
+					}
+					pArg = arg
+					pFlag = flag
+					continue outer
+				}
+			}
+			return c.InvalidArg(InvalidFlag, arg, nil, nil)
+		}
+		// Accumulate all arguments after the first non-flag/value argument.
+		for ; i < len(c.args); i++ {
+			lArgs = append(lArgs, c.args[i])
+		}
+		break outer
+	}
+	// Check all required flags have been set.
+	for _, flag := range c.flags {
+		if flag.req && !(flag.setEnv || flag.setFlag) {
+			return c.InvalidArg(MissingFlag, "", flag, nil)
+		}
+	}
+	// Run the subcommand if there's a match.
+	if len(lArgs) > 0 {
+		name := lArgs[0]
+		for sub, cmd := range c.subs {
+			if name != sub {
+				continue
+			}
+			if cmd == nil {
+				break
+			}
+			if help {
+				lArgs[0] = "--help"
+				lArgs = append(lArgs, rArgs...)
+			} else {
+				lArgs = append(lArgs[1:], rArgs...)
+			}
+			csub, err := newContext(name, cmd, lArgs, c)
+			if err != nil {
+				return err
+			}
+			return csub.run()
+		}
+	}
+	// Print the help text if --help was specified.
+	if help {
+		c.PrintHelp()
 		return nil
 	}
+	cmd, runner := c.cmd.(Runner)
+	// Handle non-Runners.
+	if !runner {
+		if len(lArgs) == 0 {
+			c.PrintHelp()
+			return nil
+		}
+		return c.InvalidArg(UnknownSubcommand, lArgs[0], nil, nil)
+	}
+	c.args = append(lArgs, rArgs...)
 	return cmd.Run(c)
+}
+
+func (c *Context) setEnv(flag *Flag, val string) error {
+	flag.setEnv = true
+	return nil
+}
+
+func (c *Context) setFlag(flag *Flag, val string) error {
+	// if seen[name] && !flag.multi {
+	// 	return c.InvalidArg(RepeatedFlag, arg, nil, nil)
+	// }
+	flag.setFlag = true
+	return nil
 }
 
 func extractLabel(help string) (string, string) {
@@ -438,7 +672,7 @@ func newContext(name string, cmd Command, args []string, parent *Context) (*Cont
 			return nil, fmt.Errorf("cli: invalid program name: %q", name)
 		}
 		fname := parent.FullName()
-		return nil, fmt.Errorf("cli: invalid name %q for %q subcommand", name, fname)
+		return nil, fmt.Errorf("cli: invalid name %q for the %q subcommand", name, fname)
 	}
 	c := &Context{
 		args: args,
@@ -447,7 +681,6 @@ func newContext(name string, cmd Command, args []string, parent *Context) (*Cont
 	}
 	if parent == nil {
 		c.opts = &optspec{
-			autoenv:  true,
 			validate: true,
 		}
 	} else {
@@ -469,6 +702,10 @@ func newRoot(name string, cmd Command, args []string, opts ...Option) (*Context,
 	for _, opt := range opts {
 		opt(c)
 	}
+	c.subs = Subcommands{
+		"completion": builtinCompletion,
+		"help":       builtinHelp,
+	}
 	return c, nil
 }
 
@@ -476,7 +713,7 @@ func validate(c *Context) error {
 	if err := c.init(); err != nil {
 		return err
 	}
-	for name, cmd := range c.sub {
+	for name, cmd := range c.subs {
 		if cmd == nil {
 			continue
 		}
