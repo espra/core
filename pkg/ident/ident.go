@@ -195,7 +195,7 @@ func FromPascal(ident string) (Parts, error) {
 	caps := true
 	for i := 1; i < len(ident); i++ {
 		char := ident[i]
-		if char >= 'A' && char <= 'Z' {
+		if (char >= 'A' && char <= 'Z') || (char >= '0' && char <= '9') {
 			if caps {
 				elem = append(elem, char)
 			} else {

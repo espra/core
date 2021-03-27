@@ -45,6 +45,10 @@ var spec = map[string]*definition{
 		camel: "peerIDs",
 		kebab: "peer-ids",
 	},
+	"SHA256Hash": {
+		camel: "sha256Hash",
+		kebab: "sha256-hash",
+	},
 	"ServiceAPIKey": {
 		camel: "serviceAPIKey",
 		kebab: "service-api-key",
@@ -104,6 +108,10 @@ var tests = []testcase{
 	{"service-key-", spec["ServiceKey"]},
 	{"-service-key", spec["ServiceKey"]},
 	{"--service-key-", spec["ServiceKey"]},
+	{"sha256-hash", spec["SHA256Hash"]},
+	{"sha256-hash-", spec["SHA256Hash"]},
+	{"-sha256-hash", spec["SHA256Hash"]},
+	{"--sha256-hash-", spec["SHA256Hash"]},
 	{"user-acl-ids", spec["UserACLIDs"]},
 	{"user-acl-ids-", spec["UserACLIDs"]},
 	{"-user-acl-ids", spec["UserACLIDs"]},
