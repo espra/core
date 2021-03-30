@@ -10,6 +10,7 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
+	"runtime/debug"
 	"sync"
 	"syscall"
 )
@@ -36,6 +37,13 @@ type lockFile struct {
 func (l *lockFile) release() {
 	os.Remove(l.file)
 	os.Remove(l.link)
+}
+
+// Crash will terminate the process with a panic that will generate stacktraces
+// for all user-generated goroutines.
+func Crash() {
+	debug.SetTraceback("all")
+	panic("abort")
 }
 
 // CreatePIDFile writes the current process ID to a new file at the given path.
