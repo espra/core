@@ -50,9 +50,28 @@ func TestCodes(t *testing.T) {
 	}
 }
 
+func TestEnabled(t *testing.T) {
+	got := isEnabled("0")
+	if got != false {
+		t.Errorf(`isEnabled("0") = %v: want false`, got)
+	}
+	got = isEnabled("1")
+	if got != true {
+		t.Errorf(`isEnabled("1") = %v: want true`, got)
+	}
+	got = isEnabled("2")
+	if got != true {
+		t.Errorf(`isEnabled("2") = %v: want true`, got)
+	}
+	got = Enabled()
+	if got != enabled {
+		t.Errorf(`Enabled() = %v: want %v`, got, enabled)
+	}
+}
+
 func TestWrap(t *testing.T) {
-	ori := style
-	style = true
+	ori := enabled
+	enabled = true
 	got := Red.String()
 	want := "\x1b[31m"
 	if got != want {
@@ -63,7 +82,7 @@ func TestWrap(t *testing.T) {
 	if got != want {
 		t.Errorf(`COLOR=1 Wrap("test", Bold|Red) = %q: want %q`, got, want)
 	}
-	style = false
+	enabled = false
 	got = Red.String()
 	if got != "" {
 		t.Errorf(`COLOR=0 Red.String() = %q: want ""`, got)
@@ -72,5 +91,5 @@ func TestWrap(t *testing.T) {
 	if got != "test" {
 		t.Errorf(`COLOR=0 Wrap("test", Bold|Red) = %q: want "test"`, got)
 	}
-	style = ori
+	enabled = ori
 }

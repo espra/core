@@ -3,11 +3,12 @@
 
 // Package style provides support for styling terminal output.
 //
-// See the documentation for the term package's `Style` function to understand
-// the mechanism used to detect whether to emit styled output.
+// See the documentation for the `Enabled` function to understand how styled
+// output support is determined.
 package style
 
 import (
+	"os"
 	"strconv"
 	"strings"
 
@@ -52,7 +53,7 @@ const (
 	WhiteBG
 )
 
-var style = term.Style()
+var enabled bool
 
 // Code represents colors and text effects for styling terminal output. You can
 // OR multiple codes together with the following exceptions:
@@ -69,7 +70,7 @@ var style = term.Style()
 // colors.
 //
 // * At most, only two colors can be OR-ed together: a foreground color and a
-// background color, or a foreground color and a undercurl color. Any other
+// background color, or a foreground color and an undercurl color. Any other
 // color combination, e.g. a foreground with another foreground color, will
 // result in undefined behavior.
 type Code uint64
@@ -87,7 +88,7 @@ type Code uint64
 // - 24 bits for the background/undercurl color
 
 // EscapeCodes returns the ANSI escape codes for the Code. This function doesn't
-// pay any heed to whether the terminal supports styled output or not.
+// pay any heed to whether styled output is enabled or not.
 func (c Code) EscapeCodes() string {
 	if c == 0 || c&Reset != 0 {
 		return "\x1b[0m"
@@ -262,10 +263,10 @@ func (c Code) EscapeCodes() string {
 	return ""
 }
 
-// String returns the ANSI escape codes for the Code. If the terminal doesn't
-// support styled output, this function will return an empty string.
+// String returns the ANSI escape codes for the Code. If styled output is not
+// enabled, this function will return an empty string.
 func (c Code) String() string {
-	if !style {
+	if !enabled {
 		return ""
 	}
 	return c.EscapeCodes()
@@ -284,11 +285,37 @@ func BackgroundRGB(r uint8, g uint8, b uint8) Code {
 	return (code << 40) | (1 << 13)
 }
 
+// Enabled returns whether styled output is enabled. This can be forced using
+// the `ForceEnable` and `ForceDisable` functions, but will default to using the
+// following heuristic:
+//
+// * If the environment variable TERMSTYLE=0, then styled output is disabled.
+//
+// * If TERMSTYLE=2, then styled output is enabled.
+//
+// * Otherwise, styled output is only enabled if stdout is connected to a
+// terminal.
+//
+// This heuristic is run at startup using the stdout value at `os.Stdout`.
+func Enabled() bool {
+	return enabled
+}
+
+// ForceDisable forces styled output to be disabled.
+func ForceDisable() {
+	enabled = false
+}
+
+// ForceEnable forces styled output to be enabled.
+func ForceEnable() {
+	enabled = true
+}
+
 // ForceWrap encloses the given text with escape codes to stylize it and then
 // resets the output back to normal. Unlike Wrap, this function doesn't pay any
-// heed to whether the terminal supports styled output or not.
+// heed to whether styled output is enabled or not.
 func ForceWrap(s string, c Code) string {
-	return c.String() + s + "\x1b[0m"
+	return c.EscapeCodes() + s + "\x1b[0m"
 }
 
 // Foreground256 returns the foreground color code representing the given 256
@@ -318,11 +345,25 @@ func UndercurlRGB(r uint8, g uint8, b uint8) Code {
 }
 
 // Wrap encloses the given text with escape codes to stylize it and then resets
-// the output back to normal. If the terminal doesn't support styled output,
-// this function will return the given text without any changes.
+// the output back to normal. If styled output is not enabled, this function
+// will return the given text without any changes.
 func Wrap(s string, c Code) string {
-	if !style {
+	if !enabled {
 		return s
 	}
 	return ForceWrap(s, c)
+}
+
+func isEnabled(env string) bool {
+	switch env {
+	case "0":
+		return false
+	case "2":
+		return true
+	}
+	return term.IsTTY(os.Stdout)
+}
+
+func init() {
+	enabled = isEnabled(os.Getenv("TERMSTYLE"))
 }
