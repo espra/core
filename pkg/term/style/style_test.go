@@ -63,10 +63,18 @@ func TestEnabled(t *testing.T) {
 	if got != true {
 		t.Errorf(`isEnabled("2") = %v: want true`, got)
 	}
+	ori := enabled
+	ForceEnable()
 	got = Enabled()
-	if got != enabled {
-		t.Errorf(`Enabled() = %v: want %v`, got, enabled)
+	if got != true {
+		t.Errorf(`ForceEnable(); Enabled() = %v: want %v`, got, true)
 	}
+	ForceDisable()
+	got = Enabled()
+	if got != false {
+		t.Errorf(`ForceDisable(); Enabled() = %v: want %v`, got, false)
+	}
+	enabled = ori
 }
 
 func TestWrap(t *testing.T) {
