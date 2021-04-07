@@ -23,16 +23,6 @@ func (d *device) Read(p []byte) (int, error) {
 	return unix.Read(d.fd, p)
 }
 
-func disableEcho(d *device) error {
-	t := *d.termios
-	t.Iflag |= unix.ICRNL // Enable CR -> NL translation
-	t.Lflag &^= unix.ECHO // Disable echoing
-	t.Lflag |= 0 |
-		unix.ICANON | // Enable canonical/cooked input processing
-		unix.ISIG // Enable signal generation for characters like DSUSP, INTR, QUIT, and SUSP
-	return setTermios(d.fd, &t)
-}
-
 func getDevice(fd int) (*device, error) {
 	t, err := getTermios(fd)
 	return &device{fd, t}, err
@@ -57,7 +47,7 @@ func isTTY(fd int) bool {
 // As well as like raw mode on other systems, e.g.
 //
 // * OpenSSH: https://github.com/openssh/openssh-portable/blob/master/sshtty.c
-func makeRaw(d *device, mode *RawMode) error {
+func makeRaw(d *device, cfg RawConfig) error {
 	// NOTE(tav): Given the historic nature of all of this, you are likely to
 	// find better documentation from early UNIX systems than from more "modern"
 	// systems.
@@ -74,13 +64,13 @@ func makeRaw(d *device, mode *RawMode) error {
 		unix.IXON | // Disable use of START and STOP characters for control flow on output
 		unix.PARMRK // Do not mark framing/parity errors
 	t.Iflag |= unix.IGNBRK // Ignore break conditions
-	if mode != nil && mode.DisableCRNL {
-		t.Iflag &^= unix.ICRNL // Disable CR -> NL translation
-		t.Oflag &^= unix.OPOST // Disable output post-processing
-	} else {
+	if cfg.crnl {
 		t.Iflag |= unix.ICRNL  // Enable CR -> NL translation
 		t.Oflag = unix.OPOST | // Enable output post-processing
 			unix.ONLCR // Enable NL -> CRNL translation
+	} else {
+		t.Iflag &^= unix.ICRNL // Disable CR -> NL translation
+		t.Oflag &^= unix.OPOST // Disable output post-processing
 	}
 	// Configure local terminal functions.
 	t.Lflag &^= 0 |
@@ -88,9 +78,17 @@ func makeRaw(d *device, mode *RawMode) error {
 		unix.ECHOE | // Disable echoing erasure of input by the ERASE character
 		unix.ECHOK | // Disable echoing of NL after the KILL character
 		unix.ECHONL | // Disable echoing of NL
-		unix.ICANON | // Disable canonical/cooked input processing
-		unix.IEXTEN | // Disable extended input processing like DISCARD and LNEXT
-		unix.ISIG // Disable signal generation for characters like DSUSP, INTR, QUIT, and SUSP
+		unix.IEXTEN // Disable extended input processing like DISCARD and LNEXT
+	if cfg.canon {
+		t.Lflag |= unix.ICANON // Enable line-based canonical/cooked input processing
+	} else {
+		t.Lflag &^= unix.ICANON // Disable line-based canonical/cooked input processing
+	}
+	if cfg.sig {
+		t.Lflag |= unix.ISIG // Enable signal generation for characters like DSUSP, INTR, QUIT, and SUSP
+	} else {
+		t.Lflag &^= unix.ISIG // Disable signal generation for characters like DSUSP, INTR, QUIT, and SUSP
+	}
 	// Configure control modes.
 	t.Cflag &^= 0 |
 		unix.CSIZE | // Clear the current character size mask
@@ -99,10 +97,10 @@ func makeRaw(d *device, mode *RawMode) error {
 		unix.CREAD | // Enable receiving of characters
 		unix.CS8 // Specify 8-bit character sizes
 	// Set the minimum number of bytes for read calls.
-	if mode != nil && mode.NonBlocking {
-		t.Cc[unix.VMIN] = 0
-	} else {
+	if cfg.block {
 		t.Cc[unix.VMIN] = 1
+	} else {
+		t.Cc[unix.VMIN] = 0
 	}
 	// Disable timeouts on data transmissions.
 	t.Cc[unix.VTIME] = 0
