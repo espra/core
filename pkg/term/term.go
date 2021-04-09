@@ -82,7 +82,7 @@ const isWindows = runtime.GOOS == "windows"
 
 // Error values.
 var (
-	errInvalidResponse = errors.New("term: invalid response from terminal")
+	errInvalidResponse = errors.New("invalid input from terminal")
 )
 
 var (
@@ -210,49 +210,12 @@ func (s *Screen) CursorLeft(n int) {
 }
 
 // CursorPos returns the current position of the cursor.
-func (s *Screen) CursorPos() (*Pos, error) {
-	if err := s.makeRaw(); err != nil {
-		return nil, err
-	}
-	defer s.reset()
-	// Query the terminal.
-	if _, err := s.out.WriteString("\x1b[6n"); err != nil {
-		return nil, err
-	}
-	// Read the response.
-	buf := [20]byte{}
-	i := 0
-	for i < len(buf) {
-		n, err := s.Read(buf[i : i+1])
-		if n == 1 && buf[i] == 'R' {
-			break
-		}
-		if err != nil {
-			return nil, err
-		}
-		i++
-	}
-	// Exit on invalid data from the device.
-	if !(i >= 5 && buf[0] == '\x1b' && buf[1] == '[') {
-		return nil, errInvalidResponse
-	}
-	// Parse the response to get the position.
-	split := bytes.Split(buf[2:i], []byte{';'})
-	if len(split) != 2 {
-		return nil, errInvalidResponse
-	}
-	row, err := strconv.ParseUint(string(split[0]), 10, 16)
+func (s *Screen) CursorPos() (Pos, error) {
+	pos, err := s.cursorPos()
 	if err != nil {
-		return nil, errInvalidResponse
+		return pos, fmt.Errorf("term: unable to get cursor position: %s", err)
 	}
-	col, err := strconv.ParseUint(string(split[1]), 10, 16)
-	if err != nil {
-		return nil, errInvalidResponse
-	}
-	return &Pos{
-		Col: int(col),
-		Row: int(row),
-	}, nil
+	return pos, nil
 }
 
 // CursorRight moves the cursor right by the given amount.
@@ -261,8 +224,8 @@ func (s *Screen) CursorRight(n int) {
 }
 
 // CursorTo moves the cursor to the given position.
-func (s *Screen) CursorTo(row, column int) {
-	fmt.Fprintf(s.out, "\x1b[%d;%dH", row, column)
+func (s *Screen) CursorTo(pos Pos) {
+	fmt.Fprintf(s.out, "\x1b[%d;%dH", pos.Row, pos.Col)
 }
 
 // CursorUp moves the cursor up by the given amount.
@@ -494,6 +457,60 @@ func (s *Screen) WriteString(p string) (n int, err error) {
 	return s.Write([]byte(p))
 }
 
+func (s *Screen) cursorPos() (Pos, error) {
+	if err := s.makeRaw(); err != nil {
+		return Pos{}, err
+	}
+	defer s.reset()
+	// Query the terminal.
+	if _, err := s.out.WriteString("\x1b[6n"); err != nil {
+		return Pos{}, err
+	}
+	// Read the response after draining any unexpected input.
+	buf := [20]byte{}
+	for {
+		n, err := s.Read(buf[0:1])
+		if n == 1 && buf[0] == '\x1b' {
+			break
+		}
+		if err != nil {
+			return Pos{}, err
+		}
+	}
+	i := 0
+	for i < len(buf) {
+		n, err := s.Read(buf[i : i+1])
+		if n == 1 && buf[i] == 'R' {
+			break
+		}
+		if err != nil {
+			return Pos{}, err
+		}
+		i++
+	}
+	// Exit on invalid data from the device.
+	if !(i >= 4 && buf[0] == '[') {
+		return Pos{}, errInvalidResponse
+	}
+	// Parse the response to get the position.
+	split := bytes.Split(buf[1:i], []byte{';'})
+	if len(split) != 2 {
+		return Pos{}, errInvalidResponse
+	}
+	row, err := strconv.ParseUint(string(split[0]), 10, 16)
+	if err != nil {
+		return Pos{}, errInvalidResponse
+	}
+	col, err := strconv.ParseUint(string(split[1]), 10, 16)
+	if err != nil {
+		return Pos{}, errInvalidResponse
+	}
+	return Pos{
+		Col: int(col),
+		Row: int(row),
+	}, nil
+}
+
 func (s *Screen) makeRaw(opts ...RawOption) error {
 	if s.dev != nil {
 		return nil
@@ -576,8 +593,8 @@ func (s *Screen) trueColor(env string) bool {
 		if err != nil {
 			return
 		}
-		if now.Col != prev.Col || now.Row != prev.Row {
-			s.CursorTo(prev.Row, prev.Col)
+		if now != prev {
+			s.CursorTo(prev)
 			s.ClearToEnd()
 		}
 	}()
