@@ -1,0 +1,14 @@
+# System-wide excludes
+
+.DS_Store
+
+# IDEs
+
+*~
+.idea/
+.vscode/
+
+# Zig
+
+zig-cache/
+zig-out/
