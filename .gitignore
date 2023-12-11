@@ -8,6 +8,18 @@
 .idea/
 .vscode/
 
+# Generated files
+
+*.gen.go
+*.pb.go
+coverage.txt
+
+# Go
+
+*.out
+cpu.prof
+mem.prof
+
 # Zig
 
 zig-cache/
