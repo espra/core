@@ -23,12 +23,18 @@ var OSExit = os.Exit
 var (
 	exitDisabled bool
 	exiting      bool
-	mu           sync.RWMutex // protects exitDisabled, exiting, registry
-	registry     = map[os.Signal][]func(){}
+	handlerID    int
+	mu           sync.RWMutex // protects exitDisabled, exiting, handlerID, registry
+	registry     = map[os.Signal][]entry{}
 	testMode     = false
 	testSig      = make(chan struct{}, 10)
 	wait         = make(chan struct{})
 )
+
+type entry struct {
+	handler func()
+	id      int
+}
 
 type lockFile struct {
 	file string
@@ -39,6 +45,9 @@ func (l *lockFile) release() {
 	os.Remove(l.file)
 	os.Remove(l.link)
 }
+
+// RemoveHandler defines a function for removing a registered signal handler.
+type RemoveHandler func()
 
 // Crash will terminate the process with a panic that will generate stacktraces
 // for all user-generated goroutines.
@@ -88,10 +97,10 @@ func Exit(code int) {
 		return
 	}
 	exiting = true
-	handlers := slices.Clone(registry[os.Interrupt])
+	entries := slices.Clone(registry[os.Interrupt])
 	mu.Unlock()
-	for _, handler := range handlers {
-		handler()
+	for _, entry := range entries {
+		entry.handler()
 	}
 	OSExit(code)
 }
@@ -145,7 +154,7 @@ func ReapOrphans() bool {
 // ResetHandlers drops all currently registered handlers.
 func ResetHandlers() {
 	mu.Lock()
-	registry = map[os.Signal][]func(){}
+	registry = map[os.Signal][]entry{}
 	mu.Unlock()
 }
 
@@ -162,20 +171,30 @@ func RunReaper(ctx context.Context) {
 // SetExitHandler registers the given handler function to run when receiving
 // os.Interrupt or SIGTERM signals. Registered handlers are executed in reverse
 // order of when they were set.
-func SetExitHandler(handler func()) {
+func SetExitHandler(handler func()) RemoveHandler {
 	mu.Lock()
-	registry[os.Interrupt] = slices.Insert(registry[os.Interrupt], 0, handler)
-	registry[syscall.SIGTERM] = slices.Insert(registry[syscall.SIGTERM], 0, handler)
+	e := entry{handler, handlerID}
+	handlerID++
+	registry[os.Interrupt] = slices.Insert(registry[os.Interrupt], 0, e)
+	registry[syscall.SIGTERM] = slices.Insert(registry[syscall.SIGTERM], 0, e)
 	mu.Unlock()
+	return func() {
+		removeHandler(e.id, os.Interrupt, syscall.SIGTERM)
+	}
 }
 
 // SetSignalHandler registers the given handler function to run when receiving
 // the specified signal. Registered handlers are executed in reverse order of
 // when they were set.
-func SetSignalHandler(signal os.Signal, handler func()) {
+func SetSignalHandler(signal os.Signal, handler func()) RemoveHandler {
 	mu.Lock()
-	registry[signal] = slices.Insert(registry[signal], 0, handler)
+	e := entry{handler, handlerID}
+	handlerID++
+	registry[signal] = slices.Insert(registry[signal], 0, e)
 	mu.Unlock()
+	return func() {
+		removeHandler(e.id, signal)
+	}
 }
 
 func handleSignals() {
@@ -190,10 +209,10 @@ func handleSignals() {
 					exiting = true
 				}
 			}
-			handlers := slices.Clone(registry[sig])
+			entries := slices.Clone(registry[sig])
 			mu.Unlock()
-			for _, handler := range handlers {
-				handler()
+			for _, entry := range entries {
+				entry.handler()
 			}
 			if !disabled {
 				if sig == syscall.SIGTERM || sig == os.Interrupt {
@@ -205,6 +224,22 @@ func handleSignals() {
 			}
 		}
 	}()
+}
+
+func removeHandler(id int, signals ...os.Signal) {
+	mu.Lock()
+	for _, signal := range signals {
+		entries := registry[signal]
+		idx := -1
+		for i, entry := range entries {
+			if entry.id == id {
+				idx = i
+				break
+			}
+		}
+		registry[signal] = append(entries[:idx], entries[idx+1:]...)
+	}
+	mu.Unlock()
 }
 
 func init() {

@@ -92,7 +92,7 @@ func TestDisableDefaultExit(t *testing.T) {
 func TestExit(t *testing.T) {
 	reset()
 	called := false
-	SetExitHandler(func() {
+	remove := SetExitHandler(func() {
 		called = true
 	})
 	Exit(7)
@@ -118,6 +118,17 @@ func TestExit(t *testing.T) {
 	}
 	if called {
 		t.Fatalf("Second call to Exit resulted in Exit handler being run again")
+	}
+	resetExiting()
+	osexit.Reset()
+	called = false
+	remove()
+	Exit(9)
+	if !osexit.Called() {
+		t.Fatalf("Third call to Exit didn't call os.Exit")
+	}
+	if called {
+		t.Fatalf("Exit handler called after being removed")
 	}
 }
 
@@ -168,7 +179,7 @@ func TestLock(t *testing.T) {
 func TestSignalHandler(t *testing.T) {
 	reset()
 	called := false
-	SetSignalHandler(syscall.SIGHUP, func() {
+	remove := SetSignalHandler(syscall.SIGHUP, func() {
 		called = true
 	})
 	send(syscall.SIGABRT)
@@ -178,6 +189,17 @@ func TestSignalHandler(t *testing.T) {
 	send(syscall.SIGHUP)
 	if !called {
 		t.Fatalf("Signal handler not called on SIGHUP")
+	}
+	called = false
+	send(syscall.SIGHUP)
+	if !called {
+		t.Fatalf("Signal handler not called on SIGHUP the second time")
+	}
+	called = false
+	remove()
+	send(syscall.SIGHUP)
+	if called {
+		t.Fatalf("Signal handler called on SIGHUP after being removed")
 	}
 }
 
